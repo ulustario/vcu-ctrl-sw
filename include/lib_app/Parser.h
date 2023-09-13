@@ -15,6 +15,7 @@
 #include <sstream>
 #include <vector>
 #include <iomanip>
+#include <cstdint>
 
 std::deque<Token> toReversePolish(std::deque<Token>& tokens);
 std::string parseString(std::deque<Token>& tokens);
