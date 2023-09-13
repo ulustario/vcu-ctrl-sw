@@ -3,6 +3,7 @@
 
 #pragma once
 #include <functional>
+#include <set>
 #include "lib_app/utils.h"
 
 extern "C"
@@ -20,7 +21,6 @@ typedef struct AL_t_driver AL_TDriver;
 /*****************************************************************************/
 struct CIpDeviceParam
 {
-  int iDeviceType;
   int iSchedulerType;
   bool bTrackDma = false;
   uint8_t uNumCore = 0;
@@ -33,11 +33,12 @@ struct CIpDeviceParam
 class CIpDevice
 {
 public:
-  CIpDevice() {};
+  CIpDevice(CIpDeviceParam const& param, AL_EDeviceType eDeviceType, std::set<std::string> tDevices);
   ~CIpDevice();
 
-  void Configure(CIpDeviceParam& param);
   AL_IDecScheduler* GetScheduler();
+  AL_EDeviceType GetDeviceType();
+
   AL_TAllocator* GetAllocator();
   AL_Timer* GetTimer();
 
@@ -45,6 +46,9 @@ public:
   CIpDevice & operator = (CIpDevice const &) = delete;
 
 private:
+  std::set<std::string> const m_tDevices;
+  std::string m_tSelectedDevice;
+  AL_EDeviceType m_eDeviceType;
   AL_IDecScheduler* m_pScheduler = nullptr;
   AL_TAllocator* m_pAllocator = nullptr;
   AL_Timer* m_pTimer = nullptr;

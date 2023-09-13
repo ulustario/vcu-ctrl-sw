@@ -2,12 +2,14 @@
 // SPDX-License-Identifier: MIT
 
 #include "Encoder.h"
-#include "lib_rtos/lib_rtos.h"
+#include "IP_EncoderCtx.h"
 #include "lib_encode/I_EncScheduler.h"
 #include "lib_encode/Com_Encoder.h"
 #include "lib_encode/lib_encoder.h"
-#include "IP_EncoderCtx.h"
 #include "lib_encode/I_EncArch.h"
+#include "lib_encode/lib_encoder.h"
+
+#include "lib_rtos/lib_rtos.h"
 
 void AL_CreateHevcEncoder(HighLevelEncoder* pCtx);
 void AL_CreateAvcEncoder(HighLevelEncoder* pCtx);
@@ -38,10 +40,29 @@ static AL_ERR CreateEncCtx(AL_IEncScheduler* pScheduler, AL_TAllocator* pAlloc, 
   return errorCode;
 }
 
+static bool CheckVersion(AL_TIEncSchedulerVersion const* pVersion)
+{
+  if(pVersion->version.uMajor != AL_VERSION_MAJOR)
+    return false;
+
+  if(pVersion->version.uMinor != AL_VERSION_MINOR)
+    return false;
+
+  if(pVersion->version.uPatch != AL_VERSION_PATCH)
+    return false;
+  return true;
+}
+
 /****************************************************************************/
 static AL_ERR AL_Encoder_Create_Host(AL_HEncoder* hEnc, AL_IEncScheduler* pScheduler, AL_TAllocator* pAlloc, AL_TEncSettings const* pSettings, AL_CB_EndEncoding callback)
 {
   if(!pSettings)
+    return AL_ERROR;
+
+  AL_TIEncSchedulerVersion tVersion;
+  AL_IEncScheduler_Get(pScheduler, AL_IENCSCHEDULER_VERSION, &tVersion);
+
+  if(!CheckVersion(&tVersion))
     return AL_ERROR;
 
   AL_ERR errorCode = AL_ERR_NO_MEMORY;

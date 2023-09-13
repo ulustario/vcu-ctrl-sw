@@ -3,6 +3,8 @@
 
 #include "I_DecScheduler.h"
 
+/* can't be a static inline function as api user need this function and
+ * don't know about the AL_IEncScheduler type internals */
 void AL_IDecScheduler_Destroy(AL_IDecScheduler* pThis)
 {
   pThis->vtable->Destroy(pThis);

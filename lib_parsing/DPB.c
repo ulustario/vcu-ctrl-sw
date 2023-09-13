@@ -688,6 +688,11 @@ void AL_Dpb_SetNumRef(AL_TDpb* pDpb, uint8_t uMaxRef)
 /*************************************************************************/
 void AL_Dpb_SetMarkingFlag(AL_TDpb* pDpb, uint8_t uNode, AL_EMarkingRef eMarkingFlag)
 {
+  if(pDpb->Nodes[uNode].eMarking_flag != UNUSED_FOR_REF && eMarkingFlag == UNUSED_FOR_REF)
+    --pDpb->uCountRef;
+  else if(pDpb->Nodes[uNode].eMarking_flag == UNUSED_FOR_REF && eMarkingFlag != UNUSED_FOR_REF)
+    ++pDpb->uCountRef;
+
   pDpb->Nodes[uNode].eMarking_flag = eMarkingFlag;
 }
 
@@ -755,12 +760,19 @@ uint8_t AL_Dpb_GetNextFreeNode(AL_TDpb const* pDpb)
 
   Rtos_GetMutex(pDpb->Mutex);
 
-  while((pDpb->Nodes[uNew].eMarking_flag != UNUSED_FOR_REF) || (pDpb->Nodes[uNew].pic_output_flag))
-    uNew = (uNew + 1) % MAX_DPB_SIZE;
+  while(uNew < MAX_DPB_SIZE)
+  {
+    if((pDpb->Nodes[uNew].eMarking_flag == UNUSED_FOR_REF) && !pDpb->Nodes[uNew].pic_output_flag)
+    {
+      Rtos_ReleaseMutex(pDpb->Mutex);
+      return uNew;
+    }
+    ++uNew;
+  }
 
   Rtos_ReleaseMutex(pDpb->Mutex);
 
-  return uNew;
+  return uEndOfList;
 }
 
 /*****************************************************************************/
@@ -775,6 +787,10 @@ void AL_Dpb_FillList(AL_TDpb const* pDpb, uint8_t uL0L1, TBufferListRef const* p
     if(uNodeID != uEndOfList && !pDpb->Nodes[uNodeID].non_existing)
     {
       uint8_t uPicID = pDpb->Nodes[uNodeID].uPicID;
+
+      if(uPicID == uEndOfList || uPicID >= MAX_REF)
+        continue;
+
       pPocList[uPicID] = pDpb->Nodes[uNodeID].iFramePOC;
 
       if(pDpb->Nodes[uNodeID].eMarking_flag == LONG_TERM_REF)
@@ -1138,7 +1154,7 @@ void AL_Dpb_Insert(AL_TDpb* pDpb, int iFramePOC, AL_EPicStruct ePicStruct, uint3
   pDpb->uCurRef = uNode;
   AL_TDpbNode* pNode = &pDpb->Nodes[uNode];
 
-  // Assign frame buffer informations
+  // Assign frame buffer information
   pNode->iFramePOC = iFramePOC;
   pNode->ePicStruct = ePicStruct;
   pNode->slice_pic_order_cnt_lsb = uPocLsb;

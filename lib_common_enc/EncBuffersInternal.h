@@ -7,6 +7,7 @@
 #include "lib_common/BufCommonInternal.h"
 #include "lib_common_enc/EncBuffers.h"
 #include "lib_common_enc/Lambdas.h"
+#include "lib_rtos/types.h"
 #define AL_MAX_LAWINDOWSIZE 0
 #define ENC_MAX_CMD (AL_MAX_NUM_B_PICT + 3 + AL_MAX_LAWINDOWSIZE)
 

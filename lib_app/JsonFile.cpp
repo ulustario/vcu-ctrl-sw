@@ -194,10 +194,7 @@ TJsonToken CJsonReader::ReadNextToken(std::ifstream& ifs)
   static const TJsonToken ERROR_TOKEN = { TJsonToken::JSON_TOKEN_ERROR, "", 0 };
 
   while((cToken == ' ' || cToken == '\n' || cToken == '\t' || cToken == '\r') && ifs.get(cToken))
-  {
-  }
-
-  ;
+    ;
 
   if(ifs.eof())
     return TJsonToken {
@@ -208,9 +205,11 @@ TJsonToken CJsonReader::ReadNextToken(std::ifstream& ifs)
                     {
                       char c;
 
-                      for(auto cExpected : sExpected)
+                      for(auto const& cExpected : sExpected)
+                      {
                         if(!ifs.get(c) || c != cExpected)
                           return false;
+                      }
 
                       return true;
                     };

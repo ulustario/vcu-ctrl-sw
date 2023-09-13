@@ -61,7 +61,7 @@ uint8_t AL_DPBConstraint_GetMaxRef_DefaultGopMngr(const AL_TGopParam* pGopParam,
 
 #define NEXT_PYR_LEVEL_NUMB(uNumBForPyrLevel) (((uNumBForPyrLevel) << 1) + 1)
 /****************************************************************************/
-uint8_t AL_DPBConstraint_GetMaxRef_GopMngrCustom(AL_TGopParam const* pGopParam, AL_ECodec eCodec, AL_EVideoMode eVideoMode)
+uint8_t AL_DPBConstraint_GetMaxRef_GopMngrCustom(AL_TGopParam const* pGopParam, AL_ECodec eCodec, AL_EVideoMode eVideoMode, bool bLookAheadSkipExtraRef)
 {
   int iNumRef;
 
@@ -104,6 +104,9 @@ uint8_t AL_DPBConstraint_GetMaxRef_GopMngrCustom(AL_TGopParam const* pGopParam, 
   if(pGopParam->bEnableLT)
     iNumRef++;
 
+  if(bLookAheadSkipExtraRef)
+    iNumRef++;
+
   // The current buffer is used as reference when dealing with the second field
   if(eCodec == AL_CODEC_AVC && eVideoMode != AL_VM_PROGRESSIVE)
     ++iNumRef;
@@ -115,6 +118,8 @@ uint8_t AL_DPBConstraint_GetMaxRef_GopMngrCustom(AL_TGopParam const* pGopParam, 
 uint8_t AL_DPBConstraint_GetMaxDPBSize(const AL_TEncChanParam* pChParam)
 {
   bool bIsLookAhead = false;
+  bool bLookAheadSkipExtraRef = false;
+
   AL_EGopMngrType eGopMngrType = AL_GetGopMngrType(pChParam->tGopParam.eMode, AL_GET_CODEC(pChParam->eProfile), bIsLookAhead);
   AL_ECodec eCodec = AL_GET_CODEC(pChParam->eProfile);
   uint8_t uDPBSize = 0;
@@ -125,7 +130,7 @@ uint8_t AL_DPBConstraint_GetMaxDPBSize(const AL_TEncChanParam* pChParam)
     break;
   case AL_GOP_MNGR_CUSTOM:
   case AL_GOP_MNGR_COMMON:
-    uDPBSize = AL_DPBConstraint_GetMaxRef_GopMngrCustom(&pChParam->tGopParam, eCodec, pChParam->eVideoMode);
+    uDPBSize = AL_DPBConstraint_GetMaxRef_GopMngrCustom(&pChParam->tGopParam, eCodec, pChParam->eVideoMode, bLookAheadSkipExtraRef);
     break;
   case AL_GOP_MNGR_MAX_ENUM:
     break;

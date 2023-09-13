@@ -77,6 +77,12 @@ static uint32_t AL_AVC_GetSliceRate(int level)
 }
 
 /****************************************************************************/
+uint32_t AL_AVC_GetSpecificationMaxNumberOfSlices(void)
+{
+  return 2880;
+}
+
+/****************************************************************************/
 uint32_t AL_AVC_GetMaxNumberOfSlices(AL_EProfile profile, int level, int numUnitInTicks, int timeScale, int numMbsInPic)
 {
 
@@ -97,9 +103,7 @@ uint32_t AL_AVC_GetMaxNumberOfSlices(AL_EProfile profile, int level, int numUnit
     }
   }
 
-  int const specificationMaxNumSlices = 2880;
-
-  return Min(specificationMaxNumSlices, maxNumSlices);
+  return Min(AL_AVC_GetSpecificationMaxNumberOfSlices(), maxNumSlices);
 }
 
 /****************************************************************************/

@@ -53,17 +53,17 @@ static bool Slave_Process(DecoderFeederSlave* slave, AL_TBuffer* startCodeStream
 
   CircBuffer_ConsumeUpToOffset(slave->patchworker->outputCirc, uNewOffset);
 
-  uint32_t uTransferedBytes = AL_Patchworker_Transfer(slave->patchworker);
+  uint32_t uTransferredBytes = AL_Patchworker_Transfer(slave->patchworker);
 
-  if(uTransferedBytes)
+  if(uTransferredBytes)
   {
     bIsIncomingWorkSignaled = true;
     Rtos_ReleaseSemaphore(slave->incomingWorkSem);
   }
 
   AL_TCircMetaData* pMeta = (AL_TCircMetaData*)AL_Buffer_GetMetaData(startCodeStreamView, AL_META_TYPE_CIRCULAR);
-  pMeta->iAvailSize += uTransferedBytes;
-  pMeta->bLastBuffer = AL_Patchworker_IsAllDataTransfered(slave->patchworker);
+  pMeta->iAvailSize += uTransferredBytes;
+  pMeta->bLastBuffer = AL_Patchworker_IsAllDataTransferred(slave->patchworker);
 
   // Decode
   UNIT_ERROR const eErr = AL_Decoder_TryDecodeOneUnit(hDec, startCodeStreamView);
@@ -113,7 +113,7 @@ static bool Slave_Process(DecoderFeederSlave* slave, AL_TBuffer* startCodeStream
     }
 
     // Leave when end of input [all the data were processed in the previous TryDecodeOneUnit]
-    if(AL_Patchworker_IsAllDataTransfered(slave->patchworker))
+    if(AL_Patchworker_IsAllDataTransferred(slave->patchworker))
     {
       AL_Decoder_InternalFlush(slave->hDec);
       slave->decoderHasBeenFlushed = true;

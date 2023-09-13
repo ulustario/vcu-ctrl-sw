@@ -18,7 +18,7 @@
    \param[out] pSkipPict Pointer to TSkippedPicture that receives the skipped
    picture slice data
    \param[in] iNumMBs Number of macroblock in the skipped pictures
-   \param[in] bCabac Specifies the entropy encoding methode :
+   \param[in] bCabac Specifies the entropy encoding method :
    true = CABAC, false = CAVLC
    \param[in] iCabacInitIdc When bCabac is true, Specifies the index for
    determining the initialisation table used in initialisation

@@ -84,7 +84,7 @@ typedef struct t_AvcSliceHeader
   int slice_header_length;
 
   const AL_TAvcPps* pPPS;
-  const AL_TAvcSps* pSPS;
+  AL_TAvcSps* pSPS;
 }AL_TAvcSliceHdr;
 
 typedef struct t_AvcHdrSvcExt // nal_unit_header_svc_extension

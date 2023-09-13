@@ -17,8 +17,8 @@ void LogVerbose(const char* sMsg, ...);
 void LogDebug(const char* sMsg, ...);
 void LogVerbose(EConColor Color, const char* sMsg, ...);
 
-void OpenInput(std::ifstream& fp, std::string filename, bool binary = true);
-void OpenOutput(std::ofstream& fp, std::string filename, bool binary = true);
+void OpenInput(std::ifstream& fp, std::string const& filename, bool binary = true);
+void OpenOutput(std::ofstream& fp, std::string const& filename, bool binary = true);
 
 /*****************************************************************************/
 
@@ -68,9 +68,9 @@ enum AL_ESchedulerType
   AL_SCHEDULER_TYPE_MCU,
 };
 
-enum AL_EDeviceType
+typedef enum
 {
   AL_DEVICE_TYPE_AUTO,
   AL_DEVICE_TYPE_BOARD,
   AL_DEVICE_TYPE_REFSW,
-};
+}AL_EDeviceType;

@@ -16,6 +16,7 @@
 #include "lib_common/List.h"
 #include "lib_common/Error.h"
 #include "lib_assert/al_assert.h"
+#include "lib_scheduler_dec/SchedulerInfo.h"
 
 #define DCACHE_OFFSET 0x80000000
 
@@ -609,7 +610,7 @@ static void API_DecodeOneSlice(AL_IDecScheduler* pScheduler, AL_HANDLE hChannel,
     Rtos_Log(AL_LOG_ERROR, "Failed to decode one slice (error code: %d)\n", error);
 }
 
-static void GetSchedulerCoreInfo(DecSchedulerMcuCtx const* pThis, AL_TISchedulerCore* pCore)
+static void GetSchedulerCoreInfo(DecSchedulerMcuCtx const* pThis, AL_TIDecSchedulerCore* pCore)
 {
   int const fd = AL_Driver_Open(pThis->driver, pThis->deviceFile);
 
@@ -620,7 +621,7 @@ static void GetSchedulerCoreInfo(DecSchedulerMcuCtx const* pThis, AL_TIScheduler
   }
 
   struct al5_params msg;
-  AL_EIDecSchedulerInfo eInfo = AL_ISCHEDULER_CORE;
+  AL_EDecSchedulerInfo eInfo = AL_DEC_SCHEDULER_CORE;
   msg.opaque[0] = eInfo;
   memcpy(&msg.opaque[sizeof(eInfo) / sizeof(*msg.opaque)], pCore, sizeof(*pCore));
 
@@ -631,7 +632,7 @@ static void GetSchedulerCoreInfo(DecSchedulerMcuCtx const* pThis, AL_TIScheduler
 
   if(error != DRIVER_SUCCESS)
   {
-    Rtos_Log(AL_LOG_ERROR, "Failed to get parameter '%s', (error code: '%d')\n", ToStringIDecSchedulerInfo(AL_ISCHEDULER_CORE), error);
+    Rtos_Log(AL_LOG_ERROR, "Failed to get parameter '%s', (error code: '%d')\n", ToStringIDecSchedulerInfo(AL_IDECSCHEDULER_CORE), error);
     AL_Driver_Close(pThis->driver, fd);
     return;
   }
@@ -641,14 +642,52 @@ static void GetSchedulerCoreInfo(DecSchedulerMcuCtx const* pThis, AL_TIScheduler
   AL_Driver_Close(pThis->driver, fd);
 }
 
+/******************************************************************************/
+static void GetSchedulerVersion(DecSchedulerMcuCtx const* pThis, AL_TIDecSchedulerVersion* pVersion)
+{
+  int const fd = AL_Driver_Open(pThis->driver, pThis->deviceFile);
+
+  if(fd < 0)
+  {
+    Rtos_Log(AL_LOG_ERROR, "Couldn't open device file '%s' while creating channel: '%s'\n", pThis->deviceFile, strerror(errno));
+    return;
+  }
+
+  struct al5_params msg;
+  AL_EDecSchedulerInfo eInfo = AL_DEC_SCHEDULER_VERSION;
+  msg.opaque[0] = eInfo;
+  memcpy(&msg.opaque[sizeof(eInfo) / sizeof(*msg.opaque)], pVersion, sizeof(*pVersion));
+
+  static_assert(sizeof(eInfo) + sizeof(*pVersion) <= sizeof(msg.opaque), "Driver version structure struct is too small");
+  msg.size = sizeof(eInfo) + sizeof(*pVersion);
+
+  AL_EDriverError const error = AL_Driver_PostMessage(pThis->driver, fd, AL_MCU_GET, &msg);
+
+  if(error != DRIVER_SUCCESS)
+  {
+    Rtos_Log(AL_LOG_ERROR, "Failed to get parameter '%s', (error code: '%d')\n", ToStringIDecSchedulerInfo(AL_IDECSCHEDULER_VERSION), error);
+    AL_Driver_Close(pThis->driver, fd);
+    return;
+  }
+
+  memcpy(pVersion, &msg.opaque[1], sizeof(*pVersion));
+
+  AL_Driver_Close(pThis->driver, fd);
+}
+
 static void API_Get(AL_IDecScheduler const* pScheduler, AL_EIDecSchedulerInfo info, void* pParam)
 {
   DecSchedulerMcuCtx const* pThis = (DecSchedulerMcuCtx const*)pScheduler;
   switch(info)
   {
-  case AL_ISCHEDULER_CORE:
+  case AL_IDECSCHEDULER_VERSION:
   {
-    GetSchedulerCoreInfo(pThis, (AL_TISchedulerCore*)pParam);
+    GetSchedulerVersion(pThis, (AL_TIDecSchedulerVersion*)pParam);
+    return;
+  }
+  case AL_IDECSCHEDULER_CORE:
+  {
+    GetSchedulerCoreInfo(pThis, (AL_TIDecSchedulerCore*)pParam);
     return;
   }
   default: return;

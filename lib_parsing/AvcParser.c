@@ -48,222 +48,217 @@ static void propagate_scaling_list(int iSclID, uint8_t* Default4x4Flag, uint8_t*
 AL_PARSE_RESULT AL_AVC_ParsePPS(AL_TAup* pIAup, AL_TRbspParser* pRP, uint16_t* pPpsId)
 {
   skipAllZerosAndTheNextByte(pRP);
-
   u(pRP, 8); // Skip NUT
 
   uint16_t pps_id = ue(pRP);
 
-  COMPLY(pps_id < AL_AVC_MAX_PPS);
-
   if(pPpsId)
     *pPpsId = pps_id;
 
-  AL_TAvcPps tempPPS;
-  initPps(&tempPPS);
+  COMPLY(pps_id < AL_AVC_MAX_PPS);
 
-  tempPPS.pic_parameter_set_id = pps_id;
-  tempPPS.seq_parameter_set_id = ue(pRP);
+  AL_TAvcAup* aup = &pIAup->avcAup;
+  AL_TAvcPps* pPPS = &aup->pPPS[pps_id];
 
-  COMPLY(tempPPS.seq_parameter_set_id < AL_AVC_MAX_SPS);
+  // default values
+  initPps(pPPS);
 
-  tempPPS.pSPS = &pIAup->avcAup.pSPS[tempPPS.seq_parameter_set_id];
+  pPPS->pic_parameter_set_id = pps_id;
+  pPPS->seq_parameter_set_id = ue(pRP);
 
-  COMPLY(!tempPPS.pSPS->bConceal);
+  COMPLY(pPPS->seq_parameter_set_id < AL_AVC_MAX_SPS);
 
-  tempPPS.entropy_coding_mode_flag = u(pRP, 1);
-  tempPPS.bottom_field_pic_order_in_frame_present_flag = u(pRP, 1);
-  tempPPS.num_slice_groups_minus1 = ue(pRP);
+  pPPS->pSPS = &pIAup->avcAup.pSPS[pPPS->seq_parameter_set_id];
 
-  if(tempPPS.num_slice_groups_minus1 > 0)
+  COMPLY(!pPPS->pSPS->bConceal);
+
+  pPPS->entropy_coding_mode_flag = u(pRP, 1);
+  pPPS->bottom_field_pic_order_in_frame_present_flag = u(pRP, 1);
+  pPPS->num_slice_groups_minus1 = Clip3(ue(pRP), 0, 7);
+
+  if(pPPS->num_slice_groups_minus1 > 0)
   {
-    tempPPS.slice_group_map_type = ue(pRP);
+    pPPS->slice_group_map_type = ue(pRP);
 
-    if(tempPPS.slice_group_map_type == 0)
+    if(pPPS->slice_group_map_type == 0)
     {
-      for(int iGroup = 0; iGroup <= tempPPS.num_slice_groups_minus1; iGroup++)
-        tempPPS.run_length_minus1[iGroup] = ue(pRP);
+      for(int iGroup = 0; iGroup <= pPPS->num_slice_groups_minus1; iGroup++)
+        pPPS->run_length_minus1[iGroup] = ue(pRP);
     }
-    else if(tempPPS.slice_group_map_type == 2)
+    else if(pPPS->slice_group_map_type == 2)
     {
-      for(int iGroup = 0; iGroup <= tempPPS.num_slice_groups_minus1; iGroup++)
+      for(int iGroup = 0; iGroup <= pPPS->num_slice_groups_minus1; iGroup++)
       {
-        tempPPS.top_left[iGroup] = ue(pRP);
-        tempPPS.bottom_right[iGroup] = ue(pRP);
+        pPPS->top_left[iGroup] = ue(pRP);
+        pPPS->bottom_right[iGroup] = ue(pRP);
       }
     }
-    else if(tempPPS.slice_group_map_type == 3 ||
-            tempPPS.slice_group_map_type == 4 ||
-            tempPPS.slice_group_map_type == 5)
+    else if(pPPS->slice_group_map_type == 3 ||
+            pPPS->slice_group_map_type == 4 ||
+            pPPS->slice_group_map_type == 5)
     {
-      tempPPS.slice_group_change_direction_flag = u(pRP, 1);
-      tempPPS.slice_group_change_rate_minus1 = ue(pRP);
+      pPPS->slice_group_change_direction_flag = u(pRP, 1);
+      pPPS->slice_group_change_rate_minus1 = ue(pRP);
     }
-    else if(tempPPS.slice_group_map_type == 6)
+    else if(pPPS->slice_group_map_type == 6)
     {
-      tempPPS.pic_size_in_map_units_minus1 = ue(pRP);
+      pPPS->pic_size_in_map_units_minus1 = Clip3(ue(pRP), 0, 8159);
 
-      for(int i = 0; i <= tempPPS.pic_size_in_map_units_minus1; i++)
+      for(int i = 0; i <= pPPS->pic_size_in_map_units_minus1; i++)
       {
-        int slicegroupsize = tempPPS.pic_size_in_map_units_minus1 + 1;
-        tempPPS.slice_group_id[i] = u(pRP, slicegroupsize);
+        int slicegroupsize = pPPS->pic_size_in_map_units_minus1 + 1;
+        pPPS->slice_group_id[i] = u(pRP, slicegroupsize);
       }
     }
   }
 
-  // check if NAL isn't empty
-  COMPLY(more_rbsp_data(pRP));
+  pPPS->num_ref_idx_l0_active_minus1 = Clip3(ue(pRP), 0, AL_AVC_MAX_REF_IDX);
+  pPPS->num_ref_idx_l1_active_minus1 = Clip3(ue(pRP), 0, AL_AVC_MAX_REF_IDX);
 
-  tempPPS.num_ref_idx_l0_active_minus1 = Clip3(ue(pRP), 0, AL_AVC_MAX_REF_IDX);
-  tempPPS.num_ref_idx_l1_active_minus1 = Clip3(ue(pRP), 0, AL_AVC_MAX_REF_IDX);
+  pPPS->weighted_pred_flag = u(pRP, 1);
+  pPPS->weighted_bipred_idc = Clip3(u(pRP, 2), 0, AL_MAX_WP_IDC);
 
-  tempPPS.weighted_pred_flag = u(pRP, 1);
-  tempPPS.weighted_bipred_idc = Clip3(u(pRP, 2), 0, AL_MAX_WP_IDC);
+  uint16_t QpBdOffset = 6 * pPPS->pSPS->bit_depth_luma_minus8;
+  pPPS->pic_init_qp_minus26 = Clip3(se(pRP), -(26 + QpBdOffset), AL_MAX_INIT_QP);
+  pPPS->pic_init_qs_minus26 = Clip3(se(pRP), AL_MIN_INIT_QP, AL_MAX_INIT_QP);
 
-  uint16_t QpBdOffset = 6 * tempPPS.pSPS->bit_depth_luma_minus8;
-  tempPPS.pic_init_qp_minus26 = Clip3(se(pRP), -(26 + QpBdOffset), AL_MAX_INIT_QP);
-  tempPPS.pic_init_qs_minus26 = Clip3(se(pRP), AL_MIN_INIT_QP, AL_MAX_INIT_QP);
+  pPPS->chroma_qp_index_offset = Clip3(se(pRP), AL_MIN_QP_OFFSET, AL_MAX_QP_OFFSET);
+  pPPS->second_chroma_qp_index_offset = pPPS->chroma_qp_index_offset;
 
-  tempPPS.chroma_qp_index_offset = Clip3(se(pRP), AL_MIN_QP_OFFSET, AL_MAX_QP_OFFSET);
-  tempPPS.second_chroma_qp_index_offset = tempPPS.chroma_qp_index_offset;
-
-  tempPPS.deblocking_filter_control_present_flag = u(pRP, 1);
-  tempPPS.constrained_intra_pred_flag = u(pRP, 1);
-  skip(pRP, 1);
-  tempPPS.redundant_pic_cnt_present_flag = 0;
+  pPPS->deblocking_filter_control_present_flag = u(pRP, 1);
+  pPPS->constrained_intra_pred_flag = u(pRP, 1);
+  pPPS->redundant_pic_cnt_present_flag = u(pRP, 1);
 
   if(more_rbsp_data(pRP))
   {
-    tempPPS.transform_8x8_mode_flag = u(pRP, 1);
-    tempPPS.pic_scaling_matrix_present_flag = u(pRP, 1);
+    pPPS->transform_8x8_mode_flag = u(pRP, 1);
+    pPPS->pic_scaling_matrix_present_flag = u(pRP, 1);
 
-    if(tempPPS.pic_scaling_matrix_present_flag)
+    if(pPPS->pic_scaling_matrix_present_flag)
     {
-      for(int i = 0; i < 6 + (tempPPS.pSPS->chroma_format_idc != 3 ? 2 : 6) * tempPPS.transform_8x8_mode_flag; i++)
+      for(int i = 0; i < 6 + (pPPS->pSPS->chroma_format_idc != 3 ? 2 : 6) * pPPS->transform_8x8_mode_flag; i++)
       {
         if(i < 6)
-          tempPPS.UseDefaultScalingMatrix4x4Flag[i] = 0;
+          pPPS->UseDefaultScalingMatrix4x4Flag[i] = 0;
         else
-          tempPPS.UseDefaultScalingMatrix8x8Flag[i - 6] = 0;
+          pPPS->UseDefaultScalingMatrix8x8Flag[i - 6] = 0;
 
-        tempPPS.pic_scaling_list_present_flag[i] = u(pRP, 1);
+        pPPS->pic_scaling_list_present_flag[i] = u(pRP, 1);
 
-        if(tempPPS.pic_scaling_list_present_flag[i])
+        if(pPPS->pic_scaling_list_present_flag[i])
         {
           if(i < 6)
-            avc_scaling_list_data(tempPPS.ScalingList4x4[i], pRP, 16, &tempPPS.UseDefaultScalingMatrix4x4Flag[i]);
+            avc_scaling_list_data(pPPS->ScalingList4x4[i], pRP, 16, &pPPS->UseDefaultScalingMatrix4x4Flag[i]);
           else
-            avc_scaling_list_data(tempPPS.ScalingList8x8[i - 6], pRP, 64, &tempPPS.UseDefaultScalingMatrix8x8Flag[i - 6]);
+            avc_scaling_list_data(pPPS->ScalingList8x8[i - 6], pRP, 64, &pPPS->UseDefaultScalingMatrix8x8Flag[i - 6]);
         }
         else
         {
-          if(!tempPPS.pSPS->seq_scaling_matrix_present_flag)
-            propagate_scaling_list(i, tempPPS.UseDefaultScalingMatrix4x4Flag, tempPPS.UseDefaultScalingMatrix8x8Flag, tempPPS.ScalingList4x4, tempPPS.ScalingList8x8);
+          if(!pPPS->pSPS->seq_scaling_matrix_present_flag)
+            propagate_scaling_list(i, pPPS->UseDefaultScalingMatrix4x4Flag, pPPS->UseDefaultScalingMatrix8x8Flag, pPPS->ScalingList4x4, pPPS->ScalingList8x8);
           else
           {
             if(i < 6)
             {
               if(i == 0 || i == 3)
               {
-                if(tempPPS.pSPS->UseDefaultScalingMatrix4x4Flag[i])
-                  tempPPS.UseDefaultScalingMatrix4x4Flag[i] = 1;
+                if(pPPS->pSPS->UseDefaultScalingMatrix4x4Flag[i])
+                  pPPS->UseDefaultScalingMatrix4x4Flag[i] = 1;
                 else
-                  Rtos_Memcpy(tempPPS.ScalingList4x4[i], tempPPS.pSPS->ScalingList4x4[i], 16);
+                  Rtos_Memcpy(pPPS->ScalingList4x4[i], pPPS->pSPS->ScalingList4x4[i], 16);
               }
               else
               {
-                if(tempPPS.UseDefaultScalingMatrix4x4Flag[i - 1])
-                  tempPPS.UseDefaultScalingMatrix4x4Flag[i] = 1;
+                if(pPPS->UseDefaultScalingMatrix4x4Flag[i - 1])
+                  pPPS->UseDefaultScalingMatrix4x4Flag[i] = 1;
                 else
-                  Rtos_Memcpy(tempPPS.ScalingList4x4[i], tempPPS.ScalingList4x4[i - 1], 16);
+                  Rtos_Memcpy(pPPS->ScalingList4x4[i], pPPS->ScalingList4x4[i - 1], 16);
               }
             }
             else
             {
               if(i < 8)
               {
-                if(tempPPS.pSPS->UseDefaultScalingMatrix8x8Flag[i - 6])
-                  tempPPS.UseDefaultScalingMatrix8x8Flag[i - 6] = 1;
+                if(pPPS->pSPS->UseDefaultScalingMatrix8x8Flag[i - 6])
+                  pPPS->UseDefaultScalingMatrix8x8Flag[i - 6] = 1;
                 else
-                  Rtos_Memcpy(tempPPS.ScalingList8x8[i - 6], tempPPS.pSPS->ScalingList8x8[i - 6], 64);
+                  Rtos_Memcpy(pPPS->ScalingList8x8[i - 6], pPPS->pSPS->ScalingList8x8[i - 6], 64);
               }
               else
               {
-                if(tempPPS.UseDefaultScalingMatrix8x8Flag[i - 8])
-                  tempPPS.UseDefaultScalingMatrix8x8Flag[i - 6] = 1;
+                if(pPPS->UseDefaultScalingMatrix8x8Flag[i - 8])
+                  pPPS->UseDefaultScalingMatrix8x8Flag[i - 6] = 1;
                 else
-                  Rtos_Memcpy(tempPPS.ScalingList8x8[i - 6], tempPPS.ScalingList8x8[i - 8], 64);
+                  Rtos_Memcpy(pPPS->ScalingList8x8[i - 6], pPPS->ScalingList8x8[i - 8], 64);
               }
             }
           }
         }
       }
     }
-    else if(tempPPS.pSPS)
+    else if(pPPS->pSPS)
     {
-      for(int i = 0; i < (tempPPS.pSPS->chroma_format_idc != 3 ? 8 : 12); ++i)
+      for(int i = 0; i < (pPPS->pSPS->chroma_format_idc != 3 ? 8 : 12); ++i)
       {
         if(i < 6)
         {
-          if(tempPPS.pSPS->UseDefaultScalingMatrix4x4Flag[i])
-            tempPPS.UseDefaultScalingMatrix4x4Flag[i] = 1;
+          if(pPPS->pSPS->UseDefaultScalingMatrix4x4Flag[i])
+            pPPS->UseDefaultScalingMatrix4x4Flag[i] = 1;
           else
-            Rtos_Memcpy(tempPPS.ScalingList4x4[i], tempPPS.pSPS->ScalingList4x4[i], 16);
+            Rtos_Memcpy(pPPS->ScalingList4x4[i], pPPS->pSPS->ScalingList4x4[i], 16);
         }
         else
         {
-          if(tempPPS.pSPS->UseDefaultScalingMatrix8x8Flag[i - 6])
-            tempPPS.UseDefaultScalingMatrix8x8Flag[i - 6] = 1;
+          if(pPPS->pSPS->UseDefaultScalingMatrix8x8Flag[i - 6])
+            pPPS->UseDefaultScalingMatrix8x8Flag[i - 6] = 1;
           else
-            Rtos_Memcpy(tempPPS.ScalingList8x8[i - 6], tempPPS.pSPS->ScalingList8x8[i - 6], 64);
+            Rtos_Memcpy(pPPS->ScalingList8x8[i - 6], pPPS->pSPS->ScalingList8x8[i - 6], 64);
         }
       }
     }
 
-    tempPPS.second_chroma_qp_index_offset = Clip3(se(pRP), AL_MIN_INIT_QP, AL_MAX_INIT_QP);
+    pPPS->second_chroma_qp_index_offset = Clip3(se(pRP), AL_MIN_INIT_QP, AL_MAX_INIT_QP);
   }
   else
   {
-    for(int i = 0; i < (tempPPS.pSPS->chroma_format_idc != 3 ? 8 : 12); ++i)
+    for(int i = 0; i < (pPPS->pSPS->chroma_format_idc != 3 ? 8 : 12); ++i)
     {
       if(i < 6)
       {
-        if(tempPPS.pSPS->UseDefaultScalingMatrix4x4Flag[i])
-          tempPPS.UseDefaultScalingMatrix4x4Flag[i] = 1;
+        if(pPPS->pSPS->UseDefaultScalingMatrix4x4Flag[i])
+          pPPS->UseDefaultScalingMatrix4x4Flag[i] = 1;
         else
-          Rtos_Memcpy(tempPPS.ScalingList4x4[i], tempPPS.pSPS->ScalingList4x4[i], 16);
+          Rtos_Memcpy(pPPS->ScalingList4x4[i], pPPS->pSPS->ScalingList4x4[i], 16);
       }
       else
       {
-        if(tempPPS.pSPS->UseDefaultScalingMatrix8x8Flag[i - 6])
-          tempPPS.UseDefaultScalingMatrix8x8Flag[i - 6] = 1;
+        if(pPPS->pSPS->UseDefaultScalingMatrix8x8Flag[i - 6])
+          pPPS->UseDefaultScalingMatrix8x8Flag[i - 6] = 1;
         else
-          Rtos_Memcpy(tempPPS.ScalingList8x8[i - 6], tempPPS.pSPS->ScalingList8x8[i - 6], 64);
+          Rtos_Memcpy(pPPS->ScalingList8x8[i - 6], pPPS->pSPS->ScalingList8x8[i - 6], 64);
       }
     }
   }
 
   /*dummy information to ensure there's no zero value in scaling list structure (div by zero prevention)*/
-  if(!tempPPS.transform_8x8_mode_flag)
+  if(!pPPS->transform_8x8_mode_flag)
   {
     for(int i = 0; i < 6; ++i)
-      tempPPS.UseDefaultScalingMatrix8x8Flag[i] = 1;
+      pPPS->UseDefaultScalingMatrix8x8Flag[i] = 1;
   }
 
-  tempPPS.bConceal = rbsp_trailing_bits(pRP) ? false : true;
-
-  pIAup->avcAup.pPPS[pps_id] = tempPPS;
+  COMPLY(rbsp_trailing_bits(pRP));
 
   return AL_OK;
 }
 
 static void initSps(AL_TAvcSps* pSPS)
 {
+  Rtos_Memset(pSPS, 0, sizeof(AL_TAvcSps));
+
   pSPS->vui_param.hrd_param.initial_cpb_removal_delay_length_minus1 = 23;
   pSPS->vui_param.hrd_param.au_cpb_removal_delay_length_minus1 = 23;
   pSPS->vui_param.hrd_param.dpb_output_delay_length_minus1 = 23;
-
-  Rtos_Memset(pSPS->UseDefaultScalingMatrix4x4Flag, 0, sizeof(pSPS->UseDefaultScalingMatrix4x4Flag));
-  Rtos_Memset(pSPS->UseDefaultScalingMatrix8x8Flag, 0, sizeof(pSPS->UseDefaultScalingMatrix8x8Flag));
 
   pSPS->mb_adaptive_frame_field_flag = 0;
   pSPS->chroma_format_idc = 1;
@@ -303,35 +298,29 @@ static bool isProfileSupported(uint8_t profile_idc)
 AL_PARSE_RESULT AL_AVC_ParseSPS(AL_TRbspParser* pRP, AL_TAvcSps* pSPS)
 {
   skipAllZerosAndTheNextByte(pRP);
-
   u(pRP, 8); // Skip NUT
 
-  uint8_t profile_idc = u(pRP, 8);
-  skip(pRP, 1); // constraint_set0_flag
-  uint8_t constr_set1_flag = u(pRP, 1);
+  initSps(pSPS);
 
-  if(!isProfileSupported(profile_idc) && !constr_set1_flag)
+  pSPS->profile_idc = u(pRP, 8);
+  pSPS->constraint_set0_flag = u(pRP, 1);
+  pSPS->constraint_set1_flag = u(pRP, 1);
+  pSPS->constraint_set2_flag = u(pRP, 1);
+  pSPS->constraint_set3_flag = u(pRP, 1);
+  pSPS->constraint_set4_flag = u(pRP, 1);
+  pSPS->constraint_set5_flag = u(pRP, 1);
+  skip(pRP, 2); // reserved_zero_bits
+
+  pSPS->level_idc = u(pRP, 8);
+
+  pSPS->seq_parameter_set_id = ue(pRP);
+  COMPLY_ID(pSPS->seq_parameter_set_id < AL_AVC_MAX_SPS);
+
+  if(!isProfileSupported(pSPS->profile_idc) && !pSPS->constraint_set1_flag)
   {
     Rtos_Log(AL_LOG_ERROR, "Unsupported profile\n");
     return AL_UNSUPPORTED;
   }
-  skip(pRP, 1); // constraint_set2_flag
-  uint8_t constr_set3_flag = u(pRP, 1);
-  skip(pRP, 1); // constraint_set4_flag
-  skip(pRP, 1); // constraint_set5_flag
-  skip(pRP, 2); // reserved_zero_bits
-  uint8_t level_idc = u(pRP, 8);
-  uint8_t sps_id = ue(pRP);
-
-  COMPLY(sps_id < AL_AVC_MAX_SPS);
-
-  Rtos_Memset(pSPS, 0, sizeof(AL_TAvcSps));
-  initSps(pSPS);
-
-  pSPS->profile_idc = profile_idc;
-  pSPS->constraint_set3_flag = constr_set3_flag;
-  pSPS->level_idc = level_idc;
-  pSPS->seq_parameter_set_id = sps_id;
 
   if(pSPS->profile_idc == 44 || pSPS->profile_idc == 83 ||
      pSPS->profile_idc == 86 || pSPS->profile_idc == 100 ||
@@ -339,10 +328,9 @@ AL_PARSE_RESULT AL_AVC_ParseSPS(AL_TRbspParser* pRP, AL_TAvcSps* pSPS)
      pSPS->profile_idc == 122 || pSPS->profile_idc == 128 ||
      pSPS->profile_idc == 244)
   {
-    // check if NAL isn't empty
-    COMPLY(more_rbsp_data(pRP));
-
     pSPS->chroma_format_idc = ue(pRP);
+
+    COMPLY(pSPS->chroma_format_idc < AL_CHROMA_MAX_ENUM);
 
     if(pSPS->chroma_format_idc == 3)
       pSPS->separate_colour_plane_flag = u(pRP, 1);
@@ -408,7 +396,7 @@ AL_PARSE_RESULT AL_AVC_ParseSPS(AL_TRbspParser* pRP, AL_TAvcSps* pSPS)
       pSPS->offset_for_ref_frame[i] = se(pRP);
   }
 
-  pSPS->max_num_ref_frames = ue(pRP);
+  pSPS->max_num_ref_frames = Clip3(ue(pRP), 0, MAX_REF);
   pSPS->gaps_in_frame_num_value_allowed_flag = u(pRP, 1);
 
   pSPS->pic_width_in_mbs_minus1 = ue(pRP);
@@ -430,9 +418,6 @@ AL_PARSE_RESULT AL_AVC_ParseSPS(AL_TRbspParser* pRP, AL_TAvcSps* pSPS)
     }
   }
 
-  // check if NAL isn't empty
-  COMPLY(more_rbsp_data(pRP));
-
   pSPS->direct_8x8_inference_flag = u(pRP, 1);
   pSPS->frame_cropping_flag = u(pRP, 1);
 
@@ -447,11 +432,7 @@ AL_PARSE_RESULT AL_AVC_ParseSPS(AL_TRbspParser* pRP, AL_TAvcSps* pSPS)
   pSPS->vui_parameters_present_flag = u(pRP, 1);
 
   if(pSPS->vui_parameters_present_flag)
-  {
-    // check if NAL isn't empty
-    COMPLY(more_rbsp_data(pRP));
     COMPLY(avc_vui_parameters(&pSPS->vui_param, pRP));
-  }
 
   // validate current SPS
   pSPS->bConceal = false;
@@ -466,7 +447,7 @@ static bool SeiBufferingPeriod(AL_TRbspParser* pRP, AL_TAvcSps* pSpsTable, AL_TA
 
   pBufPeriod->seq_parameter_set_id = ue(pRP);
 
-  if(pBufPeriod->seq_parameter_set_id >= 32)
+  if(pBufPeriod->seq_parameter_set_id >= AL_AVC_MAX_SPS)
     return false;
 
   pSPS = &pSpsTable[pBufPeriod->seq_parameter_set_id];
@@ -498,7 +479,7 @@ static bool SeiBufferingPeriod(AL_TRbspParser* pRP, AL_TAvcSps* pSpsTable, AL_TA
     }
   }
 
-  return byte_alignment(pRP);
+  return true;
 }
 
 /*****************************************************************************/
@@ -536,8 +517,12 @@ bool AL_AVC_ParseSEI(AL_TAup* pIAup, AL_TRbspParser* pRP, bool bIsPrefix, AL_CB_
   SeiParserParam tSeiParserParam = { pIAup, bIsPrefix, cb, pMeta };
   SeiParserCB tSeiParserCb = { ParseSeiPayload, &tSeiParserParam };
 
-  while(more_rbsp_data(pRP))
-    ParseSeiHeader(pRP, &tSeiParserCb);
+  do
+  {
+    if(!ParseSeiHeader(pRP, &tSeiParserCb))
+      return false;
+  }
+  while(more_rbsp_data(pRP));
 
   rbsp_trailing_bits(pRP);
 

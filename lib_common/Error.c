@@ -48,6 +48,7 @@ const char* AL_Codec_ErrorToString(AL_ERR eErrorCode)
   case AL_WARN_SPS_MIN_RESOLUTION_NOT_COMPATIBLE_WITH_CHANNEL_SETTINGS: return "Sps resolution not compatible with minimal resolution, decoder discarded it";
   case AL_WARN_SPS_RESOLUTION_NOT_COMPATIBLE_WITH_CHANNEL_SETTINGS: return "Sps resolution not compatible with channel settings, decoder discarded it";
   case AL_WARN_ASO_FMO_NOT_SUPPORTED: return "Arbitrary Slice Order (ASO) or Flexible Macroblock Reordering (FMO) features are not supported, decoder discarded it";
+  case AL_WARN_INVALID_ACCESS_UNIT_STRUCTURE: return "The NALs present in the stream buffer don't form a valid Access Unit structure";
 
   /* Others */
   case AL_SUCCESS: return "Success";

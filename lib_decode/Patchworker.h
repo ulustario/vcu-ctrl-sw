@@ -29,7 +29,7 @@ size_t AL_Patchworker_CopyBuffer(AL_TPatchworker* pPatchworker, AL_TBuffer* pBuf
 /* Transfer as much data as possible from one buffer of the fifo to the circular buffer */
 size_t AL_Patchworker_Transfer(AL_TPatchworker* pPatchworker);
 
-bool AL_Patchworker_IsAllDataTransfered(AL_TPatchworker* pPatchworker);
+bool AL_Patchworker_IsAllDataTransferred(AL_TPatchworker* pPatchworker);
 
 void AL_Patchworker_Reset(AL_TPatchworker* pPatchworker);
 

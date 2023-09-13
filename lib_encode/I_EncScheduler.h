@@ -16,6 +16,7 @@
 #include "lib_common_enc/EncRecBuffer.h"
 #include "lib_common/BufferAPI.h"
 #include "lib_common/MemDesc.h"
+#include "lib_encode/I_EncSchedulerInfo.h"
 
 /****************************************************************************/
 static const AL_HANDLE AL_INVALID_CHANNEL = (AL_HANDLE)(NULL);
@@ -46,10 +47,24 @@ typedef struct AL_i_EncSchedulerVtable
   void (* putStreamBuffer)(AL_IEncScheduler* pScheduler, AL_HANDLE hChannel, AL_TBuffer* pStream, AL_64U streamUserPtr, uint32_t uOffset);
   bool (* getRecPicture)(AL_IEncScheduler* pScheduler, AL_HANDLE hChannel, AL_TRecPic* pRecPic);
   bool (* releaseRecPicture)(AL_IEncScheduler* pScheduler, AL_HANDLE hChannel, AL_TRecPic* pRecPic);
-
+  void (* get)(AL_IEncScheduler const* pScheduler, AL_EIEncSchedulerInfo info, void* pParam);
+  void (* set)(AL_IEncScheduler* pScheduler, AL_EIEncSchedulerInfo info, void const* pParam);
 }AL_IEncSchedulerVtable;
 
+/*************************************************************************//*!
+   \brief De-initializes the scheduler
+*****************************************************************************/
 void AL_IEncScheduler_Destroy(AL_IEncScheduler* pScheduler);
+
+/*************************************************************************//*!
+   \brief Scheduler getter
+*****************************************************************************/
+void AL_IEncScheduler_Get(AL_IEncScheduler const* pScheduler, AL_EIEncSchedulerInfo eInfo, void* pParam);
+
+/*************************************************************************//*!
+   \brief Scheduler setter
+*****************************************************************************/
+void AL_IEncScheduler_Set(AL_IEncScheduler* pScheduler, AL_EIEncSchedulerInfo eInfo, void const* pParam);
 
 /*************************************************************************//*!
    \brief Channel creation
@@ -81,7 +96,7 @@ bool AL_IEncScheduler_DestroyChannel(AL_IEncScheduler* pScheduler, AL_HANDLE hCh
    \param[in] hChannel Channel identifier
    \param[in] pEncInfo Pointer to the encoding parameters structure
    \param[in] pBufferAddrs Pointer to the input buffer structure
-   \return return true if the decoding launch is successfull
+   \return return true if the decoding launch is successful
    false otherwise
 *****************************************************************************/
 static inline

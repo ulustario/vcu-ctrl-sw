@@ -98,6 +98,7 @@ typedef AL_INTROSPECT (category = "debug") struct t_EncSettings
   bool bDisIntra; /*!< Disable Intra preiction Mode in P or B slice (validation purpose only) */
   bool bForceLoad; /*!< Specifies if the work buffers are reloaded each time by the IP, recommended value : true */
   int32_t iPrefetchLevel2; /*!< Specifies the size of the L2 prefetch memory */
+  bool bEnableL2PReducedRange; /*!< Specifies if monochrome luma reduced range need to be used */
   uint16_t uClipHrzRange; /*!< Specifies the Horizontal motion vector range. Note: this range can be further reduce by the encoder according to various constraints*/
   uint16_t uClipVrtRange; /*!< Specifies the Vertical motion vector range. Note: this range can be further reduce by the encoder according to various constraints*/
   AL_EQpCtrlMode eQpCtrlMode; /*!< Specifies the QP control mode inside a frame; see AL_EQpCtrlMode for available modes */

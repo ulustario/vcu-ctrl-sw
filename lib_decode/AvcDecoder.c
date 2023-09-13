@@ -102,8 +102,9 @@ static int getMaxNumberOfSlices(AL_TDecCtx const* pCtx, AL_TAvcSps const* pSPS)
     timeScale = 2 * pCtx->uConcealMaxFps;
   }
 
-  AL_Assert(numUnitsInTick && "vui_num_units_in_tick should not be equal to 0");
-  AL_Assert(timeScale && "vui_time_scale should not be equal to 0");
+  if(numUnitsInTick == 0 || timeScale == 0)
+    return Min(macroblocksCountInPicture, AL_AVC_GetSpecificationMaxNumberOfSlices());
+
   return AL_AVC_GetMaxNumberOfSlices(pStreamSettings->eProfile, pStreamSettings->iLevel, numUnitsInTick, timeScale, macroblocksCountInPicture);
 }
 
@@ -170,8 +171,8 @@ static AL_ERR isSPSCompatibleWithStreamSettings(AL_TDecCtx const* pCtx, AL_TAvcS
   AL_TDimension tSPSDim = extractDimension(pSPS, bHasFields);
 
   int iSPSLevel = pSPS->constraint_set3_flag ? 9 : pSPS->level_idc; /* We treat constraint set 3 as a level 9 */
-  int iCurDPBSize = AL_AVC_GetMaxDPBSize(pStreamSettings->iLevel, pStreamSettings->tDim.iWidth, pStreamSettings->tDim.iHeight, 0, false, false);
-  int iNewDPBSize = AL_AVC_GetMaxDPBSize(iSPSLevel, tSPSDim.iWidth, tSPSDim.iHeight, 0, false, false);
+  int iCurDPBSize = Max(AL_AVC_GetMaxDPBSize(pStreamSettings->iLevel, pStreamSettings->tDim.iWidth, pStreamSettings->tDim.iHeight, 0, false, false), pStreamSettings->iMaxRef);
+  int iNewDPBSize = Min(AL_AVC_GetMaxDPBSize(iSPSLevel, tSPSDim.iWidth, tSPSDim.iHeight, 0, false, false), pSPS->max_num_ref_frames);
 
   if(iNewDPBSize > iCurDPBSize)
     return AL_WARN_SPS_LEVEL_NOT_COMPATIBLE_WITH_CHANNEL_SETTINGS;
@@ -234,13 +235,13 @@ static void extractStreamSettings(AL_TAvcSps const* pSPS, AL_TStreamSettings* pS
   pStreamSettings->iLevel = pSPS->constraint_set3_flag ? 9 : pSPS->level_idc;
   pStreamSettings->eProfile = AL_PROFILE_AVC | pSPS->profile_idc | AL_CS_FLAGS(uFlags);
   pStreamSettings->eSequenceMode = AL_SM_PROGRESSIVE;
-  pStreamSettings->iMaxRef = AL_AVC_GetMaxDPBSize(pStreamSettings->iLevel, pStreamSettings->tDim.iWidth, pStreamSettings->tDim.iHeight, AL_IS_INTRA_PROFILE(pStreamSettings->eProfile), AL_IS_STILL_PROFILE(pStreamSettings->eProfile), pStreamSettings->bDecodeIntraOnly);
+  pStreamSettings->iMaxRef = 0;
 }
 
 /******************************************************************************/
 int AL_AVC_GetMaxDpbBuffers(AL_TStreamSettings const* pCurrentStreamSettings, int iSPSMaxRefFrames)
 {
-  return AL_AVC_GetMaxDPBSize(pCurrentStreamSettings->iLevel, pCurrentStreamSettings->tDim.iWidth, pCurrentStreamSettings->tDim.iHeight, iSPSMaxRefFrames, AL_IS_INTRA_PROFILE(pCurrentStreamSettings->eProfile), pCurrentStreamSettings->bDecodeIntraOnly);
+  return Max(AL_AVC_GetMaxDPBSize(pCurrentStreamSettings->iLevel, pCurrentStreamSettings->tDim.iWidth, pCurrentStreamSettings->tDim.iHeight, iSPSMaxRefFrames, AL_IS_INTRA_PROFILE(pCurrentStreamSettings->eProfile), pCurrentStreamSettings->bDecodeIntraOnly), pCurrentStreamSettings->iMaxRef);
 }
 
 /******************************************************************************/
@@ -517,6 +518,9 @@ static void reallyEndFrame(AL_TDecCtx* pCtx, AL_ENut eNUT, AL_TAvcSliceHdr* pSli
   if(pCtx->pChanParam->eDecUnit == AL_VCL_NAL_UNIT)
     AL_LaunchSliceDecoding(pCtx, true, hasPreviousSlice);
 
+  if(pCtx->eInputMode == AL_DEC_SPLIT_INPUT)
+    pCtx->tConceal.bSkipRemainingNals = true;
+
   UpdateContextAtEndOfFrame(pCtx);
 }
 
@@ -636,7 +640,7 @@ static bool avcInitFrameBuffers(AL_TDecCtx* pCtx, bool bStartsNewCVS, const AL_T
 /*****************************************************************************/
 static bool decodeSliceData(AL_TAup* pIAUP, AL_TDecCtx* pCtx, AL_ENut eNUT, bool bIsLastAUNal, int* iNumSlice)
 {
-  if(*iNumSlice > pCtx->pChanParam->iMaxSlices)
+  if(pCtx->bFirstSliceInFrameIsValid && *iNumSlice > pCtx->pChanParam->iMaxSlices)
     return false;
 
   // Slice header deanti-emulation
@@ -650,16 +654,25 @@ static bool decodeSliceData(AL_TAup* pIAUP, AL_TDecCtx* pCtx, AL_ENut eNUT, bool
   Rtos_Memset(pSlice, 0, sizeof(AL_TAvcSliceHdr));
   AL_TConceal* pConceal = &pCtx->tConceal;
   AL_TAvcAup* pAUP = &pIAUP->avcAup;
-  bool isValid;
-  bool bSliceBelongsToSameFrame = true;
 
   AL_ERR const ret = AL_AVC_ParseSliceHeader(pSlice, &rp, pConceal, pAUP->pPPS);
-  isValid = ret == AL_SUCCESS;
+  bool isSliceHdrValid = ret == AL_SUCCESS;
+  bool isValid = isSliceHdrValid;
+  bool bSliceBelongsToSameFrame = true;
+
+  if(!pSlice->pSPS)
+    pSlice->pSPS = pAUP->pActiveSPS;
 
   if(isValid)
-    bSliceBelongsToSameFrame = (!pSlice->first_mb_in_slice || (pSlice->pic_order_cnt_lsb == pCtx->uCurPocLsb));
+  {
+    if(pSlice->pic_order_cnt_lsb != pCtx->uCurPocLsb && pSlice->first_mb_in_slice != 0)
+      bSliceBelongsToSameFrame = false;
+  }
   else if(ret != AL_WARN_CONCEAL_DETECT)
     AL_Default_Decoder_SetError(pCtx, ret, -1, true);
+
+  if(pSlice->first_mb_in_slice <= pConceal->iFirstLCU)
+    bSliceBelongsToSameFrame = false;
 
   bool* bFirstSliceInFrameIsValid = &pCtx->bFirstSliceInFrameIsValid;
   bool* bFirstIsValid = &pCtx->bFirstIsValid;
@@ -668,44 +681,27 @@ static bool decodeSliceData(AL_TAup* pIAUP, AL_TDecCtx* pCtx, AL_ENut eNUT, bool
   AL_TDimension tActiveDimension = !pCtx->bIsFirstSPSChecked ? pCtx->tStreamSettings.tDim : extractDimension(pAUP->pActiveSPS, pSlice->field_pic_flag);
 
   if(!bSliceBelongsToSameFrame && AL_Default_Decoder_HasOngoingFrame(pCtx))
+  {
     finishPreviousFrame(pCtx);
 
+    if(pCtx->eInputMode == AL_DEC_SPLIT_INPUT)
+    {
+      pConceal->bSkipRemainingNals = true;
+      return true;
+    }
+  }
+
   pCtx->bIsIFrame &= pSlice->slice_type == AL_SLICE_I;
+
+  if(isValid)
+    pConceal->iFirstLCU = pSlice->first_mb_in_slice;
 
   AL_TDecPicBuffers* pBufs = &pCtx->PoolPB[pCtx->uToggle];
   AL_TDecPicParam* pPP = &pCtx->PoolPP[pCtx->uToggle];
 
-  if(isValid)
+  if(isValid && pCtx->bIsBuffersAllocated)
   {
-    pCtx->uCurPocLsb = pSlice->pic_order_cnt_lsb;
-
-    if(!initSlice(pCtx, pSlice))
-    {
-      if(bIsLastAUNal && *bBeginFrameIsValid)
-        AL_CancelFrameBuffers(pCtx);
-
-      UpdateContextAtEndOfFrame(pCtx);
-      return false;
-    }
-  }
-
-  pCtx->uCurID = (pCtx->uCurID + 1) & 1;
-  AL_TDecSliceParam* pSP = &(((AL_TDecSliceParam*)pCtx->PoolSP[pCtx->uToggle].tMD.pVirtualAddr)[pCtx->PictMngr.uNumSlice]);
-
-  if(pCtx->bIsBuffersAllocated && !(*bFirstSliceInFrameIsValid) && pSlice->first_mb_in_slice)
-  {
-    if(!pSlice->pSPS)
-      pSlice->pSPS = pAUP->pActiveSPS;
-    createConcealSlice(pCtx, pPP, pSP, pSlice);
-
-    pSP = &(((AL_TDecSliceParam*)pCtx->PoolSP[pCtx->uToggle].tMD.pVirtualAddr)[++pCtx->PictMngr.uNumSlice]);
-    *bFirstSliceInFrameIsValid = true;
-  }
-
-  if(isValid)
-  {
-    int const spsid = sliceSpsId(pAUP->pPPS, pSlice);
-    AL_TAvcSps* pSPS = &pAUP->pSPS[spsid];
+    AL_TAvcSps* pSPS = pSlice->pSPS;
     AL_ERR const ret = isSPSCompatibleWithStreamSettings(pCtx, pSPS, pSlice->field_pic_flag, &pCtx->tStreamSettings);
     isValid = ret == AL_SUCCESS;
     AL_TStreamSettings spsSettings;
@@ -714,6 +710,8 @@ static bool decodeSliceData(AL_TAup* pIAUP, AL_TDecCtx* pCtx, AL_ENut eNUT, bool
     {
       spsSettings.bDecodeIntraOnly = pCtx->tStreamSettings.bDecodeIntraOnly;
       extractStreamSettings(pSPS, &spsSettings, pSlice->field_pic_flag);
+      // get value from pre alloc
+      spsSettings.iMaxRef = pCtx->tStreamSettings.iMaxRef;
     }
 
     if(!isValid)
@@ -725,7 +723,8 @@ static bool decodeSliceData(AL_TAup* pIAUP, AL_TDecCtx* pCtx, AL_ENut eNUT, bool
     else if(spsSettings.tDim.iWidth != tActiveDimension.iWidth || spsSettings.tDim.iHeight != tActiveDimension.iHeight)
     {
       AL_TCropInfo tCropInfo = AL_AVC_GetCropInfo(pSPS);
-      AL_ERR error = resolutionFound(pCtx, &spsSettings, &tCropInfo, pSPS->max_num_ref_frames * (1 + pSlice->field_pic_flag));
+      int iSPSMaxRefFrames = Max(pSPS->max_num_ref_frames, spsSettings.iMaxRef);
+      AL_ERR error = resolutionFound(pCtx, &spsSettings, &tCropInfo, iSPSMaxRefFrames * (1 + pSlice->field_pic_flag));
 
       if(error != AL_SUCCESS)
       {
@@ -737,16 +736,38 @@ static bool decodeSliceData(AL_TAup* pIAUP, AL_TDecCtx* pCtx, AL_ENut eNUT, bool
     }
   }
 
-  if(isValid && !pSlice->first_mb_in_slice)
+  if(isValid)
+  {
+    pCtx->uCurPocLsb = pSlice->pic_order_cnt_lsb;
+
+    if(!initSlice(pCtx, pSlice))
+    {
+      if(bIsLastAUNal)
+      {
+        if(*bBeginFrameIsValid)
+          AL_CancelFrameBuffers(pCtx);
+        else
+          UpdateContextAtEndOfFrame(pCtx);
+      }
+      return false;
+    }
+  }
+
+  pCtx->uCurID = (pCtx->uCurID + 1) & 1;
+  AL_TDecSliceParam* pSP = &(((AL_TDecSliceParam*)pCtx->PoolSP[pCtx->uToggle].tMD.pVirtualAddr)[pCtx->PictMngr.uNumSlice]);
+
+  if(isSliceHdrValid && !pSlice->pSPS->bConceal && pCtx->bIsBuffersAllocated && !(*bFirstSliceInFrameIsValid) && pSlice->first_mb_in_slice)
+  {
+    createConcealSlice(pCtx, pPP, pSP, pSlice);
+
+    pSP = &(((AL_TDecSliceParam*)pCtx->PoolSP[pCtx->uToggle].tMD.pVirtualAddr)[++pCtx->PictMngr.uNumSlice]);
     *bFirstSliceInFrameIsValid = true;
+  }
 
   if(isValid && pSlice->slice_type != AL_SLICE_I)
     AL_SET_DEC_OPT(pPP, IntraOnly, 0);
 
   pBufs->tStream.tMD = pCtx->Stream.tMD;
-
-  if(!pSlice->pSPS)
-    pSlice->pSPS = pAUP->pActiveSPS;
 
   // Compute Current POC
   if(isValid && (!pSlice->first_mb_in_slice || !bSliceBelongsToSameFrame))
@@ -822,14 +843,19 @@ static bool decodeSliceData(AL_TAup* pIAUP, AL_TDecCtx* pCtx, AL_ENut eNUT, bool
     if(bIsLastAUNal || (pCtx->tStreamSettings.bDecodeIntraOnly && !pCtx->bIsIFrame))
     {
       if(*bBeginFrameIsValid)
+      {
         AL_CancelFrameBuffers(pCtx);
-
-      UpdateContextAtEndOfFrame(pCtx);
-      pCtx->bIsIFrame = true;
+        pCtx->bIsIFrame = true;
+      }
+      else
+        UpdateContextAtEndOfFrame(pCtx);
     }
 
     return false;
   }
+
+  if(isValid && !pSlice->first_mb_in_slice)
+    *bFirstSliceInFrameIsValid = true;
 
   // Launch slice decoding
   AL_AVC_PrepareCommand(pCtx, &ScalingList, pPP, pBufs, pSP, pSlice, bIsLastAUNal || bLastSlice, isValid);
@@ -879,6 +905,8 @@ static AL_PARSE_RESULT parsePPSandUpdateConcealment(AL_TAup* IAup, AL_TRbspParse
 
   AL_TAvcAup* aup = &IAup->avcAup;
 
+  aup->pPPS[PpsId].bConceal = (result != AL_OK);
+
   if(!aup->pPPS[PpsId].bConceal)
   {
     pCtx->tConceal.bHasPPS = true;
@@ -906,19 +934,21 @@ static AL_PARSE_RESULT parseAndApplySPS(AL_TAup* pIAup, AL_TRbspParser* pRP, AL_
   AL_TAvcSps tNewSPS;
   AL_PARSE_RESULT eParseResult = AL_AVC_ParseSPS(pRP, &tNewSPS);
 
-  if(tNewSPS.seq_parameter_set_id >= AL_AVC_MAX_SPS)
-    return AL_UNSUPPORTED;
-
-  if(eParseResult == AL_OK)
+  if(eParseResult != AL_BAD_ID)
   {
-    if(AL_Default_Decoder_HasOngoingFrame(pCtx) && isActiveSPSChanging(&tNewSPS, pIAup->avcAup.pActiveSPS))
+    if(eParseResult == AL_OK)
     {
-      // An active SPS should not be modified unless it is the end of the CVS (spec I.7.4.1.2).
-      // So we consider we received the full frame.
-      finishPreviousFrame(pCtx);
+      if(AL_Default_Decoder_HasOngoingFrame(pCtx) && isActiveSPSChanging(&tNewSPS, pIAup->avcAup.pActiveSPS))
+      {
+        // An active SPS should not be modified unless it is the end of the CVS (spec I.7.4.1.2).
+        // So we consider we received the full frame.
+        finishPreviousFrame(pCtx);
+        eParseResult = AL_LAUNCHED_OK;
+      }
+      pIAup->avcAup.pSPS[tNewSPS.seq_parameter_set_id] = tNewSPS;
     }
-
-    pIAup->avcAup.pSPS[tNewSPS.seq_parameter_set_id] = tNewSPS;
+    else
+      pIAup->avcAup.pSPS[tNewSPS.seq_parameter_set_id].bConceal = true;
   }
 
   return eParseResult;

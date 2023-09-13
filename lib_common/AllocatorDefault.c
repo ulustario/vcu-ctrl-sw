@@ -133,13 +133,13 @@ static AL_TAllocator s_DefaultAllocator =
 };
 
 /*****************************************************************************/
-AL_TAllocator* AL_GetWrapperAllocator()
+AL_TAllocator* AL_GetWrapperAllocator(void)
 {
   return &s_WrapperAllocator;
 }
 
 /*****************************************************************************/
-AL_TAllocator* AL_GetDefaultAllocator()
+AL_TAllocator* AL_GetDefaultAllocator(void)
 {
   return &s_DefaultAllocator;
 }

@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: MIT
 
 #include "lib_encode/I_EncScheduler.h"
+#include "lib_encode/I_EncSchedulerInfo.h"
 #include "lib_encode/EncSchedulerMcu.h"
 #include "lib_encode/EncSchedulerCommon.h"
 #include "lib_common/IDriver.h"
@@ -225,14 +226,14 @@ static void processStatusMsg(Channel* chan, struct al5_params* msg)
 {
   AL_Assert(msg->size >= sizeof(AL_PTR64));
   AL_PTR64 streamBufferPtr;
-  Rtos_Memcpy(&streamBufferPtr, msg->opaque_params, sizeof(AL_PTR64));
+  Rtos_Memcpy(&streamBufferPtr, msg->opaque, sizeof(AL_PTR64));
   AL_TEncPicStatus* pStatus = NULL;
   AL_TEncPicStatus status;
 
   if(msg->size > sizeof(AL_PTR64))
   {
     AL_Assert(msg->size == sizeof(AL_PTR64) + sizeof(AL_TEncPicStatus));
-    Rtos_Memcpy(&status, (char*)msg->opaque_params + sizeof(AL_PTR64), sizeof(status));
+    Rtos_Memcpy(&status, (char*)msg->opaque + sizeof(AL_PTR64), sizeof(status));
     pStatus = &status;
   }
 
@@ -315,6 +316,68 @@ static void API_PutStreamBuffer(AL_IEncScheduler* pScheduler, AL_HANDLE hChannel
   AL_Driver_PostMessage(scheduler->driver, chan->fd, AL_MCU_PUT_STREAM_BUFFER, &driverBuffer);
 }
 
+/******************************************************************************/
+static void GetSchedulerVersion(AL_TEncSchedulerMcu const* pScheduler, AL_TIEncSchedulerVersion* pVersion)
+{
+  int const fd = AL_Driver_Open(pScheduler->driver, pScheduler->deviceFile);
+
+  if(fd < 0)
+  {
+    Rtos_Log(AL_LOG_ERROR, "Couldn't open device file '%s' while creating channel: '%s'\n", pScheduler->deviceFile, strerror(errno));
+    return;
+  }
+
+  struct al5_params msg;
+  AL_EIEncSchedulerInfo eInfo = AL_IENCSCHEDULER_VERSION;
+  msg.opaque[0] = eInfo;
+  memcpy(&msg.opaque[sizeof(eInfo) / sizeof(*msg.opaque)], pVersion, sizeof(*pVersion));
+
+  static_assert(sizeof(eInfo) + sizeof(*pVersion) <= sizeof(msg.opaque), "Driver version structure struct is too small");
+  msg.size = sizeof(eInfo) + sizeof(*pVersion);
+
+  AL_EDriverError const error = AL_Driver_PostMessage(pScheduler->driver, fd, AL_MCU_GET, &msg);
+
+  if(error != DRIVER_SUCCESS)
+  {
+    Rtos_Log(AL_LOG_ERROR, "Failed to get parameter '%s', (error code: '%d')\n", ToStringIEncSchedulerInfo(AL_IENCSCHEDULER_VERSION), error);
+    AL_Driver_Close(pScheduler->driver, fd);
+    return;
+  }
+
+  memcpy(pVersion, &msg.opaque[1], sizeof(*pVersion));
+
+  AL_Driver_Close(pScheduler->driver, fd);
+}
+
+static void API_Get(AL_IEncScheduler const* pScheduler, AL_EIEncSchedulerInfo info, void* pParam)
+{
+  AL_TEncSchedulerMcu const* pSchedulerMcu = (AL_TEncSchedulerMcu const*)pScheduler;
+  switch(info)
+  {
+  case AL_IENCSCHEDULER_VERSION:
+  {
+    GetSchedulerVersion(pSchedulerMcu, (AL_TIEncSchedulerVersion*)pParam);
+    return;
+  }
+  default: return;
+  }
+
+  return;
+}
+
+static void API_Set(AL_IEncScheduler* pScheduler, AL_EIEncSchedulerInfo info, void const* pParam)
+{
+  (void)pParam;
+  AL_TEncSchedulerMcu const* pSchedulerMcu = (AL_TEncSchedulerMcu const*)pScheduler;
+  (void)pSchedulerMcu;
+  switch(info)
+  {
+  default: return;
+  }
+
+  return;
+}
+
 static const AL_IEncSchedulerVtable McuEncSchedulerVtable =
 {
   API_Destroy,
@@ -324,6 +387,8 @@ static const AL_IEncSchedulerVtable McuEncSchedulerVtable =
   API_PutStreamBuffer,
   API_GetRecPicture,
   API_ReleaseRecPicture,
+  API_Get,
+  API_Set,
 };
 
 AL_IEncScheduler* AL_SchedulerMcu_Create(AL_TDriver* driver, AL_TLinuxDmaAllocator* pDmaAllocator, char const* deviceFile)

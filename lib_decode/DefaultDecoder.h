@@ -60,7 +60,7 @@ void AL_Default_Decoder_ReleaseStreamBuffer(void* pUserParam, AL_TBuffer* pBufSt
    \brief This function allocate memory blocks usable by the decoder
    \param[in]  pCtx decoder context
    \param[out] pMD  Pointer to TMemDesc structure that receives allocated
-                  memory informations
+                  memory information
    \param[in] uSize Number of bytes to allocate
    \param[in] name name of the buffer for debug purpose
    \return If the function succeeds the return value is nonzero (true)
@@ -98,7 +98,7 @@ bool AL_Default_Decoder_AllocMv(AL_TDecCtx* pCtx, int iMVSize, int iPOCSize, int
    \brief This function sets an error
    \param[in] pCtx decoder context
    \param[in] eError Error to set
-   \param[in] iFrameID Id of the erronous frame, -1 if error is not frame-related
+   \param[in] iFrameID Id of the erroneous frame, -1 if error is not frame-related
    \param[in] bTriggerCB Specifies if we must trigger the error CB
 *****************************************************************************/
 void AL_Default_Decoder_SetError(AL_TDecCtx* pCtx, AL_ERR eError, int iFrameID, bool bTriggerCB);

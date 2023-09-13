@@ -13,9 +13,10 @@
 
 extern "C"
 {
-#include <lib_rtos/lib_rtos.h>
-#include <lib_common_enc/EncBuffers.h>
+#include "lib_rtos/lib_rtos.h"
+#include "lib_common_enc/EncBuffers.h"
 #include "lib_common/Error.h"
+#include "lib_common/RoundUp.h"
 }
 
 #include "QPGenerator.h"
@@ -24,12 +25,6 @@ extern "C"
 #include "lib_app/FileUtils.h"
 
 using namespace std;
-
-/****************************************************************************/
-static inline int RoundUp(int iVal, int iRnd)
-{
-  return (iVal + iRnd - 1) & (~(iRnd - 1));
-}
 
 /****************************************************************************/
 static AL_ERR ReadQPs(ifstream& qpFile, uint8_t* pQPs, int iNumLCUs, int iNumQPPerLCU, int iNumBytesPerLCU, int iQPTableDepth)
@@ -408,7 +403,7 @@ static void GetQPBufferParameters(int iLCUPicWidth, int iLCUPicHeight, AL_EProfi
   iNumBytesPerLCU = 1;
 
   iNumLCUs = iLCUPicWidth * iLCUPicHeight;
-  int const iSize = RoundUp(iNumLCUs * iNumBytesPerLCU, 128);
+  int const iSize = AL_RoundUp(iNumLCUs * iNumBytesPerLCU, 128);
 
   Rtos_Memset(pQPs, 0, iSize);
 }

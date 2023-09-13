@@ -12,6 +12,7 @@ extern "C"
 }
 #include <algorithm>
 #include <memory>
+#include <cassert>
 #include <stdexcept>
 
 using namespace std;
@@ -490,3 +491,39 @@ uint32_t SplitInput::ReadStream(istream& ifFileStream, AL_TBuffer* pBufStream, u
   return frame.numBytes;
 }
 
+/******************************************************************************/
+SplitInputFromSizes::SplitInputFromSizes(std::istream& ifFileSizes)
+  : m_FileSizes(ifFileSizes)
+{
+}
+
+/******************************************************************************/
+uint32_t SplitInputFromSizes::ReadStream(istream& ifFileStream, AL_TBuffer* pBufStream, uint8_t& uBufFlags)
+{
+  uBufFlags = AL_STREAM_BUF_FLAG_UNKNOWN;
+
+  if(m_bEOF)
+    return 0;
+
+  string sFrmSize;
+  getline(m_FileSizes, sFrmSize);
+
+  int iFrmSize = atoi(sFrmSize.c_str());
+
+  if(iFrmSize)
+  {
+    assert(iFrmSize <= (int)AL_Buffer_GetSize(pBufStream));
+
+    uint8_t* pBufOut = AL_Buffer_GetData(pBufStream);
+
+    ifFileStream.read((char*)pBufOut, iFrmSize);
+
+    assert(ifFileStream.gcount() == iFrmSize);
+
+    uBufFlags = AL_STREAM_BUF_FLAG_ENDOFSLICE | AL_STREAM_BUF_FLAG_ENDOFFRAME;
+  }
+  else
+    m_bEOF = true;
+
+  return iFrmSize;
+}

@@ -38,9 +38,6 @@ void UnCompFrameWriter::ProcessFrame(AL_TBuffer* pBuf)
   if(currentStorageMode != m_eStorageMode || eOutputID != m_iOutputID)
     return;
 
-  if(pMeta)
-    m_iOutputID = pMeta->eOutputID;
-
   m_tPicDim = AL_PixMapBuffer_GetDimension(pBuf);
 
   int32_t iPitchInLuma = AL_PixMapBuffer_GetPlanePitch(pBuf, AL_PLANE_Y);
@@ -90,6 +87,6 @@ void UnCompFrameWriter::DimInTileCalculusRaster()
   if(m_tPicFormat.eChromaOrder == AL_C_ORDER_SEMIPLANAR)
     m_uPitchCFile = m_uPitchYFile;
   else
-    m_uPitchCFile = AL_RoundUp(m_uPitchYFile, m_iChromaHorzScale) / m_iChromaHorzScale;
+    m_uPitchCFile = ((m_tPicDim.iWidth + m_iChromaHorzScale - 1) / m_iChromaHorzScale) * m_iNbBytesPerPix;
 }
 

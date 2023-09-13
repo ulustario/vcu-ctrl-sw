@@ -23,11 +23,14 @@
 #include <type_traits>
 #include <cmath>
 
+extern "C"
+{
+#include "lib_common/RoundUp.h"
 #include "lib_common/SEI.h"
 #include "lib_common/SliceConsts.h"
+}
 
 using std::cout;
-using std::numeric_limits;
 using std::cerr;
 using std::endl;
 using std::string;
@@ -932,7 +935,8 @@ static void populateSettingsSection(ConfigParser& parser, ConfigFile& cfg, Tempo
   parser.addNote(curSection, "WaveFront", "When a video sequence (resolution and frame rate) requires more than one core for encoding and WaveFront is disabled, the encoder automatically uses tiles instead.");
   string l2cacheDesc = "";
   l2cacheDesc = "Specifies if the L2 cache is used of not";
-  parser.addBool(curSection, "CacheLevel2", cfg.Settings.iPrefetchLevel2, l2cacheDesc, allCodecs());
+  parser.addBool(curSection, "CacheLevel2", cfg.Settings.iPrefetchLevel2, l2cacheDesc, aomituCodecs());
+  parser.addBool(curSection, "EnableL2PReducedRange", cfg.Settings.bEnableL2PReducedRange, "Enable prefetch level 2 (l2p) monochrome luma reduced range need to be used", aomituCodecs());
   parser.addFlag(curSection, "AvcLowLat", cfg.Settings.tChParam[0].eEncOptions, AL_OPT_LOWLAT_SYNC, "Enables a special synchronization mode for AVC low latency encoding", isOnlyCodec(Codec::Avc));
   parser.addNote(curSection, "AvcLowLat", "Available only in multi-cores use cases");
   parser.addNote(curSection, "AvcLowLat", "Decrease latency, but can also decrease performance");
@@ -1010,6 +1014,9 @@ static void populateRunSection(ConfigParser& parser, ConfigFile& cfg)
     { allCodecs(), 0, INT_MAX },
   });
   parser.addPath(curSection, "BitrateFile", cfg.RunInfo.bitrateFile, "The generated stream size for each picture and bitrate information will be written to this file", aomituCodecs());
+  parser.addArith(curSection, "ForceStreamBufSize", cfg.iForceStreamBufSize, "Force the Output bitstreram Size (in bytes)", {
+    { allCodecs(), 0, INT_MAX },
+  });
 }
 
 static void try_to_push_secondary_input(ConfigFile& cfg, Temporary& temp, vector<TConfigYUVInput>& inputList)

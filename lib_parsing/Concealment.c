@@ -10,5 +10,6 @@ void AL_Conceal_Init(AL_TConceal* pConceal)
   pConceal->bValidFrame = false;
   pConceal->iLastPPSId = -1;
   pConceal->bHasPPS = false;
+  pConceal->bSkipRemainingNals = false;
 }
 

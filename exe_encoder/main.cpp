@@ -40,9 +40,7 @@
 
 #include "CodecUtils.h"
 #include "IpDevice.h"
-
 #include "resource.h"
-
 #include "CfgParser.h"
 
 extern "C"
@@ -83,7 +81,7 @@ static bool g_MultiChunk = false;
 using namespace std;
 
 /*****************************************************************************/
-AL_HANDLE AlignedAlloc(AL_TAllocator* pAllocator, char const* pBufName, uint32_t uSize, uint32_t uAlign, uint32_t* uAllocatedSize, uint32_t* uAlignmentOffset)
+AL_HANDLE alignedAlloc(AL_TAllocator* pAllocator, char const* pBufName, uint32_t uSize, uint32_t uAlign, uint32_t* uAllocatedSize, uint32_t* uAlignmentOffset)
 {
   *uAllocatedSize = 0;
   *uAlignmentOffset = 0;
@@ -140,7 +138,7 @@ void SetDefaults(ConfigFile& cfg)
   cfg.MainInput.FileInfo.FrameRate = 0;
   cfg.MainInput.FileInfo.PictHeight = 0;
   cfg.MainInput.FileInfo.PictWidth = 0;
-  cfg.RunInfo.encDevicePath = "/dev/allegroIP";
+  cfg.RunInfo.encDevicePath = ENCODER_DEVICES;
   cfg.RunInfo.iDeviceType = AL_DEVICE_TYPE_BOARD;
   cfg.RunInfo.iSchedulerType = AL_SCHEDULER_TYPE_MCU;
   cfg.RunInfo.bLoop = false;
@@ -371,11 +369,12 @@ void ParseCommandLine(int argc, char** argv, ConfigFile& cfg, CfgParser& cfgPars
   opt.addFlag("--multi-chunk", &g_MultiChunk, "Allocate source luma and chroma on different memory chunks");
   opt.addInt("--num-core", &cfg.Settings.tChParam[0].uNumCore, "Specifies the number of cores to use (resolution needs to be sufficient)");
 
+  opt.addInt("--stream-buf-size", &cfg.iForceStreamBufSize, "Specify stream buffers size");
   opt.addFlag("--non-realtime", &cfg.Settings.tChParam[0].bNonRealtime, "Specifies that the channel is a non-realtime channel");
   opt.addFlag("--print-ratectrl-stat", &cfg.RunInfo.printRateCtrlStat, "Write rate-control related statistics for each frame in the file. Only a subset of the statistics is written, more data and motion vectors are also available.", true);
   opt.addFlag("--print-picture-type", &cfg.RunInfo.printPictureType, "Write picture type for each frame in the file", true);
 
-  opt.addString("--device", &cfg.RunInfo.encDevicePath, "Path of the driver device file used to talk with the IP. Default is /dev/allegroIP");
+  opt.addString("--device", &cfg.RunInfo.encDevicePath, std::string(std::string("Path of the driver device file used to talk with the IP. Default is: ") + cfg.RunInfo.encDevicePath.c_str()));
   opt.startSection("Misc");
 
   opt.addOption("--color", [&](string)
@@ -647,28 +646,14 @@ unique_ptr<IConvSrc> CreateSrcConverter(TFrameInfo const& FrameInfo, AL_ESrcForm
   }
 }
 
-static AL_TBufPoolConfig GetBufPoolConfig(char const* debugName, AL_TMetaData* pMetaData, int iSize, int frameBuffersCount)
-{
-  AL_TBufPoolConfig poolConfig {};
-
-  poolConfig.uNumBuf = frameBuffersCount;
-  poolConfig.zBufSize = iSize;
-  poolConfig.pMetaData = pMetaData;
-  poolConfig.debugName = debugName;
-  return poolConfig;
-}
-
 /*****************************************************************************/
-static AL_TBufPoolConfig GetQpBufPoolConfig(AL_TEncSettings& Settings, AL_TEncChanParam& tChParam, int frameBuffersCount)
+static bool InitQpBufPool(BufPool& pool, AL_TEncSettings& Settings, AL_TEncChanParam& tChParam, int frameBuffersCount, AL_TAllocator* pAllocator)
 {
-  AL_TBufPoolConfig poolConfig {};
+  if(!AL_IS_QP_TABLE_REQUIRED(Settings.eQpTableMode))
+    return true;
 
-  if(AL_IS_QP_TABLE_REQUIRED(Settings.eQpTableMode))
-  {
-    AL_TDimension tDim = { tChParam.uEncWidth, tChParam.uEncHeight };
-    poolConfig = GetBufPoolConfig("qp-ext", nullptr, AL_GetAllocSizeEP2(tDim, static_cast<AL_ECodec>(AL_GET_CODEC(tChParam.eProfile)), tChParam.uLog2MaxCuSize), frameBuffersCount);
-  }
-  return poolConfig;
+  AL_TDimension tDim = { tChParam.uEncWidth, tChParam.uEncHeight };
+  return pool.Init(pAllocator, frameBuffersCount, AL_GetAllocSizeEP2(tDim, static_cast<AL_ECodec>(AL_GET_CODEC(tChParam.eProfile)), tChParam.uLog2MaxCuSize), nullptr, "qp-ext");
 }
 
 /*****************************************************************************/
@@ -737,7 +722,7 @@ static uint8_t GetNumBufForGop(AL_TEncSettings Settings)
 }
 
 /*****************************************************************************/
-static AL_TBufPoolConfig GetStreamBufPoolConfig(AL_TEncSettings& Settings, int iLayerID, uint8_t uNumCore, int iForcedStreamBufferSize)
+static bool InitStreamBufPool(BufPool& pool, AL_TEncSettings& Settings, int iLayerID, uint8_t uNumCore, int iForcedStreamBufferSize, AL_TAllocator* pAllocator)
 {
   (void)uNumCore;
 
@@ -795,7 +780,10 @@ static AL_TBufPoolConfig GetStreamBufPoolConfig(AL_TEncSettings& Settings, int i
     throw runtime_error("streamSize(" + to_string(streamSize) + ") must be lower or equal than INT32_MAX(" + to_string(INT32_MAX) + ")");
 
   auto pMetaData = (AL_TMetaData*)AL_StreamMetaData_Create(AL_MAX_SECTION);
-  return GetBufPoolConfig("stream", pMetaData, streamSize, numStreams);
+  bool bSucceed = pool.Init(pAllocator, numStreams, streamSize, pMetaData, "stream");
+  AL_MetaData_Destroy(pMetaData);
+
+  return bSucceed;
 }
 
 /*****************************************************************************/
@@ -847,11 +835,8 @@ struct LayerResources
 
   void ChangeInput(ConfigFile& cfg, int iInputIdx, AL_HEncoder hEnc);
 
-  AL_TBufPoolConfig StreamBufPoolConfig;
   BufPool StreamBufPool;
-
   BufPool QpBufPool;
-
   PixMapBufPool SrcBufPool;
 
   // Input/Output Format conversion
@@ -893,8 +878,9 @@ void LayerResources::Init(ConfigFile& cfg, AL_TEncoderInfo tEncInfo, int iLayerI
   // Stream Buffers
   // --------------------------------------------------------------------------------
   int iForcedStreamBufSize = 0;
-  StreamBufPoolConfig = GetStreamBufPoolConfig(Settings, iLayerID, tEncInfo.uNumCore, iForcedStreamBufSize);
-  StreamBufPool.Init(pAllocator, StreamBufPoolConfig);
+
+  if(!InitStreamBufPool(StreamBufPool, Settings, iLayerID, tEncInfo.uNumCore, iForcedStreamBufSize, pAllocator))
+    throw std::runtime_error("Error creating stream buffer pool");
 
   bool bUsePictureMeta = false;
   bUsePictureMeta |= cfg.RunInfo.printPictureType;
@@ -941,8 +927,8 @@ void LayerResources::Init(ConfigFile& cfg, AL_TEncoderInfo tEncInfo, int iLayerI
 
   }
 
-  AL_TBufPoolConfig poolConfig = GetQpBufPoolConfig(Settings, Settings.tChParam[iLayerID], frameBuffersCount);
-  QpBufPool.Init(pAllocator, poolConfig);
+  if(!InitQpBufPool(QpBufPool, Settings, Settings.tChParam[iLayerID], frameBuffersCount, pAllocator))
+    throw std::runtime_error("Error creating QP buffer pool");
 
   // --------------------------------------------------------------------------------
   // Application Input/Output Format conversion
@@ -990,7 +976,7 @@ void LayerResources::PushResources(ConfigFile& cfg, EncoderSink* enc
   if(frameWriter)
     enc->RecOutput[iLayerID] = std::move(frameWriter);
 
-  for(int i = 0; i < (int)StreamBufPoolConfig.uNumBuf; ++i)
+  for(int i = 0; i < (int)StreamBufPool.GetNumBuf(); ++i)
   {
     AL_TBuffer* pStream = StreamBufPool.GetBuffer(AL_BUF_MODE_NONBLOCK);
 
@@ -1361,7 +1347,7 @@ int main(int argc, char* argv[])
   {
     return error.GetCode();
   }
-  catch(channel_runtime_error const& error)
+  catch(channel_runtime_error const &)
   {
     return 1;
   }

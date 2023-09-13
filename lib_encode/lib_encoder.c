@@ -4,7 +4,7 @@
 #include "lib_encode/lib_encoder.h"
 #include "lib_encode/LibEncoderHost.h"
 
-/* Initialize with encHost so AL_Lib_Encoder_Init() call is optionnal for the
+/* Initialize with encHost so AL_Lib_Encoder_Init() call is optional for the
  * time being.
  */
 static AL_IEncArch* pArch = &encHost;

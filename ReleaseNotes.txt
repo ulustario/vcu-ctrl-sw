@@ -798,21 +798,28 @@
       - Performances issues
     -- Several minors bugs
 
-2023-06-01
-----------
-Added Features:
-  -- All CLI options are now double-dashed `--`, or have a better double-dash's name
-
-API:
+  API:
     -- Rename NonCompFrameReader.h into UnCompFrameReader.h
-    -- Extract Display information into a common file: include/lib_common/DisplayInfoMeta.h
-    -- Extract StreamSettings into a single file: include/lib_common_dec/StreamSettings.h
-    -- Add helpers in API such as: AL_Round{Up, Down}, ..
-    -- Decoder:
-      - Ensure constness in AL_DecSettings_CheckValidity
 
-Fixes:
-  -- Decoder:
-    - NV16 format
-    - Concealment and resilience
-  -- Several minors bugs
+2023-07-24 (v1.0.75)
+--------------------
+  Added Features:
+    -- lib_app BufPool improvement
+    -- Firmware Setter/Getter
+    -- Version checking between low-level ctrlsw and high-level ctrlsw
+    -- New warnings
+    -- Encoder:
+      - Enable/Disable L2P reduced range
+
+  API:
+    -- Version of the API is now 0.38.0
+    -- New warnings:
+      - AL_WARN_INVALID_ACCESS_UNIT_STRUCTURE
+      - AL_WARN_HW_CONCEAL_DETECT
+
+  Fixes:
+    -- Namespace naming issue
+    -- Tons of typos
+    -- Decoder:
+      - Error concealement
+    -- Several minors bugs

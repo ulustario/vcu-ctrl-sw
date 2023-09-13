@@ -13,9 +13,11 @@
 #include <sstream>
 #include <mutex>
 #include <map>
+#include <set>
 #include <thread>
 #include <algorithm>
 #include <cassert>
+#include <vector>
 
 extern "C"
 {
@@ -43,14 +45,15 @@ extern "C"
 #include "lib_app/YuvIO.h"
 #include "lib_app/MD5.h"
 #include "lib_app/UnCompFrameWriter.h"
-#include "lib_app/SinkStreamMd5.h"
 #include "lib_app/SinkCrcDump.h"
+#include <cassert>
 
 #include "Conversion.h"
 #include "IpDevice.h"
 #include "CodecUtils.h"
 #include "SinkYuvCrc.h"
 #include "InputLoader.h"
+#include "SinkYuvMd5.h"
 #include "HDRWriter.h"
 
 using namespace std;
@@ -67,6 +70,23 @@ struct codec_error : public runtime_error
 static uint32_t constexpr uDefaultNumBuffersHeldByNextComponent = 1; /* We need at least 1 buffer to copy the output on a file */
 static bool bCertCRC = false;
 static bool g_MultiChunk = false;
+
+static std::set<std::string> const g_DecDefaultDevicePath(DECODER_DEVICES);
+static std::set<std::string> g_DecDevicePath;
+
+static std::string toStringPathsSet(std::set<std::string> paths)
+{
+  std::string out;
+
+  for(auto path : paths)
+  {
+    if(out.length() != 0)
+      out += string(", ");
+    out += path;
+  }
+
+  return out;
+}
 
 AL_TDecSettings getDefaultDecSettings()
 {
@@ -97,7 +117,7 @@ struct Config
 
   AL_TDecSettings tDecSettings = getDefaultDecSettings();
 
-  int iDeviceType = AL_DEVICE_TYPE_BOARD; // board
+  AL_EDeviceType iDeviceType = AL_DEVICE_TYPE_BOARD; // board
   AL_ESchedulerType iSchedulerType = AL_SCHEDULER_TYPE_MCU;
   int iOutputBitDepth = OUTPUT_BD_ALLOC;
   TFourCC tOutputFourCC = FOURCC(NULL);
@@ -118,6 +138,7 @@ struct Config
   int iMaxFrames = INT_MAX;
   string seiFile = "";
   string hdrFile = "";
+  string sSplitSizesFile = "";
   bool bUsePreAlloc = false;
   EDecErrorLevel eExitCondition = DEC_ERROR;
 };
@@ -520,6 +541,8 @@ static Config ParseCommandLine(int argc, char* argv[])
               "Send stream by decoding unit",
               AL_DEC_SPLIT_INPUT);
 
+  opt.addString("--split-from-sizes", &Config.sSplitSizesFile, "Send stream by decoding unit");
+
   opt.addString("--sei-file", &Config.seiFile, "File in which the SEI decoded by the decoder will be dumped");
 
   opt.addString("--hdr-file", &Config.hdrFile, "Parse and dump HDR data in the specified file");
@@ -564,8 +587,9 @@ static Config ParseCommandLine(int argc, char* argv[])
   opt.addInt("--ddrwidth,-ddrwidth", &Config.tDecSettings.uDDRWidth, "Width of DDR requests (16, 32, 64) (default: 32)");
   opt.addFlag("--nocache,-nocache", &Config.tDecSettings.bDisableCache, "Inactivate the cache");
 
-  extern std::string g_DecDevicePath;
-  opt.addString("--device", &g_DecDevicePath, "Path of the driver device file used to talk with the IP. Default is /dev/allegroDecodeIP");
+  opt.addOption("--device", [&](string) {
+    g_DecDevicePath.insert(opt.popWord());
+  }, std::string(std::string("Path of the driver device(s) file(s) used to talk with the IP. Default(s) are: ") + toStringPathsSet(g_DecDefaultDevicePath)));
 
   opt.addFlag("--noyuv,-noyuv", &Config.bEnableYUVOutput,
               "Disable writing output YUV file",
@@ -590,6 +614,7 @@ static Config ParseCommandLine(int argc, char* argv[])
   opt.addInt("--verbosity", &g_Verbosity, "Choose the verbosity level (-q is equivalent to --verbosity 0)");
 
   opt.startDeprecatedSection();
+
   opt.addFlag("--lowref,-lowref", &Config.tDecSettings.eDpbMode,
               "Use --no-reordering instead",
               AL_DPB_NO_REORDERING);
@@ -637,6 +662,9 @@ static Config ParseCommandLine(int argc, char* argv[])
     Config.tDecSettings.uFrameRate = fps * 1000;
     Config.tDecSettings.bForceFrameRate = true;
   }
+
+  if(!Config.sSplitSizesFile.empty())
+    Config.tDecSettings.eInputMode = AL_DEC_SPLIT_INPUT;
 
   if(!sOutputBitDepth.empty())
     parseOutputBD(Config, sOutputBitDepth);
@@ -967,7 +995,7 @@ void Display::Process(AL_TBuffer* pFrame, AL_TInfoDecode* pInfo)
   {
     if(NumFrames < MaxFrames)
     {
-      if(err == AL_WARN_CONCEAL_DETECT)
+      if(err == AL_WARN_CONCEAL_DETECT || err == AL_WARN_HW_CONCEAL_DETECT || err == AL_WARN_INVALID_ACCESS_UNIT_STRUCTURE)
         iNumFrameConceal++;
 
       if(!AL_Buffer_GetData(pFrame))
@@ -1327,7 +1355,7 @@ void ShowStatistics(double durationInSeconds, int iNumFrameConceal, int decodedF
 /******************************************************************************/
 struct AsyncFileInput
 {
-  AsyncFileInput(AL_HDecoder hDec_, string path, BufPool& bufPool_, bool bSplitInput, AL_ECodec eCodec, bool bVclSplit)
+  AsyncFileInput(AL_HDecoder hDec_, string const& path, BufPool& bufPool_, bool bSplitInput, string const& pathSplitSizes, AL_ECodec eCodec, bool bVclSplit)
     : hDec(hDec_), bufPool(bufPool_)
   {
     (void)eCodec;
@@ -1335,17 +1363,9 @@ struct AsyncFileInput
     exit = false;
     OpenInput(ifFileStream, path);
 
-    if(bSplitInput)
-    {
+    m_Loader = std::unique_ptr<InputLoader>(getLoader(bSplitInput, pathSplitSizes, eCodec, bVclSplit));
 
-      if(AL_IS_ITU_CODEC(eCodec))
-        m_Loader.reset(new SplitInput(bufPool.m_pool.zBufSize, eCodec, bVclSplit));
-
-      if(!m_Loader.get())
-        throw runtime_error("Null unique pointer");
-    }
-    else
-      m_Loader.reset(new BasicLoader());
+    assert(m_Loader.get());
 
     m_thread = thread(&AsyncFileInput::run, this);
   }
@@ -1357,6 +1377,29 @@ struct AsyncFileInput
   }
 
 private:
+  InputLoader* getLoader(bool bSplitInput, string const& pathSplitSizes, AL_ECodec eCodec, bool bVclSplit)
+  {
+    (void)pathSplitSizes;
+    (void)eCodec;
+
+    if(!pathSplitSizes.empty())
+    {
+      OpenInput(ifFileSizes, pathSplitSizes, false);
+
+      return new SplitInputFromSizes(ifFileSizes);
+    }
+
+    if(bSplitInput)
+    {
+
+      if(AL_IS_ITU_CODEC(eCodec))
+        return new SplitInput(bufPool.GetBufSize(), eCodec, bVclSplit);
+
+      return nullptr;
+    }
+    return new BasicLoader();
+  }
+
   void run()
   {
     Rtos_SetCurrentThreadName("FileInput");
@@ -1394,6 +1437,7 @@ private:
 
   const AL_HDecoder hDec;
   ifstream ifFileStream;
+  ifstream ifFileSizes;
   BufPool& bufPool;
   atomic<bool> exit;
   std::unique_ptr<InputLoader> m_Loader;
@@ -1484,14 +1528,9 @@ void SafeChannelMain(WorkerConfig& w)
   BufPool bufPool;
 
   {
-    AL_TBufPoolConfig BufPoolConfig {};
-    BufPoolConfig.debugName = "stream";
-    BufPoolConfig.zBufSize = Config.zInputBufferSize;
-    BufPoolConfig.uNumBuf = Config.uInputBufferNum;
-
     auto pBufPoolAllocator = Config.tDecSettings.eInputMode == AL_DEC_SPLIT_INPUT ? pAllocator : AL_GetDefaultAllocator();
 
-    auto ret = bufPool.Init(pBufPoolAllocator, BufPoolConfig);
+    auto ret = bufPool.Init(pBufPoolAllocator, Config.uInputBufferNum, Config.zInputBufferSize, nullptr, "stream");
 
     if(!ret)
       throw runtime_error("Can't create BufPool");
@@ -1501,40 +1540,52 @@ void SafeChannelMain(WorkerConfig& w)
 
   bool bMainOutputCompression = false;
 
-  if(Config.tOutputFourCC == FOURCC(NULL))
-    display.eMainOutputStorageMode = AL_FB_RASTER;
+  if(Config.tOutputFourCC != FOURCC(NULL))
+    display.eMainOutputStorageMode = AL_GetStorageMode(Config.tOutputFourCC);
   else
+  {
     display.eMainOutputStorageMode = GetMainOutputStorageMode(Config.tDecSettings, bMainOutputCompression, 8);
+
+    if(!IsRaster(display.eMainOutputStorageMode) && !bMainOutputCompression)
+      display.eMainOutputStorageMode = AL_FB_RASTER;
+  }
 
   display.bHasOutput = Config.bEnableYUVOutput || bCertCRC || !Config.sCrc.empty() || !Config.md5File.empty();
 
   if(display.bHasOutput)
   {
-    std::shared_ptr<ofstream> hFileOut(new ofstream(Config.sMainOut, ios::binary));
-
-    if(!hFileOut->is_open())
-      throw runtime_error("Invalid output file");
-
-    std::shared_ptr<ofstream> hMapOut;
-
-    if(bMainOutputCompression
-       )
+    if(Config.bEnableYUVOutput)
     {
-      hMapOut.reset(new ofstream(Config.sMainOut + ".map", ios::binary));
+      std::shared_ptr<ofstream> hFileOut(new ofstream(Config.sMainOut, ios::binary));
 
-      if(!hMapOut->is_open())
-        throw runtime_error("Invalid output map file");
-    }
+      if(!hFileOut->is_open())
+        throw runtime_error("Invalid output file");
 
-    {
-      if(!bMainOutputCompression)
+      std::shared_ptr<ofstream> hMapOut;
+
+      if(bMainOutputCompression
+         )
       {
-        std::unique_ptr<IFrameSink> sink_main = std::unique_ptr<UnCompFrameWriter>(new UnCompFrameWriter(hFileOut, display.eMainOutputStorageMode, AL_OUTPUT_MAIN));
-        display.multisink->addSink(sink_main);
+        hMapOut.reset(new ofstream(Config.sMainOut + ".map", ios::binary));
+
+        if(!hMapOut->is_open())
+          throw runtime_error("Invalid output map file");
+      }
+
+      {
+        if(!bMainOutputCompression)
+        {
+          std::unique_ptr<IFrameSink> sink_main = std::unique_ptr<UnCompFrameWriter>(new UnCompFrameWriter(hFileOut, display.eMainOutputStorageMode, AL_OUTPUT_MAIN));
+          display.multisink->addSink(sink_main);
+        }
       }
     }
-    std::unique_ptr<IFrameSink> md5Calculator = createStreamMd5Calculator(Config.md5File);
-    display.multisink->addSink(md5Calculator);
+
+    if(!bMainOutputCompression)
+    {
+      std::unique_ptr<IFrameSink> md5Calculator = createYuvMd5Calculator(Config.md5File);
+      display.multisink->addSink(md5Calculator);
+    }
     std::unique_ptr<IFrameSink> crcDump = createStreamCrcDump(Config.sCrc);
     display.multisink->addSink(crcDump);
 
@@ -1624,7 +1675,7 @@ void SafeChannelMain(WorkerConfig& w)
     if(iLoop > 0)
       LogVerbose(CC_GREY, "  Looping\n");
 
-    AsyncFileInput producer(hDec, Config.sIn, bufPool, Config.tDecSettings.eInputMode == AL_DEC_SPLIT_INPUT, eCodec, Config.tDecSettings.eDecUnit == AL_VCL_NAL_UNIT);
+    AsyncFileInput producer(hDec, Config.sIn, bufPool, Config.tDecSettings.eInputMode == AL_DEC_SPLIT_INPUT, Config.sSplitSizesFile, eCodec, Config.tDecSettings.eDecUnit == AL_VCL_NAL_UNIT);
 
     auto const maxWait = Config.iTimeoutInSeconds * 1000;
     auto const timeout = maxWait >= 0 ? maxWait : AL_WAIT_FOREVER;
@@ -1701,21 +1752,21 @@ void SafeMain(int argc, char** argv)
 
   CIpDeviceParam param;
   param.iSchedulerType = Config.iSchedulerType;
-  param.iDeviceType = Config.iDeviceType;
   param.bTrackDma = Config.trackDma;
   param.uNumCore = Config.tDecSettings.uNumCore;
   param.iHangers = Config.hangers;
   param.ipCtrlMode = Config.ipCtrlMode;
   param.apbFile = Config.apbFile;
 
-  std::shared_ptr<CIpDevice> pIpDevice = std::shared_ptr<CIpDevice>(new CIpDevice);
+  if(g_DecDevicePath.empty())
+    g_DecDevicePath = g_DecDefaultDevicePath;
+
+  std::shared_ptr<CIpDevice> pIpDevice = std::shared_ptr<CIpDevice>(new CIpDevice(param, Config.iDeviceType, { g_DecDevicePath }));
 
   if(!pIpDevice)
     throw runtime_error("Can't create IpDevice");
 
-  pIpDevice->Configure(param);
-
-  bool bUseBoard = (param.iDeviceType == AL_DEVICE_TYPE_BOARD); // retrieve auto-detected device type
+  bool bUseBoard = pIpDevice->GetDeviceType() == AL_DEVICE_TYPE_BOARD; // retrieve auto-detected device type
 
   // mono channel case
   if(maxChan == 0)

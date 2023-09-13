@@ -2,11 +2,12 @@
 // SPDX-License-Identifier: MIT
 
 #include "EncUtils.h"
-#include "lib_common_enc/EncHwScalingList.h"
-#include "lib_common_enc/EncBuffersInternal.h"
 #include "IP_EncoderCtx.h"
+#include "lib_assert/al_assert.h"
 #include "lib_common/SyntaxConversion.h"
 #include "lib_common/Utils.h"
+#include "lib_common_enc/EncHwScalingList.h"
+#include "lib_common_enc/EncBuffersInternal.h"
 
 /****************************************************************************/
 static void AL_sUpdateProfileTierLevel(AL_THevcProfilevel* pPTL, AL_TEncChanParam const* pChParam, bool profilePresentFlag, int iLayerId)
@@ -190,19 +191,19 @@ static void AL_HEVC_UpdateHrdParameters(AL_THevcSps* pSPS, AL_TSubHrdParam* pSub
   pSubHrdParam->bit_rate_du_value_minus1[0] = (pSettings->tChParam[0].tRCParam.uMaxBitRate / pSettings->NumView) >> 6;
   AL_Decomposition(&(pSubHrdParam->bit_rate_du_value_minus1[0]), &pSPS->vui_param.hrd_param.bit_rate_scale);
 
-  assert(pSubHrdParam->bit_rate_du_value_minus1[0] <= (UINT32_MAX - 1));
+  AL_Assert(pSubHrdParam->bit_rate_du_value_minus1[0] <= (UINT32_MAX - 1));
 
   pSubHrdParam->bit_rate_value_minus1[0] = (pSettings->tChParam[0].tRCParam.uMaxBitRate / pSettings->NumView) >> 6;
   AL_Decomposition(&(pSubHrdParam->bit_rate_value_minus1[0]), &pSPS->vui_param.hrd_param.bit_rate_scale);
-  assert(pSubHrdParam->bit_rate_value_minus1[0] <= (UINT32_MAX - 1));
+  AL_Assert(pSubHrdParam->bit_rate_value_minus1[0] <= (UINT32_MAX - 1));
 
   pSubHrdParam->cpb_size_du_value_minus1[0] = iCpbSize >> 4;
   AL_Decomposition(&(pSubHrdParam->cpb_size_du_value_minus1[0]), &pSPS->vui_param.hrd_param.cpb_size_scale);
-  assert(pSubHrdParam->cpb_size_du_value_minus1[0] <= (UINT32_MAX - 1));
+  AL_Assert(pSubHrdParam->cpb_size_du_value_minus1[0] <= (UINT32_MAX - 1));
 
   pSubHrdParam->cpb_size_value_minus1[0] = iCpbSize >> 4;
   AL_Decomposition(&(pSubHrdParam->cpb_size_value_minus1[0]), &pSPS->vui_param.hrd_param.cpb_size_scale);
-  assert(pSubHrdParam->cpb_size_value_minus1[0] <= (UINT32_MAX - 1));
+  AL_Assert(pSubHrdParam->cpb_size_value_minus1[0] <= (UINT32_MAX - 1));
 
   pSubHrdParam->cbr_flag[0] = (pSettings->tChParam[0].tRCParam.eRCMode == AL_RC_CBR) ? 1 : 0;
 
@@ -633,7 +634,7 @@ bool AL_HEVC_UpdatePPS(AL_TPps* pIPPS, AL_TEncSettings const* pSettings, AL_TEnc
   pPPS->pps_cb_qp_offset = pHLSInfo->iCbPicQpOffset;
   pPPS->pps_cr_qp_offset = pHLSInfo->iCrPicQpOffset;
 
-  // For LF offsets, the PPS is updated directly, but we don't force PPS update now (offsets overwriten in slice headers).
+  // For LF offsets, the PPS is updated directly, but we don't force PPS update now (offsets overwritten in slice headers).
   // Will be updated with the next IDR. Works under the assumption that we only insert PPS with IDRs, so that we match the
   // behaviour of the firmware.
   if(pHLSInfo->bLFOffsetChanged)

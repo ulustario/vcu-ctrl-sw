@@ -110,7 +110,7 @@ void LogDebug(const char* sMsg, ...)
   va_end(args);
 }
 
-void OpenInput(std::ifstream& fp, std::string filename, bool binary)
+void OpenInput(std::ifstream& fp, std::string const& filename, bool binary)
 {
   fp.open(filename, binary ? std::ios::binary : std::ios::in);
   fp.exceptions(ifstream::badbit);
@@ -119,7 +119,7 @@ void OpenInput(std::ifstream& fp, std::string filename, bool binary)
     throw std::runtime_error("Can't open file for reading: '" + filename + "'");
 }
 
-void OpenOutput(std::ofstream& fp, std::string filename, bool binary)
+void OpenOutput(std::ofstream& fp, std::string const& filename, bool binary)
 {
   auto open_mode = binary ? std::ios::out | std::ios::binary : std::ios::out;
 

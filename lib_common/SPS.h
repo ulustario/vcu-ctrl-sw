@@ -57,10 +57,10 @@ typedef struct t_Avc_Sps
   uint8_t pic_order_cnt_type;
   uint8_t log2_max_pic_order_cnt_lsb_minus4;
   uint8_t delta_pic_order_always_zero_flag;
-  int offset_for_non_ref_pic;
-  int offset_for_top_to_bottom_field;
+  int32_t offset_for_non_ref_pic;
+  int32_t offset_for_top_to_bottom_field;
   uint8_t num_ref_frames_in_pic_order_cnt_cycle;
-  int offset_for_ref_frame[256];
+  int32_t offset_for_ref_frame[256];
   uint32_t max_num_ref_frames;
   uint8_t gaps_in_frame_num_value_allowed_flag;
 
@@ -159,7 +159,7 @@ typedef struct t_Hevc_Sps
   uint8_t pcm_loop_filter_disabled_flag;
 
   uint8_t num_short_term_ref_pic_sets;
-  AL_TRefPicSet short_term_ref_pic_set[65];
+  AL_TRefPicSet short_term_ref_pic_set[MAX_REF_PIC_SET + 1];
   uint8_t long_term_ref_pics_present_flag;
   uint8_t num_long_term_ref_pics_sps;
   uint16_t lt_ref_pic_poc_lsb_sps[33];
@@ -210,13 +210,13 @@ typedef struct t_Hevc_Sps
   uint32_t SpsMaxLatency;
 
   /* short term reference picture set variables */
-  uint8_t NumNegativePics[65];
-  int32_t DeltaPocS0[65][16];
-  uint8_t UsedByCurrPicS0[65][16];
-  uint8_t NumPositivePics[65];
-  int32_t DeltaPocS1[65][16];
-  uint8_t UsedByCurrPicS1[65][16];
-  uint8_t NumDeltaPocs[65];
+  uint8_t NumNegativePics[MAX_REF_PIC_SET + 1];
+  int32_t DeltaPocS0[MAX_REF_PIC_SET + 1][MAX_REF];
+  uint8_t UsedByCurrPicS0[MAX_REF_PIC_SET + 1][MAX_REF];
+  uint8_t NumPositivePics[MAX_REF_PIC_SET + 1];
+  int32_t DeltaPocS1[MAX_REF_PIC_SET + 1][MAX_REF];
+  uint8_t UsedByCurrPicS1[MAX_REF_PIC_SET + 1][MAX_REF];
+  uint8_t NumDeltaPocs[MAX_REF_PIC_SET + 1];
 
   /* picture order count variable */
   uint32_t MaxPicOrderCntLsb;

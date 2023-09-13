@@ -106,7 +106,7 @@ typedef struct t_DpbNode
   int32_t iPic_num;
 
   uint8_t pic_output_flag; /*!< whether picture must be displayed or not */
-  bool bIsReset; /*!< Node has been reseted or not */
+  bool bIsReset; /*!< Node has been reset or not */
   bool bIsDisplayed; /*!< Picture in displayed list */
 
   uint32_t uPicLatency;
@@ -277,7 +277,7 @@ void AL_Dpb_ResetMMCO5(AL_TDpb* pDpb);
 uint8_t AL_Dpb_GetDisplayBuffer(AL_TDpb const* pDpb);
 
 /*************************************************************************//*!
-   \brief This function releases a picture index previoulsy
+   \brief This function releases a picture index previously
        obtained through DPB_GetDisplayBuffer
    \param[in,out] pDpb  Pointer to a DPB context object
    \return return the frame index of the released picture
@@ -432,7 +432,7 @@ uint8_t AL_Dpb_ConvertPicIDToNodeID(AL_TDpb const* pDpb, uint8_t uPicID);
 void AL_Dpb_FillList(AL_TDpb const* pDpb, uint8_t uL0L1, TBufferListRef const* pListRef, int* pPocList, uint32_t* pLongTermList, uint32_t* pSubpicList);
 
 /*************************************************************************//*!
-   \brief Searches the picture with the given poc_lsb in the dpb with the correspondig marking flag
+   \brief Searches the picture with the given poc_lsb in the dpb with the corresponding marking flag
    \param[in] pDpb    Pointer to a DPB context object
    \param[in] poc_lsb poc_lsb value to search in the DPB
    \return The node index with the given poc_lsb
@@ -440,7 +440,7 @@ void AL_Dpb_FillList(AL_TDpb const* pDpb, uint8_t uL0L1, TBufferListRef const* p
 uint8_t AL_Dpb_SearchPocLsb(AL_TDpb const* pDpb, uint32_t poc_lsb);
 
 /*************************************************************************//*!
-   \brief Searches the picture with the given iPOC in the dpb with the correspondig marking flag
+   \brief Searches the picture with the given iPOC in the dpb with the corresponding marking flag
    \param[in] pDpb Pointer to a DPB context object
    \param[in] iPOC Picture order count value to search in the DPB
    \return The node index with the given iPOC
@@ -466,7 +466,7 @@ uint8_t AL_Dpb_GetOutputFlag(AL_TDpb const* pDpb, uint8_t uNode);
 /*************************************************************************//*!
    \brief This function removes a picture from the picture list needed for output
    \param[in,out] pDpb    Pointer to a DPB context object
-   \param[in]     uNode   Picture identifer in the DPB Node
+   \param[in]     uNode   Picture identifier in the DPB Node
 *****************************************************************************/
 void AL_Dpb_ResetOutputFlag(AL_TDpb* pDpb, uint8_t uNode); // UNUSED
 
@@ -481,7 +481,7 @@ uint8_t AL_Dpb_GetMarkingFlag(AL_TDpb const* pDpb, uint8_t uNode);
 /*************************************************************************//*!
    \brief This function set the reference status of a specific picture
    \param[in,out] pDpb         Pointer to a DPB context object
-   \param[in]     uNode        Picture identifer in the DPB Node
+   \param[in]     uNode        Picture identifier in the DPB Node
    \param[in]     eMarkingFlag Reference status to apply to the picture
 *****************************************************************************/
 void AL_Dpb_SetMarkingFlag(AL_TDpb* pDpb, uint8_t uNode, AL_EMarkingRef eMarkingFlag);
@@ -534,10 +534,10 @@ void AL_Dpb_IncrementPicLatency(AL_TDpb* pDpb, uint8_t uNode, int iCurFramePOC);
 void AL_Dpb_DecrementPicLatency(AL_TDpb* pDpb, uint8_t uNode);
 
 /*************************************************************************//*!
-   \brief Checks if the Node identified by uNode has been reseted
+   \brief Checks if the Node identified by uNode has been reset
    \param[in] pDpb  Pointer to a DPB context object
    \param[in] uNode Node identifier
-   \return true if the node has been reseted
+   \return true if the node has been reset
         false otherwise
 *****************************************************************************/
 bool AL_Dpb_NodeIsReset(AL_TDpb const* pDpb, uint8_t uNode);

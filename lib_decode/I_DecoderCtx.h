@@ -88,7 +88,7 @@ typedef struct t_Dec_Ctx
   TBuffer BufNoAE;            // Deanti-Emulated buffer used for high level syntax parsing
   TCircBuffer Stream;             // Input stream buffer
   TCircBuffer NalStream;
-  AL_TBuffer* pInputBuffer;     // keep a refence to input buffer and its meta data
+  AL_TBuffer* pInputBuffer;     // keep a reference to input buffer and its meta data
 
   // decoder IP handle
   AL_IDecScheduler* pScheduler;
@@ -116,8 +116,8 @@ typedef struct t_Dec_Ctx
   TBuffer PoolCompData[MAX_STACK_SIZE];    // compressed MVDs + header + residuals pool buffer
   TBuffer PoolCompMap[MAX_STACK_SIZE];     // Compression map : LCU size + LCU offset pool buffer
   TBuffer PoolWP[MAX_STACK_SIZE];          // Weighted Pred Tables pool buffer
-  TBuffer PoolListRefAddr[MAX_STACK_SIZE]; // Reference adresses for the board pool buffer
-  TBuffer PoolVirtRefAddr[MAX_STACK_SIZE]; // Reference adresses for the reference pool buffer
+  TBuffer PoolListRefAddr[MAX_STACK_SIZE]; // Reference addresses for the board pool buffer
+  TBuffer PoolVirtRefAddr[MAX_STACK_SIZE]; // Reference addresses for the reference pool buffer
 
   TBufferListRef ListRef;            // Picture Reference List buffer
 

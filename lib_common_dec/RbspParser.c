@@ -227,7 +227,7 @@ bool rbsp_trailing_bits(AL_TRbspParser* pRP)
   pRP->iTrailingBitOneIndex = pRP->iTrailingBitOneIndexConceal;
   uint8_t rbsp_stop_one_bit = u(pRP, 1);
 
-  if(!rbsp_stop_one_bit)
+  if(!rbsp_stop_one_bit || rbsp_stop_one_bit == UINT8_MAX)
     return false;
 
   while(!byte_aligned(pRP))

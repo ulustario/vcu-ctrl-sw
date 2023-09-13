@@ -464,11 +464,20 @@ static std::map<std::string, std::string> descriptionEnum(std::map<std::string, 
 template<typename T>
 std::string getDefaultEnumValue(T const& t, std::map<std::string, EnumDescription<int>> const& availableEnums)
 {
-  for(auto& it : availableEnums)
+  auto found = availableEnums.cend();
+
+  for(auto it = availableEnums.cbegin(); it != availableEnums.cend(); ++it)
   {
-    if(it.second.name == (int)t)
-      return it.first;
+    if(it->second.name == (int)t)
+    {
+      if(it->second.description.find("DEPRECATED") == std::string::npos)
+        return it->first;
+      found = it;
+    }
   }
+
+  if(found != availableEnums.cend())
+    return found->first;
 
   return "unknown";
 }

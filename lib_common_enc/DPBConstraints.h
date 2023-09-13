@@ -30,6 +30,6 @@ uint8_t AL_DPBConstraint_GetMaxDPBSize(const AL_TEncChanParam* pChParam);
 AL_EGopMngrType AL_GetGopMngrType(AL_EGopCtrlMode eMode, AL_ECodec eCodec, bool bIsLookAhead);
 
 uint8_t AL_DPBConstraint_GetMaxRef_DefaultGopMngr(const AL_TGopParam* pGopParam, AL_ECodec eCodec, AL_EVideoMode eVideoMode);
-uint8_t AL_DPBConstraint_GetMaxRef_GopMngrCustom(const AL_TGopParam* pGopParam, AL_ECodec eCodec, AL_EVideoMode eVideoMode);
-uint8_t AL_DPBConstraint_GetMaxRef_GopMngrDefaultAom(const AL_TGopParam* pGopParam);
+uint8_t AL_DPBConstraint_GetMaxRef_GopMngrCustom(const AL_TGopParam* pGopParam, AL_ECodec eCodec, AL_EVideoMode eVideoMode, bool bLookAheadSkipExtraRef);
+uint8_t AL_DPBConstraint_GetMaxRef_GopMngrDefaultAom(const AL_TGopParam* pGopParam, bool bLookAheadSkipExtraRef);
 

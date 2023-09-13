@@ -120,4 +120,13 @@ static inline AL_EChromaOrder GetChromaOrder(AL_EChromaMode eChromaMode)
          (eChromaMode == AL_CHROMA_4_4_4 ? AL_C_ORDER_U_V : AL_C_ORDER_SEMIPLANAR);
 }
 
+/****************************************************************************/
+static inline bool IsRaster(AL_EFbStorageMode eFBStorageMode)
+{
+  if(eFBStorageMode == AL_FB_RASTER
+     )
+    return true;
+  return false;
+}
+
 /*@}*/

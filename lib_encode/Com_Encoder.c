@@ -352,7 +352,7 @@ void AL_Common_Encoder_SetEncodingOptions(AL_TEncCtx* pCtx, AL_TFrameInfo* pFI, 
 void AL_Common_Encoder_ProcessLookAheadParam(AL_TEncCtx* pCtx, AL_TEncInfo* pEI, AL_TBuffer* pFrame)
 {
   (void)pEI;
-  // Process first pass informations from the metadata, notifies scene changes and transmits parameters for the RateCtrl
+  // Process first pass information from the metadata, notifies scene changes and transmits parameters for the RateCtrl
   AL_TLookAheadMetaData* pMetaDataLA = (AL_TLookAheadMetaData*)AL_Buffer_GetMetaData(pFrame, AL_META_TYPE_LOOKAHEAD);
 
   if(pMetaDataLA && pMetaDataLA->eSceneChange == AL_SC_NEXT)
@@ -702,6 +702,9 @@ static AL_TEncChanParam* TransferChannelParameters(AL_TEncSettings const* pSetti
 
   pChParamOut->uL2PrefetchMemSize = pSettings->iPrefetchLevel2;
   pChParamOut->uL2PrefetchMemOffset = 0;
+#if AL_ENABLE_L2_PREFETCH_REDUCED_SIZE
+  pChParamOut->bEnableL2PReducedRange = pSettings->bEnableL2PReducedRange;
+#endif
 
   if(AL_IS_AUTO_OR_ADAPTIVE_QP_CTRL(pSettings->eQpCtrlMode))
   {

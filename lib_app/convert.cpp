@@ -112,14 +112,12 @@ void SetPixMapPlane(AL_TBuffer* pDst, AL_EPlaneId ePlaneType, int iWidth, int iH
 void I420_To_IYUV(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 {
   CopyPixMapBuffer(pSrc, pDst);
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(IYUV));
 }
 
 /****************************************************************************/
 void I420_To_YV12(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 {
   CopyPixMapBuffer(pSrc, pDst);
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(YV12));
 }
 
 /****************************************************************************/
@@ -128,7 +126,6 @@ void I420_To_Y800(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
   AL_TDimension tDim = AL_PixMapBuffer_GetDimension(pSrc);
 
   AL_PixMapBuffer_SetDimension(pDst, tDim);
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(Y800));
 
   CopyPixMapPlane(pSrc, pDst, AL_PLANE_Y, tDim.iWidth, tDim.iHeight, 8);
 }
@@ -139,7 +136,6 @@ void I420_To_Y010(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
   AL_TDimension tDim = AL_PixMapBuffer_GetDimension(pSrc);
 
   AL_PixMapBuffer_SetDimension(pDst, tDim);
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(Y010));
 
   ConvertPixMapPlane<uint8_t, uint16_t>(pSrc, pDst, AL_PLANE_Y, tDim.iWidth, tDim.iHeight, CONV_8B_TO_10B);
 }
@@ -150,7 +146,6 @@ void I420_To_Y012(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
   AL_TDimension tDim = AL_PixMapBuffer_GetDimension(pSrc);
 
   AL_PixMapBuffer_SetDimension(pDst, tDim);
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(Y012));
 
   ConvertPixMapPlane<uint8_t, uint16_t>(pSrc, pDst, AL_PLANE_Y, tDim.iWidth, tDim.iHeight, CONV_8B_TO_12B);
 }
@@ -161,7 +156,6 @@ static void I4XX_To_IXAL(AL_TBuffer const* pSrc, AL_TBuffer* pDst, int iHScale, 
   AL_TDimension tDim = AL_PixMapBuffer_GetDimension(pSrc);
 
   AL_PixMapBuffer_SetDimension(pDst, tDim);
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(I0AL));
 
   // Luma
   ConvertPixMapPlane<uint8_t, uint16_t>(pSrc, pDst, AL_PLANE_Y, tDim.iWidth, tDim.iHeight, CONV_8B_TO_10B);
@@ -176,14 +170,12 @@ static void I4XX_To_IXAL(AL_TBuffer const* pSrc, AL_TBuffer* pDst, int iHScale, 
 /****************************************************************************/
 void I420_To_I0AL(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 {
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(I0AL));
   I4XX_To_IXAL(pSrc, pDst, 2, 2);
 }
 
 /****************************************************************************/
 void I444_To_I4AL(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 {
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(I4AL));
   I4XX_To_IXAL(pSrc, pDst, 1, 1);
 }
 
@@ -215,14 +207,12 @@ void IYUV_To_I0AL(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 void YV12_To_I420(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 {
   CopyPixMapBuffer(pSrc, pDst);
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(I420));
 }
 
 /****************************************************************************/
 void YV12_To_IYUV(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 {
   CopyPixMapBuffer(pSrc, pDst);
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(IYUV));
 }
 
 /****************************************************************************/
@@ -243,7 +233,6 @@ void NV12_To_Y800(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
   AL_TDimension tDim = AL_PixMapBuffer_GetDimension(pSrc);
 
   AL_PixMapBuffer_SetDimension(pDst, tDim);
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(Y800));
 
   CopyPixMapPlane(pSrc, pDst, AL_PLANE_Y, tDim.iWidth, tDim.iHeight, 8);
 }
@@ -254,7 +243,6 @@ void Y800_To_I420(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
   AL_TDimension tDim = AL_PixMapBuffer_GetDimension(pSrc);
 
   AL_PixMapBuffer_SetDimension(pDst, tDim);
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(I420));
 
   CopyPixMapPlane(pSrc, pDst, AL_PLANE_Y, tDim.iWidth, tDim.iHeight, 8);
 
@@ -268,14 +256,12 @@ void Y800_To_I420(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 void Y800_To_IYUV(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 {
   Y800_To_I420(pSrc, pDst);
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(IYUV));
 }
 
 /****************************************************************************/
 void Y800_To_YV12(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 {
   Y800_To_I420(pSrc, pDst);
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(YV12));
 }
 
 /****************************************************************************/
@@ -284,7 +270,6 @@ void Y800_To_NV12(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
   AL_TDimension tDim = AL_PixMapBuffer_GetDimension(pSrc);
 
   AL_PixMapBuffer_SetDimension(pDst, tDim);
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(NV12));
 
   CopyPixMapPlane(pSrc, pDst, AL_PLANE_Y, tDim.iWidth, tDim.iHeight, 8);
 
@@ -299,7 +284,6 @@ void Y800_To_P010(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
   AL_TDimension tDim = AL_PixMapBuffer_GetDimension(pSrc);
 
   AL_PixMapBuffer_SetDimension(pDst, tDim);
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(P010));
 
   ConvertPixMapPlane<uint8_t, uint16_t>(pSrc, pDst, AL_PLANE_Y, tDim.iWidth, tDim.iHeight, CONV_8B_TO_10B);
 
@@ -314,7 +298,6 @@ void Y800_To_I0AL(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
   AL_TDimension tDim = AL_PixMapBuffer_GetDimension(pSrc);
 
   AL_PixMapBuffer_SetDimension(pDst, tDim);
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(I0AL));
 
   ConvertPixMapPlane<uint8_t, uint16_t>(pSrc, pDst, AL_PLANE_Y, tDim.iWidth, tDim.iHeight, CONV_8B_TO_10B);
 
@@ -330,7 +313,6 @@ void Y800_To_Y010(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
   AL_TDimension tDim = AL_PixMapBuffer_GetDimension(pSrc);
 
   AL_PixMapBuffer_SetDimension(pDst, tDim);
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(Y010));
 
   ConvertPixMapPlane<uint8_t, uint16_t>(pSrc, pDst, AL_PLANE_Y, tDim.iWidth, tDim.iHeight, CONV_8B_TO_10B);
 }
@@ -339,8 +321,6 @@ void Y800_To_Y010(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 void Y800_To_XV10(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 {
   AL_TDimension tDim = AL_PixMapBuffer_GetDimension(pSrc);
-
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(XV15));
 
   int iPitchSrcY = AL_PixMapBuffer_GetPlanePitch(pSrc, AL_PLANE_Y);
   int iPitchDstY = AL_PixMapBuffer_GetPlanePitch(pDst, AL_PLANE_Y);
@@ -422,8 +402,6 @@ void Y800_To_XV15(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 
   // Chroma
   Set_XV_ChromaComponent(pDst, 2, 2);
-
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(XV15));
 }
 
 /****************************************************************************/
@@ -434,8 +412,6 @@ void Y800_To_XV20(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 
   // Chroma
   Set_XV_ChromaComponent(pDst, 2, 1);
-
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(XV20));
 }
 
 /****************************************************************************/
@@ -493,7 +469,6 @@ static void SemiPlanar_To_XV_OneComponent(AL_TBuffer const* pSrcBuf, AL_TBuffer*
 void Y010_To_XV10(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 {
   SemiPlanar_To_XV_OneComponent(pSrc, pDst, true, 1, 1);
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(XV10));
 }
 
 /****************************************************************************/
@@ -504,8 +479,6 @@ void Y010_To_XV15(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 
   // Chroma
   Set_XV_ChromaComponent(pDst, 2, 2);
-
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(XV15));
 }
 
 /****************************************************************************/
@@ -516,8 +489,6 @@ void Y010_To_XV20(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 
   // Chroma
   Set_XV_ChromaComponent(pDst, 2, 1);
-
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(XV20));
 }
 
 /****************************************************************************/
@@ -641,92 +612,78 @@ static void IXYL_To_IXYL(AL_TBuffer const* pSrc, AL_TBuffer* pDst, int iHScale, 
 void P010_To_I420(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 {
   SemiPlanarToPlanar_1XTo8b(pSrc, pDst, 2, 2, RND_10B_TO_8B);
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(I420));
 }
 
 /****************************************************************************/
 void P210_To_I422(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 {
   SemiPlanarToPlanar_1XTo8b(pSrc, pDst, 2, 1, RND_10B_TO_8B);
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(I422));
 }
 
 /****************************************************************************/
 void P210_To_I444(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 {
   SemiPlanarToPlanar_1XTo8b(pSrc, pDst, 1, 1, RND_10B_TO_8B);
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(I444));
 }
 
 void P210_To_XV20(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 {
   SemiPlanar_To_XV_OneComponent(pSrc, pDst, true, 1, 1);
   SemiPlanar_To_XV_OneComponent(pSrc, pDst, false, 2, 1);
-
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(XV20));
 }
 
 /****************************************************************************/
 void P010_To_IYUV(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 {
   P010_To_I420(pSrc, pDst);
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(IYUV));
 }
 
 /****************************************************************************/
 void P010_To_I0AL(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 {
   SemiPlanarToPlanar_1XTo1X(pSrc, pDst, 2, 2, COPY);
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(I0AL));
 }
 
 /****************************************************************************/
 void P210_To_I2AL(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 {
   SemiPlanarToPlanar_1XTo1X(pSrc, pDst, 2, 1, COPY);
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(I2AL));
 }
 
 /****************************************************************************/
 void P012_To_I0CL(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 {
   SemiPlanarToPlanar_1XTo1X(pSrc, pDst, 2, 2, COPY);
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(I0CL));
 }
 
 /****************************************************************************/
 void P212_To_I2CL(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 {
   SemiPlanarToPlanar_1XTo1X(pSrc, pDst, 2, 1, COPY);
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(I2CL));
 }
 
 /****************************************************************************/
 void P012_To_I420(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 {
   SemiPlanarToPlanar_1XTo8b(pSrc, pDst, 2, 2, RND_12B_TO_8B);
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(I420));
 }
 
 /****************************************************************************/
 void P212_To_I422(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 {
   SemiPlanarToPlanar_1XTo8b(pSrc, pDst, 2, 1, RND_12B_TO_8B);
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(I422));
 }
 
 /****************************************************************************/
 void P010_To_YV12(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 {
   P010_To_I420(pSrc, pDst);
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(YV12));
 }
 
 /****************************************************************************/
 void P010_To_NV12(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 {
   PX1X_To_NVXX(pSrc, pDst, 2, 2, RND_10B_TO_8B);
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(NV12));
 }
 
 /****************************************************************************/
@@ -740,7 +697,6 @@ void P010_To_XV15(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 {
   SemiPlanar_To_XV_OneComponent(pSrc, pDst, true, 1, 1);
   SemiPlanar_To_XV_OneComponent(pSrc, pDst, false, 2, 2);
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(XV15));
 }
 
 /****************************************************************************/
@@ -763,21 +719,18 @@ static void IXAL_To_I4XX(AL_TBuffer const* pSrc, AL_TBuffer* pDst, int iHScale, 
 void I0AL_To_I420(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 {
   IXAL_To_I4XX(pSrc, pDst, 2, 2);
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(I420));
 }
 
 /****************************************************************************/
 void I4AL_To_I444(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 {
   IXAL_To_I4XX(pSrc, pDst, 1, 1);
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(I444));
 }
 
 /****************************************************************************/
 void I0AL_To_IYUV(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 {
   I0AL_To_I420(pSrc, pDst);
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(IYUV));
 }
 
 /****************************************************************************/
@@ -786,7 +739,6 @@ void I0AL_To_Y800(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
   AL_TDimension tDim = AL_PixMapBuffer_GetDimension(pSrc);
   AL_PixMapBuffer_SetDimension(pDst, tDim);
   ConvertPixMapPlane<uint16_t, uint8_t>(pSrc, pDst, AL_PLANE_Y, tDim.iWidth, tDim.iHeight, RND_10B_TO_8B);
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(Y800));
 }
 
 /****************************************************************************/
@@ -795,7 +747,6 @@ void I0CL_To_Y010(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
   AL_TDimension tDim = AL_PixMapBuffer_GetDimension(pSrc);
   AL_PixMapBuffer_SetDimension(pDst, tDim);
   ConvertPixMapPlane<uint16_t, uint16_t>(pSrc, pDst, AL_PLANE_Y, tDim.iWidth, tDim.iHeight, RND_12B_TO_10B);
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(Y012));
 }
 
 /****************************************************************************/
@@ -804,7 +755,6 @@ void I0CL_To_Y012(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
   AL_TDimension tDim = AL_PixMapBuffer_GetDimension(pSrc);
   AL_PixMapBuffer_SetDimension(pDst, tDim);
   ConvertPixMapPlane<uint16_t, uint16_t>(pSrc, pDst, AL_PLANE_Y, tDim.iWidth, tDim.iHeight, COPY);
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(Y012));
 }
 
 /****************************************************************************/
@@ -820,21 +770,18 @@ static void I0XL_To_Y01X(AL_TBuffer const* pSrc, AL_TBuffer* pDst, uint16_t (* R
 void P010_To_Y010(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 {
   I0XL_To_Y01X(pSrc, pDst, COPY);
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(Y010));
 }
 
 /****************************************************************************/
 void P012_To_Y012(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 {
   I0XL_To_Y01X(pSrc, pDst, COPY);
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(Y012));
 }
 
 /****************************************************************************/
 void I0AL_To_Y010(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 {
   I0XL_To_Y01X(pSrc, pDst, COPY);
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(Y010));
 }
 
 /****************************************************************************/
@@ -881,28 +828,24 @@ void YV12_To_NV12(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 void I420_To_NV12(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 {
   I4XX_To_NVXX(pSrc, pDst, 2, 2);
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(NV12));
 }
 
 /****************************************************************************/
 void IYUV_To_NV12(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 {
   I4XX_To_NVXX(pSrc, pDst, 2, 2);
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(NV12));
 }
 
 /****************************************************************************/
 void I422_To_NV16(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 {
   I4XX_To_NVXX(pSrc, pDst, 2, 1);
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(NV16));
 }
 
 /****************************************************************************/
 void I444_To_NV24(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 {
   I4XX_To_NVXX(pSrc, pDst, 1, 1);
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(NV24));
 }
 
 /****************************************************************************/
@@ -937,15 +880,6 @@ static void I4XX_To_PX10(AL_TBuffer const* pSrc, AL_TBuffer* pDst, uint8_t uHrzC
     pBufInV += iPitchSrcV - iWidthC;
     pBufOut += iPitchDst - (2 * iWidthC);
   }
-
-  int iCScale = uHrzCScale * uVrtCScale;
-  switch(iCScale)
-  {
-  case 1: return (void)AL_PixMapBuffer_SetFourCC(pDst, FOURCC(P410));
-  case 2: return (void)AL_PixMapBuffer_SetFourCC(pDst, FOURCC(P210));
-  case 4: return (void)AL_PixMapBuffer_SetFourCC(pDst, FOURCC(P010));
-  default: throw std::runtime_error("Unsupported chroma scale");
-  }
 }
 
 /****************************************************************************/
@@ -979,15 +913,6 @@ static void I4XX_To_PX12(AL_TBuffer const* pSrc, AL_TBuffer* pDst, uint8_t uHrzC
     pBufInU += iPitchSrcU - iWidthC;
     pBufInV += iPitchSrcV - iWidthC;
     pBufOut += iPitchDst - (2 * iWidthC);
-  }
-
-  int iCScale = uHrzCScale * uVrtCScale;
-  switch(iCScale)
-  {
-  case 1: return (void)AL_PixMapBuffer_SetFourCC(pDst, FOURCC(P412));
-  case 2: return (void)AL_PixMapBuffer_SetFourCC(pDst, FOURCC(P212));
-  case 4: return (void)AL_PixMapBuffer_SetFourCC(pDst, FOURCC(P012));
-  default: throw std::runtime_error("Unsupported chroma scale");
   }
 }
 
@@ -1044,7 +969,6 @@ void Y012_To_Y010(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 {
   AL_TDimension tDim = AL_PixMapBuffer_GetDimension(pSrc);
   ConvertPixMapPlane<uint16_t, uint16_t>(pSrc, pDst, AL_PLANE_Y, tDim.iWidth, tDim.iHeight, RND_12B_TO_10B);
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(Y010));
 }
 
 /****************************************************************************/
@@ -1052,35 +976,30 @@ void Y012_To_Y800(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 {
   AL_TDimension tDim = AL_PixMapBuffer_GetDimension(pSrc);
   ConvertPixMapPlane<uint16_t, uint8_t>(pSrc, pDst, AL_PLANE_Y, tDim.iWidth, tDim.iHeight, RND_12B_TO_8B);
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(Y800));
 }
 
 /****************************************************************************/
 void P012_To_I0AL(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 {
   SemiPlanarToPlanar_1XTo1X(pSrc, pDst, 2, 2, RND_12B_TO_10B);
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(I0AL));
 }
 
 /****************************************************************************/
 void P212_To_I2AL(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 {
   SemiPlanarToPlanar_1XTo1X(pSrc, pDst, 2, 1, RND_12B_TO_10B);
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(I2AL));
 }
 
 /****************************************************************************/
 void I4CL_To_I4AL(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 {
   IXYL_To_IXYL(pSrc, pDst, 1, 1, RND_12B_TO_10B);
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(I4AL));
 }
 
 /****************************************************************************/
 void I4CL_To_I444(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 {
   IXYL_To_I4XX(pSrc, pDst, 1, 1, RND_12B_TO_8B);
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(I444));
 }
 
 /****************************************************************************/
@@ -1142,8 +1061,6 @@ static void I42X_To_XVXX(AL_TBuffer const* pSrc, AL_TBuffer* pDst, uint8_t uHrzC
       *pDst32 |= ((uint32_t)*pSrcV++) << 12;
     }
   }
-
-  AL_PixMapBuffer_SetFourCC(pDst, (uHrzCScale * uVrtCScale) == 2 ? FOURCC(XV20) : FOURCC(XV15));
 }
 
 /****************************************************************************/
@@ -1200,15 +1117,6 @@ static void IXAL_To_NVXX(AL_TBuffer const* pSrc, AL_TBuffer* pDst, uint8_t uHrzC
     pBufOut += uPitchDst - tDim.iWidth;
     pBufInU += uPitchSrcU - iWidthC;
     pBufInV += uPitchSrcV - iWidthC;
-  }
-
-  int iCScale = uHrzCScale * uVrtCScale;
-  switch(iCScale)
-  {
-  case 1: return (void)AL_PixMapBuffer_SetFourCC(pDst, FOURCC(NV24));
-  case 2: return (void)AL_PixMapBuffer_SetFourCC(pDst, FOURCC(NV16));
-  case 4: return (void)AL_PixMapBuffer_SetFourCC(pDst, FOURCC(NV12));
-  default: throw std::runtime_error("Unsupported chroma scale");
   }
 }
 
@@ -1268,42 +1176,36 @@ static void IXYL_To_PX1Y(AL_TBuffer const* pSrc, AL_TBuffer* pDst, uint8_t uHrzC
 void I0AL_To_P010(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 {
   IXYL_To_PX1Y(pSrc, pDst, 2, 2, COPY);
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(P010));
 }
 
 /****************************************************************************/
 void I2AL_To_P210(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 {
   IXYL_To_PX1Y(pSrc, pDst, 2, 1, COPY);
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(P210));
 }
 
 /****************************************************************************/
 void I4AL_To_P410(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 {
   IXYL_To_PX1Y(pSrc, pDst, 1, 1, COPY);
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(P410));
 }
 
 /****************************************************************************/
 void I0CL_To_P012(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 {
   IXYL_To_PX1Y(pSrc, pDst, 2, 2, COPY);
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(P012));
 }
 
 /****************************************************************************/
 void I2CL_To_P212(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 {
   IXYL_To_PX1Y(pSrc, pDst, 2, 1, COPY);
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(P212));
 }
 
 /****************************************************************************/
 void I4CL_To_P412(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 {
   IXYL_To_PX1Y(pSrc, pDst, 1, 1, COPY);
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(P412));
 }
 
 /****************************************************************************/
@@ -1366,8 +1268,6 @@ static void IXAL_To_XVXX(AL_TBuffer const* pSrc, AL_TBuffer* pDst, uint8_t uHrzC
       *pDst32 |= ((uint32_t)(*pSrcV++) & 0x3FF) << 10;
     }
   }
-
-  AL_PixMapBuffer_SetFourCC(pDst, (uHrzCScale * uVrtCScale) == 2 ? FOURCC(XV20) : FOURCC(XV15));
 }
 
 /****************************************************************************/
@@ -1468,15 +1368,12 @@ void T608_To_I420(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 
   // Chroma
   ALX8_To_I4XX(pSrc, pDst, 2, 2);
-
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(I420));
 }
 
 /****************************************************************************/
 void T608_To_IYUV(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 {
   T608_To_I420(pSrc, pDst);
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(IYUV));
 }
 
 /****************************************************************************/
@@ -1487,8 +1384,6 @@ void T608_To_YV12(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 
   // Chroma
   ALX8_To_I4XX(pSrc, pDst, 2, 2);
-
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(YV12));
 }
 
 /****************************************************************************/
@@ -1767,8 +1662,6 @@ void T608_To_Y800(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 {
   AL_TDimension tDim = AL_PixMapBuffer_GetDimension(pDst);
   T64_Untile_Plane<uint8_t, uint8_t>(pSrc, pDst, 8, 8, AL_PLANE_Y, tDim);
-
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(Y800));
 }
 
 /****************************************************************************/
@@ -1782,8 +1675,6 @@ void T608_To_NV12(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
   tDim.iWidth = ((tDim.iWidth + 1) >> 1) << 1;
   tDim.iHeight = (tDim.iHeight + 1) >> 1;
   T64_Untile_Plane<uint8_t, uint8_t>(pSrc, pDst, 8, 8, AL_PLANE_UV, tDim);
-
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(NV12));
 }
 
 /****************************************************************************/
@@ -1791,8 +1682,6 @@ void T608_To_Y010(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 {
   AL_TDimension tDim = AL_PixMapBuffer_GetDimension(pDst);
   T64_Untile_Plane<uint8_t, uint16_t>(pSrc, pDst, 8, 10, AL_PLANE_Y, tDim);
-
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(Y010));
 }
 
 /****************************************************************************/
@@ -1800,8 +1689,6 @@ void T608_To_Y012(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 {
   AL_TDimension tDim = AL_PixMapBuffer_GetDimension(pDst);
   T64_Untile_Plane<uint8_t, uint16_t>(pSrc, pDst, 8, 12, AL_PLANE_Y, tDim);
-
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(Y012));
 }
 
 /****************************************************************************/
@@ -1815,8 +1702,6 @@ void T608_To_P010(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
   tDim.iWidth = ((tDim.iWidth + 1) >> 1) << 1;
   tDim.iHeight = (tDim.iHeight + 1) >> 1;
   T64_Untile_Plane<uint8_t, uint16_t>(pSrc, pDst, 8, 10, AL_PLANE_UV, tDim);
-
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(P010));
 }
 
 /****************************************************************************/
@@ -1830,8 +1715,6 @@ void T608_To_P012(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
   tDim.iWidth = ((tDim.iWidth + 1) >> 1) << 1;
   tDim.iHeight = (tDim.iHeight + 1) >> 1;
   T64_Untile_Plane<uint8_t, uint16_t>(pSrc, pDst, 8, 12, AL_PLANE_UV, tDim);
-
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(P012));
 }
 
 /****************************************************************************/
@@ -1921,8 +1804,6 @@ void T608_To_I0AL(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 
   // Chroma
   Chroma_T608_To_I0XL(pSrc, pDst, 10);
-
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(I0AL));
 }
 
 /****************************************************************************/
@@ -1933,15 +1814,12 @@ void T608_To_I0CL(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 
   // Chroma
   Chroma_T608_To_I0XL(pSrc, pDst, 12);
-
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(I0AL));
 }
 
 /****************************************************************************/
 void T6m8_To_I420(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 {
   T608_To_Y800(pSrc, pDst);
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(I420));
 }
 
 /****************************************************************************/
@@ -2023,7 +1901,6 @@ void T628_To_Y800(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 {
   // Luma
   T608_To_Y800(pSrc, pDst);
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(Y800));
 }
 
 /****************************************************************************/
@@ -2031,7 +1908,6 @@ void T628_To_Y010(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 {
   // Luma
   T608_To_Y010(pSrc, pDst);
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(Y010));
 }
 
 /****************************************************************************/
@@ -2042,8 +1918,6 @@ void T628_To_I422(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 
   // Chroma
   ALX8_To_I4XX(pSrc, pDst, 2, 1);
-
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(I422));
 }
 
 /****************************************************************************/
@@ -2056,8 +1930,6 @@ void T628_To_NV16(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
   AL_TDimension tDim = AL_PixMapBuffer_GetDimension(pDst);
   tDim.iWidth = ((tDim.iWidth + 1) >> 1) << 1;
   T64_Untile_Plane<uint8_t, uint8_t>(pSrc, pDst, 8, 8, AL_PLANE_UV, tDim);
-
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(NV16));
 }
 
 /****************************************************************************/
@@ -2123,8 +1995,6 @@ void T628_To_I2AL(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 
   // Chroma
   Chroma_T628_To_I2XL(pSrc, pDst, 10);
-
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(I2AL));
 }
 
 /****************************************************************************/
@@ -2135,8 +2005,6 @@ void T628_To_I2CL(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 
   // Chroma
   Chroma_T628_To_I2XL(pSrc, pDst, 12);
-
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(I2CL));
 }
 
 /****************************************************************************/
@@ -2149,8 +2017,6 @@ void T628_To_P210(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
   AL_TDimension tDim = AL_PixMapBuffer_GetDimension(pSrc);
   tDim.iWidth = ((tDim.iWidth + 1) >> 1) << 1;
   T64_Untile_Plane<uint8_t, uint16_t>(pSrc, pDst, 8, 10, AL_PLANE_UV, tDim);
-
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(P210));
 }
 
 /****************************************************************************/
@@ -2158,7 +2024,6 @@ void T60A_To_Y800(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 {
   AL_TDimension tDim = AL_PixMapBuffer_GetDimension(pSrc);
   T64_Untile_Plane<uint16_t, uint8_t>(pSrc, pDst, 10, 8, AL_PLANE_Y, tDim);
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(Y800));
 }
 
 /****************************************************************************/
@@ -2166,7 +2031,6 @@ void T60C_To_Y800(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 {
   AL_TDimension tDim = AL_PixMapBuffer_GetDimension(pSrc);
   T64_Untile_Plane<uint16_t, uint8_t>(pSrc, pDst, 12, 8, AL_PLANE_Y, tDim);
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(Y800));
 }
 
 /****************************************************************************/
@@ -2174,7 +2038,6 @@ void T60A_To_Y010(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 {
   AL_TDimension tDim = AL_PixMapBuffer_GetDimension(pSrc);
   T64_Untile_Plane<uint16_t, uint16_t>(pSrc, pDst, 10, 10, AL_PLANE_Y, tDim);
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(Y010));
 }
 
 /****************************************************************************/
@@ -2182,7 +2045,6 @@ void T60C_To_Y010(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 {
   AL_TDimension tDim = AL_PixMapBuffer_GetDimension(pSrc);
   T64_Untile_Plane<uint16_t, uint16_t>(pSrc, pDst, 12, 10, AL_PLANE_Y, tDim);
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(Y010));
 }
 
 /****************************************************************************/
@@ -2190,7 +2052,6 @@ void T60C_To_Y012(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 {
   AL_TDimension tDim = AL_PixMapBuffer_GetDimension(pSrc);
   T64_Untile_Plane<uint16_t, uint16_t>(pSrc, pDst, 12, 12, AL_PLANE_Y, tDim);
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(Y012));
 }
 
 /****************************************************************************/
@@ -2252,63 +2113,54 @@ static void T6XX_To_4XX(AL_TBuffer const* pSrc, AL_TBuffer* pDst, uint8_t bdIn, 
 void T60A_To_I420(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 {
   T6XX_To_4XX<uint8_t>(pSrc, pDst, 10, 8, 2, 2);
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(I420));
 }
 
 /****************************************************************************/
 void T60C_To_I420(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 {
   T6XX_To_4XX<uint8_t>(pSrc, pDst, 12, 8, 2, 2);
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(I420));
 }
 
 /****************************************************************************/
 void T60A_To_IYUV(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 {
   T60A_To_I420(pSrc, pDst);
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(IYUV));
 }
 
 /****************************************************************************/
 void T60C_To_IYUV(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 {
   T60A_To_I420(pSrc, pDst);
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(IYUV));
 }
 
 /****************************************************************************/
 void T60A_To_YV12(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 {
   T6XX_To_4XX<uint8_t>(pSrc, pDst, 10, 8, 2, 2);
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(YV12));
 }
 
 /****************************************************************************/
 void T60C_To_YV12(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 {
   T6XX_To_4XX<uint8_t>(pSrc, pDst, 12, 8, 2, 2);
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(YV12));
 }
 
 /****************************************************************************/
 void T60A_To_I0AL(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 {
   T6XX_To_4XX<uint16_t>(pSrc, pDst, 10, 10, 2, 2);
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(I0AL));
 }
 
 /****************************************************************************/
 void T60C_To_I0CL(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 {
   T6XX_To_4XX<uint16_t>(pSrc, pDst, 12, 12, 2, 2);
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(I0CL));
 }
 
 /****************************************************************************/
 void T60C_To_I0AL(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 {
   T6XX_To_4XX<uint16_t>(pSrc, pDst, 12, 10, 2, 2);
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(I0AL));
 }
 
 /****************************************************************************/
@@ -2322,8 +2174,6 @@ void T60A_To_NV12(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
   tDim.iWidth = ((tDim.iWidth + 1) >> 1) << 1;
   tDim.iHeight = (tDim.iHeight + 1) >> 1;
   T64_Untile_Plane<uint16_t, uint8_t>(pSrc, pDst, 10, 8, AL_PLANE_UV, tDim);
-
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(NV12));
 }
 
 /****************************************************************************/
@@ -2337,8 +2187,6 @@ void T60A_To_P010(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
   tDim.iWidth = ((tDim.iWidth + 1) >> 1) << 1;
   tDim.iHeight = (tDim.iHeight + 1) >> 1;
   T64_Untile_Plane<uint16_t, uint16_t>(pSrc, pDst, 10, 10, AL_PLANE_UV, tDim);
-
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(P010));
 }
 
 /****************************************************************************/
@@ -2346,14 +2194,12 @@ void T60A_To_XV15(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 {
   Tile_To_XV_OneComponent(pSrc, pDst, true, 1);
   Tile_To_XV_OneComponent(pSrc, pDst, false, 2);
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(XV15));
 }
 
 /****************************************************************************/
 void T60A_To_XV10(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 {
   Tile_To_XV_OneComponent(pSrc, pDst, true, 1);
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(XV10));
 }
 
 /****************************************************************************/
@@ -2361,7 +2207,6 @@ void T62A_To_Y800(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 {
   // Luma
   T60A_To_Y800(pSrc, pDst);
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(Y800));
 }
 
 /****************************************************************************/
@@ -2369,7 +2214,6 @@ void T62C_To_Y800(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 {
   // Luma
   T60C_To_Y800(pSrc, pDst);
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(Y800));
 }
 
 /****************************************************************************/
@@ -2377,7 +2221,6 @@ void T62C_To_Y012(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 {
   // Luma
   T60C_To_Y012(pSrc, pDst);
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(Y012));
 }
 
 /****************************************************************************/
@@ -2385,42 +2228,36 @@ void T62A_To_Y010(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 {
   // Luma
   T60A_To_Y010(pSrc, pDst);
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(Y010));
 }
 
 /****************************************************************************/
 void T62A_To_I2AL(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 {
   T6XX_To_4XX<uint16_t>(pSrc, pDst, 10, 10, 2, 1);
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(I2AL));
 }
 
 /****************************************************************************/
 void T62C_To_I2CL(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 {
   T6XX_To_4XX<uint16_t>(pSrc, pDst, 12, 12, 2, 1);
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(I2CL));
 }
 
 /****************************************************************************/
 void T62C_To_I2AL(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 {
   T6XX_To_4XX<uint16_t>(pSrc, pDst, 12, 10, 2, 1);
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(I2AL));
 }
 
 /****************************************************************************/
 void T62C_To_I422(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 {
   T6XX_To_4XX<uint8_t>(pSrc, pDst, 12, 8, 2, 1);
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(I422));
 }
 
 /****************************************************************************/
 void T62A_To_I422(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 {
   T6XX_To_4XX<uint8_t>(pSrc, pDst, 10, 8, 2, 1);
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(I422));
 }
 
 /****************************************************************************/
@@ -2433,8 +2270,6 @@ void T62A_To_NV16(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
   AL_TDimension tDim = AL_PixMapBuffer_GetDimension(pSrc);
   tDim.iWidth = ((tDim.iWidth + 1) >> 1) << 1;
   T64_Untile_Plane<uint16_t, uint8_t>(pSrc, pDst, 10, 8, AL_PLANE_UV, tDim);
-
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(NV16));
 }
 
 /****************************************************************************/
@@ -2453,14 +2288,12 @@ void T62X_To_P21X(AL_TBuffer const* pSrc, AL_TBuffer* pDst, uint8_t uBd)
 void T62A_To_P210(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 {
   T62X_To_P21X(pSrc, pDst, 10);
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(P210));
 }
 
 /****************************************************************************/
 void T62C_To_P212(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 {
   T62X_To_P21X(pSrc, pDst, 12);
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(P212));
 }
 
 /****************************************************************************/
@@ -2470,8 +2303,6 @@ void T648_To_I444(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
   T64_Untile_Plane<uint8_t, uint8_t>(pSrc, pDst, 8, 8, AL_PLANE_Y, tDim);
   T64_Untile_Plane<uint8_t, uint8_t>(pSrc, pDst, 8, 8, AL_PLANE_U, tDim);
   T64_Untile_Plane<uint8_t, uint8_t>(pSrc, pDst, 8, 8, AL_PLANE_V, tDim);
-
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(I444));
 }
 
 /****************************************************************************/
@@ -2481,8 +2312,6 @@ void T64A_To_I444(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
   T64_Untile_Plane<uint16_t, uint8_t>(pSrc, pDst, 10, 8, AL_PLANE_Y, tDim);
   T64_Untile_Plane<uint16_t, uint8_t>(pSrc, pDst, 10, 8, AL_PLANE_U, tDim);
   T64_Untile_Plane<uint16_t, uint8_t>(pSrc, pDst, 10, 8, AL_PLANE_V, tDim);
-
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(I444));
 }
 
 /****************************************************************************/
@@ -2492,8 +2321,6 @@ void T648_To_I4AL(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
   T64_Untile_Plane<uint8_t, uint16_t>(pSrc, pDst, 8, 10, AL_PLANE_Y, tDim);
   T64_Untile_Plane<uint8_t, uint16_t>(pSrc, pDst, 8, 10, AL_PLANE_U, tDim);
   T64_Untile_Plane<uint8_t, uint16_t>(pSrc, pDst, 8, 10, AL_PLANE_V, tDim);
-
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(I4AL));
 }
 
 /****************************************************************************/
@@ -2503,8 +2330,6 @@ void T64A_To_I4AL(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
   T64_Untile_Plane<uint16_t, uint16_t>(pSrc, pDst, 10, 10, AL_PLANE_Y, tDim);
   T64_Untile_Plane<uint16_t, uint16_t>(pSrc, pDst, 10, 10, AL_PLANE_U, tDim);
   T64_Untile_Plane<uint16_t, uint16_t>(pSrc, pDst, 10, 10, AL_PLANE_V, tDim);
-
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(I4AL));
 }
 
 /****************************************************************************/
@@ -2514,8 +2339,6 @@ void T64C_To_I4CL(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
   T64_Untile_Plane<uint16_t, uint16_t>(pSrc, pDst, 12, 12, AL_PLANE_Y, tDim);
   T64_Untile_Plane<uint16_t, uint16_t>(pSrc, pDst, 12, 12, AL_PLANE_U, tDim);
   T64_Untile_Plane<uint16_t, uint16_t>(pSrc, pDst, 12, 12, AL_PLANE_V, tDim);
-
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(I4CL));
 }
 
 /****************************************************************************/
@@ -2525,8 +2348,6 @@ void T64C_To_I4AL(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
   T64_Untile_Plane<uint16_t, uint16_t>(pSrc, pDst, 12, 10, AL_PLANE_Y, tDim);
   T64_Untile_Plane<uint16_t, uint16_t>(pSrc, pDst, 12, 10, AL_PLANE_U, tDim);
   T64_Untile_Plane<uint16_t, uint16_t>(pSrc, pDst, 12, 10, AL_PLANE_V, tDim);
-
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(I4AL));
 }
 
 /****************************************************************************/
@@ -2536,8 +2357,6 @@ void T64C_To_I444(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
   T64_Untile_Plane<uint16_t, uint8_t>(pSrc, pDst, 12, 8, AL_PLANE_Y, tDim);
   T64_Untile_Plane<uint16_t, uint8_t>(pSrc, pDst, 12, 8, AL_PLANE_U, tDim);
   T64_Untile_Plane<uint16_t, uint8_t>(pSrc, pDst, 12, 8, AL_PLANE_V, tDim);
-
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(I444));
 }
 
 /****************************************************************************/
@@ -2917,12 +2736,49 @@ static void I4XX_To_ALX8(AL_TBuffer const* pSrc, AL_TBuffer* pDst, uint8_t uHrzC
 }
 
 /****************************************************************************/
+void Y800_To_T6m8(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
+{
+  AL_TDimension tDim = AL_PixMapBuffer_GetDimension(pDst);
+  Plane_Tile_T64<uint8_t, uint8_t>(pSrc, pDst, 8, 8, AL_PLANE_Y, tDim);
+}
+
+/****************************************************************************/
+void I420_To_T6m8(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
+{
+  Y800_To_T6m8(pSrc, pDst);
+}
+
+/****************************************************************************/
+void Y010_To_T6mA(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
+{
+  AL_TDimension tDim = AL_PixMapBuffer_GetDimension(pSrc);
+  Plane_Tile_T64<uint16_t, uint16_t>(pSrc, pDst, 10, 10, AL_PLANE_Y, tDim);
+}
+
+/****************************************************************************/
+void I0AL_To_T6mA(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
+{
+  Y010_To_T6mA(pSrc, pDst);
+}
+
+/****************************************************************************/
+void Y012_To_T6mC(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
+{
+  AL_TDimension tDim = AL_PixMapBuffer_GetDimension(pSrc);
+  Plane_Tile_T64<uint16_t, uint16_t>(pSrc, pDst, 12, 12, AL_PLANE_Y, tDim);
+}
+
+/****************************************************************************/
+void I0CL_To_T6mC(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
+{
+  Y012_To_T6mC(pSrc, pDst);
+}
+
+/****************************************************************************/
 void Y010_To_T608(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 {
   AL_TDimension tDim = AL_PixMapBuffer_GetDimension(pDst);
   Plane_Tile_T64<uint16_t, uint8_t>(pSrc, pDst, 10, 8, AL_PLANE_Y, tDim);
-
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(T608));
 }
 
 /****************************************************************************/
@@ -2930,8 +2786,6 @@ void Y012_To_T608(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 {
   AL_TDimension tDim = AL_PixMapBuffer_GetDimension(pDst);
   Plane_Tile_T64<uint16_t, uint8_t>(pSrc, pDst, 12, 8, AL_PLANE_Y, tDim);
-
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(T608));
 }
 
 /****************************************************************************/
@@ -2945,17 +2799,12 @@ void P010_To_T608(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
   tDim.iWidth = ((tDim.iWidth + 1) >> 1) << 1;
   tDim.iHeight = (tDim.iHeight + 1) >> 1;
   Plane_Tile_T64<uint16_t, uint8_t>(pSrc, pDst, 10, 8, AL_PLANE_UV, tDim);
-
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(T608));
 }
 
 /****************************************************************************/
 void Y800_To_T608(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 {
-  AL_TDimension tDim = AL_PixMapBuffer_GetDimension(pDst);
-  Plane_Tile_T64<uint8_t, uint8_t>(pSrc, pDst, 8, 8, AL_PLANE_Y, tDim);
-
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(T608));
+  Y800_To_T6m8(pSrc, pDst);
 }
 
 /****************************************************************************/
@@ -2969,8 +2818,6 @@ void NV12_To_T608(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
   tDim.iWidth = ((tDim.iWidth + 1) >> 1) << 1;
   tDim.iHeight = (tDim.iHeight + 1) >> 1;
   Plane_Tile_T64<uint8_t, uint8_t>(pSrc, pDst, 8, 8, AL_PLANE_UV, tDim);
-
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(T608));
 }
 
 /****************************************************************************/
@@ -2981,8 +2828,6 @@ void I0AL_To_T608(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 
   // Chroma
   Chroma_I0XL_To_T608(pSrc, pDst, 10);
-
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(T608));
 }
 
 /****************************************************************************/
@@ -2993,15 +2838,6 @@ void I0CL_To_T608(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 
   // Chroma
   Chroma_I0XL_To_T608(pSrc, pDst, 12);
-
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(T608));
-}
-
-/****************************************************************************/
-void I420_To_T6m8(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
-{
-  Y800_To_T608(pSrc, pDst);
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(T6m8));
 }
 
 /****************************************************************************/
@@ -3012,15 +2848,12 @@ void I420_To_T608(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 
   // Chroma
   I4XX_To_ALX8(pSrc, pDst, 2, 2);
-
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(T608));
 }
 
 /****************************************************************************/
 void IYUV_To_T608(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 {
   I420_To_T608(pSrc, pDst);
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(IYUV));
 }
 
 /****************************************************************************/
@@ -3031,8 +2864,6 @@ void YV12_To_T608(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 
   // Chroma
   I4XX_To_ALX8(pSrc, pDst, 2, 2);
-
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(YV12));
 }
 
 /****************************************************************************/
@@ -3187,65 +3018,42 @@ static void From_4XX_To_T6XX(AL_TBuffer const* pSrc, AL_TBuffer* pDst, uint8_t b
 void I420_To_T60A(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 {
   From_4XX_To_T6XX<uint16_t>(pSrc, pDst, 8, 10, 2, 2);
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(T60A));
 }
 
 /****************************************************************************/
 void I420_To_T60C(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 {
   From_4XX_To_T6XX<uint16_t>(pSrc, pDst, 8, 12, 2, 2);
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(T60C));
 }
 
 /****************************************************************************/
 void IYUV_To_T60A(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 {
   I420_To_T60A(pSrc, pDst);
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(T60A));
 }
 
 /****************************************************************************/
 void YV12_To_T60A(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 {
   From_4XX_To_T6XX<uint8_t>(pSrc, pDst, 8, 10, 2, 2);
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(T60A));
 }
 
 /****************************************************************************/
 void I0AL_To_T60A(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 {
   From_4XX_To_T6XX<uint16_t>(pSrc, pDst, 10, 10, 2, 2);
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(T60A));
-}
-
-/****************************************************************************/
-void I0AL_To_T6mA(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
-{
-  AL_TDimension tDim = AL_PixMapBuffer_GetDimension(pSrc);
-  Plane_Tile_T64<uint16_t, uint16_t>(pSrc, pDst, 10, 10, AL_PLANE_Y, tDim);
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(T6mA));
 }
 
 /****************************************************************************/
 void I0CL_To_T60C(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 {
   From_4XX_To_T6XX<uint16_t>(pSrc, pDst, 12, 12, 2, 2);
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(T60C));
-}
-
-/****************************************************************************/
-void I0CL_To_T6mC(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
-{
-  AL_TDimension tDim = AL_PixMapBuffer_GetDimension(pSrc);
-  Plane_Tile_T64<uint16_t, uint16_t>(pSrc, pDst, 12, 12, AL_PLANE_Y, tDim);
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(T6mC));
 }
 
 /****************************************************************************/
 void I0AL_To_T60C(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 {
   From_4XX_To_T6XX<uint16_t>(pSrc, pDst, 10, 12, 2, 2);
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(T60C));
 }
 
 /****************************************************************************/
@@ -3253,7 +3061,6 @@ void Y800_To_T60A(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 {
   AL_TDimension tDim = AL_PixMapBuffer_GetDimension(pSrc);
   Plane_Tile_T64<uint8_t, uint16_t>(pSrc, pDst, 8, 10, AL_PLANE_Y, tDim);
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(T60A));
 }
 
 /****************************************************************************/
@@ -3261,7 +3068,6 @@ void Y800_To_T60C(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 {
   AL_TDimension tDim = AL_PixMapBuffer_GetDimension(pSrc);
   Plane_Tile_T64<uint16_t, uint8_t>(pSrc, pDst, 8, 12, AL_PLANE_Y, tDim);
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(T60C));
 }
 
 /****************************************************************************/
@@ -3269,7 +3075,6 @@ void Y010_To_T60A(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 {
   AL_TDimension tDim = AL_PixMapBuffer_GetDimension(pSrc);
   Plane_Tile_T64<uint16_t, uint16_t>(pSrc, pDst, 10, 10, AL_PLANE_Y, tDim);
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(T60A));
 }
 
 /****************************************************************************/
@@ -3277,7 +3082,6 @@ void Y010_To_T60C(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 {
   AL_TDimension tDim = AL_PixMapBuffer_GetDimension(pSrc);
   Plane_Tile_T64<uint16_t, uint16_t>(pSrc, pDst, 10, 12, AL_PLANE_Y, tDim);
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(T60C));
 }
 
 /****************************************************************************/
@@ -3285,7 +3089,6 @@ void Y012_To_T60C(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 {
   AL_TDimension tDim = AL_PixMapBuffer_GetDimension(pSrc);
   Plane_Tile_T64<uint16_t, uint16_t>(pSrc, pDst, 12, 12, AL_PLANE_Y, tDim);
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(T60C));
 }
 
 /****************************************************************************/
@@ -3299,8 +3102,6 @@ void NV12_To_T60A(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
   tDim.iWidth = ((tDim.iWidth + 1) >> 1) << 1;
   tDim.iHeight = (tDim.iHeight + 1) >> 1;
   Plane_Tile_T64<uint8_t, uint16_t>(pSrc, pDst, 8, 10, AL_PLANE_UV, tDim);
-
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(T60A));
 }
 
 /****************************************************************************/
@@ -3314,8 +3115,6 @@ void P010_To_T60A(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
   tDim.iWidth = ((tDim.iWidth + 1) >> 1) << 1;
   tDim.iHeight = (tDim.iHeight + 1) >> 1;
   Plane_Tile_T64<uint16_t, uint16_t>(pSrc, pDst, 10, 10, AL_PLANE_UV, tDim);
-
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(T60A));
 }
 
 /****************************************************************************/
@@ -3323,7 +3122,6 @@ void Y800_To_T62A(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 {
   // Luma
   Y800_To_T60A(pSrc, pDst);
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(T62A));
 }
 
 /****************************************************************************/
@@ -3331,7 +3129,6 @@ void Y800_To_T62C(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 {
   // Luma
   Y800_To_T60C(pSrc, pDst);
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(T62C));
 }
 
 /****************************************************************************/
@@ -3339,7 +3136,6 @@ void Y012_To_T62C(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 {
   // Luma
   Y012_To_T60C(pSrc, pDst);
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(T62C));
 }
 
 /****************************************************************************/
@@ -3347,42 +3143,36 @@ void Y010_To_T62A(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 {
   // Luma
   Y010_To_T60A(pSrc, pDst);
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(T62A));
 }
 
 /****************************************************************************/
 void I2AL_To_T62A(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 {
   From_4XX_To_T6XX<uint16_t>(pSrc, pDst, 10, 10, 2, 1);
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(T62A));
 }
 
 /****************************************************************************/
 void I2CL_To_T62C(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 {
   From_4XX_To_T6XX<uint16_t>(pSrc, pDst, 12, 12, 2, 1);
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(T62C));
 }
 
 /****************************************************************************/
 void I2AL_To_T62C(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 {
   From_4XX_To_T6XX<uint16_t>(pSrc, pDst, 10, 12, 2, 1);
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(T62C));
 }
 
 /****************************************************************************/
 void I422_To_T62C(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 {
   From_4XX_To_T6XX<uint16_t>(pSrc, pDst, 8, 12, 2, 1);
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(T62C));
 }
 
 /****************************************************************************/
 void I422_To_T62A(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 {
   From_4XX_To_T6XX<uint16_t>(pSrc, pDst, 8, 10, 2, 1);
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(T62A));
 }
 
 /****************************************************************************/
@@ -3395,8 +3185,6 @@ void NV16_To_T62A(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
   AL_TDimension tDim = AL_PixMapBuffer_GetDimension(pSrc);
   tDim.iWidth = ((tDim.iWidth + 1) >> 1) << 1;
   Plane_Tile_T64<uint8_t, uint16_t>(pSrc, pDst, 8, 10, AL_PLANE_UV, tDim);
-
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(T62A));
 }
 
 /****************************************************************************/
@@ -3415,14 +3203,12 @@ void P21X_To_T62X(AL_TBuffer const* pSrc, AL_TBuffer* pDst, uint8_t uBd)
 void P210_To_T62A(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 {
   P21X_To_T62X(pSrc, pDst, 10);
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(T62A));
 }
 
 /****************************************************************************/
 void P212_To_T62C(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 {
   P21X_To_T62X(pSrc, pDst, 12);
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(T62C));
 }
 
 /****************************************************************************/
@@ -3432,8 +3218,6 @@ void I444_To_T648(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
   Plane_Tile_T64<uint8_t, uint8_t>(pSrc, pDst, 8, 8, AL_PLANE_Y, tDim);
   Plane_Tile_T64<uint8_t, uint8_t>(pSrc, pDst, 8, 8, AL_PLANE_U, tDim);
   Plane_Tile_T64<uint8_t, uint8_t>(pSrc, pDst, 8, 8, AL_PLANE_V, tDim);
-
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(T648));
 }
 
 /****************************************************************************/
@@ -3443,8 +3227,6 @@ void I444_To_T64A(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
   Plane_Tile_T64<uint8_t, uint16_t>(pSrc, pDst, 8, 10, AL_PLANE_Y, tDim);
   Plane_Tile_T64<uint8_t, uint16_t>(pSrc, pDst, 8, 10, AL_PLANE_U, tDim);
   Plane_Tile_T64<uint8_t, uint16_t>(pSrc, pDst, 8, 10, AL_PLANE_V, tDim);
-
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(T64A));
 }
 
 /****************************************************************************/
@@ -3454,8 +3236,6 @@ void I4AL_To_T648(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
   Plane_Tile_T64<uint16_t, uint8_t>(pSrc, pDst, 10, 8, AL_PLANE_Y, tDim);
   Plane_Tile_T64<uint16_t, uint8_t>(pSrc, pDst, 10, 8, AL_PLANE_U, tDim);
   Plane_Tile_T64<uint16_t, uint8_t>(pSrc, pDst, 10, 8, AL_PLANE_V, tDim);
-
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(T648));
 }
 
 /****************************************************************************/
@@ -3465,8 +3245,6 @@ void I4AL_To_T64A(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
   Plane_Tile_T64<uint16_t, uint16_t>(pSrc, pDst, 10, 10, AL_PLANE_Y, tDim);
   Plane_Tile_T64<uint16_t, uint16_t>(pSrc, pDst, 10, 10, AL_PLANE_U, tDim);
   Plane_Tile_T64<uint16_t, uint16_t>(pSrc, pDst, 10, 10, AL_PLANE_V, tDim);
-
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(T64A));
 }
 
 /****************************************************************************/
@@ -3476,8 +3254,6 @@ void I4CL_To_T64C(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
   Plane_Tile_T64<uint16_t, uint16_t>(pSrc, pDst, 12, 12, AL_PLANE_Y, tDim);
   Plane_Tile_T64<uint16_t, uint16_t>(pSrc, pDst, 12, 12, AL_PLANE_U, tDim);
   Plane_Tile_T64<uint16_t, uint16_t>(pSrc, pDst, 12, 12, AL_PLANE_V, tDim);
-
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(T64C));
 }
 
 /****************************************************************************/
@@ -3487,8 +3263,6 @@ void I4AL_To_T64C(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
   Plane_Tile_T64<uint16_t, uint16_t>(pSrc, pDst, 10, 12, AL_PLANE_Y, tDim);
   Plane_Tile_T64<uint16_t, uint16_t>(pSrc, pDst, 10, 12, AL_PLANE_U, tDim);
   Plane_Tile_T64<uint16_t, uint16_t>(pSrc, pDst, 10, 12, AL_PLANE_V, tDim);
-
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(T64C));
 }
 
 /****************************************************************************/
@@ -3498,8 +3272,6 @@ void I444_To_T64C(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
   Plane_Tile_T64<uint8_t, uint16_t>(pSrc, pDst, 8, 12, AL_PLANE_Y, tDim);
   Plane_Tile_T64<uint8_t, uint16_t>(pSrc, pDst, 8, 12, AL_PLANE_U, tDim);
   Plane_Tile_T64<uint8_t, uint16_t>(pSrc, pDst, 8, 12, AL_PLANE_V, tDim);
-
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(T64C));
 }
 
 /****************************************************************************/
@@ -3507,7 +3279,6 @@ void Y800_To_T628(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 {
   // Luma
   Y800_To_T608(pSrc, pDst);
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(T628));
 }
 
 /****************************************************************************/
@@ -3515,7 +3286,6 @@ void Y010_To_T628(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 {
   // Luma
   Y010_To_T608(pSrc, pDst);
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(T628));
 }
 
 /****************************************************************************/
@@ -3526,8 +3296,6 @@ void I422_To_T628(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 
   // Chroma
   I4XX_To_ALX8(pSrc, pDst, 2, 1);
-
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(T628));
 }
 
 /****************************************************************************/
@@ -3540,8 +3308,6 @@ void NV16_To_T628(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
   AL_TDimension tDim = AL_PixMapBuffer_GetDimension(pDst);
   tDim.iWidth = ((tDim.iWidth + 1) >> 1) << 1;
   Plane_Tile_T64<uint8_t, uint8_t>(pSrc, pDst, 8, 8, AL_PLANE_UV, tDim);
-
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(T628));
 }
 
 /****************************************************************************/
@@ -3607,8 +3373,6 @@ void I2AL_To_T628(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 
   // Chroma
   Chroma_I2XL_To_T628(pSrc, pDst, 10);
-
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(T628));
 }
 
 /****************************************************************************/
@@ -3619,8 +3383,6 @@ void I2CL_To_T628(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 
   // Chroma
   Chroma_I2XL_To_T628(pSrc, pDst, 12);
-
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(T628));
 }
 
 /****************************************************************************/
@@ -3633,8 +3395,6 @@ void P210_To_T628(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
   AL_TDimension tDim = AL_PixMapBuffer_GetDimension(pSrc);
   tDim.iWidth = ((tDim.iWidth + 1) >> 1) << 1;
   Plane_Tile_T64<uint16_t, uint8_t>(pSrc, pDst, 10, 8, AL_PLANE_UV, tDim);
-
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(T628));
 }
 
 /****************************************************************************/
@@ -3642,7 +3402,6 @@ void T62A_To_XV20(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 {
   Tile_To_XV_OneComponent(pSrc, pDst, true, 1);
   Tile_To_XV_OneComponent(pSrc, pDst, false, 1);
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(XV20));
 }
 
 /****************************************************************************/
@@ -3704,8 +3463,6 @@ static void XVXX_To_I42X(AL_TBuffer const* pSrc, AL_TBuffer* pDst, uint8_t uHrzC
       *pDstV++ = (uint8_t)((*pSrc32 >> 12) & 0xFF);
     }
   }
-
-  AL_PixMapBuffer_SetFourCC(pDst, (uHrzCScale * uVrtCScale) == 2 ? FOURCC(I422) : FOURCC(I420));
 }
 
 /****************************************************************************/
@@ -3759,8 +3516,6 @@ void XV10_To_Y800(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
       *pDstY++ = (*pSrc32 >> 2) & 0xFF;
     }
   }
-
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(Y800));
 }
 
 /****************************************************************************/
@@ -3802,8 +3557,6 @@ void XV10_To_Y010(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
       *pDstY++ = (uint16_t)((*pSrc32) & 0x3FF);
     }
   }
-
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(Y010));
 }
 
 /****************************************************************************/
@@ -3824,14 +3577,12 @@ void XV15_To_Y010(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 void XV15_To_YV12(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 {
   XV15_To_I420(pSrc, pDst);
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(YV12));
 }
 
 /****************************************************************************/
 void XV15_To_IYUV(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 {
   XV15_To_I420(pSrc, pDst);
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(IYUV));
 }
 
 /****************************************************************************/
@@ -3892,8 +3643,6 @@ void XVXX_To_NV1X(AL_TBuffer const* pSrc, AL_TBuffer* pDst, uint8_t uHrzCScale, 
       *pDstC++ = (*pSrc32 >> 2) & 0xFF;
     }
   }
-
-  AL_PixMapBuffer_SetFourCC(pDst, (uHrzCScale * uVrtCScale) == 2 ? FOURCC(NV16) : FOURCC(NV12));
 }
 
 /****************************************************************************/
@@ -3954,8 +3703,6 @@ static void XVXX_To_PX10(AL_TBuffer const* pSrc, AL_TBuffer* pDst, uint8_t uHrzC
       *pDstC++ = (uint16_t)((*pSrc32) & 0x3FF);
     }
   }
-
-  AL_PixMapBuffer_SetFourCC(pDst, (uHrzCScale * uVrtCScale) == 2 ? FOURCC(P210) : FOURCC(P010));
 }
 
 /****************************************************************************/
@@ -4029,8 +3776,6 @@ static void XVXX_To_IXAL(AL_TBuffer const* pSrc, AL_TBuffer* pDst, uint8_t uHrzC
       *pDstV++ = (uint16_t)((*pSrc32 >> 10) & 0x3FF);
     }
   }
-
-  AL_PixMapBuffer_SetFourCC(pDst, (uHrzCScale * uVrtCScale) == 2 ? FOURCC(I2AL) : FOURCC(I0AL));
 }
 
 /****************************************************************************/
@@ -4082,35 +3827,30 @@ static void NVXX_To_I4XX(AL_TBuffer const* pSrc, AL_TBuffer* pDst, uint8_t uHrzC
 void NV12_To_YV12(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 {
   NV12_To_I420(pSrc, pDst);
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(YV12));
 }
 
 /****************************************************************************/
 void NV12_To_I420(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 {
   NVXX_To_I4XX(pSrc, pDst, 2, 2);
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(I420));
 }
 
 /****************************************************************************/
 void NV16_To_I422(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 {
   NVXX_To_I4XX(pSrc, pDst, 2, 1);
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(I422));
 }
 
 /****************************************************************************/
 void NV24_To_I444(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 {
   NVXX_To_I4XX(pSrc, pDst, 1, 1);
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(I444));
 }
 
 /****************************************************************************/
 void NV12_To_IYUV(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 {
   NVXX_To_I4XX(pSrc, pDst, 2, 2);
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(IYUV));
 }
 
 /****************************************************************************/
@@ -4144,15 +3884,6 @@ static void NVXX_To_IXAL(AL_TBuffer const* pSrc, AL_TBuffer* pDst, uint8_t uHrzC
     pBufOutU += iPitchDstU;
     pBufOutV += iPitchDstV;
   }
-
-  int iCScale = uHrzCScale * uVrtCScale;
-  switch(iCScale)
-  {
-  case 1: return (void)AL_PixMapBuffer_SetFourCC(pDst, FOURCC(I4AL));
-  case 2: return (void)AL_PixMapBuffer_SetFourCC(pDst, FOURCC(I2AL));
-  case 4: return (void)AL_PixMapBuffer_SetFourCC(pDst, FOURCC(I0AL));
-  default: throw std::runtime_error("Unsupported chroma scale");
-  }
 }
 
 /****************************************************************************/
@@ -4178,7 +3909,6 @@ static void NVXX_To_PX10(AL_TBuffer const* pSrc, AL_TBuffer* pDst, uint8_t uHrzC
 {
   AL_TDimension tDim = AL_PixMapBuffer_GetDimension(pSrc);
   AL_PixMapBuffer_SetDimension(pDst, tDim);
-  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(P010));
 
   // Luma
   I420_To_Y010(pSrc, pDst);
@@ -4200,15 +3930,6 @@ static void NVXX_To_PX10(AL_TBuffer const* pSrc, AL_TBuffer* pDst, uint8_t uHrzC
 
     pBufIn += iPitchSrc;
     pBufOut += iPitchDst;
-  }
-
-  int iCScale = uHrzCScale * uVrtCScale;
-  switch(iCScale)
-  {
-  case 1: return (void)AL_PixMapBuffer_SetFourCC(pDst, FOURCC(P410));
-  case 2: return (void)AL_PixMapBuffer_SetFourCC(pDst, FOURCC(P210));
-  case 4: return (void)AL_PixMapBuffer_SetFourCC(pDst, FOURCC(P010));
-  default: throw std::runtime_error("Unsupported chroma scale");
   }
 }
 
@@ -4276,8 +3997,6 @@ static void NV1X_To_XVXX(AL_TBuffer const* pSrc, AL_TBuffer* pDst, uint8_t uHrzC
       *pDst32 = ((uint32_t)*pSrcC++) << 2;
     }
   }
-
-  AL_PixMapBuffer_SetFourCC(pDst, (uHrzCScale * uVrtCScale) == 2 ? FOURCC(XV20) : FOURCC(XV15));
 }
 
 /****************************************************************************/
@@ -4307,7 +4026,6 @@ bool CopyPixMapBuffer(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
   if(!bSuccess || tPicFormat.b10bPacked || tPicFormat.bCompressed)
     return false;
 
-  AL_PixMapBuffer_SetFourCC(pDst, tFourCC);
   AL_PixMapBuffer_SetDimension(pDst, tDim);
 
   // Luma
@@ -4944,6 +4662,9 @@ static const sFourCCToConvFunc ConversionY010FuncArray[] =
     FOURCC(T608), Y010_To_T608
   },
   {
+    FOURCC(T6mA), Y010_To_T6mA
+  },
+  {
     FOURCC(T60A), Y010_To_T60A
   },
   {
@@ -4975,6 +4696,9 @@ static const sFourCCToConvFunc ConversionY012FuncArray[] =
     FOURCC(T608), Y012_To_T608
   },
   {
+    FOURCC(T6mC), Y012_To_T6mC
+  },
+  {
     FOURCC(T60C), Y012_To_T60C
   },
   {
@@ -5004,6 +4728,9 @@ static const sFourCCToConvFunc ConversionY800FuncArray[] =
   },
   {
     FOURCC(YV12), Y800_To_YV12
+  },
+  {
+    FOURCC(T6m8), Y800_To_T6m8
   },
   {
     FOURCC(T608), Y800_To_T608

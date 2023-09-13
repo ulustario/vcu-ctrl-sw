@@ -71,7 +71,7 @@ struct BuildInfoDisplay
       LogInfo("\nUsing compilation options:\n%s\n", compilationFlags);
 #endif
 
-    LogInfo("\nUsing allegro library version: %d.%d.%d\n", AL_VERSION_MAJOR, AL_VERSION_MINOR, AL_VERSION_STEP);
+    LogInfo("\nUsing allegro library version: %d.%d.%d\n", AL_VERSION_MAJOR, AL_VERSION_MINOR, AL_VERSION_PATCH);
   }
 
   char const* scmRevision;

@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: MIT
 
 #include "lib_common/Allocator.h"
+#include "Utils.h"
 
 typedef struct
 {
@@ -23,11 +24,6 @@ static bool AL_AlignedAllocator_Destroy(AL_TAllocator* pAllocator)
 {
   AL_TAlignedAllocator* p = (AL_TAlignedAllocator*)pAllocator;
   return AL_Allocator_Free(p->pMemoryAllocator, p->this);
-}
-
-static inline uint32_t UnsignedRoundUp(uint32_t uVal, int iRnd)
-{
-  return ((uVal + iRnd - 1) / iRnd) * iRnd;
 }
 
 static AL_HANDLE AL_AlignedAllocator_AllocNamed(AL_TAllocator* pAllocator, size_t zSize, char const* pBufName)

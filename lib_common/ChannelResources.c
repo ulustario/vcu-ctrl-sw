@@ -32,10 +32,10 @@ void AL_CoreConstraint_Init(AL_CoreConstraint* constraint, int coreFrequency, in
   constraint->maxWidth = maxWidth;
   constraint->lcuSize = lcuSize;
   constraint->resources = GetCoreResources(coreFrequency, margin);
-  constraint->cycles32x32[0] = hardwareCyclesCounts[0];
-  constraint->cycles32x32[1] = hardwareCyclesCounts[1];
-  constraint->cycles32x32[2] = hardwareCyclesCounts[2];
-  constraint->cycles32x32[3] = hardwareCyclesCounts[3];
+
+  for(int i = 0; i < 4; ++i)
+    constraint->cycles32x32[i] = hardwareCyclesCounts[i];
+
   constraint->enableMultiCore = true;
 }
 

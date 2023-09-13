@@ -63,3 +63,13 @@ private:
   bool m_bEOF {};
 };
 
+struct SplitInputFromSizes : public InputLoader
+{
+  SplitInputFromSizes(std::istream& ifFileSizes);
+  uint32_t ReadStream(std::istream& ifFileStream, AL_TBuffer* pBufStream, uint8_t& uBufFlags) override;
+
+private:
+  std::istream& m_FileSizes;
+  std::vector<uint8_t> m_Stream;
+  bool m_bEOF {};
+};

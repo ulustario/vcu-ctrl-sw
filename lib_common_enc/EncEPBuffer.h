@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include "lib_rtos/types.h"
 #include "lib_common/MemDesc.h"
 
 /*************************************************************************//*!

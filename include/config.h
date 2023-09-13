@@ -31,6 +31,9 @@
 #ifndef HEVC_MAX_VERTICAL_RANGE_B
 #define HEVC_MAX_VERTICAL_RANGE_B 16
 #endif
+#ifndef ENCODER_DEVICES
+#define ENCODER_DEVICES { "/dev/allegroIP" }
+#endif
 #ifndef ENCODER_CORE_FREQUENCY
 #define ENCODER_CORE_FREQUENCY 666666666
 #endif
@@ -39,6 +42,9 @@
 #endif
 #ifndef ENCODER_CYCLES_FOR_BLK_32X32
 #define ENCODER_CYCLES_FOR_BLK_32X32 { 4900, 4900, 4900, -1 }
+#endif
+#ifndef DECODER_DEVICES
+#define DECODER_DEVICES { "/dev/allegroDecodeIP" }
 #endif
 #ifndef AL_ENC_NUM_CORES
 #define AL_ENC_NUM_CORES 4
@@ -74,6 +80,6 @@
 
 #define AL_CONFIGURE_COMMANDLINE "./configure --config-blob customers/Xilinx/config.ini"
 #define AL_VERSION_MAJOR 0
-#define AL_VERSION_MINOR 36
-#define AL_VERSION_STEP 0
+#define AL_VERSION_MINOR 38
+#define AL_VERSION_PATCH 0
 

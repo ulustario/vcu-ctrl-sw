@@ -111,7 +111,7 @@ static int GetCircularBufferSize(AL_ECodec eCodec, int iStack, AL_TStreamSetting
   {
     /* Circular buffer always should be able to hold one frame, therefore compute the worst case and use it as a lower bound.  */
     int const zMaxNalSize = AL_GetMaxNalSize(pStreamSettings->tDim, pStreamSettings->eChroma, pStreamSettings->iBitDepth, pStreamSettings->eProfile, pStreamSettings->iLevel); /* Worst case: (5/3)*PCM + Worst case slice Headers */
-    int const zRealworstcaseNalSize = AL_GetMitigatedMaxNalSize(pStreamSettings->tDim, pStreamSettings->eChroma, pStreamSettings->iBitDepth); /* Reasonnable: PCM + Slice Headers */
+    int const zRealworstcaseNalSize = AL_GetMitigatedMaxNalSize(pStreamSettings->tDim, pStreamSettings->eChroma, pStreamSettings->iBitDepth); /* Reasonable: PCM + Slice Headers */
     circularBufferSize = UnsignedMax(zMaxNalSize, iStack * zRealworstcaseNalSize);
   }
   else
@@ -384,6 +384,9 @@ void AL_Default_Decoder_EndDecoding(void* pUserParam, AL_TDecPicStatus const* pS
     Rtos_Log(AL_LOG_CRITICAL, "\n***** /!\\ Timeout - resetting the decoder /!\\ *****\n");
 
   Rtos_ReleaseMutex(pCtx->DecMutex);
+
+  if(pStatus->bConcealed || pStatus->uNumConcealedLCU > 0)
+    AL_Default_Decoder_SetError(pCtx, AL_WARN_HW_CONCEAL_DETECT, iFrameID, true);
 
   AL_Feeder_Signal(pCtx->Feeder);
   AL_sDecoder_CallBacks(pCtx, iFrameID);
@@ -881,6 +884,14 @@ bool AL_DecodeOneNal(AL_TAup* pAUP, AL_TDecCtx* pCtx, AL_ENut nut, bool bIsLastA
   {
     AL_TRbspParser rp = getParserOnNonVclNalInternalBuf(pCtx);
     AL_PARSE_RESULT eParserResult = parser.parseSps(pAUP, &rp, pCtx);
+
+    if(eParserResult == AL_LAUNCHED_OK)
+    {
+      if(pCtx->eInputMode != AL_DEC_UNSPLIT_INPUT)
+        pCtx->tConceal.bSkipRemainingNals = true;
+
+      return true;
+    }
     CheckNALParserResult(pCtx, eParserResult);
   }
 
@@ -888,6 +899,15 @@ bool AL_DecodeOneNal(AL_TAup* pAUP, AL_TDecCtx* pCtx, AL_ENut nut, bool bIsLastA
   {
     AL_TRbspParser rp = getParserOnNonVclNalInternalBuf(pCtx);
     AL_PARSE_RESULT eParserResult = parser.parsePps(pAUP, &rp, pCtx);
+
+    if(eParserResult == AL_LAUNCHED_OK)
+    {
+      if(pCtx->eInputMode != AL_DEC_UNSPLIT_INPUT)
+        pCtx->tConceal.bSkipRemainingNals = true;
+
+      return true;
+    }
+
     CheckNALParserResult(pCtx, eParserResult);
   }
 
@@ -915,7 +935,14 @@ bool AL_DecodeOneNal(AL_TAup* pAUP, AL_TDecCtx* pCtx, AL_ENut nut, bool bIsLastA
   if((nut == nuts.eos) || (nut == nuts.eob))
   {
     if(pCtx->bFirstIsValid && pCtx->bFirstSliceInFrameIsValid)
+    {
       parser.finishPendingRequest(pCtx);
+      pCtx->bIsFirstPicture = true;
+
+      if(pCtx->eInputMode != AL_DEC_UNSPLIT_INPUT)
+        pCtx->tConceal.bSkipRemainingNals = true;
+      return true;
+    }
     pCtx->bIsFirstPicture = true;
   }
 
@@ -1154,16 +1181,22 @@ static void ResetValidFlags(AL_TDecCtx* pCtx)
 }
 
 /*****************************************************************************/
-static void GetNextNal(AL_TDecCtx* pCtx, AL_TNal* nals, int iNalCount, int iLastVclNalInAU, int* iNal, AL_DecodeNalStep* step)
+static bool GetNextNal(AL_TDecCtx* pCtx, AL_TNal* nals, int iNalCount, int iLastVclNalInAU, int* iNal, AL_DecodeNalStep* step)
 {
   (void)nals;
   (void)iNalCount;
   (void)step;
 
+  if(pCtx->tConceal.bSkipRemainingNals)
+  {
+    *iNal = iNalCount;
+    return false;
+  }
+
   if((pCtx->eInputMode != AL_DEC_SPLIT_INPUT) || (iLastVclNalInAU == LAST_VCL_NAL_IN_AU_NOT_PRESENT))
   {
     (*iNal)++;
-    return;
+    return true;
   }
 
   AL_Assert(isITU(pCtx->pChanParam->eCodec) && "Unsupported codec");
@@ -1177,7 +1210,7 @@ static void GetNextNal(AL_TDecCtx* pCtx, AL_TNal* nals, int iNalCount, int iLast
       (*iNal)++;
 
       if(*iNal < iLastVclNalInAU)
-        return;
+        return true;
 
       (*step) = SEND_REORDERED_SUFFIX;
       continue;
@@ -1194,13 +1227,13 @@ static void GetNextNal(AL_TDecCtx* pCtx, AL_TNal* nals, int iNalCount, int iLast
         (*step) = SEND_LAST_VCL;
         continue;
       }
-      return;
+      return true;
     }
     case SEND_LAST_VCL:
     {
       AL_Assert(*iNal == iLastVclNalInAU);
       (*step) = SEND_REMAINING_NAL;
-      return;
+      return true;
     }
     case SEND_REMAINING_NAL:
     {
@@ -1214,19 +1247,22 @@ static void GetNextNal(AL_TDecCtx* pCtx, AL_TNal* nals, int iNalCount, int iLast
         AL_NonVclNuts nuts = pCtx->parser.getNonVclNuts();
         (void)nal;
         (void)nuts;
-        AL_Assert(nal == nuts.fd || nal == nuts.eos || nal == nuts.eob || nal == nuts.apsSuffix);
+
+        if(nal != nuts.fd && nal != nuts.eos && nal != nuts.eob && nal != nuts.apsSuffix)
+          return false;
       }
 
-      return;
+      return true;
     }
     default:
     {
       AL_Assert(0);
-      break;
+      return false;
     }
     }
   }
 
+  return false;
 }
 
 /*****************************************************************************/
@@ -1263,14 +1299,17 @@ static UNIT_ERROR DecodeOneUnit(AL_TDecCtx* pCtx, AL_TBuffer* pStream, int iNalC
 
   AL_Assert(iNalCount < MAX_NAL_UNIT);
   int iNal = -1;
-  AL_DecodeNalStep step = SEND_NAL_UNTIL_LAST_VCL;
+  AL_DecodeNalStep iStep = SEND_NAL_UNTIL_LAST_VCL;
 
   bool bIsNalProcessed = false;
 
   for(int iNalIdx = 0; iNalIdx < iNalCount; ++iNalIdx)
   {
-    GetNextNal(pCtx, nals, iNalCount, iLastVclNalInAU, &iNal, &step);
-    AL_Assert(iNal < iNalCount);
+    if(!GetNextNal(pCtx, nals, iNalCount, iLastVclNalInAU, &iNal, &iStep) || iNal >= iNalCount)
+    {
+      AL_Default_Decoder_SetError(pCtx, AL_WARN_INVALID_ACCESS_UNIT_STRUCTURE, -1, true);
+      return bIsNalProcessed ? SUCCESS_ACCESS_UNIT : ERR_INVALID_ACCESS_UNIT;
+    }
     AL_TNal CurrentNal = nals[iNal];
     AL_TStartCode CurrentStartCode = CurrentNal.tStartCode;
     AL_TStartCode NextStartCode;
@@ -1335,7 +1374,14 @@ UNIT_ERROR AL_Default_Decoder_TryDecodeOneUnit(AL_TDecoder* pAbsDec, AL_TBuffer*
     if(iNalCount == 0)
       return ERR_UNIT_NOT_FOUND;
 
-    return DecodeOneUnit(pCtx, pStream, iNalCount, iLastVclNalInAU);
+    UNIT_ERROR ret = DecodeOneUnit(pCtx, pStream, iNalCount, iLastVclNalInAU);
+
+    if(pCtx->eInputMode == AL_DEC_SPLIT_INPUT)
+      pCtx->uNumSC = 0;
+
+    pCtx->tConceal.bSkipRemainingNals = false;
+
+    return ret;
   }
   return ERR_UNIT_FAILED;
 }

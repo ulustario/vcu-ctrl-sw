@@ -9,6 +9,7 @@ EXE_DECODER_SRC:=\
   $(THIS_EXE_DECODER)/InputLoader.cpp\
   $(THIS_EXE_DECODER)/SinkCheckSum.cpp\
   $(THIS_EXE_DECODER)/SinkStatistics.cpp\
+  $(THIS_EXE_DECODER)/SinkYuvMd5.cpp\
 
 
 

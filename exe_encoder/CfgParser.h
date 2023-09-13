@@ -128,6 +128,7 @@ AL_INTROSPECT(category = "debug") struct ConfigFile
   // \brief control the strictness when parsing the configuration file
   bool strict_mode;
 
+  int iForceStreamBufSize = 0;
 };
 
 struct Temporary

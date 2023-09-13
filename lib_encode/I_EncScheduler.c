@@ -9,3 +9,13 @@ void AL_IEncScheduler_Destroy(AL_IEncScheduler* pScheduler)
 {
   pScheduler->vtable->destroy(pScheduler);
 }
+
+void AL_IEncScheduler_Get(AL_IEncScheduler const* pScheduler, AL_EIEncSchedulerInfo eInfo, void* pParam)
+{
+  pScheduler->vtable->get(pScheduler, eInfo, pParam);
+}
+
+void AL_IEncScheduler_Set(AL_IEncScheduler* pScheduler, AL_EIEncSchedulerInfo eInfo, void const* pParam)
+{
+  pScheduler->vtable->set(pScheduler, eInfo, pParam);
+}

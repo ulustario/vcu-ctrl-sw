@@ -51,6 +51,10 @@ typedef enum
   AL_WARN_SPS_MIN_RESOLUTION_NOT_COMPATIBLE_WITH_CHANNEL_SETTINGS = AL_DEF_WARNING(13),
   /*! Arbitrary Slice Order or Flexible Macroblock Reordering features are not supported, decoder discards it */
   AL_WARN_ASO_FMO_NOT_SUPPORTED = AL_DEF_WARNING(14),
+  /*! Found invalid Access Unit structure while decoding in split-input mode */
+  AL_WARN_INVALID_ACCESS_UNIT_STRUCTURE = AL_DEF_WARNING(15),
+  /*! The hardware decoder had to conceal some errors in the stream */
+  AL_WARN_HW_CONCEAL_DETECT = AL_DEF_WARNING(16),
 
   /*! Unknown error */
   AL_ERROR = AL_DEF_ERROR(0),

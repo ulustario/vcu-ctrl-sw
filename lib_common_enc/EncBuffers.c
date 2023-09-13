@@ -17,6 +17,7 @@
 #include "lib_common_enc/EncSize.h"
 #include "lib_common_enc/EncPicInfo.h"
 #include "lib_common_enc/QPTableInternal.h"
+#include "lib_assert/al_assert.h"
 
 /****************************************************************************/
 uint32_t AL_GetAllocSizeEP1(AL_ECodec eCodec)
@@ -43,14 +44,14 @@ uint32_t AL_GetAllocSizeEP2(AL_TDimension tDim, AL_ECodec eCodec, uint8_t uLog2M
 }
 
 /****************************************************************************/
-uint32_t AL_GetAllocSizeEP3PerCore()
+uint32_t AL_GetAllocSizeEP3PerCore(void)
 {
   return (uint32_t)(EP3_BUF_RC_TABLE1.Size + EP3_BUF_RC_TABLE2.Size + EP3_BUF_RC_CTX.Size + EP3_BUF_RC_LVL.Size);
   ;
 }
 
 /****************************************************************************/
-uint32_t AL_GetAllocSizeEP3()
+uint32_t AL_GetAllocSizeEP3(void)
 {
   uint32_t uMaxSize = AL_GetAllocSizeEP3PerCore() * AL_ENC_NUM_CORES;
   return RoundUp(uMaxSize, 128);
@@ -194,7 +195,7 @@ static uint32_t GetRasterFrameSize(AL_TDimension tDim, uint8_t uBitDepth, AL_ECh
 
   if(uBitDepth > 8)
   {
-    assert((uBitDepth <= 12) && "Support bitpdeth > 12");
+    AL_Assert((uBitDepth <= 12) && "Support bitpdeth > 12");
     uSize *= uBitDepth;
     uSizeDiv *= 8;
   }
@@ -323,7 +324,7 @@ void AL_FillPlaneDesc_EncReference(AL_TPlaneDescription* pPlaneDesc, AL_TDimensi
     return;
   }
 
-  assert(0);
+  AL_Assert(0);
 }
 
 /*!@}*/

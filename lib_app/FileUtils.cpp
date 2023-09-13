@@ -38,9 +38,9 @@ void formatFolderPath(std::string& folderPath)
 /****************************************************************************/
 std::string combinePath(const std::string& folder, const std::string& filename)
 {
-  std::string formatedFolderPath = folder;
-  formatFolderPath(formatedFolderPath);
-  return formatedFolderPath + filename;
+  std::string formattedFolderPath = folder;
+  formatFolderPath(formattedFolderPath);
+  return formattedFolderPath + filename;
 }
 
 /****************************************************************************/

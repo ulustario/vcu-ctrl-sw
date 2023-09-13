@@ -463,6 +463,14 @@ void ComputeMd5SumFrame(AL_TBuffer* pBuf, CMD5& pMD5)
   int iIORowSize = GetIOLumaRowSize(tFourCC, tDim.iWidth);
   int iHeight = tDim.iHeight;
 
+  AL_EFbStorageMode eStorageMode = AL_GetStorageMode(tFourCC);
+  int iLinesInPitch = AL_GetNumLinesInPitch(eStorageMode);
+
+  if(eStorageMode == AL_FB_TILE_32x4 || eStorageMode == AL_FB_TILE_64x4)
+  {
+    iIORowSize *= iLinesInPitch;
+    iHeight /= iLinesInPitch;
+  }
   ComputeMd5Plane(pBuf, AL_PLANE_Y, iIORowSize, iHeight, pMD5);
 
   AL_EChromaOrder eChromaOrder = AL_GetChromaOrder(tFourCC);

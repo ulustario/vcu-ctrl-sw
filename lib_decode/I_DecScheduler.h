@@ -162,7 +162,7 @@ void AL_IDecScheduler_SearchSC(AL_IDecScheduler* pThis, AL_HANDLE hStartCodeChan
    \param[in] pThis Decoder scheduler interface
    \param[in] pPictParam  Pointer to the picture parameters structure
    \param[in] pSliceParam Pointer to the slice parameters list structure
-   \return return true if the decoding launch is successfull
+   \return return true if the decoding launch is successful
               false otherwise
 *****************************************************************************/
 static inline
@@ -176,7 +176,7 @@ void AL_IDecScheduler_DecodeOneFrame(AL_IDecScheduler* pThis, AL_HANDLE hChannel
    \param[in] pThis Decoder scheduler interface
    \param[in] pPictParam  Pointer to the picture parameters structure
    \param[in] pSliceParam Pointer to the slice parameters list structure
-   \return return true if the decoding launch is successfull
+   \return return true if the decoding launch is successful
               false otherwise
 *****************************************************************************/
 static inline

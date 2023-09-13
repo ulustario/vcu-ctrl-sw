@@ -10,14 +10,14 @@
 
 static void write(struct al5_params* msg, void* data, int size)
 {
-  memcpy(msg->opaque_params + (msg->size / 4), data, size);
+  memcpy(msg->opaque + (msg->size / 4), data, size);
   msg->size += ((size + 3) / 4) * 4;
 }
 
 void setChannelParam(struct al5_params* msg, TMemDesc* pMDChParam, TMemDesc* pEP1)
 {
   uint32_t uMcuVirtAddr;
-  static_assert(2 * sizeof(uMcuVirtAddr) <= sizeof(msg->opaque_params), "Driver channel_param struct is too small");
+  static_assert(2 * sizeof(uMcuVirtAddr) <= sizeof(msg->opaque), "Driver channel_param struct is too small");
   msg->size = 0;
 
   uMcuVirtAddr = pMDChParam->uPhysicalAddr + DCACHE_OFFSET;
@@ -32,7 +32,7 @@ void setChannelParam(struct al5_params* msg, TMemDesc* pMDChParam, TMemDesc* pEP
 
 static void setPicParam(struct al5_params* msg, AL_TEncInfo* encInfo, AL_TEncRequestInfo* reqInfo)
 {
-  static_assert(sizeof(*encInfo) + sizeof(*reqInfo) <= sizeof(msg->opaque_params), "Driver struct is too small for AL_TEncInfo & AL_TEncRequestInfo");
+  static_assert(sizeof(*encInfo) + sizeof(*reqInfo) <= sizeof(msg->opaque), "Driver struct is too small for AL_TEncInfo & AL_TEncRequestInfo");
   msg->size = 0;
   write(msg, encInfo, sizeof(*encInfo));
 
@@ -62,7 +62,7 @@ static void setPicParam(struct al5_params* msg, AL_TEncInfo* encInfo, AL_TEncReq
 
 static void setBuffersAddrs(struct al5_params* msg, AL_TEncPicBufAddrs* pBuffersAddrs)
 {
-  static_assert(sizeof(*pBuffersAddrs) <= sizeof(msg->opaque_params), "Driver struct is too small for AL_TEncPicBufAddrs");
+  static_assert(sizeof(*pBuffersAddrs) <= sizeof(msg->opaque), "Driver struct is too small for AL_TEncPicBufAddrs");
   msg->size = 0;
   write(msg, pBuffersAddrs, sizeof(*pBuffersAddrs));
 }

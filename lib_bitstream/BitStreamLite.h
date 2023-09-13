@@ -17,7 +17,7 @@
 *****************************************************************************/
 typedef struct AL_t_BitStreamLite
 {
-  uint8_t* pData; /*!< Pointer to an array of bytes used as bistream */
+  uint8_t* pData; /*!< Pointer to an array of bytes used as bitstream */
   int iBitCount; /*!< Bits already written */
   int iMaxBits;
   bool isOverflow;
@@ -61,7 +61,7 @@ void AL_BitStreamLite_PutBits(AL_TBitStreamLite* pBS, uint8_t iNumBits, uint32_t
 /*************************************************************************//*!
    \brief Puts some bits in the bitstream until reaching the end of a byte.
    \param[in] pBS Pointer to a TBitStreamLite object
-   \param[in] iBit Specifies the bit value for addded bits
+   \param[in] iBit Specifies the bit value for added bits
  *************************************************************************/
 void AL_BitStreamLite_AlignWithBits(AL_TBitStreamLite* pBS, uint8_t iBit);
 
@@ -110,13 +110,13 @@ void AL_BitStreamLite_PutUE(AL_TBitStreamLite* pBS, uint32_t uValue);
 void AL_BitStreamLite_PutSE(AL_TBitStreamLite* pBS, int32_t iValue);
 
 /*************************************************************************//*!
-   \brief Returns pointer to the begining of the bitstream
+   \brief Returns pointer to the beginning of the bitstream
    \param[in] pBS Pointer to a TBitStreamLite object
  *************************************************************************/
 uint8_t* AL_BitStreamLite_GetData(AL_TBitStreamLite* pBS);
 
 /*************************************************************************//*!
-   \brief Returns pointer to the begining of the bitstream
+   \brief Returns pointer to the beginning of the bitstream
    \param[in] pBS Pointer to a TBitStreamLite object
  *************************************************************************/
 uint8_t* AL_BitStreamLite_GetCurData(AL_TBitStreamLite* pBS);

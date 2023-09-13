@@ -30,7 +30,7 @@ void AL_LaunchFrameDecoding(AL_TDecCtx* pCtx);
 void AL_LaunchSliceDecoding(AL_TDecCtx* pCtx, bool bIsLastAUNal, bool hasPreviousSlice);
 
 /*************************************************************************//*!
-   \brief The AL_InitFrameBuffers function intializes the frame buffers needed to process the current frame decoding
+   \brief The AL_InitFrameBuffers function initializes the frame buffers needed to process the current frame decoding
    \param[in]  pCtx              Pointer to a decoder context object
    \param[in]  pBufs             Pointer to the current picture buffers
    \param[in]  bStartsNewCVS     True if the next frame starts a new CVS, false otherwise

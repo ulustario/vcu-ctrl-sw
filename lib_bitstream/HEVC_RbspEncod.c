@@ -664,7 +664,7 @@ static void writeSeiActiveParameterSets(AL_TBitStreamLite* pBS, AL_THevcVps cons
   int bookmark = AL_RbspEncoding_BeginSEI(pBS, 129);
 
   AL_BitStreamLite_PutU(pBS, 4, pSps->sps_video_parameter_set_id);
-  AL_BitStreamLite_PutBit(pBS, 0); // self_containd_cvs_flag
+  AL_BitStreamLite_PutBit(pBS, 0); // self_contained_cvs_flag
   AL_BitStreamLite_PutBit(pBS, 1); // no_parameter_set_update_flag
   AL_BitStreamLite_PutUE(pBS, 0); // num_sps_ids_minus1
 

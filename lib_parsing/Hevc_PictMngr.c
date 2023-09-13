@@ -115,10 +115,17 @@ void AL_HEVC_PictMngr_ClearDPB(AL_TPictMngrCtx* pCtx, AL_THevcSps const* pSPS, b
       uNode = AL_Dpb_GetNextPOC(pDpb, uNode);
   }
 
+  // Compute DPB fullness
+  uint8_t max_dec_pict_buffering = pSPS->sps_max_dec_pic_buffering_minus1[pSPS->sps_max_sub_layers_minus1] + 1;
+  // The number of ref shall be less than max_dec_pict_buffering, but this condition is reverse here for concealment
+  max_dec_pict_buffering = Max(max_dec_pict_buffering, AL_Dpb_GetRefCount(pDpb) + 1);
+  // clip to Max supported Ref
+  max_dec_pict_buffering = Min(max_dec_pict_buffering, AL_Dpb_GetNumRef(pDpb) + 1);
+
   // Remove Unused for reference if DBP is Full
   uNode = AL_Dpb_GetHeadPOC(pDpb);
 
-  while(uNode != uEndOfList && AL_Dpb_GetPicCount(pDpb) >= (pSPS->sps_max_dec_pic_buffering_minus1[pSPS->sps_max_sub_layers_minus1] + 1))
+  while(uNode != uEndOfList && AL_Dpb_GetPicCount(pDpb) >= max_dec_pict_buffering)
   {
     if(AL_Dpb_GetOutputFlag(pDpb, uNode))
       AL_Dpb_Display(&pCtx->DPB, uNode);
@@ -135,7 +142,7 @@ void AL_HEVC_PictMngr_ClearDPB(AL_TPictMngrCtx* pCtx, AL_THevcSps const* pSPS, b
   }
 
   // Remove oldest POC if DBP is Full
-  if(uNode == uEndOfList && AL_Dpb_GetPicCount(pDpb) >= (pSPS->sps_max_dec_pic_buffering_minus1[pSPS->sps_max_sub_layers_minus1] + 1))
+  if(uNode == uEndOfList && AL_Dpb_GetPicCount(pDpb) >= max_dec_pict_buffering)
   {
     uint8_t uDelete = AL_Dpb_GetHeadPOC(pDpb);
     uint8_t uCurNode = uDelete;
@@ -404,7 +411,12 @@ bool AL_HEVC_PictMngr_BuildPictureList(AL_TPictMngrCtx const* pCtx, AL_THevcSlic
       {
         uint8_t uNode = pSlice->ref_pic_modif.ref_pic_list_modification_flag_l0 ? uNodeList[pSlice->ref_pic_modif.list_entry_l0[uRef]] :
                         uNodeList[uRef];
-        uNode = (uNode == uEndOfList) ? AL_Dpb_GetHeadPOC(&pCtx->DPB) : uNode;
+
+        if((uNode == uEndOfList) || (pCtx->DPB.Nodes[uNode].uFrmID == UndefID))
+          uNode = AL_Dpb_GetHeadPOC(&pCtx->DPB);
+
+        if((uNode == uEndOfList) || (pCtx->DPB.Nodes[uNode].uFrmID == UndefID))
+          return false;
 
         (*pListRef)[0][uRef].uNodeID = uNode;
         (*pListRef)[0][uRef].RefBuf = *(AL_PictMngr_GetRecBufferFromID(pCtx, pCtx->DPB.Nodes[uNode].uFrmID));
@@ -435,7 +447,12 @@ bool AL_HEVC_PictMngr_BuildPictureList(AL_TPictMngrCtx const* pCtx, AL_THevcSlic
         {
           uint8_t uNode = pSlice->ref_pic_modif.ref_pic_list_modification_flag_l1 ? uNodeList[pSlice->ref_pic_modif.list_entry_l1[uRef]] :
                           uNodeList[uRef];
-          uNode = (uNode == uEndOfList) ? AL_Dpb_GetHeadPOC(&pCtx->DPB) : uNode;
+
+          if((uNode == uEndOfList) || (pCtx->DPB.Nodes[uNode].uFrmID == UndefID))
+            uNode = AL_Dpb_GetHeadPOC(&pCtx->DPB);
+
+          if((uNode == uEndOfList) || (pCtx->DPB.Nodes[uNode].uFrmID == UndefID))
+            return false;
 
           (*pListRef)[1][uRef].uNodeID = uNode;
           (*pListRef)[1][uRef].RefBuf = *(AL_PictMngr_GetRecBufferFromID(pCtx, pCtx->DPB.Nodes[uNode].uFrmID));

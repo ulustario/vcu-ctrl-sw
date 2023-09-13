@@ -35,7 +35,7 @@ typedef struct
   int iNext;
   int iAccessCnt;
   bool bStartsNewCVS;
-  bool bWillBeOutputed;
+  bool bWillBeOutputted;
   bool bOutEarly;
   uint32_t uCRC;
   AL_TCropInfo tCrop;
@@ -78,7 +78,7 @@ typedef struct t_MvBufPool
 /*************************************************************************//*!
    \brief Reference Picture List Context
 *****************************************************************************/
-/* reference picture list contruction variables */
+/* reference picture list construction variables */
 typedef struct AL_t_HevcRefPicCtx
 {
   int PocStCurrBefore[MAX_DPB_SIZE];
@@ -144,7 +144,7 @@ typedef struct AL_t_PictMngrParam
   int iNumDPBRef; /*!< Number of reference to manage */
   AL_EDpbMode eDPBMode; /*!< Mode of the DPB */
   AL_EFbStorageMode eFbStorageMode; /*!< Frame buffer storage mode */
-  int iBitdepth; /*!< Bitdepth of the outputed frame */
+  int iBitdepth; /*!< Bitdepth of the outputted frame */
 
   int iNumMV;  /*!< Number of motion-vector buffer to manage */
   int iSizeMV; /*!< Size of motion-vector buffer managed */
@@ -331,15 +331,6 @@ AL_TBuffer* AL_PictMngr_GetDisplayBufferFromID(AL_TPictMngrCtx const* pCtx, int 
    \return Picture buffer's pointer
 *****************************************************************************/
 AL_TBuffer* AL_PictMngr_GetRecBufferFromID(AL_TPictMngrCtx const* pCtx, int iFrameID);
-
-/*************************************************************************//*!
-   \brief This function returns the reconstructed picture buffer associated to a displayed buffer
-   \param[in]  pCtx      Pointer to a Picture manager context object
-   \param[in]  pDisplayBuf  Display buffer pointer
-   \param[out] pInfo     Pointer to retrieve information about the decoded frame
-   \return Reconstructed picture buffer's pointer
-*****************************************************************************/
-AL_TBuffer* AL_PictMngr_GetRecBufferFromDisplayBuffer(AL_TPictMngrCtx const* pCtx, AL_TBuffer const* pDisplayBuf, AL_TInfoDecode* pInfo);
 
 /*************************************************************************//*!
    \brief This function returns the encoding error status associated to a display or rec buffer

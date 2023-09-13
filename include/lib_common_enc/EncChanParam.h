@@ -8,10 +8,10 @@
 ******************************************************************************/
 #pragma once
 
+#include <assert.h>
 #include "lib_common/SliceConsts.h"
 #include "lib_common/VideoMode.h"
 #include "lib_common/PicFormat.h"
-#include <assert.h>
 
 /*************************************************************************//*!
    \brief Encoding parameters buffers (EP1, EP2, EP3 and EP4 buffers) sub buffer information
@@ -516,6 +516,7 @@ typedef AL_INTROSPECT (category = "debug") struct __AL_ALIGNED__ (4) AL_t_EncCha
   /* L2 prefetch parameters */
   uint32_t uL2PrefetchMemOffset;
   uint32_t uL2PrefetchMemSize;
+  bool bEnableL2PReducedRange;
   uint16_t uClipHrzRange;
   uint16_t uClipVrtRange;
 

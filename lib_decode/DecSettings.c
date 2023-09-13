@@ -95,7 +95,7 @@ int AL_DecSettings_CheckValidity(AL_TDecSettings const* pSettings, FILE* pOut)
   if((pSettings->tOutputPosition.iX % HStep) != 0 || (pSettings->tOutputPosition.iY % VStep) != 0)
   {
     ++err;
-    MSG("The output position doesn't fit the alignement constraints for the current buffer format");
+    MSG("The output position doesn't fit the alignment constraints for the current buffer format");
   }
 
   if(pSettings->tStream.bDecodeIntraOnly && !(pSettings->eCodec == AL_CODEC_AVC || pSettings->eCodec == AL_CODEC_HEVC || pSettings->eCodec == AL_CODEC_VVC))

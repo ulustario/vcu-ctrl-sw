@@ -186,7 +186,7 @@ size_t AL_Patchworker_Transfer(AL_TPatchworker* this)
   return zCopiedSize;
 }
 
-bool AL_Patchworker_IsAllDataTransfered(AL_TPatchworker* this)
+bool AL_Patchworker_IsAllDataTransferred(AL_TPatchworker* this)
 {
   AL_TCircMetaData* pMeta = (AL_TCircMetaData*)AL_Buffer_GetMetaData(this->outputCirc, AL_META_TYPE_CIRCULAR);
   return pMeta->bLastBuffer;

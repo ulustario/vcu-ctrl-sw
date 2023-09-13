@@ -41,7 +41,7 @@
 #define AL_DEC_OPT_WaveFront 0x00400000
 #define AL_DEC_OPT_CuQPDeltaFlag 0x00800000
 
-#define AL_SET_DEC_OPT(pPictParam, Opt, Val) (pPictParam)->OptionFlags = (((pPictParam)->OptionFlags & ~(AL_DEC_OPT_ ## Opt)) | ((Val) * (AL_DEC_OPT_ ## Opt)))
+#define AL_SET_DEC_OPT(pPictParam, Opt, Val) (pPictParam)->OptionFlags = (((pPictParam)->OptionFlags & ~(AL_DEC_OPT_ ## Opt)) | (((Val) * (AL_DEC_OPT_ ## Opt)) & (AL_DEC_OPT_ ## Opt)))
 #define AL_GET_DEC_OPT(pPictParam, Opt) ((pPictParam)->OptionFlags & (AL_DEC_OPT_ ## Opt))
 
 /****************************************************************************/
@@ -175,6 +175,8 @@ typedef struct AL_t_DecPicStatus
   uint32_t uNumLCU;
   uint32_t uNumBytes;
   uint32_t uNumBins;
+  uint32_t uNumConcealedLCU;
+  bool bConcealed;
   uint32_t uCRC;
   AL_TDecPicState tDecPicState;
 }AL_TDecPicStatus;

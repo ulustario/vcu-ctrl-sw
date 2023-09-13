@@ -4,7 +4,7 @@
 #include "lib_decode/lib_decode.h"
 #include "lib_decode/LibDecoderHost.h"
 
-/* Initialize with decHost so AL_Lib_Decoder_Init() call is optionnal for the
+/* Initialize with decHost so AL_Lib_Decoder_Init() call is optional for the
  * time being.
  */
 static AL_IDecArch* pArch = &decHost;
