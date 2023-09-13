@@ -922,8 +922,12 @@ void LayerResources::Init(ConfigFile& cfg, AL_TEncoderInfo tEncInfo, int iLayerI
     frameBuffersCount = g_defaultMinBuffers + GetNumBufForGop(Settings);
 
     if(AL_TwoPassMngr_HasLookAhead(Settings))
+    {
       frameBuffersCount += Settings.LookAhead + (GetNumBufForGop(Settings) * 2);
 
+      if(AL_IS_AVC(cfg.Settings.tChParam[0].eProfile))
+        frameBuffersCount += 1;
+    }
   }
 
   if(!InitQpBufPool(QpBufPool, Settings, Settings.tChParam[iLayerID], frameBuffersCount, pAllocator))
