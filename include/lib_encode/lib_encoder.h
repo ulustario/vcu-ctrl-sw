@@ -73,18 +73,23 @@ typedef struct
   uint8_t uNumCore; /*< number of cores used for encoding */
 }AL_TEncoderInfo;
 
+/* allegro-doc-start: init */
 /*************************************************************************//*!
    \brief Initialize encoder library
    \param[in] eArch  encoder library arch to use
    \return error code specifying why library initialization has failed
 *****************************************************************************/
 AL_ERR AL_Lib_Encoder_Init(AL_ELibEncoderArch eArch);
+/* allegro-doc-end: init */
 
+/* allegro-doc-start: deinit */
 /*************************************************************************//*!
    \brief Deinitialize encoder library
 *****************************************************************************/
 void AL_Lib_Encoder_DeInit(void);
+/* allegro-doc-end: deinit */
 
+/* allegro-doc-start: create */
 /*************************************************************************//*!
    \brief Creates a new instance of the encoder
    and returns a handle that can be used to access the object
@@ -98,13 +103,16 @@ void AL_Lib_Encoder_DeInit(void);
    \see AL_Encoder_Destroy
 *****************************************************************************/
 AL_ERR AL_Encoder_Create(AL_HEncoder* hEnc, AL_IEncScheduler* pScheduler, AL_TAllocator* pAlloc, AL_TEncSettings const* pSettings, AL_CB_EndEncoding callback);
+/* allegro-doc-end: create */
 
+/* allegro-doc-start: destroy */
 /*************************************************************************//*!
    \brief Releases all allocated and/or owned resources
    \param[in] hEnc Handle to Encoder object previously created with CreateEncoder
    \see AL_Encoder_Create
 *****************************************************************************/
 void AL_Encoder_Destroy(AL_HEncoder hEnc);
+/* allegro-doc-end: destroy */
 
 /*************************************************************************//*!
    \brief Get information on created encoder
@@ -114,6 +122,7 @@ void AL_Encoder_Destroy(AL_HEncoder hEnc);
 *****************************************************************************/
 bool AL_Encoder_GetInfo(AL_HEncoder hEnc, AL_TEncoderInfo* pEncInfo);
 
+/* allegro-doc-start: notify_scenechange */
 /*************************************************************************//*!
    \brief Informs the encoder that a scene change will shortly happen.
    \param[in] hEnc Handle to an encoder object
@@ -121,19 +130,24 @@ bool AL_Encoder_GetInfo(AL_HEncoder hEnc, AL_TEncoderInfo* pEncInfo);
    Allowed range is [0..31]
 *****************************************************************************/
 void AL_Encoder_NotifySceneChange(AL_HEncoder hEnc, int iAhead);
+/* allegro-doc-end: notify_scenechange */
 
+/* allegro-doc-start: notify_islongterm */
 /*************************************************************************//*!
    \brief Informs the encoder that the next reference picture is a long term
    reference picture
    \param[in] hEnc Handle to an encoder object
 *****************************************************************************/
 void AL_Encoder_NotifyIsLongTerm(AL_HEncoder hEnc);
+/* allegro-doc-end: notify_islongterm */
 
+/* allegro-doc-start: notify_uselongterm */
 /*************************************************************************//*!
    \brief Informs the encoder that a long term reference picture will be used
    \param[in] hEnc Handle to an encoder object
 *****************************************************************************/
 void AL_Encoder_NotifyUseLongTerm(AL_HEncoder hEnc);
+/* allegro-doc-end: notify_uselongterm */
 
 /*************************************************************************//*!
    \brief When the encoder has been created with bEnableRecOutput set to
@@ -213,6 +227,7 @@ int AL_Encoder_AddSei(AL_HEncoder hEnc, AL_TBuffer* pStream, bool isPrefix, int 
 *****************************************************************************/
 AL_ERR AL_Encoder_GetLastError(AL_HEncoder hEnc);
 
+/* allegro-doc-start: smartfeature_setcostmode */
 /*************************************************************************//*!
    \brief Requests the encoder to change the cost mode flag.
    \param[in] hEnc Handle to an encoder object
@@ -221,7 +236,9 @@ AL_ERR AL_Encoder_GetLastError(AL_HEncoder hEnc);
    retrieve the error code
 *****************************************************************************/
 bool AL_Encoder_SetCostMode(AL_HEncoder hEnc, bool costMode);
+/* allegro-doc-end: smartfeature_setcostmode */
 
+/* allegro-doc-start: smartfeature_setmaxpicturesize */
 /*************************************************************************//*!
    \brief Changes the max picture size set by the rate control
    \param[in] pEnc Pointer on an encoder object
@@ -230,7 +247,9 @@ bool AL_Encoder_SetCostMode(AL_HEncoder hEnc, bool costMode);
    retrieve the error code
 *****************************************************************************/
 bool AL_Encoder_SetMaxPictureSize(AL_HEncoder hEnc, uint32_t uMaxPictureSize);
+/* allegro-doc-end: smartfeature_setmaxpicturesize */
 
+/* allegro-doc-start: smartfeature_setmaxpicturesizeperframetype */
 /*************************************************************************//*!
    \brief Changes the max picture size set by the rate control
    \param[in] pEnc Pointer on an encoder object
@@ -240,7 +259,9 @@ bool AL_Encoder_SetMaxPictureSize(AL_HEncoder hEnc, uint32_t uMaxPictureSize);
    retrieve the error code
 *****************************************************************************/
 bool AL_Encoder_SetMaxPictureSizePerFrameType(AL_HEncoder hEnc, uint32_t uMaxPictureSize, AL_ESliceType sliceType);
+/* allegro-doc-end: smartfeature_setmaxpicturesizeperframetype */
 
+/* allegro-doc-start: smartfeature_restartgop */
 /*************************************************************************//*!
    \brief Requests the encoder to insert a Keyframe and restart a new Gop.
    \param[in] hEnc Handle to an encoder object
@@ -248,7 +269,9 @@ bool AL_Encoder_SetMaxPictureSizePerFrameType(AL_HEncoder hEnc, uint32_t uMaxPic
    retrieve the error code
 *****************************************************************************/
 bool AL_Encoder_RestartGop(AL_HEncoder hEnc);
+/* allegro-doc-end: smartfeature_restartgop */
 
+/* allegro-doc-start: smartfeature_restartgoprecoverypoint */
 /*************************************************************************//*!
    \brief Requests the encoder to start a new pass of Gradual Decoding
    Refresh.
@@ -257,7 +280,9 @@ bool AL_Encoder_RestartGop(AL_HEncoder hEnc);
    retrieve the error code
 *****************************************************************************/
 bool AL_Encoder_RestartGopRecoveryPoint(AL_HEncoder hEnc);
+/* allegro-doc-end: smartfeature_restartgoprecoverypoint */
 
+/* allegro-doc-start: smartfeature_setgoplength */
 /*************************************************************************//*!
    \brief Changes the GopLength. If the on-going
    Gop is already longer than the new GopLength the encoder will restart a new
@@ -270,7 +295,9 @@ bool AL_Encoder_RestartGopRecoveryPoint(AL_HEncoder hEnc);
    retrieve the error code
 *****************************************************************************/
 bool AL_Encoder_SetGopLength(AL_HEncoder hEnc, int iGopLength);
+/* allegro-doc-end: smartfeature_setgoplength */
 
+/* allegro-doc-start: smartfeature_setgopnumb */
 /*************************************************************************//*!
    \brief Changes the Number of consecutive B
    frame in-between 2 I/P frames.
@@ -280,7 +307,9 @@ bool AL_Encoder_SetGopLength(AL_HEncoder hEnc, int iGopLength);
    retrieve the error code
 *****************************************************************************/
 bool AL_Encoder_SetGopNumB(AL_HEncoder hEnc, int iNumB);
+/* allegro-doc-end: smartfeature_setgopnumb */
 
+/* allegro-doc-start: smartfeature_setfreqidr */
 /*************************************************************************//*!
    \brief Changes the IDR frequency. If the new frequency is shorter than the
    number of frames already encoded since the last IDR, insert and IDR as soon
@@ -293,7 +322,9 @@ bool AL_Encoder_SetGopNumB(AL_HEncoder hEnc, int iNumB);
    retrieve the error code
 *****************************************************************************/
 bool AL_Encoder_SetFreqIDR(AL_HEncoder hEnc, int iFreqIDR);
+/* allegro-doc-end: smartfeature_setfreqidr */
 
+/* allegro-doc-start: smartfeature_setbitrate */
 /*************************************************************************//*!
    \brief Changes the target bitrate
    \param[in] hEnc Handle to an encoder object
@@ -302,7 +333,9 @@ bool AL_Encoder_SetFreqIDR(AL_HEncoder hEnc, int iFreqIDR);
    retrieve the error code
 *****************************************************************************/
 bool AL_Encoder_SetBitRate(AL_HEncoder hEnc, int iBitRate);
+/* allegro-doc-end: smartfeature_setbitrate */
 
+/* allegro-doc-start: smartfeature_setmaxbitrate */
 /*************************************************************************//*!
    \brief Changes the max bitrate
    \param[in] hEnc Handle to an encoder object
@@ -312,7 +345,9 @@ bool AL_Encoder_SetBitRate(AL_HEncoder hEnc, int iBitRate);
    retrieve the error code
 *****************************************************************************/
 bool AL_Encoder_SetMaxBitRate(AL_HEncoder hEnc, int iTargetBitRate, int iMaxBitRate);
+/* allegro-doc-end: smartfeature_setmaxbitrate */
 
+/* allegro-doc-start: smartfeature_setframerate */
 /*************************************************************************//*!
    \brief Changes the encoding frame rate
    \param[in] hEnc Handle to an encoder object
@@ -324,7 +359,9 @@ bool AL_Encoder_SetMaxBitRate(AL_HEncoder hEnc, int iTargetBitRate, int iMaxBitR
    uClkRatio = 1001 gives 59.94 fps
 *****************************************************************************/
 bool AL_Encoder_SetFrameRate(AL_HEncoder hEnc, uint16_t uFrameRate, uint16_t uClkRatio);
+/* allegro-doc-end: smartfeature_setframerate */
 
+/* allegro-doc-start: smartfeature_setqp */
 /*************************************************************************//*!
    \brief Changes the quantization parameter for the next pushed frame
    \param[in] hEnc Handle to an encoder object
@@ -333,7 +370,9 @@ bool AL_Encoder_SetFrameRate(AL_HEncoder hEnc, uint16_t uFrameRate, uint16_t uCl
    retrieve the error code
 *****************************************************************************/
 bool AL_Encoder_SetQP(AL_HEncoder hEnc, int16_t iQP);
+/* allegro-doc-end: smartfeature_setqp */
 
+/* allegro-doc-start: smartfeature_setqpoffset */
 /*************************************************************************//*!
    \brief Add an offset to the current QP. Only available while using RateCtrlMode = CONST_QP
    \param[in] hEnc Handle to an encoder object
@@ -342,7 +381,9 @@ bool AL_Encoder_SetQP(AL_HEncoder hEnc, int16_t iQP);
    retrieve the error code
 *****************************************************************************/
 bool AL_Encoder_SetQPOffset(AL_HEncoder hEnc, int16_t iQPOffset);
+/* allegro-doc-end: smartfeature_setqpoffset */
 
+/* allegro-doc-start: smartfeature_setqpbounds */
 /*************************************************************************//*!
    \brief Changes the bounds of the QP set by the rate control
    \param[in] hEnc Handle to an encoder object
@@ -352,7 +393,9 @@ bool AL_Encoder_SetQPOffset(AL_HEncoder hEnc, int16_t iQPOffset);
    retrieve the error code
 *****************************************************************************/
 bool AL_Encoder_SetQPBounds(AL_HEncoder hEnc, int16_t iMinQP, int16_t iMaxQP);
+/* allegro-doc-end: smartfeature_setqpbounds */
 
+/* allegro-doc-start: smartfeature_setqpboundsperframetype */
 /*************************************************************************//*!
    \brief Changes the bounds of the QP set by the rate control for a slice type
    \param[in] hEnc Handle to an encoder object
@@ -363,7 +406,9 @@ bool AL_Encoder_SetQPBounds(AL_HEncoder hEnc, int16_t iMinQP, int16_t iMaxQP);
    retrieve the error code
 *****************************************************************************/
 bool AL_Encoder_SetQPBoundsPerFrameType(AL_HEncoder hEnc, int16_t iMinQP, int16_t iMaxQP, AL_ESliceType sliceType);
+/* allegro-doc-end: smartfeature_setqpboundsperframetype */
 
+/* allegro-doc-start: smartfeature_setqpidelta */
 /*************************************************************************//*!
    \brief Changes the QP delta between I frames and P frames
    \param[in] hEnc Handle to an encoder object
@@ -372,7 +417,9 @@ bool AL_Encoder_SetQPBoundsPerFrameType(AL_HEncoder hEnc, int16_t iMinQP, int16_
    retrieve the error code
 *****************************************************************************/
 bool AL_Encoder_SetQPIPDelta(AL_HEncoder hEnc, int16_t uIPDelta);
+/* allegro-doc-end: smartfeature_setqpidelta */
 
+/* allegro-doc-start: smartfeature_setqpbdelta */
 /*************************************************************************//*!
    \brief Changes the QP delta between P frames and B frames
    \param[in] hEnc Handle to an encoder object
@@ -381,7 +428,9 @@ bool AL_Encoder_SetQPIPDelta(AL_HEncoder hEnc, int16_t uIPDelta);
    retrieve the error code
 *****************************************************************************/
 bool AL_Encoder_SetQPPBDelta(AL_HEncoder hEnc, int16_t uPBDelta);
+/* allegro-doc-end: smartfeature_setqpbdelta */
 
+/* allegro-doc-start: smartfeature_setinputresolution */
 /*************************************************************************//*!
    \brief Changes the resolution of the input frames to encode from the next
    pushed frame
@@ -391,7 +440,9 @@ bool AL_Encoder_SetQPPBDelta(AL_HEncoder hEnc, int16_t uPBDelta);
    retrieve the error code
 *****************************************************************************/
 bool AL_Encoder_SetInputResolution(AL_HEncoder hEnc, AL_TDimension tDim);
+/* allegro-doc-end: smartfeature_setinputresolution */
 
+/* allegro-doc-start: smartfeature_setloopfilterbetaoffset */
 /*************************************************************************//*!
    \brief Changes the loop filter beta offset
    \param[in] hEnc Handle to an encoder object
@@ -400,7 +451,9 @@ bool AL_Encoder_SetInputResolution(AL_HEncoder hEnc, AL_TDimension tDim);
    retrieve the error code
 *****************************************************************************/
 bool AL_Encoder_SetLoopFilterBetaOffset(AL_HEncoder hEnc, int8_t iBetaOffset);
+/* allegro-doc-end: smartfeature_setloopfilterbetaoffset */
 
+/* allegro-doc-start: smartfeature_setloopfiltertcoffset */
 /*************************************************************************//*!
    \brief Changes the loop filter TC offset
    \param[in] hEnc Handle to an encoder object
@@ -409,7 +462,8 @@ bool AL_Encoder_SetLoopFilterBetaOffset(AL_HEncoder hEnc, int8_t iBetaOffset);
    retrieve the error code
 *****************************************************************************/
 bool AL_Encoder_SetLoopFilterTcOffset(AL_HEncoder hEnc, int8_t iTcOffset);
-
+/* allegro-doc-end: smartfeature_setloopfiltertcoffset */
+/* allegro-doc-start: smartfeature_setqpchromaoffsets */
 /*************************************************************************//*!
    \brief Changes chroma offsets. change will be applied for current picture
    and for following pictures in display order.
@@ -422,7 +476,8 @@ bool AL_Encoder_SetLoopFilterTcOffset(AL_HEncoder hEnc, int8_t iTcOffset);
    retrieve the error code
 *****************************************************************************/
 bool AL_Encoder_SetQPChromaOffsets(AL_HEncoder hEnc, int8_t iQp1Offset, int8_t iQp2Offset);
-
+/* allegro-doc-end: smartfeature_setqpchromaoffsets */
+/* allegro-doc-start: smartfeature_setautoqp */
 /*************************************************************************//*!
    \brief Enable or Disable AutoQP control
    \param[in] hEnc Handle to an encoder object
@@ -431,7 +486,9 @@ bool AL_Encoder_SetQPChromaOffsets(AL_HEncoder hEnc, int8_t iQp1Offset, int8_t i
    retrieve the error code
 *****************************************************************************/
 bool AL_Encoder_SetAutoQP(AL_HEncoder hEnc, bool useAutoQP);
+/* allegro-doc-end: smartfeature_setautoqp */
 
+/* allegro-doc-start: notify_sethdrseis */
 /*************************************************************************//*!
    \brief Specify HDR SEIs to insert in the bitstream
    \param[in] hEnc Handle to an encoder object
@@ -440,6 +497,7 @@ bool AL_Encoder_SetAutoQP(AL_HEncoder hEnc, bool useAutoQP);
    retrieve the error code
 *****************************************************************************/
 bool AL_Encoder_SetHDRSEIs(AL_HEncoder hEnc, AL_THDRSEIs* pHDRSEIs);
+/* allegro-doc-end: notify_sethdrseis */
 
 /*@}*/
 

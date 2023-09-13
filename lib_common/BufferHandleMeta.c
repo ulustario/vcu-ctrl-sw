@@ -96,7 +96,7 @@ AL_THandleMetaData* AL_HandleMetaData_Create(int iMaxHandles, int iHandleSize)
   return pMeta;
 }
 
-static AL_HANDLE getHandlePtr(AL_THandleMetaData* pMeta, int iNumHandle)
+static AL_HANDLE getHandlePtr(AL_THandleMetaData const* pMeta, int iNumHandle)
 {
   Rtos_GetMutex(pMeta->pInternal->mutex);
   AL_HANDLE pHandle = (AL_HANDLE)(((uintptr_t)pMeta->pInternal->pHandles) + (iNumHandle * pMeta->pInternal->handleSizeInBytes));
@@ -127,12 +127,12 @@ void AL_HandleMetaData_ResetHandles(AL_THandleMetaData* pMeta)
   Rtos_ReleaseMutex(pMeta->pInternal->mutex);
 }
 
-AL_HANDLE AL_HandleMetaData_GetHandle(AL_THandleMetaData* pMeta, int iNumHandle)
+AL_HANDLE AL_HandleMetaData_GetHandle(AL_THandleMetaData const* pMeta, int iNumHandle)
 {
   return getHandlePtr(pMeta, iNumHandle);
 }
 
-int AL_HandleMetaData_GetNumHandles(AL_THandleMetaData* pMeta)
+int AL_HandleMetaData_GetNumHandles(AL_THandleMetaData const* pMeta)
 {
   Rtos_GetMutex(pMeta->pInternal->mutex);
   int numHandles = pMeta->pInternal->numHandles;

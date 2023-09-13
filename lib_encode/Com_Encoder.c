@@ -3,6 +3,7 @@
 
 #include "Com_Encoder.h"
 
+#include "lib_common/Profiles.h"
 #include "lib_encode/lib_encoder.h"
 #include "lib_encode/LoadLda.h"
 
@@ -1464,10 +1465,10 @@ static void EndEncoding(void* pUserParam, AL_TEncPicStatus* pPicStatus, AL_64U s
   AL_Common_SetError(pCtx, pPicStatus->eErrorCode);
 
   AL_TBuffer* pStream = pCtx->tLayerCtx[iLayerID].StreamSent[streamId];
-  AL_TStreamPart* pStreamParts = (AL_TStreamPart*)(AL_Buffer_GetData(pStream) + pPicStatus->uStreamPartOffset);
+  AL_TStreamPart const* pStreamParts = (AL_TStreamPart*)(AL_Buffer_GetData(pStream) + pPicStatus->uStreamPartOffset);
 
   for(int iPart = 0; iPart < pPicStatus->iNumParts; ++iPart)
-    Rtos_InvalidateCacheMemory(AL_Buffer_GetData(pStream) + pStreamParts[iPart].uOffset, pStreamParts[iPart].uSize);
+    Rtos_InvalidateCacheMemory(AL_Buffer_GetData(pStream) + pStreamParts[iPart].uOffset, UnsignedMin(pStreamParts[iPart].uSize, (AL_Buffer_GetSize(pStream) - pStreamParts[iPart].uOffset)));
 
   int iPoolID = pPicStatus->UserParam;
   AL_TFrameInfo* pFI = &pCtx->tFrameInfoPool.FrameInfos[iPoolID];

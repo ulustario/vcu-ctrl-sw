@@ -22,14 +22,16 @@ public:
     Md5Calculator(path)
   {}
 
-  void ProcessFrame(AL_TBuffer* pBuf) override
+  ~StreamMd5Calculator()
   {
-    if(pBuf == EndOfStream)
+    if(IsFileOpen())
     {
       Md5Output();
-      return;
     }
+  }
 
+  void ProcessFrame(AL_TBuffer* pBuf) override
+  {
     AL_TStreamMetaData* pMeta = reinterpret_cast<AL_TStreamMetaData*>(AL_Buffer_GetMetaData(pBuf, AL_META_TYPE_STREAM));
 
     if(pMeta)

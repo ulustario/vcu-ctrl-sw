@@ -429,7 +429,7 @@ uint8_t AL_Dpb_ConvertPicIDToNodeID(AL_TDpb const* pDpb, uint8_t uPicID);
    \param[out] pLongTermList Reference picture marking status output buffer
    \param[out] pSubpicList   Reference picture subpics flags output buffer
 *****************************************************************************/
-void AL_Dpb_FillList(AL_TDpb const* pDpb, uint8_t uL0L1, TBufferListRef const* pListRef, int* pPocList, uint32_t* pLongTermList, uint32_t* pSubpicList);
+void AL_Dpb_FillList(AL_TDpb const* pDpb, uint8_t uL0L1, TBufferListRef const* pListRef, int32_t* pPocList, uint32_t* pLongTermList, uint32_t* pSubpicList);
 
 /*************************************************************************//*!
    \brief Searches the picture with the given poc_lsb in the dpb with the corresponding marking flag

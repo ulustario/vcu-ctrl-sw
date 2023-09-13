@@ -1138,7 +1138,7 @@ static void parseIdentifier(ConfigParser& parser, Tokenizer& tokenizer, Token co
     token = tokenizer.getToken();
   }
 
-  if(tokens.size() == 0)
+  if(tokens.empty())
     throw TokenError(token, "expected value after equal sign");
 
   parser.parseIdentifiers(identToken, tokens);

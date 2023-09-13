@@ -961,8 +961,6 @@ int AL_Settings_CheckValidity(AL_TEncSettings* pSettings, AL_TEncChanParam* pChP
 
   if(pChParam->bSubframeLatency && AL_IS_AVC(pChParam->eProfile))
   {
-    int const iCTBSize = (1 << pChParam->uLog2MaxCuSize);
-
     if((pChParam->uEncHeight / iCTBSize) < (int)pChParam->uNumCore)
     {
       ++err;

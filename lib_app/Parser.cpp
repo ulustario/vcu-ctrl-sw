@@ -257,7 +257,7 @@ std::deque<Token> toReversePolish(std::deque<Token>& tokens)
 
       while(!operatorStack.empty() && operatorToken.type != TokenType::OpenParen)
       {
-        Token operatorToken = operatorStack.back();
+        operatorToken = operatorStack.back();
         operatorStack.pop_back();
 
         if(operatorToken.type != TokenType::OpenParen)

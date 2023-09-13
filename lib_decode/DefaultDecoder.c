@@ -151,7 +151,7 @@ static bool isSubframeUnit(AL_EDecUnit eDecUnit)
 /*****************************************************************************/
 static void AL_sDecoder_CallEndParsing(AL_TDecCtx* pCtx, AL_TBuffer* pParsedFrame, int iParsingID)
 {
-  AL_THandleMetaData* pHandlesMeta = (AL_THandleMetaData*)AL_Buffer_GetMetaData(pParsedFrame, AL_META_TYPE_HANDLE);
+  AL_THandleMetaData const* pHandlesMeta = (AL_THandleMetaData const*)AL_Buffer_GetMetaData(pParsedFrame, AL_META_TYPE_HANDLE);
 
   if(!pHandlesMeta)
   {
@@ -1094,6 +1094,7 @@ static int FindNextDecodingUnit(AL_TDecCtx* pCtx, AL_TBuffer* pStream, int* iLas
 
   while(!SearchNextDecodingUnit(pCtx, pStream, &iLastStartCodeIdx, iLastVclNalInAU))
   {
+
     if(!canStoreMoreStartCodes(pCtx))
     {
       // The start code table is full and doesn't contain any AU.
@@ -1276,7 +1277,7 @@ static UNIT_ERROR DecodeOneUnit(AL_TDecCtx* pCtx, AL_TBuffer* pStream, int iNalC
   pCtx->Stream.tMD.hAllocBuf = pStream->hBufs[0];
   pCtx->Stream.tMD.pVirtualAddr = AL_Buffer_GetData(pStream);
   pCtx->Stream.tMD.uPhysicalAddr = AL_Buffer_GetPhysicalAddress(pStream);
-  AL_TCircMetaData* pMeta = (AL_TCircMetaData*)AL_Buffer_GetMetaData(pStream, AL_META_TYPE_CIRCULAR);
+  AL_TCircMetaData const* pMeta = (AL_TCircMetaData const*)AL_Buffer_GetMetaData(pStream, AL_META_TYPE_CIRCULAR);
 
   int iNumSlice = 0;
   bool bIsEndOfFrame = false;
@@ -1427,7 +1428,7 @@ bool AL_Default_Decoder_PushBuffer(AL_TDecoder* pAbsDec, AL_TBuffer* pBuf, size_
 {
   uint8_t uFlags = AL_STREAM_BUF_FLAG_UNKNOWN;
 
-  AL_TStreamMetaData* pStreamMeta = (AL_TStreamMetaData*)AL_Buffer_GetMetaData(pBuf, AL_META_TYPE_STREAM);
+  AL_TStreamMetaData const* pStreamMeta = (AL_TStreamMetaData const*)AL_Buffer_GetMetaData(pBuf, AL_META_TYPE_STREAM);
 
   if(pStreamMeta != NULL)
   {

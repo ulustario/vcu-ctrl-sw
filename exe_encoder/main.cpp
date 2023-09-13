@@ -138,7 +138,7 @@ void SetDefaults(ConfigFile& cfg)
   cfg.MainInput.FileInfo.FrameRate = 0;
   cfg.MainInput.FileInfo.PictHeight = 0;
   cfg.MainInput.FileInfo.PictWidth = 0;
-  cfg.RunInfo.encDevicePath = ENCODER_DEVICES;
+  cfg.RunInfo.encDevicePath = { ENCODER_DEVICES };
   cfg.RunInfo.iDeviceType = AL_DEVICE_TYPE_BOARD;
   cfg.RunInfo.iSchedulerType = AL_SCHEDULER_TYPE_MCU;
   cfg.RunInfo.bLoop = false;
@@ -148,6 +148,7 @@ void SetDefaults(ConfigFile& cfg)
   cfg.RunInfo.ipCtrlMode = AL_IPCTRL_MODE_STANDARD;
   cfg.RunInfo.uInputSleepInMilliseconds = 0;
   cfg.strict_mode = false;
+  cfg.iForceStreamBufSize = 0;
 }
 
 #include "lib_app/CommandLineParser.h"
@@ -877,9 +878,7 @@ void LayerResources::Init(ConfigFile& cfg, AL_TEncoderInfo tEncInfo, int iLayerI
   // --------------------------------------------------------------------------------
   // Stream Buffers
   // --------------------------------------------------------------------------------
-  int iForcedStreamBufSize = 0;
-
-  if(!InitStreamBufPool(StreamBufPool, Settings, iLayerID, tEncInfo.uNumCore, iForcedStreamBufSize, pAllocator))
+  if(!InitStreamBufPool(StreamBufPool, Settings, iLayerID, tEncInfo.uNumCore, cfg.iForceStreamBufSize, pAllocator))
     throw std::runtime_error("Error creating stream buffer pool");
 
   bool bUsePictureMeta = false;
@@ -1001,9 +1000,10 @@ void LayerResources::PushResources(ConfigFile& cfg, EncoderSink* enc
       bRet = AL_Encoder_PutStreamBuffer(hEnc, pStream);
     }
 
+    AL_Buffer_Unref(pStream);
+
     if(!bRet)
       throw std::runtime_error("bRet must be true");
-    AL_Buffer_Unref(pStream);
   }
 }
 
@@ -1197,12 +1197,12 @@ void SafeChannelMain(ConfigFile& cfg, CIpDevice* pIpDevice, CIpDeviceParam& para
   {
     for(int iLayerID = 0; iLayerID < Settings.NumLayer; ++iLayerID)
     {
-      auto multisink = unique_ptr<MultiSink>(new MultiSink);
-      multisink->addSink(enc->RecOutput[iLayerID]);
+      auto layer_multisink = unique_ptr<MultiSink>(new MultiSink);
+      layer_multisink->addSink(enc->RecOutput[iLayerID]);
       string LayerMd5FileName = RunInfo.sRecMd5Path;
       std::unique_ptr<IFrameSink> md5Calculator = createYuvMd5Calculator(LayerMd5FileName, cfg);
-      multisink->addSink(md5Calculator);
-      enc->RecOutput[iLayerID] = std::move(multisink);
+      layer_multisink->addSink(md5Calculator);
+      enc->RecOutput[iLayerID] = std::move(layer_multisink);
     }
   }
 

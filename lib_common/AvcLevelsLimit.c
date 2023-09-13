@@ -10,7 +10,8 @@
 /****************************************************************************/
 bool AL_AVC_CheckLevel(int level)
 {
-  return ((level >= 10) && (level <= 13))
+  return (level == 9)
+         || ((level >= 10) && (level <= 13))
          || ((level >= 20) && (level <= 22))
          || ((level >= 30) && (level <= 32))
          || ((level >= 40) && (level <= 42))

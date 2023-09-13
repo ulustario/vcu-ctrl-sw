@@ -39,14 +39,16 @@ public:
   {
   }
 
-  void ProcessFrame(AL_TBuffer* pBuf) override
+  ~YuvMd5Calculator()
   {
-    if(pBuf == EndOfStream)
+    if(IsFileOpen())
     {
       Md5Output();
-      return;
     }
+  }
 
+  void ProcessFrame(AL_TBuffer* pBuf) override
+  {
     TFourCC tRecFourCC = AL_PixMapBuffer_GetFourCC(pBuf);
 
     if(tRecFourCC != fourcc && !AL_IsCompressed(tRecFourCC))

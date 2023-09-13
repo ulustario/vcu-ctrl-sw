@@ -23,13 +23,6 @@ public:
   {
     if(!path.empty())
     {
-      /*if(path == "stdout")
-        m_pCrcOut = &std::cout;
-      else
-      {
-        OpenOutput(m_CrcFile, path);
-        m_pCrcOut = &m_CrcFile;
-      }*/
       OpenOutput(m_CrcFile, path, false);
       m_CrcFile << std::hex << std::uppercase;
     }
@@ -37,16 +30,9 @@ public:
 
   void ProcessFrame(AL_TBuffer* pBuf) override
   {
-    /*if(pBuf == EndOfStream)
-    {
-      auto const sCrc = m_Crc;
-      * m_pCrcOut << sCrc << std::endl;
-      return;
-    }*/
-
     AL_TDisplayInfoMetaData* pMeta = reinterpret_cast<AL_TDisplayInfoMetaData*>(AL_Buffer_GetMetaData(pBuf, AL_META_TYPE_DISPLAY_INFO));
 
-    if(pMeta)
+    if(pMeta && pMeta->eOutputID == AL_OUTPUT_MAIN)
     {
       if(m_CrcFile.is_open())
         m_CrcFile << std::setfill('0') << std::setw(8) << (int)pMeta->uCrc << std::endl;
@@ -55,7 +41,6 @@ public:
 
 private:
   std::ofstream m_CrcFile;
-  // std::ostream* m_pCrcOut;
 };
 
 std::unique_ptr<IFrameSink> createStreamCrcDump(std::string path)
