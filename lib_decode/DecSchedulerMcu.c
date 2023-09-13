@@ -158,7 +158,7 @@ static void setChannelMsg(struct al5_params* msg, TMemDesc const* pMDChParams)
   static_assert(sizeof(uVirtAddr) <= sizeof(msg->opaque), "Driver channel_param struct is too small");
   msg->size = sizeof(uVirtAddr);
 
-  uVirtAddr = pMDChParams->uPhysicalAddr + DCACHE_OFFSET;
+  uVirtAddr = (pMDChParams->uPhysicalAddr & 0x7FFFFFFF) + DCACHE_OFFSET;
   Rtos_Memcpy(msg->opaque, &uVirtAddr, msg->size);
 }
 
@@ -579,7 +579,7 @@ static void prepareDecodeMessage(struct al5_decode_msg* msg, AL_TDecPicParam* pP
   setPictParam(&msg->params, pPictParam);
   setPictBufferAddrs(&msg->addresses, pPictAddrs);
 
-  msg->slice_param_v = hSliceParam->uPhysicalAddr + DCACHE_OFFSET;
+  msg->slice_param_v = (hSliceParam->uPhysicalAddr & 0x7FFFFFFF) + DCACHE_OFFSET;
 }
 
 // TODO return error

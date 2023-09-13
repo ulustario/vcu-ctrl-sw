@@ -134,7 +134,7 @@ static void createEncodeMsg(struct al5_encode_msg* msg, AL_TEncInfo* pEncInfo, A
   }
 
   if(pBuffersAddrs->pEP2)
-    pBuffersAddrs->pEP2_v = pBuffersAddrs->pEP2 + DCACHE_OFFSET;
+    pBuffersAddrs->pEP2_v = (pBuffersAddrs->pEP2 & 0x7FFFFFFF)+ DCACHE_OFFSET;
   else
     pBuffersAddrs->pEP2_v = 0;
   setEncodeMsg(msg, pEncInfo, pReqInfo, pBuffersAddrs);

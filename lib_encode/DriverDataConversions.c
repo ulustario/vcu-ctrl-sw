@@ -20,11 +20,11 @@ void setChannelParam(struct al5_params* msg, TMemDesc* pMDChParam, TMemDesc* pEP
   static_assert(2 * sizeof(uMcuVirtAddr) <= sizeof(msg->opaque), "Driver channel_param struct is too small");
   msg->size = 0;
 
-  uMcuVirtAddr = pMDChParam->uPhysicalAddr + DCACHE_OFFSET;
+  uMcuVirtAddr = (pMDChParam->uPhysicalAddr & 0x7FFFFFFF) + DCACHE_OFFSET;
   write(msg, &uMcuVirtAddr, sizeof(uMcuVirtAddr));
 
   if(pEP1)
-    uMcuVirtAddr = pEP1->uPhysicalAddr + DCACHE_OFFSET;
+    uMcuVirtAddr = (pEP1->uPhysicalAddr & 0x7FFFFFFF) + DCACHE_OFFSET;
   else
     uMcuVirtAddr = 0;
   write(msg, &uMcuVirtAddr, sizeof(uMcuVirtAddr));
