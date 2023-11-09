@@ -518,9 +518,6 @@ static void reallyEndFrame(AL_TDecCtx* pCtx, AL_ENut eNUT, AL_TAvcSliceHdr* pSli
   if(pCtx->pChanParam->eDecUnit == AL_VCL_NAL_UNIT)
     AL_LaunchSliceDecoding(pCtx, true, hasPreviousSlice);
 
-  if(pCtx->eInputMode == AL_DEC_SPLIT_INPUT)
-    pCtx->tConceal.bSkipRemainingNals = true;
-
   UpdateContextAtEndOfFrame(pCtx);
 }
 
@@ -541,13 +538,15 @@ static void finishPreviousFrame(AL_TDecCtx* pCtx)
   AL_TDecPicParam* pPP = &pCtx->PoolPP[pCtx->uToggle];
   AL_TDecSliceParam* pSP = &(((AL_TDecSliceParam*)pCtx->PoolSP[pCtx->uToggle].tMD.pVirtualAddr)[pCtx->PictMngr.uNumSlice - 1]);
 
-  AL_TerminatePreviousCommand(pCtx, pPP, pSP, true, true);
+  /* AVC doesn't have Dependent */
+  bool const bUsedDependent = false;
+  AL_TerminatePreviousCommand(pCtx, pPP, pSP, true, bUsedDependent);
 
   // copy stream offset from previous command
   pCtx->iStreamOffset[pCtx->iNumFrmBlk1 % pCtx->iStackSize] = pCtx->iStreamOffset[(pCtx->iNumFrmBlk1 + pCtx->iStackSize - 1) % pCtx->iStackSize];
 
   /* The slice is its own previous slice as we changed it in the last slice
-   * This means we don't want to send a previous slice at all. */
+   * This means that in AL_VCL_NAL_UNIT we don't want to send a previous slice at all. */
   endFrameConceal(pCtx, pSlice->nal_unit_type, pSlice);
 
   pCtx->bFirstSliceInFrameIsValid = false;

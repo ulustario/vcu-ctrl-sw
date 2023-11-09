@@ -45,6 +45,7 @@ ifneq ($(HAS_CODEC),0)
   LIB_COMMON_SRC+=lib_common/BufferCircMeta.c
   LIB_COMMON_SRC+=lib_common/BufferStreamMeta.c
   LIB_COMMON_SRC+=lib_common/BufferPictureMeta.c
+  LIB_COMMON_SRC+=lib_common/BufferPictureDecMeta.c
   LIB_COMMON_SRC+=lib_common/BufferSeiMeta.c
   LIB_COMMON_SRC+=lib_common/BufferStatisticsMeta.c
 

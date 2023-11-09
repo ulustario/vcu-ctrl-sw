@@ -7,6 +7,8 @@
 #include "SliceDataParsing.h"
 #include "NalUnitParserPrivate.h"
 
+#include "lib_common/Nuts.h"
+#include "lib_common/SliceHeader.h"
 #include "lib_common/Utils.h"
 #include "lib_common/HevcLevelsLimit.h"
 #include "lib_common/HevcUtils.h"
@@ -18,6 +20,7 @@
 #include "lib_common_dec/Defines_mcu.h"
 #include "lib_common_dec/DecHardwareConfig.h"
 #include "lib_common_dec/StreamSettingsInternal.h"
+#include "lib_decode/NalUnitParser.h"
 
 #include "lib_common_dec/HDRMeta.h"
 
@@ -651,7 +654,7 @@ static void createConcealSlice(AL_TDecCtx* pCtx, AL_TDecPicParam* pPP, AL_TDecSl
 }
 
 /*****************************************************************************/
-static void endFrame(AL_TDecCtx* pCtx, AL_ENut eNUT, AL_THevcSliceHdr* pSlice, uint8_t pic_output_flag, bool bHasPreviousSlice)
+static void reallyEndFrame(AL_TDecCtx* pCtx, AL_ENut eNUT, AL_THevcSliceHdr* pSlice, uint8_t pic_output_flag, bool bHasPreviousSlice)
 {
   AL_HEVC_PictMngr_EndFrame(&pCtx->PictMngr, pSlice->slice_pic_order_cnt_lsb, eNUT, pSlice, pic_output_flag);
 
@@ -660,7 +663,18 @@ static void endFrame(AL_TDecCtx* pCtx, AL_ENut eNUT, AL_THevcSliceHdr* pSlice, u
 
   if(pCtx->pChanParam->eDecUnit == AL_VCL_NAL_UNIT)
     AL_LaunchSliceDecoding(pCtx, true, bHasPreviousSlice);
+
   UpdateContextAtEndOfFrame(pCtx);
+}
+
+static void endFrame(AL_TDecCtx* pCtx, AL_ENut eNUT, AL_THevcSliceHdr* pSlice, uint8_t pic_output_flag)
+{
+  reallyEndFrame(pCtx, eNUT, pSlice, pic_output_flag, true);
+}
+
+static void endFrameConceal(AL_TDecCtx* pCtx, AL_ENut eNUT, AL_THevcSliceHdr* pSlice, uint8_t pic_output_flag)
+{
+  reallyEndFrame(pCtx, eNUT, pSlice, pic_output_flag, false);
 }
 
 /*****************************************************************************/
@@ -670,12 +684,14 @@ static void finishPreviousFrame(AL_TDecCtx* pCtx)
   AL_TDecPicParam* pPP = &pCtx->PoolPP[pCtx->uToggle];
   AL_TDecSliceParam* pSP = &(((AL_TDecSliceParam*)pCtx->PoolSP[pCtx->uToggle].tMD.pVirtualAddr)[pCtx->PictMngr.uNumSlice - 1]);
 
-  AL_TerminatePreviousCommand(pCtx, pPP, pSP, true, true);
+  AL_TerminatePreviousCommand(pCtx, pPP, pSP, true, false);
 
   // copy stream offset from previous command
   pCtx->iStreamOffset[pCtx->iNumFrmBlk1 % pCtx->iStackSize] = pCtx->iStreamOffset[(pCtx->iNumFrmBlk1 + pCtx->iStackSize - 1) % pCtx->iStackSize];
 
-  endFrame(pCtx, pSlice->nal_unit_type, pSlice, pSlice->pic_output_flag, false);
+  /* The slice is its own previous slice as we changed it in the last slice
+   * This means that in AL_VCL_NAL_UNIT we don't want to send a previous slice at all. */
+  endFrameConceal(pCtx, pSlice->nal_unit_type, pSlice, pSlice->pic_output_flag);
 
   pCtx->bFirstSliceInFrameIsValid = false;
   pCtx->bBeginFrameIsValid = false;
@@ -999,7 +1015,7 @@ static bool decodeSliceData(AL_TAup* pIAUP, AL_TDecCtx* pCtx, AL_ENut eNUT, bool
   if(bIsLastAUNal || bLastSlice)
   {
     uint8_t pic_output_flag = (AL_HEVC_IsRASL(eNUT) && pCtx->uNoRaslOutputFlag) ? 0 : pSlice->pic_output_flag;
-    endFrame(pCtx, eNUT, pSlice, pic_output_flag, true);
+    endFrame(pCtx, eNUT, pSlice, pic_output_flag);
     return true;
   }
 

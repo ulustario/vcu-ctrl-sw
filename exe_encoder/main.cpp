@@ -2,22 +2,22 @@
 // SPDX-License-Identifier: MIT
 
 #include <climits>
+#include <cstdarg>
+#include <cstdlib>
+#include <cstring>
+#include <exception>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
 #include <map>
 #include <memory>
-#include <sstream>
-#include <cstdarg>
-#include <stdexcept>
-#include <exception>
-#include <cstdlib>
-#include <cstring>
-#include <set>
-#include <string>
-#include <vector>
-#include <thread>
 #include <regex>
+#include <set>
+#include <sstream>
+#include <stdexcept>
+#include <string>
+#include <thread>
+#include <vector>
 
 #if defined(__linux__)
 #include <dirent.h>
@@ -28,34 +28,33 @@
 #endif
 
 #include "lib_app/BufPool.h"
-#include "lib_app/PixMapBufPool.h"
-#include "lib_app/console.h"
-#include "lib_app/utils.h"
 #include "lib_app/FileUtils.h"
-#include "lib_app/plateform.h"
+#include "lib_app/PixMapBufPool.h"
 #include "lib_app/YuvIO.h"
+#include "lib_app/console.h"
+#include "lib_app/plateform.h"
+#include "lib_app/utils.h"
+#include "lib_app/CompFrameCommon.h"
 #include "lib_app/UnCompFrameReader.h"
 #include "lib_app/UnCompFrameWriter.h"
-#include "lib_app/CompFrameCommon.h"
 
+#include "CfgParser.h"
 #include "CodecUtils.h"
 #include "IpDevice.h"
 #include "resource.h"
-#include "CfgParser.h"
 
-extern "C"
-{
-#include "lib_common/PixMapBuffer.h"
-#include "lib_common/BufferStreamMeta.h"
+extern "C" {
 #include "lib_common/BufferPictureMeta.h"
-#include "lib_common/StreamBuffer.h"
+#include "lib_common/BufferStreamMeta.h"
 #include "lib_common/Error.h"
+#include "lib_common/PixMapBuffer.h"
 #include "lib_common/RoundUp.h"
+#include "lib_common/StreamBuffer.h"
+#include "lib_common_enc/RateCtrlMeta.h"
 #include "lib_encode/lib_encoder.h"
 #include "lib_rtos/lib_rtos.h"
-#include "lib_common_enc/RateCtrlMeta.h"
-#include "lib_common_enc/IpEncFourCC.h"
 #include "lib_common_enc/EncBuffers.h"
+#include "lib_common_enc/IpEncFourCC.h"
 }
 
 #include "lib_conv_yuv/lib_conv_yuv.h"
@@ -64,11 +63,11 @@ extern "C"
 #include "sink_encoder.h"
 #include "sink_yuv_md5.h"
 #include "sink_lookahead.h"
-#include "sink_bitstream_writer.h"
-#include "sink_bitrate.h"
-#include "lib_app/SinkStreamMd5.h"
-#include "sink_repeater.h"
 #include "QPGenerator.h"
+#include "lib_app/SinkStreamMd5.h"
+#include "sink_bitrate.h"
+#include "sink_bitstream_writer.h"
+#include "sink_repeater.h"
 
 #include "RCPlugin.h"
 
@@ -928,6 +927,7 @@ void LayerResources::Init(ConfigFile& cfg, AL_TEncoderInfo tEncInfo, int iLayerI
       if(AL_IS_AVC(cfg.Settings.tChParam[0].eProfile))
         frameBuffersCount += 1;
     }
+
   }
 
   if(!InitQpBufPool(QpBufPool, Settings, Settings.tChParam[iLayerID], frameBuffersCount, pAllocator))

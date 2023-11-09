@@ -13,6 +13,7 @@
 
 #include "DefaultDecoder.h"
 #include "NalUnitParser.h"
+#include "lib_common/BufferAPI.h"
 #include "lib_decode/InternalError.h"
 #include "NalUnitParserPrivate.h"
 #include "UnsplitBufferFeeder.h"
@@ -174,11 +175,13 @@ static void AL_sDecoder_CallEndParsing(AL_TDecCtx* pCtx, AL_TBuffer* pParsedFram
   if(pDecMetaHandle->eState == AL_DEC_HANDLE_STATE_PROCESSING)
   {
     AL_TBuffer* pStream = pDecMetaHandle->pHandle;
+    AL_Buffer_Ref(pStream);
     pDecMetaHandle->eState = AL_DEC_HANDLE_STATE_PROCESSED;
 
     if(pCtx->tDecCB.endParsingCB.func)
       pCtx->tDecCB.endParsingCB.func(pParsedFrame, pCtx->tDecCB.endParsingCB.userParam, iParsingID);
     AL_Feeder_FreeBuf(pCtx->Feeder, pStream);
+    AL_Buffer_Unref(pStream);
   }
 }
 
@@ -203,7 +206,9 @@ static void AL_sDecoder_CallDecode(AL_TDecCtx* pCtx, int iFrameID)
 
       if(pDecMetaHandle->eState == AL_DEC_HANDLE_STATE_PROCESSING)
       {
+        AL_Buffer_Ref(pStream);
         AL_Feeder_FreeBuf(pCtx->Feeder, pStream);
+        AL_Buffer_Unref(pStream);
       }
     }
   }
@@ -918,11 +923,28 @@ bool AL_DecodeOneNal(AL_TAup* pAUP, AL_TDecCtx* pCtx, AL_ENut nut, bool bIsLastA
     CheckNALParserResult(pCtx, eParserResult);
   }
 
-  if((nut == nuts.apsPrefix || nut == nuts.apsSuffix) && parser.parseAps)
+  if((nut == nuts.apsPrefix) || (nut == nuts.apsSuffix))
   {
-    AL_TRbspParser rp = getParserOnNonVclNalInternalBuf(pCtx);
-    AL_PARSE_RESULT eParserResult = parser.parseAps(pAUP, &rp, pCtx);
-    CheckNALParserResult(pCtx, eParserResult);
+    if(parser.parseAps)
+    {
+      AL_TRbspParser rp = getParserOnNonVclNalInternalBuf(pCtx);
+      AL_PARSE_RESULT eParserResult = parser.parseAps(pAUP, &rp, pCtx);
+      CheckNALParserResult(pCtx, eParserResult);
+    }
+
+    // In split-input, apsSuffix is a non-reorderable delimiter,
+    // we need to ensure that previous NAL is launched
+    if((pCtx->eInputMode == AL_DEC_SPLIT_INPUT) && (nut == nuts.apsSuffix))
+    {
+      if(pCtx->bFirstIsValid && pCtx->bFirstSliceInFrameIsValid)
+      {
+        parser.finishPendingRequest(pCtx);
+        pCtx->bIsFirstPicture = true;
+        pCtx->tConceal.bSkipRemainingNals = true;
+        return true;
+      }
+      pCtx->bIsFirstPicture = true;
+    }
   }
 
   if(nut == nuts.ph && parser.parsePh)
@@ -932,7 +954,9 @@ bool AL_DecodeOneNal(AL_TAup* pAUP, AL_TDecCtx* pCtx, AL_ENut nut, bool bIsLastA
     CheckNALParserResult(pCtx, eParserResult);
   }
 
-  if((nut == nuts.eos) || (nut == nuts.eob))
+  // In split-input, filler data is a non-reorderable delimiter,
+  // we need to ensure that previous NAL is launched
+  if((nut == nuts.eos) || (nut == nuts.eob) || ((pCtx->eInputMode == AL_DEC_SPLIT_INPUT) && (nut == nuts.fd)))
   {
     if(pCtx->bFirstIsValid && pCtx->bFirstSliceInFrameIsValid)
     {
@@ -1292,7 +1316,7 @@ static UNIT_ERROR DecodeOneUnit(AL_TDecCtx* pCtx, AL_TBuffer* pStream, int iNalC
   // We reorder the sei nal to parse them before the non vcl suffix
   // (This assume they do not change the vcl parsing / decoding process)
   //
-  // We do not reorder the filler data suffix because in split input,
+  // We do not reorder the filler data suffix or aps suffix because in split input,
   // it is used like an eos / eob and it would affect the parsing / decoding process
   // and we do not use the stream in that case.
   uint32_t const StartCodeDataEnd = pMeta->iOffset;

@@ -1,58 +1,58 @@
 // SPDX-FileCopyrightText: © 2023 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
+#include <algorithm>
+#include <atomic>
+#include <cassert>
+#include <climits>
 #include <cstdarg>
 #include <cstdlib>
-#include <climits>
-#include <atomic>
-#include <memory>
 #include <fstream>
 #include <iostream>
+#include <map>
+#include <memory>
+#include <mutex>
+#include <set>
+#include <sstream>
 #include <stdexcept>
 #include <string>
-#include <sstream>
-#include <mutex>
-#include <map>
-#include <set>
 #include <thread>
-#include <algorithm>
-#include <cassert>
 #include <vector>
 
-extern "C"
-{
-#include "lib_common/PixMapBuffer.h"
+extern "C" {
 #include "lib_common/BufCommon.h"
-#include "lib_common/Error.h"
-#include "lib_decode/lib_decode.h"
-#include "lib_common_dec/DecBuffers.h"
-#include "lib_common_dec/IpDecFourCC.h"
-#include "lib_common/DisplayInfoMeta.h"
-#include "lib_common/StreamBuffer.h"
 #include "lib_common/BufferHandleMeta.h"
 #include "lib_common/BufferSeiMeta.h"
+#include "lib_common/DisplayInfoMeta.h"
+#include "lib_common/Error.h"
+#include "lib_common/PixMapBuffer.h"
+#include "lib_common/StreamBuffer.h"
+#include "lib_common_dec/DecBuffers.h"
+#include "lib_common_dec/IpDecFourCC.h"
+#include "lib_decode/lib_decode.h"
 #include "lib_common_dec/HDRMeta.h"
+#include "lib_common/BufferPictureDecMeta.h"
 }
 
 #include "lib_app/BufPool.h"
+#include "lib_app/CommandLineParser.h"
+#include "lib_app/MD5.h"
 #include "lib_app/PixMapBufPool.h"
+#include "lib_app/SinkCrcDump.h"
+#include "lib_app/UnCompFrameWriter.h"
+#include "lib_app/YuvIO.h"
 #include "lib_app/console.h"
 #include "lib_app/convert.h"
+#include "lib_app/plateform.h"
 #include "lib_app/timing.h"
 #include "lib_app/utils.h"
-#include "lib_app/CommandLineParser.h"
-#include "lib_app/plateform.h"
-#include "lib_app/YuvIO.h"
-#include "lib_app/MD5.h"
-#include "lib_app/UnCompFrameWriter.h"
-#include "lib_app/SinkCrcDump.h"
 #include <cassert>
 
-#include "Conversion.h"
-#include "IpDevice.h"
 #include "CodecUtils.h"
-#include "SinkYuvCrc.h"
+#include "Conversion.h"
 #include "InputLoader.h"
+#include "IpDevice.h"
+#include "SinkYuvCrc.h"
 #include "SinkYuvMd5.h"
 #include "HDRWriter.h"
 
@@ -1324,6 +1324,9 @@ static AL_ERR sResolutionFound(int BufferNumber, int BufferSizeLib, AL_TStreamSe
       AddHDRMetaData(pDecPict);
     AL_TDisplayInfoMetaData* pDisplayInfoMeta = AL_DisplayInfoMetaData_Create();
     AL_Buffer_AddMetaData(pDecPict, (AL_TMetaData*)pDisplayInfoMeta);
+
+    AL_TPictureDecMetaData* pPictureDecMeta = AL_PictureDecMetaData_Create();
+    AL_Buffer_AddMetaData(pDecPict, (AL_TMetaData*)pPictureDecMeta);
 
     bool const bAdded = AL_Decoder_PutDisplayPicture(p->hDec, pDecPict);
 

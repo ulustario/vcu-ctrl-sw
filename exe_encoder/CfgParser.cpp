@@ -959,6 +959,7 @@ static void populateSettingsSection(ConfigParser& parser, ConfigFile& cfg, Tempo
   videoModes["INTERLACED_TOP"] = { AL_VM_INTERLACED_TOP, "Interlaced video mode: top-bottom", isOnlyCodec(Codec::Hevc) };
   videoModes["INTERLACED_BOTTOM"] = { AL_VM_INTERLACED_BOTTOM, "Interlaced video mode: bottom-top", isOnlyCodec(Codec::Hevc) };
   parser.addEnum(curSection, "VideoMode", cfg.Settings.tChParam[0].eVideoMode, videoModes, "When using a profile, this parameter specifies if the video is progressive or interlaced. In interlaced mode, the corresponding flags in header and SEI message will be added.");
+  parser.addBool(curSection, "ForcePpsIdToZero", cfg.Settings.tChParam[0].bForcePpsIdToZero, "Every PPS ID is set to 0. Not compatible with reordering. By default, the pps id increases by 1 each time a PPS with different settings must be sent.", ituCodecs());
 
   parser.addNote(curSection, "LookAhead", "TwoPass, SCDFirstPass and LookAhead are exclusive modes. Only one of them can be enabled at the same time.");
   map<string, EnumDescription<int>> twoPassEnums;

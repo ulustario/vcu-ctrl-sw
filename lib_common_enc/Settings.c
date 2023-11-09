@@ -338,6 +338,7 @@ static void XAVC_CheckCoherency(AL_TEncSettings* pSettings)
   pChannel->eEncTools &= (~AL_OPT_LF);
   pChannel->iBetaOffset = 0;
   pChannel->iTcOffset = 0;
+
   pChannel->bUseUniformSliceType = true;
 
   if(AL_IS_INTRA_PROFILE(pChannel->eProfile))
@@ -454,6 +455,10 @@ void AL_Settings_SetDefaultRCParam(AL_TRCParam* pRCParam)
   pRCParam->bUseGoldenRef = true;
   pRCParam->uGoldenRefFrequency = 10;
   pRCParam->uPGoldenDelta = 2;
+
+  for(int i = 0; i < ARRAY_SIZE(pRCParam->pMaxPictureSize); i++)
+    pRCParam->pMaxPictureSize[i] = 0;
+
   pRCParam->uMaxConsecSkip = UINT32_MAX;
 }
 
