@@ -336,6 +336,8 @@ static void XAVC_CheckCoherency(AL_TEncSettings* pSettings)
   pChannel->eEncTools &= (~AL_OPT_LF_X_TILE);
   pChannel->eEncTools &= (~AL_OPT_LF_X_SLICE);
   pChannel->eEncTools &= (~AL_OPT_LF);
+  pChannel->iBetaOffset = 0;
+  pChannel->iTcOffset = 0;
   pChannel->bUseUniformSliceType = true;
 
   if(AL_IS_INTRA_PROFILE(pChannel->eProfile))
