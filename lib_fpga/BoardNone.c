@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2023 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #include <stdio.h>
@@ -21,4 +21,3 @@ AL_TAllocator* AL_DmaAlloc_Create(const char* deviceFile)
   fprintf(stderr, "No support for FPGA board on this platform\n");
   return NULL;
 }
-

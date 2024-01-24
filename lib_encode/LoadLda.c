@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2023 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #include "lib_rtos/lib_rtos.h"
@@ -74,4 +74,3 @@ void LoadCustomLda(TBufferEP* pEP)
 {
   Rtos_Memcpy(pEP->tMD.pVirtualAddr + EP1_BUF_LAMBDAS.Offset, CUSTOM_LDA_TABLE, sizeof(TLambdasTable));
 }
-

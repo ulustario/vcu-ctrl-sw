@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2023 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #pragma once
@@ -8,15 +8,14 @@
 extern "C"
 {
 #include "lib_fpga/DmaAlloc.h"
-#include "lib_perfs/Logger.h"
+#include "lib_log/Logger.h"
 #include "lib_common_dec/DecoderTraceHook.h"
 }
 
 /*****************************************************************************/
-typedef struct AL_t_Allocator AL_TAllocator;
-typedef struct AL_t_IpCtrl AL_TIpCtrl;
-typedef struct AL_t_Timer AL_Timer;
-typedef struct AL_t_driver AL_TDriver;
+typedef struct AL_TAllocator AL_TAllocator;
+typedef struct AL_TIpCtrl AL_TIpCtrl;
+typedef struct AL_TDriver AL_TDriver;
 
 /*****************************************************************************/
 struct CIpDeviceParam
@@ -36,7 +35,7 @@ class I_IpDevice
 public:
   virtual void* GetScheduler() = 0;
   virtual AL_TAllocator* GetAllocator() = 0;
-  virtual AL_Timer* GetTimer() = 0;
+  virtual AL_ITimer* GetTimer() = 0;
 };
 
 /*****************************************************************************/

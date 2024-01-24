@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2023 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 /****************************************************************************
@@ -26,25 +26,25 @@ static const AL_HANDLE AL_INVALID_CHANNEL = (AL_HANDLE)(NULL);
 *****************************************************************************/
 typedef struct
 {
-  void (* func)(void* pUserParam, AL_TEncPicStatus* pPicStatus, uint64_t streamUserPtr);
+  void (* func)(void* pUserParam, AL_TEncPicStatus* pPicStatus, AL_64U streamUserPtr);
   void* userParam;
 }AL_TEncScheduler_CB_EndEncoding;
 
 /****************************************************************************/
-typedef struct AL_i_EncSchedulerVtable AL_IEncSchedulerVtable;
+typedef struct AL_IEncSchedulerVtable AL_IEncSchedulerVtable;
 
-typedef struct AL_i_EncScheduler
+typedef struct AL_IEncScheduler
 {
   const AL_IEncSchedulerVtable* vtable;
 }AL_IEncScheduler;
 
-typedef struct AL_i_EncSchedulerVtable
+typedef struct AL_IEncSchedulerVtable
 {
   void (* destroy)(AL_IEncScheduler* pScheduler);
   AL_ERR (* createChannel)(AL_HANDLE* hChannel, AL_IEncScheduler* pScheduler, TMemDesc* pMDChParam, TMemDesc* pEP1, AL_HANDLE hRcPluginDmaCtx, AL_TEncScheduler_CB_EndEncoding* pCBs);
   bool (* destroyChannel)(AL_IEncScheduler* pScheduler, AL_HANDLE hChannel);
   bool (* encodeOneFrame)(AL_IEncScheduler* pScheduler, AL_HANDLE hChannel, AL_TEncInfo* pEncInfo, AL_TEncRequestInfo* pReqInfo, AL_TEncPicBufAddrs* pBufferAddrs);
-  void (* putStreamBuffer)(AL_IEncScheduler* pScheduler, AL_HANDLE hChannel, AL_TBuffer* pStream, uint64_t streamUserPtr, uint32_t uOffset);
+  void (* putStreamBuffer)(AL_IEncScheduler* pScheduler, AL_HANDLE hChannel, AL_TBuffer* pStream, AL_64U streamUserPtr, uint32_t uOffset);
   bool (* getRecPicture)(AL_IEncScheduler* pScheduler, AL_HANDLE hChannel, AL_TRecPic* pRecPic);
   bool (* releaseRecPicture)(AL_IEncScheduler* pScheduler, AL_HANDLE hChannel, AL_TRecPic* pRecPic);
   void (* get)(AL_IEncScheduler const* pScheduler, AL_EIEncSchedulerInfo info, void* pParam);
@@ -115,7 +115,7 @@ bool AL_IEncScheduler_EncodeOneFrame(AL_IEncScheduler* pScheduler, AL_HANDLE hCh
    false otherwise
 *****************************************************************************/
 static inline
-void AL_IEncScheduler_PutStreamBuffer(AL_IEncScheduler* pScheduler, AL_HANDLE hChannel, AL_TBuffer* pStream, uint64_t streamUserPtr, uint32_t uOffset)
+void AL_IEncScheduler_PutStreamBuffer(AL_IEncScheduler* pScheduler, AL_HANDLE hChannel, AL_TBuffer* pStream, AL_64U streamUserPtr, uint32_t uOffset)
 {
   pScheduler->vtable->putStreamBuffer(pScheduler, hChannel, pStream, streamUserPtr, uOffset);
 }

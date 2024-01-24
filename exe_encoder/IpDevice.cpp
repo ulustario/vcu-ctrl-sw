@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2023 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #include <stdexcept>
@@ -10,7 +10,8 @@
 extern "C"
 {
 #include "lib_fpga/DmaAlloc.h"
-#include "lib_perfs/Logger.h"
+#include "lib_log/Logger.h"
+#include "lib_log/TimerSoftware.h"
 }
 using namespace std;
 

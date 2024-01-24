@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2023 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #include <fstream>
@@ -129,4 +129,3 @@ void OpenOutput(std::ofstream& fp, std::string const& filename, bool binary)
   if(!fp.is_open())
     throw std::runtime_error("Can't open file for writing: '" + filename + "'");
 }
-

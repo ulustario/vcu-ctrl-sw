@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2023 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 /**************************************************************************//*!
@@ -101,7 +101,7 @@ typedef enum e_ChromaOrder
 /*************************************************************************//*!
    \brief Describes the format of a YUV buffer
 *****************************************************************************/
-typedef struct AL_t_PicFormat
+typedef struct AL_TPicFormat
 {
   AL_EChromaMode eChromaMode;
   uint8_t uBitDepth;

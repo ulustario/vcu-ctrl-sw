@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2023 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #include "CfgParser.h"
@@ -1815,4 +1815,3 @@ double get(ArithToken<double> const& arith)
   Token const& token = arith.token;
   return std::strtod(token.text.c_str(), NULL);
 }
-

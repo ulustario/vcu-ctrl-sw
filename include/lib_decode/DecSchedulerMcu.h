@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2023 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 /**************************************************************************//*!
@@ -8,7 +8,7 @@
  *****************************************************************************/
 #pragma once
 
-typedef struct AL_i_DecScheduler AL_IDecScheduler;
+typedef struct AL_IDecScheduler AL_IDecScheduler;
 
 #include "lib_common/HardwareDriver.h"
 

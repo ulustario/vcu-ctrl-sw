@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2023 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #include <iostream>
@@ -93,4 +93,3 @@ void UnCompFrameWriter::DimInTileCalculusRaster()
   else
     m_uPitchCFile = ((m_tPicDim.iWidth + m_iChromaHorzScale - 1) / m_iChromaHorzScale) * m_iNbBytesPerPix;
 }
-

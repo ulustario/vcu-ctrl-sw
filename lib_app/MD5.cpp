@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2023 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #include "lib_app/MD5.h"
@@ -97,7 +97,7 @@ std::string CMD5::GetMD5()
     m_pBound[m_uBound++] = 0;
 
   // Append length in Bits
-  uint64_t* pAppend = reinterpret_cast<uint64_t*>(m_pBound + m_uBound);
+  AL_64U* pAppend = reinterpret_cast<AL_64U*>(m_pBound + m_uBound);
   *pAppend = (m_uNumBytes << 3);
 
   UpdateBlock(reinterpret_cast<uint32_t*>(m_pBound));
@@ -194,4 +194,3 @@ void CMD5::UpdateBlock(uint32_t* pBlock)
   m_pHash32[2] += c;
   m_pHash32[3] += d;
 }
-

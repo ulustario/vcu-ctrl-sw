@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2023 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #pragma once
@@ -12,7 +12,7 @@
 /*************************************************************************//*!
    \brief Generic Buffer
 *****************************************************************************/
-typedef struct AL_t_Buffer
+typedef struct TBuffer
 {
   TMemDesc tMD; /*!< Memory descriptor associated to the buffer */
 }TBuffer;
@@ -53,4 +53,3 @@ static inline void CircBuffer_Init(TCircBuffer* pBuf)
 }
 
 int32_t ComputeRndPitch(int32_t iWidth, uint8_t uBitDepth, AL_EFbStorageMode eFrameBufferStorageMode, int iAlignment);
-

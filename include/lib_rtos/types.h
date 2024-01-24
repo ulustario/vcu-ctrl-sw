@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2023 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 /**************************************************************************//*!
@@ -19,7 +19,7 @@
 
 #define _CRT_SECURE_NO_WARNINGS
 #define AL_DEPRECATED(msg) __attribute__((deprecated(msg)))
-#define __AL_ALIGNED__(x) alignas(x)
+#define __AL_ALIGNED__(x) __attribute__((__aligned__(x)))
 
 #ifndef __cplusplus
 #define static_assert _Static_assert
@@ -39,13 +39,14 @@
 
 #define AL_DEPRECATED_ENUM_VALUE(eType, name, val, msg) AL_DEPRECATED(msg) static const eType name = val
 
+typedef uint64_t __AL_ALIGNED__ (8) AL_64U; // Ensure that 64bits has same alignment on all platforms (especially 32bits platforms)
+typedef int64_t __AL_ALIGNED__ (8) AL_64S; // Ensure that 64bits has same alignment on all platforms (especially 32bits platforms)
 typedef uint8_t* AL_VADDR; /*!< Virtual address. byte pointer */
 
 typedef uint32_t AL_PADDR; /*!< Physical address, 32-bit address registers */
 
-typedef uint64_t AL_PTR64;
+typedef AL_64U AL_PTR64;
 typedef void* AL_HANDLE;
 typedef void const* AL_CONST_HANDLE;
 
 /*@}*/
-

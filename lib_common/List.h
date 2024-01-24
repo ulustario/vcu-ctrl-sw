@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2023 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #pragma once
@@ -6,9 +6,9 @@
 #define AL_POISONOUS1 ((void*)0xdeadbeef)
 #define AL_POISONOUS2 ((void*)0xcafecafe)
 
-typedef struct AL_t_ListHead
+typedef struct AL_TListHead
 {
-  struct AL_t_ListHead* pNext, * pPrev;
+  struct AL_TListHead* pNext, * pPrev;
 }AL_ListHead;
 
 #define containerOf(ptr, type, member) \
@@ -70,4 +70,3 @@ static inline void AL_ListDel(AL_ListHead* pEntry)
   pEntry->pNext = (AL_ListHead*)AL_POISONOUS1;
   pEntry->pPrev = (AL_ListHead*)AL_POISONOUS2;
 }
-

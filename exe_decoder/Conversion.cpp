@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2023 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #include <cstring>
@@ -29,4 +29,3 @@ void CropFrame(AL_TBuffer* pYUV, int iSizePix, AL_TCropInfo tCrop)
     pMeta->tPlanes[AL_PLANE_V].iOffset += tCrop.uCropOffsetTop * AL_PixMapBuffer_GetPlanePitch(pYUV, AL_PLANE_V) + tCrop.uCropOffsetLeft * iSizePix;
   }
 }
-

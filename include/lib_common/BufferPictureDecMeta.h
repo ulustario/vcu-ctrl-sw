@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2023 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 /**************************************************************************//*!
@@ -14,7 +14,7 @@
 /*************************************************************************//*!
    \brief Useful information about the bitstream choices for the frame
 *****************************************************************************/
-typedef struct AL_t_PictureDecMetaData
+typedef struct AL_TPictureDecMetaData
 {
   AL_TMetaData tMeta;
   bool bLastFrameFromInputPayload; /*< picture is the last frame from the input payload, used for split-input */

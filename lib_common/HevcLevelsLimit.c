@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2023 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #include "HevcLevelsLimit.h"
@@ -298,4 +298,3 @@ uint8_t AL_HEVC_GetLevelFromDPBSize(int dpbSize, int pixRate)
 
   return 255;
 }
-

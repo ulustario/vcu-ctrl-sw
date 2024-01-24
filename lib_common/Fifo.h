@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2023 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #pragma once
@@ -20,4 +20,3 @@ bool AL_Fifo_Init(AL_TFifo* pFifo, size_t zMaxElem);
 void AL_Fifo_Deinit(AL_TFifo* pFifo);
 bool AL_Fifo_Queue(AL_TFifo* pFifo, void* pElem, uint32_t uWait);
 void* AL_Fifo_Dequeue(AL_TFifo* pFifo, uint32_t uWait);
-

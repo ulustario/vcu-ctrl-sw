@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2023 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 /****************************************************************************
@@ -425,6 +425,7 @@ static void AL_sSettings_SetDefaultHEVCParam(AL_TEncSettings* pSettings)
 {
   if(pSettings->eScalingList == AL_SCL_MAX_ENUM)
     pSettings->eScalingList = AL_SCL_DEFAULT;
+  pSettings->tChParam[0].uLog2MaxTuSkipSize = 2;
 }
 
 /***************************************************************************/
@@ -1573,7 +1574,7 @@ int AL_Settings_CheckCoherency(AL_TEncSettings* pSettings, AL_TEncChanParam* pCh
   {
     if(pChParam->tRCParam.eRCMode != AL_RC_CONST_QP)
     {
-      uint64_t uCPBSize = ((uint64_t)pChParam->tRCParam.uCPBSize * pChParam->tRCParam.uMaxBitRate) / 90000LL;
+      uint64_t uCPBSize = ((AL_64U)pChParam->tRCParam.uCPBSize * pChParam->tRCParam.uMaxBitRate) / 90000LL;
       uint32_t uMaxCPBSize = AL_sSettings_GetMaxCPBSize(pChParam);
 
       if(uCPBSize > uMaxCPBSize)
@@ -1657,4 +1658,3 @@ int AL_Settings_CheckCoherency(AL_TEncSettings* pSettings, AL_TEncChanParam* pCh
 }
 
 /*@}*/
-

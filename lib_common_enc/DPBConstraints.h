@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2023 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #pragma once
@@ -22,4 +22,3 @@ uint8_t AL_DPBConstraint_GetMaxRef(const AL_TGopParam* pGopParam, AL_ECodec eCod
    \return The maximum size of the DPB
 *****************************************************************************/
 uint8_t AL_DPBConstraint_GetMaxDPBSize(const AL_TEncChanParam* pChParam);
-

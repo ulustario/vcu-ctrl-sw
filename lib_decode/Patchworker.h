@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2023 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #pragma once
@@ -35,4 +35,3 @@ void AL_Patchworker_Reset(AL_TPatchworker* pPatchworker);
 
 void AL_Patchworker_Deinit(AL_TPatchworker* pPatchworker);
 bool AL_Patchworker_Init(AL_TPatchworker* pPatchworker, AL_TBuffer* stream, AL_TFifo* pInputFifo);
-

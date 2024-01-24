@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2023 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 /**************************************************************************//*!
@@ -61,4 +61,3 @@ int AL_AVC_GetMinOutputBuffersNeeded(AL_TStreamSettings const* pStreamSettings, 
 int AL_HEVC_GetMinOutputBuffersNeeded(AL_TStreamSettings const* pStreamSettings, int iStack);
 
 /*@}*/
-

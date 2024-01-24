@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2023 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #include "AVC_Sections.h"
@@ -147,4 +147,3 @@ void AVC_GenerateSections(AL_TEncCtx* pCtx, AL_TBuffer* pStream, AL_TEncPicStatu
       padCodedSliceData(BitsToBytes(pChannel->tRCParam.pMaxPictureSize[AL_SLICE_I]), pStream, pChannel);
   }
 }
-

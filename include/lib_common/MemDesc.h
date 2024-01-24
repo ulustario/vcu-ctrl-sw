@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2023 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 /**************************************************************************//*!
@@ -47,4 +47,3 @@ bool MemDesc_AllocNamed(TMemDesc* pMD, AL_TAllocator* pAllocator, size_t uSize, 
 bool MemDesc_Free(TMemDesc* pMD);
 
 /*@}*/
-

@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2023 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #include "Com_Encoder.h"
@@ -581,7 +581,7 @@ bool AL_Common_Encoder_Process(AL_TEncCtx* pCtx, AL_TBuffer* pFrame, AL_TBuffer*
   addresses.tSrcInfo.uFormat = AL_GET_SRC_FMT(srcMode);
 
   AL_Buffer_Ref(pFrame);
-  pEI->SrcHandle = (uint64_t)(uintptr_t)pFrame;
+  pEI->SrcHandle = (AL_64U)(uintptr_t)pFrame;
   AddSourceSent(pCtx, pFrame, pFI);
 
   AL_TEncRequestInfo* pReqInfo = getCurrentCommands(&pCtx->tLayerCtx[iLayerID]);
@@ -1443,7 +1443,7 @@ AL_TNalsData AL_ExtractNalsData(AL_TEncCtx* pCtx, int iLayerID, int iPicID)
 }
 
 /****************************************************************************/
-static void EndEncoding(void* pUserParam, AL_TEncPicStatus* pPicStatus, uint64_t streamUserPtr)
+static void EndEncoding(void* pUserParam, AL_TEncPicStatus* pPicStatus, AL_64U streamUserPtr)
 {
   AL_TCbUserParam* pCbUserParam = (AL_TCbUserParam*)pUserParam;
   AL_TEncCtx* pCtx = pCbUserParam->pCtx;
@@ -1640,4 +1640,3 @@ int AL_Common_Encoder_AddSei(AL_TEncCtx* pCtx, AL_TBuffer* pStream, bool isPrefi
     return -1;
   return AL_WriteSeiSection(AL_GET_CODEC(eProfile), nuts, pStream, isPrefix, iPayloadType, pPayload, iPayloadSize, iTempId, pChannel->eStartCodeBytesAligned);
 }
-

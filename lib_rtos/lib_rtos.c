@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2023 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #include "lib_rtos/lib_rtos.h"
@@ -114,9 +114,9 @@ int Rtos_Log(int iLogLevel, char const* const sMsg, ...)
 #endif
 
 /****************************************************************************/
-uint64_t Rtos_GetTime()
+AL_64U Rtos_GetTime()
 {
-  uint64_t uCount, uFreq;
+  AL_64U uCount, uFreq;
   QueryPerformanceCounter((LARGE_INTEGER*)&uCount);
   QueryPerformanceFrequency((LARGE_INTEGER*)&uFreq);
 
@@ -304,12 +304,12 @@ typedef struct
 }evt_t;
 
 /****************************************************************************/
-uint64_t Rtos_GetTime()
+AL_64U Rtos_GetTime()
 {
   struct timeval Tv;
   gettimeofday(&Tv, NULL);
 
-  return ((uint64_t)Tv.tv_sec) * 1000 + (Tv.tv_usec / 1000);
+  return ((AL_64U)Tv.tv_sec) * 1000 + (Tv.tv_usec / 1000);
 }
 
 /****************************************************************************/
@@ -504,7 +504,7 @@ bool Rtos_WaitEvent(AL_EVENT Event, uint32_t Wait)
     gettimeofday(&now, NULL);
 
     struct timespec deadline;
-    uint64_t uWaitNsec = (now.tv_usec + 1000ULL * Wait) * 1000ULL;
+    AL_64U uWaitNsec = (now.tv_usec + 1000ULL * Wait) * 1000ULL;
     deadline.tv_sec = (uWaitNsec / 1000000000ULL) + now.tv_sec;
     deadline.tv_nsec = uWaitNsec % 1000000000ULL;
 

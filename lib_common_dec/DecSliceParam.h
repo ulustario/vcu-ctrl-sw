@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2023 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 /****************************************************************************
@@ -16,7 +16,7 @@
 /*************************************************************************//*!
    \brief Slice Parameters : Mimics structure for IP registers
 *****************************************************************************/
-typedef struct AL_t_DecSliceParam
+typedef struct AL_TDecSliceParam
 {
   uint8_t MaxMergeCand;
   uint8_t CabacInitIdc;
@@ -90,4 +90,3 @@ typedef struct AL_t_DecSliceParam
 }AL_TDecSliceParam;
 
 /*@}*/
-

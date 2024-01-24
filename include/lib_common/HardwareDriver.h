@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2023 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 /**************************************************************************//*!
@@ -8,7 +8,7 @@
  *****************************************************************************/
 #pragma once
 
-typedef struct AL_t_driver AL_TDriver;
+typedef struct AL_TDriver AL_TDriver;
 
 /*************************************************************************//*!
     \brief Get a driver that will access an hardware device
@@ -16,4 +16,3 @@ typedef struct AL_t_driver AL_TDriver;
 AL_TDriver* AL_GetHardwareDriver(void);
 
 /*@}*/
-

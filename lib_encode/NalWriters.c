@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2023 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #include "NalWriters.h"
@@ -180,4 +180,3 @@ AL_TNalUnit AL_CreateExternalSei(AL_TSeiExternalCtx* ctx, int nut, int tempId)
 {
   return AL_CreateNalUnit(&seiExternalWrite, ctx, nut, 0, 0, tempId);
 }
-

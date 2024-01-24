@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2023 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 /**************************************************************************//*!
@@ -33,7 +33,7 @@
     If you want to create multiple channels in the same process that access the same IP, the AL_IDecScheduler should be shared between them.
     \see AL_DecSchedulerCpu_Create and AL_DecSchedulerMcu_Create if available to get concrete implementations of this interface.
 *****************************************************************************/
-typedef struct AL_i_DecScheduler AL_IDecScheduler;
+typedef struct AL_IDecScheduler AL_IDecScheduler;
 
 void AL_IDecScheduler_Destroy(AL_IDecScheduler* pThis);
 void AL_IDecScheduler_Get(AL_IDecScheduler const* pThis, AL_EIDecSchedulerInfo eInfo, void* pParam);

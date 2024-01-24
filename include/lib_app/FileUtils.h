@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2023 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #pragma once
@@ -27,4 +27,3 @@ int FromHex2(char a, char b);
 
 /****************************************************************************/
 int FromHex4(char a, char b, char c, char d);
-

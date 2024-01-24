@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2023 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 /****************************************************************************
@@ -15,7 +15,7 @@
 /*************************************************************************//*!
    \brief Encoded slice status
 *****************************************************************************/
-typedef struct AL_t_SliceStatus
+typedef struct AL_TSliceStatus
 {
   bool bLcuOverflow; /*!< True when number of bit used to encode one LCU exceed */
   bool bBufOverflow; /*!< True when number of bit used to encode one slice exceed the buffer available size*/
@@ -45,4 +45,3 @@ typedef struct AL_t_SliceStatus
 }AL_TEncSliceStatus;
 
 /*@}*/
-

@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2023 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 /****************************************************************************
@@ -13,7 +13,7 @@
 #include "BitStreamLite.h"
 
 /******************************************************************************/
-typedef struct AL_t_CabacCtx
+typedef struct AL_TCabacCtx
 {
   unsigned int uLow;
   unsigned int uRange;
@@ -30,4 +30,3 @@ void AL_Cabac_Finish(AL_TBitStreamLite* pBS, AL_TCabacCtx* pCtx);
 /****************************************************************************/
 
 /*@}*/
-

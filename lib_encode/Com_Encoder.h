@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2023 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 /****************************************************************************
@@ -375,4 +375,3 @@ void AL_Common_Encoder_SetHlsParam(AL_TEncChanParam* pChParam);
 bool AL_Common_Encoder_IsInitialQpProvided(AL_TEncChanParam* pChParam);
 
 /*@}*/
-

@@ -1,9 +1,7 @@
-// SPDX-FileCopyrightText: © 2023 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #include "lib_app/JsonFile.h"
-
-using namespace std;
 
 struct TJsonToken
 {
@@ -67,7 +65,6 @@ bool TJsonValue::GetValue(const std::string& sKey, EValueType eValueType, TJsonV
 bool TJsonValue::GetValue(const std::string& sKey, bool& bValue)
 {
   TJsonValue* pValue = nullptr;
-  ;
 
   if(!GetValue(sKey, JSON_VALUE_BOOL, pValue))
     return false;
@@ -79,7 +76,6 @@ bool TJsonValue::GetValue(const std::string& sKey, bool& bValue)
 bool TJsonValue::GetValue(const std::string& sKey, int& iValue)
 {
   TJsonValue* pValue = nullptr;
-  ;
 
   if(!GetValue(sKey, JSON_VALUE_NUMBER, pValue))
     return false;
@@ -201,7 +197,7 @@ TJsonToken CJsonReader::ReadNextToken(std::ifstream& ifs)
              TJsonToken::JSON_TOKEN_END_FILE, "", 0
     };
 
-  auto CheckToken = [&ifs](const std::string& sExpected)
+  auto CheckToken = [&ifs](const std::string& sExpected) -> bool
                     {
                       char c;
 
@@ -245,22 +241,29 @@ TJsonToken CJsonReader::ReadNextToken(std::ifstream& ifs)
     tParsedToken.eType = TJsonToken::JSON_TOKEN_STRING;
     break;
   }
-  case 't':
-  {
-    if(!CheckToken("rue"))
-      return ERROR_TOKEN;
-    tParsedToken.eType = TJsonToken::JSON_TOKEN_TRUE;
-    break;
-  }
-  case 'f':
-  {
-    if(!CheckToken("alse"))
-      return ERROR_TOKEN;
-    tParsedToken.eType = TJsonToken::JSON_TOKEN_FALSE;
-    break;
-  }
   default:
   {
+    if(ifs.peek() == 't')
+    {
+      if(CheckToken("true"))
+      {
+        tParsedToken.eType = TJsonToken::JSON_TOKEN_TRUE;
+        break;
+      }
+
+      return ERROR_TOKEN;
+    }
+
+    if(ifs.peek() == 'f')
+    {
+      if(CheckToken("false"))
+      {
+        tParsedToken.eType = TJsonToken::JSON_TOKEN_FALSE;
+        break;
+      }
+      return ERROR_TOKEN;
+    }
+
     bool bNegative;
 
     if(cToken == '-')
@@ -306,16 +309,16 @@ CJsonWriter::CJsonWriter(const std::string& sFile, bool bStreamMode) :
 
 CJsonWriter::~CJsonWriter()
 {
-  if(eState == JSON_STREAM_OPENED)
-  {
-    std::ofstream ofs(sFile, ofstream::out | std::ofstream::app);
-    CloseArray(ofs, bOneLinerStream, 0);
-  }
+  if(eState != JSON_STREAM_OPENED)
+    return;
+  std::ofstream ofs(sFile, std::ofstream::out | std::ofstream::app);
+  CloseArray(ofs, bOneLinerStream, 0);
+  ofs << std::endl;
 }
 
 bool CJsonWriter::Write(const TJsonValue& tValue)
 {
-  std::ios_base::openmode openMode = ofstream::out;
+  std::ios_base::openmode openMode = std::ofstream::out;
 
   if(eState == JSON_STREAM_OPENED)
     openMode |= std::ofstream::app;

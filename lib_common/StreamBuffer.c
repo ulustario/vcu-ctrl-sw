@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2023 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #include "lib_common/StreamBuffer.h"
@@ -106,4 +106,3 @@ int AL_GetMinimalNalSize(int iNumSlices, AL_ECodec eCodec)
 
   return iNonVclSize + iSliceHdrSize + iStreamPartSize + iHardwareMinimalBurst;
 }
-

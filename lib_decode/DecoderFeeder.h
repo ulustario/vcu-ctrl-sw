@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2023 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #pragma once
@@ -16,4 +16,3 @@ void AL_DecoderFeeder_Destroy(AL_TDecoderFeeder* pDecFeeder);
 /* push a buffer in the queue. it will be fed to the decoder when possible */
 void AL_DecoderFeeder_Process(AL_TDecoderFeeder* pDecFeeder);
 void AL_DecoderFeeder_Reset(AL_TDecoderFeeder* pDecFeeder);
-

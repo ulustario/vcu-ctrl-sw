@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2023 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #pragma once
@@ -10,7 +10,7 @@
 /*************************************************************************//*!
    \brief Store information on skipped slice data.
 *****************************************************************************/
-typedef struct AL_t_SkippedSlice
+typedef struct AL_TSkippedSlice
 {
   uint32_t uOffset; /*!< Offset to slice data in the skipped picture buffer */
   uint32_t uSize; /*!< Non-anti-emulated slice data size in bytes */
@@ -21,7 +21,7 @@ typedef struct AL_t_SkippedSlice
    \brief This structure is designed to store data information of a skipped picture.
    \see GenerateSkippedPicture
 *****************************************************************************/
-typedef struct AL_t_SkippedPicture
+typedef struct AL_TSkippedPicture
 {
   AL_HANDLE hBuf; /*!< Handle of the skipped picture buffer */
   uint8_t* pData; /*!< Data pointer from hBuf for storing precomputed skipped picture bitstream */
@@ -37,4 +37,3 @@ typedef struct AL_t_SkippedPicture
 /*****************************************************************************/
 #include "HEVC_SkippedPict.h"
 #include "AVC_SkippedPict.h"
-

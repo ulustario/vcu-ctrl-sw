@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2023 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 /****************************************************************************
@@ -79,7 +79,7 @@ typedef struct t_MvBufPool
    \brief Reference Picture List Context
 *****************************************************************************/
 /* reference picture list construction variables */
-typedef struct AL_t_HevcRefPicCtx
+typedef struct AL_THevcRefPicCtx
 {
   int PocStCurrBefore[MAX_DPB_SIZE];
   int PocStCurrAfter[MAX_DPB_SIZE];
@@ -137,7 +137,7 @@ typedef struct t_PictMngrCtx
 
 }AL_TPictMngrCtx;
 
-typedef struct AL_t_PictMngrParam
+typedef struct AL_TPictMngrParam
 {
   int iNumDPBRef; /*!< Number of reference to manage */
   AL_EDpbMode eDPBMode; /*!< Mode of the DPB */
@@ -353,4 +353,3 @@ void AL_PictMngr_UnlockID(AL_TPictMngrCtx* pCtx, int iFrameID, int iMotionVector
 bool AL_PictMngr_GetBuffers(AL_TPictMngrCtx const* pCtx, AL_TDecSliceParam const* pSP, TBuffer* pListVirtAddr, TBuffer* pListAddr, TBufferPOC* pPOC, TBufferMV* pMV, AL_TRecBuffers* pRecs);
 
 /*@}*/
-

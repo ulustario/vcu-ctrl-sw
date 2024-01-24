@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2023 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 /**************************************************************************//*!
@@ -11,7 +11,7 @@
 
 #include "lib_common/BufferMeta.h"
 
-typedef struct AL_t_internalHandleMetaData AL_TInternalHandleMetaData;
+typedef struct AL_TInternalHandleMetaData AL_TInternalHandleMetaData;
 
 typedef struct
 {
@@ -30,4 +30,3 @@ AL_HANDLE AL_HandleMetaData_GetHandle(AL_THandleMetaData const* pMeta, int iNumH
 int AL_HandleMetaData_GetNumHandles(AL_THandleMetaData const* pMeta);
 
 /*@}*/
-

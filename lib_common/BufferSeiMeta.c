@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2023 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #include "lib_common/BufferSeiMeta.h"
@@ -90,4 +90,3 @@ void AL_SeiMetaData_Reset(AL_TSeiMetaData* pMeta)
   pMeta->numPayload = 0;
   Rtos_Memset(pMeta->pBuf, 0, pMeta->maxBufSize);
 }
-

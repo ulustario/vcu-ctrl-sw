@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2023 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 /**************************************************************************//*!
@@ -15,7 +15,7 @@
 /*************************************************************************//*!
    \brief Useful information about the bitstream choices for the frame
 *****************************************************************************/
-typedef struct AL_t_PictureMetaData
+typedef struct AL_TPictureMetaData
 {
   AL_TMetaData tMeta;
   AL_ESliceType eType; /*< slice type chosen to encode the picture */
@@ -30,4 +30,3 @@ AL_TPictureMetaData* AL_PictureMetaData_Create(void);
 AL_TPictureMetaData* AL_PictureMetaData_Clone(AL_TPictureMetaData* pMeta);
 
 /*@}*/
-

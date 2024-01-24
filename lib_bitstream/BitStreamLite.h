@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2023 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 /****************************************************************************
@@ -15,7 +15,7 @@
 /*************************************************************************//*!
    \brief simplified bitstream structure
 *****************************************************************************/
-typedef struct AL_t_BitStreamLite
+typedef struct AL_TBitStreamLite
 {
   uint8_t* pData; /*!< Pointer to an array of bytes used as bitstream */
   int iBitCount; /*!< Bits already written */
@@ -130,4 +130,3 @@ int AL_BitStreamLite_GetBitsCount(AL_TBitStreamLite* pBS);
 /****************************************************************************/
 
 /*@}*/
-

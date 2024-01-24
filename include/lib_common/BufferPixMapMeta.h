@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2023 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 /**************************************************************************//*!
@@ -15,7 +15,7 @@
 /*************************************************************************//*!
    \brief Plane parameters
 *****************************************************************************/
-typedef struct AL_t_Plane
+typedef struct AL_TPlane
 {
   int iChunkIdx;   /*!< Index of the chunk containing the plane */
   int iOffset;      /*!< Offset of the plane from beginning of the buffer chunk (in bytes) */
@@ -25,7 +25,7 @@ typedef struct AL_t_Plane
 /*************************************************************************//*!
    \brief Useful information related to the framebuffers containing the picture
 *****************************************************************************/
-typedef struct AL_t_PixMapMetaData
+typedef struct AL_TPixMapMetaData
 {
   AL_TMetaData tMeta;
   AL_TDimension tDim; /*!< Dimension in pixel of the frame */

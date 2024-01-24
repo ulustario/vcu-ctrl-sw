@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2023 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #pragma once
@@ -26,9 +26,9 @@ protected:
     uint8_t m_pHash8[16];
   };
 
-  uint64_t m_uNumBytes;
+  AL_64U m_uNumBytes;
 
-  alignas(alignof(uint64_t)) uint8_t m_pBound[64]; // 512 bits
+  alignas(alignof(AL_64U)) uint8_t m_pBound[64]; // 512 bits
   uint32_t m_uBound;
 };
 

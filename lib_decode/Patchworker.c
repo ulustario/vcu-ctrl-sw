@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2023 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #include "Patchworker.h"
@@ -201,4 +201,3 @@ void AL_Patchworker_Reset(AL_TPatchworker* this)
   pMeta->bLastBuffer = false;
   Rtos_ReleaseMutex(this->lock);
 }
-

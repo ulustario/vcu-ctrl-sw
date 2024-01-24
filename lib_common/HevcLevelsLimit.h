@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2023 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #pragma once
@@ -16,4 +16,3 @@ uint8_t AL_HEVC_GetLevelFromPixRate(int pixRate);
 uint8_t AL_HEVC_GetLevelFromBitrate(int bitrate, int tier);
 uint8_t AL_HEVC_GetLevelFromTileCols(int tileCols);
 uint8_t AL_HEVC_GetLevelFromDPBSize(int dpbSize, int pixRate);
-

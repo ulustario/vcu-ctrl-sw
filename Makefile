@@ -49,8 +49,8 @@ include base.mk
 -include lib_common/project.mk
 -include lib_rtos/project.mk
 -include lib_ip_ctrl/project.mk
--include lib_perfs/project.mk
--include lib_app/project.mk #lib_common and lib_perfs dependency
+-include lib_log/project.mk
+-include lib_app/project.mk #lib_common and lib_log dependency
 
 
 BUILD_EXE_FBC=0

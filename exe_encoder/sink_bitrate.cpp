@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2023 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #include "sink_bitrate.h"
@@ -96,4 +96,3 @@ std::unique_ptr<IFrameSink> createBitrateWriter(std::string path, ConfigFile con
   auto const frameRate = (float)cfg.Settings.tChParam[0].tRCParam.uFrameRate / cfg.Settings.tChParam[0].tRCParam.uClkRatio * 1000;
   return std::unique_ptr<IFrameSink>(new BitrateWriter(path, frameRate));
 }
-

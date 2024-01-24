@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2023 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #include "sink_bitstream_writer.h"
@@ -24,18 +24,17 @@ struct BitstreamWriter : IFrameSink
 
   ~BitstreamWriter()
   {
+    printBitrate();
+
+    // update container header
+    WriteContainerHeader(m_file, cfg.Settings, cfg.MainInput.FileInfo, m_frameCount);
     m_file.flush();
   }
 
   void ProcessFrame(AL_TBuffer* pStream) override
   {
-    if(pStream == EndOfStream)
-    {
-      printBitrate();
-      // update container header
-      WriteContainerHeader(m_file, cfg.Settings, cfg.MainInput.FileInfo, m_frameCount);
+    if(pStream == nullptr)
       return;
-    }
 
     m_frameCount += WriteStream(m_file, pStream, &cfg.Settings, hdr_pos, m_iFrameSize);
   }
@@ -64,4 +63,3 @@ unique_ptr<IFrameSink> createBitstreamWriter(string path, ConfigFile const& cfg)
 
   return make_unique<BitstreamWriter>(path, cfg);
 }
-

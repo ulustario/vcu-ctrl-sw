@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2023 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #include <climits>
@@ -1051,16 +1051,17 @@ unique_ptr<FrameReader> LayerResources::InitializeFrameReader(ConfigFile& cfg, i
   (void)(MapFile);
 
   unique_ptr<FrameReader> pFrameReader;
-  bool bUseCompFormat = AL_IsCompressed(FileInfo.FourCC);
-  bool bIsMapFileEmpty = sMapFileName.empty();
+  bool bUseCompressedFormat = AL_IsCompressed(FileInfo.FourCC);
+  bool bHasCompressionMapFile = !sMapFileName.empty();
 
-  if(bUseCompFormat && bIsMapFileEmpty)
-    throw runtime_error("Providing a map file is mandatory when using compressed input.");
+  if(bUseCompressedFormat != bHasCompressionMapFile)
+    throw runtime_error(std::string("Providing a map file is ") + std::string(bUseCompressedFormat ? "mandatory" : "forbidden") +
+                        " when using " + std::string(bUseCompressedFormat ? "compressed" : "uncompressed") + " input.");
 
   YuvFile.close();
   OpenInput(YuvFile, sYuvFileName);
 
-  if(bIsMapFileEmpty)
+  if(!bUseCompressedFormat)
     pFrameReader = unique_ptr<FrameReader>(new UnCompFrameReader(YuvFile, FileInfo, cfg.RunInfo.bLoop));
   pFrameReader->SeekA(cfg.RunInfo.iFirstPict + iReadCount);
 
@@ -1230,12 +1231,12 @@ void SafeChannelMain(ConfigFile& cfg, CIpDevice* pIpDevice, CIpDeviceParam& para
 
   while(hasInputAndNoError)
   {
-    uint64_t uBeforeTime = Rtos_GetTime();
+    AL_64U uBeforeTime = Rtos_GetTime();
 
     for(int i = 0; i < Settings.NumLayer; ++i)
       hasInputAndNoError = layerResources[i].SendInput(cfg, firstSink, pTraceHook) && hasInputAndNoError;
 
-    uint64_t uAfterTime = Rtos_GetTime();
+    AL_64U uAfterTime = Rtos_GetTime();
 
     if((uAfterTime - uBeforeTime) < RunInfo.uInputSleepInMilliseconds)
       Rtos_Sleep(RunInfo.uInputSleepInMilliseconds - (uAfterTime - uBeforeTime));
@@ -1364,4 +1365,3 @@ int main(int argc, char* argv[])
     return 1;
   }
 }
-

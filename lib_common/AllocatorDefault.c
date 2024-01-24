@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2023 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #include "lib_common/Allocator.h"
@@ -148,4 +148,3 @@ AL_HANDLE AL_WrapperAllocator_WrapData(uint8_t* pData, void (* destructor)(void*
 {
   return WrapData(AL_GetWrapperAllocator(), pData, destructor, pUserData);
 }
-

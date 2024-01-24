@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2023 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #include "lib_app/UnCompFrameReader.h"
@@ -24,4 +24,3 @@ void UnCompFrameReader::SeekR(int iFrameDlt)
   int iPictSize = GetPictureSize(m_tFileInfo);
   m_recFile.seekg(iPictSize * iFrameDlt, std::ios_base::cur);
 }
-

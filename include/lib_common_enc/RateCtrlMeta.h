@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2023 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 /**************************************************************************//*!
@@ -19,7 +19,7 @@
    \brief MetaData gathering encode-statistics useful for rate-control
    algorithms
 *****************************************************************************/
-typedef struct AL_t_RateCtrlMetaData
+typedef struct AL_TRateCtrlMetaData
 {
   AL_TMetaData tMeta;
   bool bFilled;
@@ -41,4 +41,3 @@ AL_TRateCtrlMetaData* AL_RateCtrlMetaData_Create(AL_TAllocator* pAllocator, AL_T
 AL_TRateCtrlMetaData* AL_RateCtrlMetaData_Create_WithBuffer(AL_TBuffer* pMVBuf);
 
 /*@}*/
-

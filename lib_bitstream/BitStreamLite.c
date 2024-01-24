@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2023 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #include "BitStreamLite.h"
@@ -220,4 +220,3 @@ void AL_BitStreamLite_PutSE(AL_TBitStreamLite* pBS, int32_t iValue)
 {
   AL_BitStreamLite_PutUE(pBS, 2 * (iValue > 0 ? iValue : -iValue) - (iValue > 0));
 }
-

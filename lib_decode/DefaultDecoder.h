@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2023 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 /****************************************************************************
@@ -135,4 +135,3 @@ void AL_Default_Decoder_InternalFlush(AL_TDecoder* pAbsDec);
 void AL_Default_Decoder_FlushInput(AL_TDecoder* pAbsDec);
 
 /*@}*/
-

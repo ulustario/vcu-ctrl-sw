@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2023 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 /**************************************************************************//*!
@@ -49,4 +49,3 @@ void AL_CleanupMemory(void* pDst, size_t uSize);
 extern int AL_CLEAN_BUFFERS;
 
 /*@}*/
-

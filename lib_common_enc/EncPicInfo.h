@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2023 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 /**************************************************************************//*!
@@ -15,7 +15,6 @@
 #include "lib_common_enc/EncChanParam.h"
 #include "lib_common/BufferAPI.h"
 #include "lib_common_enc/RateCtrlStats.h"
-#include "lib_rtos/types.h"
 
 /*************************************************************************//*!
    \brief Segmentation structure
@@ -52,8 +51,8 @@ typedef struct
 
   AL_TLookAheadParam tLAParam;
 
-  uint64_t UserParam;
-  uint64_t SrcHandle;
+  AL_64U UserParam;
+  AL_64U SrcHandle;
 
   int8_t iQp1Offset;
   int8_t iQp2Offset;
@@ -94,7 +93,7 @@ typedef struct
   bool useAutoQP;
 }AL_TEncSmartParams;
 
-typedef struct AL_t_EncRequestInfo
+typedef struct AL_TEncRequestInfo
 {
   AL_ERequestEncOption eReqOptions;
   uint32_t uSceneChangeDelay;
@@ -105,7 +104,7 @@ typedef struct AL_t_EncRequestInfo
 /*************************************************************************//*!
    \brief Stream partition structure
 *****************************************************************************/
-typedef struct AL_t_StreamPart
+typedef struct AL_TStreamPart
 {
   uint32_t uOffset;
   uint32_t uSize;
@@ -114,10 +113,10 @@ typedef struct AL_t_StreamPart
 /*************************************************************************//*!
    \brief Picture status structure
 *****************************************************************************/
-typedef struct AL_t_EncPicStatus
+typedef struct AL_TEncPicStatus
 {
-  uint64_t UserParam;
-  uint64_t SrcHandle;
+  AL_64U UserParam;
+  AL_64U SrcHandle;
 
   bool bSkip;
   bool bIsRef;
@@ -177,24 +176,23 @@ typedef struct AL_t_EncPicStatus
 /*************************************************************************//*!
    \brief Picture buffers structure
 *****************************************************************************/
-typedef struct AL_t_SrcInfo
+typedef struct AL_TSrcInfo
 {
   uint8_t uBitDepth;
   uint32_t uPitch;
   uint8_t uFormat;
 }AL_TSrcInfo;
 
-typedef struct AL_t_SrcAddrs
+typedef struct AL_TSrcAddrs
 {
   AL_PADDR pY;
   AL_PADDR pC1;
 }AL_TSrcAddrs;
 
-typedef struct AL_t_EncPicBufAddrs
+typedef struct AL_TEncPicBufAddrs
 {
   AL_TSrcAddrs tSrcAddrs;
   AL_TSrcInfo tSrcInfo;
   AL_PADDR pEP2;
   AL_PTR64 pEP2_v;
 }AL_TEncPicBufAddrs;
-

@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2023 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 extern "C"
@@ -147,4 +147,3 @@ AL_TAllocator* createAllocatorTracker(AL_TAllocator* pAllocator)
   tracker->mode = detailedMode;
   return (AL_TAllocator*)tracker;
 }
-

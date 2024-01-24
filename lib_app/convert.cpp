@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2023 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 /****************************************************************************
@@ -5036,4 +5036,3 @@ int ConvertPixMapBuffer(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 }
 
 /*@}*/
-

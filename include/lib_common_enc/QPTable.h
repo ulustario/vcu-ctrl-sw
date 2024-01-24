@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2023 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 /**************************************************************************//*!
@@ -25,4 +25,3 @@
 #define MASK_FORCE (MASK_FORCE_INTRA | MASK_FORCE_MV0)
 
 /*@}*/
-

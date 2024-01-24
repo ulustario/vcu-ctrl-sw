@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2023 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #include "Fifo.h"
@@ -89,4 +89,3 @@ void* AL_Fifo_Dequeue(AL_TFifo* pFifo, uint32_t uWait)
     Rtos_ReleaseSemaphore(pFifo->hSpaceSem);
   return pElem;
 }
-

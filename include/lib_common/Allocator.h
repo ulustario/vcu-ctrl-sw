@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2023 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 /**************************************************************************//*!
@@ -22,7 +22,7 @@
 /**************************************************************************//*!
    \brief Generic memory allocator interface object
 ******************************************************************************/
-typedef struct AL_t_Allocator AL_TAllocator;
+typedef struct AL_TAllocator AL_TAllocator;
 
 /*! \cond ********************************************************************/
 typedef struct
@@ -37,7 +37,7 @@ typedef struct
   void (* pfnSyncForDevice)(AL_TAllocator* pAllocator, AL_VADDR pVirtualAddr, size_t zSize);
 }AL_AllocatorVtable;
 
-struct AL_t_Allocator
+struct AL_TAllocator
 {
   AL_AllocatorVtable const* vtable;
 };
@@ -208,4 +208,3 @@ AL_HANDLE AL_WrapperAllocator_WrapData(uint8_t* pData, PFN_WrapDestructor destru
 AL_TAllocator* AL_AlignedAllocator_Create(AL_TAllocator* pMemoryAllocator, AL_TAllocator* pRealAllocator, uint32_t uAlign);
 
 /*@}*/
-

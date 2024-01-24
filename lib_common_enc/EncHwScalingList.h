@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2023 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 /****************************************************************************
@@ -134,4 +134,3 @@ extern void AL_HEVC_WriteEncHwScalingList(AL_TSCLParam const* pSclLst, AL_THwSca
 extern void AL_AVC_WriteEncHwScalingList(AL_TSCLParam const* pSclLst, AL_THwScalingList const* pHwSclLst, uint8_t chroma_format_idc, uint8_t* pBuf);
 
 /*@}*/
-

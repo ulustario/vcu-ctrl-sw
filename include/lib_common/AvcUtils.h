@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2023 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #pragma once
@@ -29,4 +29,3 @@ bool AL_AVC_IsVcl(AL_ENut eNUT);
    respect to the AVC specification
  ***************************************************************************/
 #define AL_AVC_NAL_HDR_SIZE 4
-

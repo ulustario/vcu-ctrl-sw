@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2023 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 /****************************************************************************
@@ -875,10 +875,25 @@ bool AL_DecodeOneNal(AL_TAup* pAUP, AL_TDecCtx* pCtx, AL_ENut nut, uint32_t uNut
 
   AL_NalParser parser = pCtx->parser;
   AL_NonVclNuts nuts = parser.getNonVclNuts();
+  bool bConcealRequestLaunched = false;
 
   if(parser.isSliceData(nut))
   {
     return parser.decodeSliceData(pAUP, pCtx, nut, bIsLastAUNal, iNumSlice);
+  }
+  else
+  {
+    // There is no NAL reordering in split-input + subframeUnit
+    // This is to ensure previous requests are finished for any non-slice nals
+    if((pCtx->eInputMode == AL_DEC_SPLIT_INPUT) && (isSubframeUnit(pCtx->pChanParam->eDecUnit)))
+    {
+      if(AL_Default_Decoder_HasOngoingFrame(pCtx))
+      {
+        parser.finishPendingRequest(pCtx);
+        pCtx->tConceal.bSkipRemainingNals = true;
+        bConcealRequestLaunched = true;
+      }
+    }
   }
 
   if((nut == nuts.seiPrefix || (nut == nuts.seiSuffix && pCtx->bIsBuffersAllocated)) && parser.parseSei)
@@ -949,12 +964,15 @@ bool AL_DecodeOneNal(AL_TAup* pAUP, AL_TDecCtx* pCtx, AL_ENut nut, uint32_t uNut
     // we need to ensure that previous NAL is launched
     if((pCtx->eInputMode == AL_DEC_SPLIT_INPUT) && (nut == nuts.apsSuffix))
     {
-      if(pCtx->bFirstIsValid && pCtx->tCurrentFrameCtx.bFirstSliceValid)
+      if(bConcealRequestLaunched == false)
       {
-        parser.finishPendingRequest(pCtx);
-        pCtx->bIsFirstPicture = true;
-        pCtx->tConceal.bSkipRemainingNals = true;
-        return true;
+        if(AL_Default_Decoder_HasOngoingFrame(pCtx))
+        {
+          parser.finishPendingRequest(pCtx);
+          pCtx->bIsFirstPicture = true;
+          pCtx->tConceal.bSkipRemainingNals = true;
+          return true;
+        }
       }
       pCtx->bIsFirstPicture = true;
     }
@@ -967,23 +985,12 @@ bool AL_DecodeOneNal(AL_TAup* pAUP, AL_TDecCtx* pCtx, AL_ENut nut, uint32_t uNut
     CheckNALParserResult(pCtx, eParserResult);
   }
 
-  // In split-input, filler data is a non-reorderable delimiter,
-  // we need to ensure that previous NAL is launched
-  if((nut == nuts.eos) || (nut == nuts.eob) || ((pCtx->eInputMode == AL_DEC_SPLIT_INPUT) && (nut == nuts.fd)))
+  if((nut == nuts.eos) || (nut == nuts.eob))
   {
-    if(pCtx->bFirstIsValid && pCtx->tCurrentFrameCtx.bFirstSliceValid)
-    {
-      parser.finishPendingRequest(pCtx);
-      pCtx->bIsFirstPicture = true;
-
-      if(pCtx->eInputMode != AL_DEC_UNSPLIT_INPUT)
-        pCtx->tConceal.bSkipRemainingNals = true;
-      return true;
-    }
     pCtx->bIsFirstPicture = true;
   }
 
-  return false;
+  return bConcealRequestLaunched;
 }
 
 /*****************************************************************************/
@@ -2175,4 +2182,3 @@ AL_EFbStorageMode AL_Default_Decoder_GetDisplayStorageMode(AL_TDecCtx const* pCt
 }
 
 /*@}*/
-

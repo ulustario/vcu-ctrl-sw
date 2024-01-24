@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2023 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 /**************************************************************************//*!
@@ -29,7 +29,7 @@
     If you want to create multiple channels in the same process that access the same IP, the AL_IEncScheduler should be shared between them.
     \see AL_SchedulerCpu_Create and AL_SchedulerMcu_Create if available to get concrete implementations of this interface.
 *****************************************************************************/
-typedef struct AL_i_EncScheduler AL_IEncScheduler;
+typedef struct AL_IEncScheduler AL_IEncScheduler;
 
 void AL_IEncScheduler_Destroy(AL_IEncScheduler* pScheduler);
 void AL_IEncScheduler_Get(AL_IEncScheduler const* pThis, AL_EIEncSchedulerInfo eInfo, void* pParam);
@@ -500,4 +500,3 @@ bool AL_Encoder_SetHDRSEIs(AL_HEncoder hEnc, AL_THDRSEIs* pHDRSEIs);
 /* allegro-doc-end: notify_sethdrseis */
 
 /*@}*/
-

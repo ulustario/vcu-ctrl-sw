@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2023 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 /****************************************************************************
@@ -47,14 +47,14 @@ typedef struct
 }AL_TDecScheduler_CB_DestroyChannel;
 
 /****************************************************************************/
-typedef struct AL_i_DecSchedulerVtable AL_IDecSchedulerVtable;
+typedef struct AL_IDecSchedulerVtable AL_IDecSchedulerVtable;
 
-typedef struct AL_i_DecScheduler
+typedef struct AL_IDecScheduler
 {
   const AL_IDecSchedulerVtable* vtable;
 }AL_IDecScheduler;
 
-typedef struct AL_i_DecSchedulerVtable
+typedef struct AL_IDecSchedulerVtable
 {
   void (* Destroy)(AL_IDecScheduler* pScheduler);
 

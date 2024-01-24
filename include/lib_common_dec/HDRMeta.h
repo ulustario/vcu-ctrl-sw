@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2023 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 /**************************************************************************//*!
@@ -15,7 +15,7 @@
 /*************************************************************************//*!
    \brief Metadata containing HDR related settings
 *****************************************************************************/
-typedef struct AL_t_HDRMeta
+typedef struct AL_THDRMeta
 {
   AL_TMetaData tMeta;
   AL_EColourDescription eColourDescription;
@@ -44,4 +44,3 @@ void AL_HDRMetaData_Reset(AL_THDRMetaData* pMeta);
 void AL_HDRMetaData_Copy(AL_THDRMetaData* pMetaSrc, AL_THDRMetaData* pMetaDst);
 
 /*@}*/
-

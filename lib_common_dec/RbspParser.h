@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2023 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 /****************************************************************************
@@ -168,4 +168,3 @@ int se(AL_TRbspParser* pRP);
 uint8_t* get_raw_data(AL_TRbspParser* pRP);
 
 /*@}*/
-

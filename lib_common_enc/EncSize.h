@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2023 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #pragma once
@@ -21,4 +21,3 @@ int AL_GetCompDataSize(uint32_t uNumLCU, uint8_t uLog2MaxCUSize, uint8_t uBitDep
 #define AL_MAX_STREAM_BUFFER (AL_MAX_SLICES_SUBFRAME * 10)
 #define AL_MAX_LOOK_AHEAD 40
 #define AL_MAX_SOURCE_BUFFER (AL_MAX_NUM_B_PICT * 2 + AL_MAX_LOOK_AHEAD + 1)
-

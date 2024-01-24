@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2023 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 /****************************************************************************
@@ -14,14 +14,14 @@
 /****************************************************************************/
 typedef AL_HANDLE AL_HDecoder;
 
-typedef struct AL_i_DecArchVtable AL_IDecArchVtable;
+typedef struct AL_IDecArchVtable AL_IDecArchVtable;
 
-typedef struct AL_i_DecArch
+typedef struct AL_IDecArch
 {
   const AL_IDecArchVtable* vtable;
 }AL_IDecArch;
 
-typedef struct AL_i_DecArchVtable
+typedef struct AL_IDecArchVtable
 {
   void (* Deinit)(void);
   AL_ERR (* DecoderCreate)(AL_HDecoder* hDec, void* pScheduler, AL_TAllocator* pAllocator, void* pSettings, void* pCB);

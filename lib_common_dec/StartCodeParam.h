@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2023 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 /****************************************************************************
@@ -16,7 +16,7 @@
 /*************************************************************************//*!
    \brief Start Code Detector Parameters : Mimics structure for IP registers
 *****************************************************************************/
-typedef struct AL_t_SCParam
+typedef struct AL_TSCParam
 {
   AL_ECodec eCodec;    /*!< Specifies the stream format */
   uint8_t StopParam;   /*!< Parameter used to stop the start code detecting >!*/
@@ -31,7 +31,7 @@ typedef struct AL_t_SCParam
 /*************************************************************************//*!
    \brief Start Code Buffers structure
 *****************************************************************************/
-typedef struct AL_t_ScBufferAddrs
+typedef struct AL_TScBufferAddrs
 {
   AL_PADDR pStream;
   uint32_t uMaxSize;
@@ -44,7 +44,7 @@ typedef struct AL_t_ScBufferAddrs
 /*************************************************************************//*!
    \brief Start Code Detector Output
 *****************************************************************************/
-typedef struct AL_t_StartCode
+typedef struct AL_TStartCode
 {
   uint32_t uPosition;  /* Position of the detected NAL in the circular buffer*/
   uint8_t uNUT;       /* Nal Unit Type of the corresponding NAL */
@@ -52,7 +52,7 @@ typedef struct AL_t_StartCode
   uint16_t Reserved;
 }AL_TStartCode;
 
-typedef struct AL_t_Nal
+typedef struct AL_TNal
 {
   AL_TStartCode tStartCode;
   uint32_t uSize; /* Nal size */
@@ -61,11 +61,10 @@ typedef struct AL_t_Nal
 /*************************************************************************//*!
    \brief Start Code Detector Status
 *****************************************************************************/
-typedef struct AL_t_SCStatus
+typedef struct AL_TSCStatus
 {
   uint16_t uNumSC;    /* number of Start Code found */
   uint32_t uNumBytes; /* number of bytes parsed */
 }AL_TScStatus;
 
 /*@}*/
-

@@ -21,7 +21,7 @@ LIB_APP_SRC:=\
   lib_app/SinkStreamMd5.cpp\
   lib_app/SinkCrcDump.cpp\
   lib_app/PlaneUtils.cpp\
-  $(LIB_PERFS_SRC)\
+  $(LIB_LOG_SRC)\
   $(LIB_COMMON_SRC)\
 
 

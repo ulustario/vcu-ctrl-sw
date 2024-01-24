@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2023 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 /****************************************************************************
@@ -19,7 +19,7 @@ extern "C" {
 /*************************************************************************//*!
    \brief AL_TBufPoolCreateBufCB: Abstraction of buffer creation
 *****************************************************************************/
-typedef struct AL_t_BufPoolCreateBufCB
+typedef struct AL_TBufPoolCreateBufCB
 {
   AL_TBuffer* (*func)(void* pUserParam, AL_TAllocator * pAllocator, PFN_RefCount_CallBack pRefCntCallBack);
   void* userParam;
@@ -39,7 +39,7 @@ typedef struct al_t_BufPoolConfig
    \brief AL_TBufPoolAvailableBufCB: Callback to be notified when a buffer is
    returned to the pool
 *****************************************************************************/
-typedef struct AL_t_BufPoolAvailableBufCB
+typedef struct AL_TBufPoolAvailableBufCB
 {
   void (* func)(void* pUserParam);
   void* userParam;
@@ -180,4 +180,3 @@ private:
   size_t zBufSize;
   std::string sName;
 };
-

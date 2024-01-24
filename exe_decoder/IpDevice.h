@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2023 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #pragma once
@@ -13,7 +13,7 @@ extern "C"
 #include "lib_common_dec/DecChanParam.h"
 }
 
-typedef struct AL_i_DecScheduler AL_IDecScheduler;
+typedef struct AL_IDecScheduler AL_IDecScheduler;
 
 /*****************************************************************************/
 class CIpDevice : public I_IpDevice
@@ -25,7 +25,7 @@ public:
   AL_EDeviceType GetDeviceType();
   void* GetScheduler() override;
   AL_TAllocator* GetAllocator() override;
-  AL_Timer* GetTimer() override;
+  AL_ITimer* GetTimer() override;
 
   CIpDevice(CIpDevice const &) = delete;
   CIpDevice & operator = (CIpDevice const &) = delete;
@@ -36,7 +36,7 @@ private:
   AL_EDeviceType m_eDeviceType;
   AL_IDecScheduler* m_pScheduler = nullptr;
   AL_TAllocator* m_pAllocator = nullptr;
-  AL_Timer* m_pTimer = nullptr;
+  AL_ITimer* m_pTimer = nullptr;
 
   void ConfigureMcu(AL_TDriver* driver, bool useProxy);
 };
@@ -51,7 +51,7 @@ inline AL_TAllocator* CIpDevice::GetAllocator()
   return m_pAllocator;
 }
 
-inline AL_Timer* CIpDevice::GetTimer()
+inline AL_ITimer* CIpDevice::GetTimer()
 {
   return m_pTimer;
 }

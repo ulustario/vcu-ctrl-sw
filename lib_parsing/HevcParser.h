@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2023 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #pragma once
@@ -25,4 +25,3 @@ AL_TCropInfo AL_HEVC_GetCropInfo(AL_THevcSps const* pSPS);
    \param[in]  pRP    Pointer to NAL parser
 *****************************************************************************/
 bool AL_HEVC_short_term_ref_pic_set(AL_THevcSps* pSPS, uint8_t RpsIdx, AL_TRbspParser* pRP);
-

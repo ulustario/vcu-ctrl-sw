@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2023 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #pragma once
@@ -14,4 +14,3 @@ typedef struct t_BufferEP
   TMemDesc tMD; /*!< Memory descriptor associated to the buffer */
   uint32_t uFlags;  /*!< Specifies which tables are present in the buffer */
 }TBufferEP;
-

@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2023 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 /**************************************************************************//*!
@@ -26,7 +26,7 @@ typedef enum AL_e_SceneChangeType
    \brief Structure used in LookAhead and Twopass, to transmits frame
     information between the two pass
 *****************************************************************************/
-typedef struct AL_t_LookAheadMetaData
+typedef struct AL_TLookAheadMetaData
 {
   AL_TMetaData tMeta;
   int32_t iPictureSize;   /*< current frame size */
@@ -47,4 +47,3 @@ void AL_LookAheadMetaData_Copy(AL_TLookAheadMetaData* pMetaSrc, AL_TLookAheadMet
 void AL_LookAheadMetaData_Reset(AL_TLookAheadMetaData* pMeta);
 
 /*@}*/
-

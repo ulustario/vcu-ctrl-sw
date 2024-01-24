@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2023 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 /****************************************************************************
@@ -12,14 +12,14 @@
 #pragma once
 
 /****************************************************************************/
-typedef struct AL_i_EncArchVtable AL_IEncArchVtable;
+typedef struct AL_IEncArchVtable AL_IEncArchVtable;
 
-typedef struct AL_i_EncArch
+typedef struct AL_IEncArch
 {
   const AL_IEncArchVtable* vtable;
 }AL_IEncArch;
 
-typedef struct AL_i_EncArchVtable
+typedef struct AL_IEncArchVtable
 {
   void (* Deinit)(void);
   AL_ERR (* EncoderCreate)(AL_HEncoder* hEnc, AL_IEncScheduler* pScheduler, AL_TAllocator* pAlloc, AL_TEncSettings const* pSettings, AL_CB_EndEncoding callback);

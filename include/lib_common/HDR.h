@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2023 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 /**************************************************************************//*!
@@ -81,7 +81,7 @@ typedef enum e_ColourMatrixCoefficients
 /*******************************************************************************//*!
    \brief Normalized x and y chromaticity coordinates
 ***********************************************************************************/
-typedef struct AL_t_ChromaCoordinates
+typedef struct AL_TChromaCoordinates
 {
   uint16_t x;
   uint16_t y;
@@ -90,7 +90,7 @@ typedef struct AL_t_ChromaCoordinates
 /*************************************************************************//*!
    \brief Mimics structure for mastering display colour volume
 *****************************************************************************/
-typedef struct AL_t_MasteringDisplayColourVolume
+typedef struct AL_TMasteringDisplayColourVolume
 {
   /* RGB chromaticity coordinates (CIE 1931 definition of x and y as specified in ISO 11664 - 1)
      in increments of 0.00002.
@@ -109,7 +109,7 @@ typedef struct AL_t_MasteringDisplayColourVolume
 /*************************************************************************//*!
    \brief Mimics structure for content light level information
 *****************************************************************************/
-typedef struct AL_t_ContentLightLevel
+typedef struct AL_TContentLightLevel
 {
   uint16_t max_content_light_level;
   uint16_t max_pic_average_light_level;
@@ -118,7 +118,7 @@ typedef struct AL_t_ContentLightLevel
 /*************************************************************************//*!
    \brief Mimics structure for alternative transfer characteristic information
 *****************************************************************************/
-typedef struct AL_t_AlternativeTransferCharacteristics
+typedef struct AL_TAlternativeTransferCharacteristics
 {
   AL_ETransferCharacteristics preferred_transfer_characteristics;
 }AL_TAlternativeTransferCharacteristics;
@@ -129,7 +129,7 @@ typedef struct AL_t_AlternativeTransferCharacteristics
 *****************************************************************************/
 #define AL_MAX_MANUAL_ADJUSTMENT_ST2094_10 16
 
-typedef struct AL_t_ProcessingWindow_ST2094_10
+typedef struct AL_TProcessingWindow_ST2094_10
 {
   uint16_t active_area_left_offset;
   uint16_t active_area_right_offset;
@@ -137,14 +137,14 @@ typedef struct AL_t_ProcessingWindow_ST2094_10
   uint16_t active_area_bottom_offset;
 }AL_TProcessingWindow_ST2094_10;
 
-typedef struct AL_t_TImageCharacteristics_ST2094_10
+typedef struct AL_TTImageCharacteristics_ST2094_10
 {
   uint16_t min_pq;
   uint16_t max_pq;
   uint16_t avg_pq;
 }AL_TImageCharacteristics_ST2094_10;
 
-typedef struct AL_t_ManualAdjustment_ST2094_10
+typedef struct AL_TManualAdjustment_ST2094_10
 {
   uint16_t target_max_pq;
   uint16_t trim_slope;
@@ -155,7 +155,7 @@ typedef struct AL_t_ManualAdjustment_ST2094_10
   int16_t ms_weight;
 }AL_TManualAdjustment_ST2094_10;
 
-typedef struct AL_t_DynamicMeta_ST2094_10
+typedef struct AL_TDynamicMeta_ST2094_10
 {
   uint8_t application_version; /* = 0 */
   bool processing_window_flag;
@@ -176,7 +176,7 @@ typedef struct AL_t_DynamicMeta_ST2094_10
 #define AL_MAX_ROW_ACTUAL_PEAK_LUMINANCE_ST2094_40 25
 #define AL_MAX_COL_ACTUAL_PEAK_LUMINANCE_ST2094_40 25
 
-typedef struct AL_t_ProcessingWindow_ST2094_1
+typedef struct AL_TProcessingWindow_ST2094_1
 {
   uint16_t upper_left_corner_x;
   uint16_t upper_left_corner_y;
@@ -184,7 +184,7 @@ typedef struct AL_t_ProcessingWindow_ST2094_1
   uint16_t lower_right_corner_y;
 }AL_TProcessingWindow_ST2094_1;
 
-typedef struct AL_t_ProcessingWindow_ST2094_40
+typedef struct AL_TProcessingWindow_ST2094_40
 {
   AL_TProcessingWindow_ST2094_1 base_processing_window;
   uint16_t center_of_ellipse_x;
@@ -196,7 +196,7 @@ typedef struct AL_t_ProcessingWindow_ST2094_40
   uint8_t overlap_process_option;
 }AL_TProcessingWindow_ST2094_40;
 
-typedef struct AL_t_DisplayPeakLuminance_ST2094_40
+typedef struct AL_TDisplayPeakLuminance_ST2094_40
 {
   bool actual_peak_luminance_flag;
   uint8_t num_rows_actual_peak_luminance;
@@ -204,13 +204,13 @@ typedef struct AL_t_DisplayPeakLuminance_ST2094_40
   uint8_t actual_peak_luminance[AL_MAX_ROW_ACTUAL_PEAK_LUMINANCE_ST2094_40][AL_MAX_COL_ACTUAL_PEAK_LUMINANCE_ST2094_40];
 }AL_TDisplayPeakLuminance_ST2094_40;
 
-typedef struct AL_t_TargetedSystemDisplay_ST2094_40
+typedef struct AL_TTargetedSystemDisplay_ST2094_40
 {
   uint32_t maximum_luminance;
   AL_TDisplayPeakLuminance_ST2094_40 peak_luminance;
 }AL_TTargetedSystemDisplay_ST2094_40;
 
-typedef struct AL_t_ToneMapping_ST2094_40
+typedef struct AL_TToneMapping_ST2094_40
 {
   bool tone_mapping_flag;
   uint16_t knee_point_x;
@@ -219,7 +219,7 @@ typedef struct AL_t_ToneMapping_ST2094_40
   uint16_t bezier_curve_anchors[AL_MAX_BEZIER_CURVE_ANCHORS_ST2094_40];
 }AL_TToneMapping_ST2094_40;
 
-typedef struct AL_t_ProcessingWindowTransform_ST2094_40
+typedef struct AL_TProcessingWindowTransform_ST2094_40
 {
   uint32_t maxscl[3];
   uint32_t average_maxrgb;
@@ -232,7 +232,7 @@ typedef struct AL_t_ProcessingWindowTransform_ST2094_40
   uint8_t color_saturation_weight;
 }AL_TProcessingWindowTransform_ST2094_40;
 
-typedef struct AL_t_DynamicMeta_ST2094_40
+typedef struct AL_TDynamicMeta_ST2094_40
 {
   uint8_t application_version;
   uint8_t num_windows;
@@ -245,7 +245,7 @@ typedef struct AL_t_DynamicMeta_ST2094_40
 /*************************************************************************//*!
    \brief Mimics structure containing HDR Related SEIs
 *****************************************************************************/
-typedef struct AL_t_HDRSEIs
+typedef struct AL_THDRSEIs
 {
   bool bHasMDCV;
   AL_TMasteringDisplayColourVolume tMDCV;
@@ -277,4 +277,3 @@ void AL_HDRSEIs_Reset(AL_THDRSEIs* pHDRSEIs);
 void AL_HDRSEIs_Copy(AL_THDRSEIs* pHDRSEIsSrc, AL_THDRSEIs* pHDRSEIsDst);
 
 /*@}*/
-

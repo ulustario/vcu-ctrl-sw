@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2023 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 /*************************************************************************//*!
@@ -15,7 +15,7 @@
 /*************************************************************************//*!
    \brief Channel Parameter structure
 *****************************************************************************/
-typedef struct AL_t_DecChannelParam
+typedef struct AL_TDecChannelParam
 {
   int32_t iWidth; /*< width in pixels */
   int32_t iHeight; /*< height in pixels */
@@ -40,4 +40,3 @@ typedef struct AL_t_DecChannelParam
 }AL_TDecChanParam;
 
 /*@}*/
-

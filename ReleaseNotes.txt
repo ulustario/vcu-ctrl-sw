@@ -823,3 +823,41 @@
     -- Decoder:
       - Error concealement
     -- Several minors bugs
+
+2023-12-13 (v1.0.76)
+--------------------
+  Added Features:
+
+  API:
+    -- Version of the API is now 0.39.0
+    -- Removes
+      - AL_64U -> uint64_t
+
+  Fixes:
+    -- Namespace naming issue
+    -- Tons of typos
+    -- Decoder:
+      - Error concealement
+    -- Several minors bugs
+
+2023-01-11 (v1.0.77)
+--------------------
+  Added Features:
+    -- Alignment for Windows
+    -- AL_64S: int64_t with 8bytes alignments on 32bits platform
+
+  API:
+    -- Version of the API is now 0.40.0
+    -- lib_perfs is now called lib_log. We'll introduce a clean way on logging later on
+    -- AL_Timer is now an interface -> AL_ITimer with 2 implementations:
+      - Software
+      - Hardware
+
+  Fixes:
+    -- structs and enum naming convention
+    -- AL_64U is required due to potential 32bit platform
+    -- Typos
+    -- Decoder:
+      - Split-input with multiple configuration
+      - Error concealement
+    -- Several minors bugs

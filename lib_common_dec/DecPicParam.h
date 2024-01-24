@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2023 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 /****************************************************************************
@@ -45,7 +45,7 @@
 #define AL_GET_DEC_OPT(pPictParam, Opt) ((pPictParam)->OptionFlags & (AL_DEC_OPT_ ## Opt))
 
 /****************************************************************************/
-typedef struct AL_t_DecBufIDs
+typedef struct AL_TDecBufIDs
 {
   uint8_t FrmID;
   uint8_t MvID;
@@ -59,7 +59,7 @@ static const AL_TDecBufIDs tEmptyBufIDs =
 /*************************************************************************//*!
    \brief Slice Parameters : Mimics structure for IP registers
 *****************************************************************************/
-typedef struct AL_t_DecPictParam
+typedef struct AL_TDecPictParam
 {
   AL_ECodec Codec;
 
@@ -107,7 +107,7 @@ typedef struct AL_t_DecPictParam
   AL_EEntropyMode eEntMode;
 
   int32_t iFrmNum;
-  uint64_t UserParam;
+  AL_64U UserParam;
 
   uint8_t log2_sao_offset_scale_luma;
   uint8_t log2_sao_offset_scale_chroma;
@@ -115,7 +115,7 @@ typedef struct AL_t_DecPictParam
 }AL_TDecPicParam;
 
 /****************************************************************************/
-typedef struct AL_t_PictBuffers
+typedef struct AL_TPictBuffers
 {
   TBuffer tCompData;
   TBuffer tCompMap;
@@ -136,7 +136,7 @@ typedef struct AL_t_PictBuffers
 }AL_TDecPicBuffers;
 
 /****************************************************************************/
-typedef struct AL_t_DecPicBufferAddrs
+typedef struct AL_TDecPicBufferAddrs
 {
   AL_PADDR pCompData;
   AL_PADDR pCompMap;
@@ -168,7 +168,7 @@ static const AL_TDecPicState AL_DEC_PIC_STATE_CMD_INVALID = 0x08;
 #define AL_DEC_IS_PIC_STATE_ENABLED(picState, picFlag) (((picState) & (picFlag)) != 0)
 
 /*****************************************************************************/
-typedef struct AL_t_DecPicStatus
+typedef struct AL_TDecPicStatus
 {
   AL_TDecBufIDs tBufIDs;
 
@@ -184,4 +184,3 @@ typedef struct AL_t_DecPicStatus
 /*****************************************************************************/
 
 /*@}*/
-

@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2023 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 /**************************************************************************//*!
@@ -14,7 +14,7 @@
 /*************************************************************************//*!
    \brief Sei messages
 *****************************************************************************/
-typedef struct AL_t_SeiMessage
+typedef struct AL_TSeiMessage
 {
   bool bPrefix;
   uint32_t type;
@@ -22,7 +22,7 @@ typedef struct AL_t_SeiMessage
   uint32_t size;
 }AL_TSeiMessage;
 
-typedef struct AL_t_SeiMetaData
+typedef struct AL_TSeiMetaData
 {
   AL_TMetaData tMeta;
   uint8_t numPayload;
@@ -42,4 +42,3 @@ uint8_t* AL_SeiMetaData_GetBuffer(AL_TSeiMetaData* pMeta);
 void AL_SeiMetaData_Reset(AL_TSeiMetaData* pMeta);
 
 /*@}*/
-

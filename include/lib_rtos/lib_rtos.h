@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2023 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 /**************************************************************************//*!
@@ -50,7 +50,7 @@ int Rtos_Log(int iLogLevel, char const* const _Format, ...);
 /****************************************************************************/
 /*  Clock */
 /****************************************************************************/
-uint64_t Rtos_GetTime(void);
+AL_64U Rtos_GetTime(void);
 void Rtos_Sleep(uint32_t uMillisecond);
 
 /****************************************************************************/
@@ -131,4 +131,3 @@ void Rtos_FlushCacheMemory(void* pMem, size_t zSize);
 /****************************************************************************/
 
 /*@}*/
-

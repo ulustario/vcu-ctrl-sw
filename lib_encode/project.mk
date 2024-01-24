@@ -20,7 +20,7 @@ LIB_ISCHEDULER_ENC_SRC:=\
   $(LIB_BITSTREAM_SRC)\
 
 # needed but user can modify these carefully
-#$(LIB_PERFS_SRC)\
+#$(LIB_LOG_SRC)\
 #$(LIB_RTOS_SRC)\
 #$(LIB_COMMON_SRC)\
 #$(LIB_COMMON_ENC_SRC)\
@@ -37,7 +37,7 @@ LIB_ENCODER_SRC:=\
   $(LIB_COMMON_ENC_SRC)\
   $(LIB_RTOS_SRC)\
   $(LIB_ENCODE_SRC)\
-  $(LIB_PERFS_SRC)\
+  $(LIB_LOG_SRC)\
 
 
 

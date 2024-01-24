@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2023 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #pragma once
@@ -23,4 +23,3 @@ enum ETileMode : uint8_t
 
 ETileMode EFbStorageModeToETileMode(AL_EFbStorageMode eFbStorageMode);
 AL_EFbStorageMode ETileModeToEFbStorageMode(ETileMode eTileMode);
-

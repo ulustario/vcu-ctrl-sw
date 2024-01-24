@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2023 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 /****************************************************************************
@@ -28,7 +28,7 @@ typedef uint8_t AL_TMtxDC[4];
 /*************************************************************************//*!
    \brief Scaling List Matrices in software user-friendly format
 *****************************************************************************/
-typedef struct AL_t_HevcScalingList
+typedef struct AL_THevcScalingList
 {
   AL_TMtx8x8 t32x32;
   AL_TMtx8x8 t16x16Y;
@@ -212,4 +212,3 @@ static const int32_t AL_DecScanBlock8x8[2][64] =
 };
 
 /*@}*/
-

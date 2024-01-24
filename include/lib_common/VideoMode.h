@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2023 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #pragma once
@@ -32,4 +32,3 @@ typedef enum AL_e_SequenceMode
   AL_SM_INTERLACED, /*!< interlaced */
   AL_SM_MAX_ENUM,
 }AL_ESequenceMode;
-

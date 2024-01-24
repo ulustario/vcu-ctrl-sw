@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2023 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 /**************************************************************************//*!
@@ -126,4 +126,3 @@ TFourCC AL_GetFourCC(AL_TPicFormat tPicFormat);
 bool AL_GetPicFormat(TFourCC tFourCC, AL_TPicFormat* tPicFormat);
 
 /*@}*/
-

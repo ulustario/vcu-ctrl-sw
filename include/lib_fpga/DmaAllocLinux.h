@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2023 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 /**************************************************************************//*!
@@ -10,7 +10,7 @@
 
 #include "lib_common/Allocator.h"
 
-typedef struct AL_t_LinuxDmaAllocator AL_TLinuxDmaAllocator;
+typedef struct AL_TLinuxDmaAllocator AL_TLinuxDmaAllocator;
 /*! \cond ********************************************************************/
 typedef struct
 {
@@ -19,7 +19,7 @@ typedef struct
   AL_HANDLE (* pfnImportFromFd)(AL_TLinuxDmaAllocator* pAllocator, int fd);
 }AL_DmaAllocLinuxVtable;
 
-struct AL_t_LinuxDmaAllocator
+struct AL_TLinuxDmaAllocator
 {
   const AL_DmaAllocLinuxVtable* vtable;
 };
@@ -61,4 +61,3 @@ AL_HANDLE AL_LinuxDmaAllocator_ImportFromFd(AL_TLinuxDmaAllocator* pAllocator, i
 }
 
 /*@}*/
-

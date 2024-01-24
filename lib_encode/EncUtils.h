@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2023 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 /****************************************************************************
@@ -46,8 +46,8 @@ typedef struct
   AL_TPpsCtx ppsCtx[MAX_PPS_IDS];
 }AL_THeadersCtx;
 
-typedef struct AL_t_EncPicStatus AL_TEncPicStatus;
-typedef struct AL_t_HLSInfo AL_HLSInfo;
+typedef struct AL_TEncPicStatus AL_TEncPicStatus;
+typedef struct AL_THLSInfo AL_HLSInfo;
 
 /****************************************************************************/
 #define MAX_IDX_BIT_PER_PEL 28
@@ -173,4 +173,3 @@ void AL_ReleasePps(AL_THeadersCtx* pHdrs, uint8_t id);
 bool AL_IsWriteSps(AL_THeadersCtx* pHdrs, uint8_t id);
 bool AL_IsWritePps(AL_THeadersCtx* pHdrs, uint8_t id);
 AL_TDimension AL_GetPpsDim(AL_THeadersCtx* pHdrs, uint8_t id);
-

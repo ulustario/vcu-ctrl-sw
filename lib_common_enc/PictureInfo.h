@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2023 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 /****************************************************************************
@@ -46,7 +46,7 @@ static const uint32_t AL_PICT_INFO_NOT_SHOWABLE = 0x80000000; /*!< The picture i
 /*************************************************************************//*!
    \brief Picture information
 *****************************************************************************/
-typedef struct AL_t_PictureInfo
+typedef struct AL_TPictureInfo
 {
   uint32_t uSrcOrder; /*!< Source picture number in display order */
   uint32_t uFlags; /*!< Bitfield containing information about this picture (For example AL_PICT_INFO_IS_REF or AL_PICT_INFO_IS_IDR) \see include/lib_common_enc/PictureInfo.h for the full list */
@@ -76,4 +76,3 @@ typedef struct AL_t_PictureInfo
 }AL_TPictureInfo;
 
 /*@}*/
-

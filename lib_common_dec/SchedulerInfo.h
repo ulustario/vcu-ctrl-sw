@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2023 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #pragma once
@@ -26,7 +26,7 @@ typedef union
     uint16_t uMinor; /*!< Minor version */
     uint32_t uPatch; /*!< Patch version */
   }version;
-  uint64_t uVersion; /*!< Version */
+  AL_64U uVersion; /*!< Version */
 }AL_TDecSchedulerVersion;
 
 /****************************************************************************/

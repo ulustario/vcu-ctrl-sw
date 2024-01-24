@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2023 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 /**************************************************************************//*!
@@ -16,7 +16,7 @@
 /*************************************************************************//*!
    \brief Metadata containing Display info
 *****************************************************************************/
-typedef struct AL_t_DisplayInfoMeta
+typedef struct AL_TDisplayInfoMeta
 {
   AL_TMetaData tMeta;
   uint8_t uStreamBitDepthY;

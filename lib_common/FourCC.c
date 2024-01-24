@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2023 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #include "lib_common/FourCC.h"
@@ -10,7 +10,7 @@
                                        | ((uint32_t)((C)) << 16) \
                                        | ((uint32_t)((D)) << 24)))
 
-typedef struct AL_t_FourCCMapping
+typedef struct AL_TFourCCMapping
 {
   TFourCC tfourCC;
   AL_TPicFormat tPictFormat;
@@ -253,4 +253,3 @@ AL_EFbStorageMode AL_GetStorageMode(TFourCC tFourCC)
   AL_TPicFormat tPicFormat;
   return AL_GetPicFormat(tFourCC, &tPicFormat) ? tPicFormat.eStorageMode : AL_FB_RASTER;
 }
-

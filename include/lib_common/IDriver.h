@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2023 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 /**************************************************************************//*!
@@ -25,7 +25,7 @@ typedef enum
     or it could also be a socket, this is implementation dependant.
     \see AL_GetHardwareDriver for the kernel driver implementation
 *****************************************************************************/
-typedef struct AL_t_driver AL_TDriver;
+typedef struct AL_TDriver AL_TDriver;
 typedef struct
 {
   int (* pfnOpen)(AL_TDriver* driver, const char* device);
@@ -33,7 +33,7 @@ typedef struct
   AL_EDriverError (* pfnPostMessage)(AL_TDriver* driver, int fd, long unsigned int messageId, void* data, bool isBlocking);
 }AL_DriverVtable;
 
-struct AL_t_driver
+struct AL_TDriver
 {
   const AL_DriverVtable* vtable;
 };

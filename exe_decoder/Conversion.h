@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2023 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #pragma once
@@ -19,4 +19,3 @@ extern "C"
    \param[in]  tCrop       Region of the picture to keep
 *****************************************************************************/
 void CropFrame(AL_TBuffer* pYUV, int iSizePix, AL_TCropInfo tCrop);
-

@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2023 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 /****************************************************************************
@@ -567,4 +567,3 @@ void AL_Dpb_Display(AL_TDpb* pDpb, uint8_t uNode);
 uint8_t AL_Dpb_Remove(AL_TDpb* pDpb, uint8_t uNode);
 
 /*@}*/
-

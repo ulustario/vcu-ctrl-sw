@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2023 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 /****************************************************************************
@@ -181,4 +181,3 @@ AL_TRbspParser getParserOnNonVclNalInternalBuf(AL_TDecCtx* pCtx)
   InitNonVclBuf(pCtx);
   return getParserOnNonVclNal(pCtx, pCtx->BufNoAE.tMD.pVirtualAddr, pCtx->BufNoAE.tMD.uSize);
 }
-

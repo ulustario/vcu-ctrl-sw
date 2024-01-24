@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2023 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #include <iostream>
@@ -201,4 +201,3 @@ int FromHex4(char a, char b, char c, char d)
 
   return (AB << 8) + CD;
 }
-

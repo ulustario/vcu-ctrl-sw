@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2023 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #include "lib_app/Tokenizer.h"
@@ -168,4 +168,3 @@ char Tokenizer::getNextChar()
 
   return getChar(curPos++);
 }
-

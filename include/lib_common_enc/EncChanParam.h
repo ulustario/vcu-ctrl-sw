@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2023 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 /**************************************************************************//*!
@@ -312,9 +312,8 @@ typedef enum
     Contains the user defined constraints on the stream in term of quality and bandwidth.
     Also contains the hardware constraints that will affect the rate control (See AL_RC_OPT_DELAYED)
 *****************************************************************************/
-typedef AL_INTROSPECT (category = "debug") struct
+typedef AL_INTROSPECT (category = "debug") struct __AL_ALIGNED__ (4) AL_TRCParam
 {
-  __AL_ALIGNED__(4)
   AL_ERateCtrlMode eRCMode;
   uint32_t uInitialRemDelay; /*!< Initial removal delay */
   uint32_t uCPBSize; /*!< Size of the Codec Picture Buffer */
@@ -337,7 +336,7 @@ typedef AL_INTROSPECT (category = "debug") struct
   uint16_t uMaxPSNR;
   uint16_t uMaxPelVal;
   uint32_t pMaxPictureSize[AL_MAX_FRAME_TYPE];
-}AL_TRCParam;
+} AL_TRCParam;
 
 static inline bool AL_IS_HWRC_ENABLED(AL_TRCParam const* pRCParam)
 {
@@ -375,9 +374,8 @@ typedef enum
 /*************************************************************************//*!
    \brief Group of Picture parameters.
 *****************************************************************************/
-typedef AL_INTROSPECT (category = "debug") struct
+typedef AL_INTROSPECT (category = "debug") struct __AL_ALIGNED__ (4) AL_TGopParam
 {
-  __AL_ALIGNED__(4)
   AL_EGopCtrlMode eMode;
   uint16_t uGopLength; /*!< Length of the Group Of Picture in the encoded stream */
   uint8_t uNumB; /*!< Number of B frames per Group of Picture in the encoded stream */
@@ -389,7 +387,7 @@ typedef AL_INTROSPECT (category = "debug") struct
   AL_EGdrMode eGdrMode;
   uint32_t uFreqRP;
   int8_t tempDQP[4];
-}AL_TGopParam;
+} AL_TGopParam;
 
 /*************************************************************************//*!
    \brief First Pass infos parameters
@@ -460,9 +458,8 @@ typedef enum
 /*************************************************************************//*!
    \brief Channel parameters structure
 *****************************************************************************/
-typedef AL_INTROSPECT (category = "debug") struct
+typedef AL_INTROSPECT (category = "debug") struct __AL_ALIGNED__ (4) AL_TEncChanParam
 {
-  __AL_ALIGNED__(4)
   int iLayerID;
 
   /* Encoding resolution */
@@ -532,6 +529,7 @@ typedef AL_INTROSPECT (category = "debug") struct
   uint8_t uLog2MaxCuSize;
   uint8_t uLog2MinCuSize;
   uint8_t uLog2MaxTuSize;
+  uint8_t uLog2MaxTuSkipSize;
   uint8_t uLog2MinTuSize;
   uint8_t uMaxTransfoDepthIntra;
   uint8_t uMaxTransfoDepthInter;
@@ -551,7 +549,7 @@ typedef AL_INTROSPECT (category = "debug") struct
   int8_t MaxNumMergeCand;
 
   uint32_t zRcPluginDmaSize; /*!< Size of the rate control plugin dma buffer (user defined data can be given using this buffer) */
-  uint64_t pRcPluginDmaContext; /*!< Physical address of the rate control plugin dma buffer (This is filled by the library, see AL_TEncSettings.hRcPluginDmaContext for the handle you need to allocate in dma) */
+  AL_64U pRcPluginDmaContext; /*!< Physical address of the rate control plugin dma buffer (This is filled by the library, see AL_TEncSettings.hRcPluginDmaContext for the handle you need to allocate in dma) */
 
   bool bEnableOutputCrop;
   uint16_t uOutputCropWidth;
@@ -561,7 +559,7 @@ typedef AL_INTROSPECT (category = "debug") struct
   bool bUseUniformSliceType;
   AL_EStartCodeBytesAlignedMode eStartCodeBytesAligned;
 
-}AL_TEncChanParam;
+} AL_TEncChanParam;
 
 /***************************************************************************/
 #define ROUND_POWER_OF_TWO(value, n) (((value) + (1 << ((n) - 1))) >> (n))
@@ -584,4 +582,3 @@ static inline bool AL_IS_CBR(AL_ERateCtrlMode eRcMode)
 }
 
 /*@}*/
-

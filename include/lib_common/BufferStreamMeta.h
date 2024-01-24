@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2023 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 /**************************************************************************//*!
@@ -17,7 +17,7 @@
 /*************************************************************************//*!
    \brief Useful section of the buffer containing the bitstream
 *****************************************************************************/
-typedef struct AL_t_StreamMetaData
+typedef struct AL_TStreamMetaData
 {
   AL_TMetaData tMeta;
   uint8_t uTemporalID; /*!< Temporal ID */
@@ -98,4 +98,3 @@ uint32_t AL_StreamMetaData_GetUnusedStreamPart(AL_TStreamMetaData* pMetaData);
 int AL_StreamMetaData_GetLastSectionOfFlag(AL_TStreamMetaData* pMetaData, uint32_t uFlag);
 
 /*@}*/
-

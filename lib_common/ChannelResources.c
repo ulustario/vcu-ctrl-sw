@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2023 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #include "ChannelResources.h"
@@ -114,4 +114,3 @@ bool AL_Constraint_NumCoreIsSane(AL_ECodec codec, int width, int numCore, int lo
 
   return widthPerCoreInCtb >= MIN_CTB_PER_CORE && offset <= RoundUp(width, ctbSize);
 }
-

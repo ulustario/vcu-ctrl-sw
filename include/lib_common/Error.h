@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2023 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 /**************************************************************************//*!
@@ -130,4 +130,3 @@ static inline bool AL_IS_SUCCESS_CODE(AL_ERR eErrorCode)
 const char* AL_Codec_ErrorToString(AL_ERR eErrorCode);
 
 /*@}*/
-

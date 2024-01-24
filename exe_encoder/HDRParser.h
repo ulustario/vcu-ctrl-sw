@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2023 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 /****************************************************************************
@@ -44,4 +44,3 @@ private:
   bool ReadST2094_40ProcessingWindow(TJsonValue* pPWObject, AL_TDynamicMeta_ST2094_40& tST2094_40, bool& bDefaultWindowParsed);
   bool ReadST2094_40PeakLuminance(TJsonValue* pPLObject, AL_TDisplayPeakLuminance_ST2094_40& tPeakLuminance);
 };
-

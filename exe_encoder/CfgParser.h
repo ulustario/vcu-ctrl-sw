@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2023 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 /****************************************************************************
@@ -44,7 +44,7 @@ typedef AL_INTROSPECT (category = "debug") struct tCfgRunInfo
   bool printPictureType = false;
   bool printRateCtrlStat = false;
   std::string bitrateFile = "";
-  uint64_t uInputSleepInMilliseconds;
+  AL_64U uInputSleepInMilliseconds;
   AL_EGenerateQpMode eGenerateQpMode = AL_GENERATE_UNIFORM_QP;
 }TCfgRunInfo;
 
@@ -160,4 +160,3 @@ private:
   Temporary temporaries {};
 };
 /*@}*/
-
