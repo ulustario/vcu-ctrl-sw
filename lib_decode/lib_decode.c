@@ -122,7 +122,7 @@ AL_ERR AL_Decoder_GetLastError(AL_HDecoder hDec)
 }
 
 /*****************************************************************************/
-AL_ERR AL_Decoder_GetFrameError(AL_HDecoder hDec, AL_TBuffer* pBuf)
+AL_ERR AL_Decoder_GetFrameError(AL_HDecoder hDec, AL_TBuffer const* pBuf)
 {
   if(!pArch)
     return AL_ERROR;

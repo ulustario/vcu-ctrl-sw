@@ -3,13 +3,16 @@ THIS_EXE_DECODER:=$(call get-my-dir)
 EXE_DECODER_SRC:=\
   $(THIS_EXE_DECODER)/main.cpp\
   $(THIS_EXE_DECODER)/SinkYuvCrc.cpp\
+  $(THIS_EXE_DECODER)/CmdParser.cpp\
   $(THIS_EXE_DECODER)/IpDevice.cpp\
+  $(THIS_EXE_DECODER)/IpDeviceCommon.cpp\
   $(THIS_EXE_DECODER)/CodecUtils.cpp\
   $(THIS_EXE_DECODER)/Conversion.cpp\
   $(THIS_EXE_DECODER)/InputLoader.cpp\
   $(THIS_EXE_DECODER)/SinkCheckSum.cpp\
   $(THIS_EXE_DECODER)/SinkStatistics.cpp\
   $(THIS_EXE_DECODER)/SinkYuvMd5.cpp\
+
 
 
 
@@ -22,7 +25,7 @@ endif
 EXE_DECODER_OBJ:=$(EXE_DECODER_SRC:%=$(BIN)/%.o)
 
 
-$(BIN)/AL_Decoder.exe: $(EXE_DECODER_OBJ) $(LIB_REFDEC_A) $(LIB_REFALLOC_A) $(LIB_DECODER_A) $(LIB_APP_A)
+$(BIN)/AL_Decoder.exe: $(EXE_DECODER_OBJ) $(LIB_REFDEC_A) $(LIB_REFALLOC_A) $(LIB_DECODER_A) $(LIB_APP_A) $(LIB_REF_LCEVC_DEC_A) $(LIB_LCEVC_DECODE_A) $(LIB_CONV_YUV_A)
 
 $(BIN)/$(THIS_EXE_DECODER)/%.o: CFLAGS+=-pthread
 

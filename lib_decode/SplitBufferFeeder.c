@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MIT
 
 #include "SplitBufferFeeder.h"
-#include "InternalError.h"
+#include "lib_common_dec/InternalError.h"
 #include "lib_decode/lib_decode.h"
 #include "lib_common/Fifo.h"
 #include "lib_common/BufferSeiMeta.h"

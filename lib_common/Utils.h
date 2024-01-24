@@ -39,6 +39,18 @@ static inline int Clip3(int iVal, int iMin, int iMax)
 }
 
 /***************************************************************************/
+static inline int64_t Clip3ll(int64_t iVal, int64_t iMin, int64_t iMax)
+{
+  return ((iVal) < (iMin)) ? (iMin) : ((iVal) > (iMax)) ? (iMax) : (iVal);
+}
+
+/***************************************************************************/
+static inline float Clip3f(float fVal, float fMin, float fMax)
+{
+  return ((fVal) < (fMin)) ? (fMin) : ((fVal) > (fMax)) ? (fMax) : (fVal);
+}
+
+/***************************************************************************/
 static inline int Max(int iVal1, int iVal2)
 {
   return (iVal1 < iVal2) ? iVal2 : iVal1;

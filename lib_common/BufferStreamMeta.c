@@ -71,12 +71,12 @@ static void SetSection(AL_TStreamSection* pSections, uint16_t uSectionID, uint32
 int AL_StreamMetaData_AddSection(AL_TStreamMetaData* pMetaData, uint32_t uOffset, uint32_t uLength, AL_ESectionFlags eFlags)
 {
   if(!pMetaData)
-    return -1;
+    return AL_INVALID_STREAMSECTION_ID;
 
   uint16_t uSectionID = pMetaData->uNumSection;
 
   if(uSectionID >= pMetaData->uMaxNumSection)
-    return -1;
+    return AL_INVALID_STREAMSECTION_ID;
 
   SetSection(pMetaData->pSections, uSectionID, uOffset, uLength, eFlags);
   ++pMetaData->uNumSection;
@@ -129,13 +129,13 @@ int AL_StreamMetaData_GetLastSectionOfFlag(AL_TStreamMetaData* pMetaData, uint32
 static int InsertSectionAtId(AL_TStreamMetaData* pMetaData, uint16_t uTargetID, uint32_t uOffset, uint32_t uLength, AL_ESectionFlags eFlags)
 {
   if(!pMetaData)
-    return -1;
+    return AL_INVALID_STREAMSECTION_ID;
 
   uint16_t uNumSection = pMetaData->uNumSection;
   AL_TStreamSection* pSections = pMetaData->pSections;
 
   if(uNumSection >= pMetaData->uMaxNumSection)
-    return -1;
+    return AL_INVALID_STREAMSECTION_ID;
 
   for(int i = uNumSection - 1; i >= (int)uTargetID; --i)
   {

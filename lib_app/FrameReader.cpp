@@ -19,7 +19,7 @@ int FrameReader::GotoNextPicture(int iFileFrameRate, int iEncFrameRate, int iEnc
   const int iMove = ((iEncPictCount * iFileFrameRate) / iEncFrameRate) - iFilePictCount;
 
   if(iMove)
-    this->GoToFrame(iMove);
+    this->SeekR(iMove);
 
   return iMove;
 }

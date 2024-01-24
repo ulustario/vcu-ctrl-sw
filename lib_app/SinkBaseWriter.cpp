@@ -7,7 +7,6 @@
 extern "C"
 {
 #include "lib_common/PixMapBuffer.h"
-#include "lib_common/Fbc.h"
 }
 
 #include <iostream>
@@ -29,6 +28,31 @@ void BaseFrameSink::FactorsCalculus()
 }
 
 /****************************************************************************/
+void BaseFrameSink::DimInTileCalculus()
+{
+  static const uint32_t MIN_HEIGHT_ROUNDING = 8;
+
+  int iTileWidth = GetTileWidth(m_tPicFormat.eStorageMode);
+  int iTileHeight = GetTileHeight(m_tPicFormat.eStorageMode);
+
+  FactorsCalculus();
+
+  {
+    m_uPitchYFile = AL_RoundUpAndMul(m_tPicDim.iWidth, iTileWidth, iTileHeight) * m_tPicFormat.uBitDepth >> 3;
+  }
+
+  m_uPitchCFile = m_uPitchYFile;
+  m_uHeightInTileYFile = AL_RoundUpAndDivide(m_tPicDim.iHeight, std::max(uint32_t(iTileHeight), MIN_HEIGHT_ROUNDING), iTileHeight);
+
+  if(m_tPicFormat.eChromaOrder == AL_C_ORDER_SEMIPLANAR)
+    m_uHeightInTileCFile = AL_RoundUp(m_uHeightInTileYFile, m_iChromaVertScale) / m_iChromaVertScale;
+  else
+  {
+    m_iChromaVertScale = 0;
+    m_uHeightInTileCFile = 0;
+  }
+}
+
 /****************************************************************************/
 void BaseFrameSink::WritePix(const uint8_t* pPix, uint32_t iPitchInPix, uint16_t uHeightInTile, uint32_t uPitchFile)
 {

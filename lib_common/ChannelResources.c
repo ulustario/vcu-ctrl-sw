@@ -15,7 +15,7 @@ static int GetMinCoresCount(int width, int maxWidth)
   return divideRoundUp(width, maxWidth);
 }
 
-static int GetCoreResources(int coreFrequency, int margin)
+int GetCoreResources(int coreFrequency, int margin)
 {
   return coreFrequency - (coreFrequency / 100) * margin;
 }
@@ -78,23 +78,18 @@ bool AL_Constraint_NumCoreIsSane(AL_ECodec codec, int width, int numCore, int lo
   (void)codec;
   /*
    * Hardware limitation, for each core, we need at least:
-   * -> 3 CTB for VP9
-   * -> 4 CTB for HEVC64
-   * -> 8 CTB for HEVC32
+   * -> 3 CTB for VP9 / HEVC64
+   * -> 4 CTB for HEVC32
    * -> 5 MB for AVC
    * Each core starts on a tile.
-   * Tiles are aligned on 64 pixels for FBC tile constraint.
+   * Tiles are aligned on 64 bytes.
    * For JPEG, each core works on a different frame.
    */
 
   int corePerFrame = numCore;
 
   int ctbSize = 1 << log2MaxCuSize;
-  int MIN_CTB_PER_CORE = 9 - log2MaxCuSize;
-
-  if(codec == AL_CODEC_HEVC && numCore >= 2)
-    MIN_CTB_PER_CORE = 256 >> log2MaxCuSize; // HEVC tiles must be at least 256 pixels wide
-
+  int const MIN_CTB_PER_CORE = 9 - log2MaxCuSize;
   int widthPerCoreInCtb = ToCtb(width / corePerFrame, ctbSize);
 
   int offset = 0;

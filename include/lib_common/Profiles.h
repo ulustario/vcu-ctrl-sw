@@ -28,7 +28,7 @@
 #define HEVC_PROFILE_IDC_RExt 4
 
 /****************************************************************************/
-typedef enum AL_e_Codec
+typedef enum
 {
   /* assign hardware standard value */
   AL_CODEC_AVC = 0,
@@ -39,13 +39,14 @@ typedef enum AL_e_Codec
   AL_CODEC_VVC = 5,
   AL_CODEC_MPEG2 = 6,
   AL_CODEC_AVC_I = 7,
+  AL_CODEC_LCEVC = 8,
   AL_CODEC_INVALID, /* sentinel */
 }AL_ECodec;
 
 /*************************************************************************//*!
    \brief Profiles identifier
 *****************************************************************************/
-typedef enum __AL_ALIGNED__ (4) AL_e_Profile
+typedef enum
 {
   AL_PROFILE_AVC = (AL_CODEC_AVC << 24),
   AL_PROFILE_AVC_CAVLC_444_INTRA = AL_PROFILE_AVC | AVC_PROFILE_IDC_CAVLC_444_INTRA, // not supported
@@ -103,7 +104,7 @@ typedef enum __AL_ALIGNED__ (4) AL_e_Profile
   AL_PROFILE_HEVC_MAIN_444_16_STILL = AL_PROFILE_HEVC_RExt | AL_RExt_FLAGS(0x0300), // not supported
 
   AL_PROFILE_UNKNOWN = ~0,
-} AL_EProfile;
+}AL_EProfile;
 
 /****************************************************************************/
 #define AL_MAKE_PROFILE(Codec, Idc, Flags) ((AL_EProfile)(((Codec) << 24) | ((Flags) << 8) | (Idc)))

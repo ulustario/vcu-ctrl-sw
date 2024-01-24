@@ -107,7 +107,7 @@ typedef struct AL_t_DecPictParam
   AL_EEntropyMode eEntMode;
 
   int32_t iFrmNum;
-  AL_64U UserParam;
+  uint64_t UserParam;
 
   uint8_t log2_sao_offset_scale_luma;
   uint8_t log2_sao_offset_scale_chroma;

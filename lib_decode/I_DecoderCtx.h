@@ -12,6 +12,8 @@
 #pragma once
 
 #include "lib_common_dec/StartCodeParam.h"
+#include "lib_common_dec/ChannelState.h"
+#include "lib_common_dec/I_Feeder.h"
 
 #include "lib_parsing/I_PictMngr.h"
 #include "lib_parsing/Concealment.h"
@@ -19,16 +21,8 @@
 #include "lib_common/BufferSeiMeta.h"
 #include "NalUnitParser.h"
 #include "lib_decode/I_DecScheduler.h"
+#include "lib_decode/DecoderFrameCtx.h"
 #include "lib_decode/lib_decode.h"
-#include "I_Feeder.h"
-
-typedef enum AL_e_ChanState
-{
-  CHAN_UNINITIALIZED,
-  CHAN_CONFIGURED,
-  CHAN_INVALID,
-  CHAN_DESTROYING,
-}AL_EChanState;
 
 typedef enum
 {
@@ -53,9 +47,6 @@ typedef struct
   AL_ENut eos;
   AL_ENut eob;
 }AL_NonVclNuts;
-
-struct t_Dec_Ctx;
-typedef struct t_Dec_Ctx AL_TDecCtx;
 
 typedef struct
 {
@@ -143,8 +134,6 @@ typedef struct t_Dec_Ctx
 
   // stream context status
   bool bFirstIsValid;
-  bool bFirstSliceInFrameIsValid;
-  bool bBeginFrameIsValid;
   bool bIsFirstPicture;
   int iStreamOffset[MAX_STACK_SIZE];
   int iCurOffset;
@@ -159,13 +148,12 @@ typedef struct t_Dec_Ctx
   uint8_t uMvIDRefList[MAX_STACK_SIZE][AL_MAX_NUM_REF];
   uint8_t uNumRef[MAX_STACK_SIZE];
 
+  // CurrentFrame context
+  AL_TDecFrameCtx tCurrentFrameCtx;
+
   // error concealment context
   AL_TConceal tConceal;
   uint16_t uConcealMaxFps; // Clipping of framerate for stream having corrupted or invalid SPS header
-
-  // tile data management
-  uint16_t uCurTileID;      // Tile offset of the current tile within the frame
-  bool bTileSupToSlice; // specify when current tile is bigger than slices (E neighbor tile computation purpose)
 
   // Decoder toggle buffer
   TBufferPOC POC;          // Colocated POC buffer
@@ -194,8 +182,6 @@ typedef struct t_Dec_Ctx
   AL_TBuffer* eosBuffer;
 
   int iNumSlicesRemaining;
-
-  bool bIsIFrame;
 
   AL_TPosition tOutputPosition;
 

@@ -5,31 +5,21 @@
 
 #include "lib_common_enc/EncChanParam.h"
 
-typedef enum AL_e_GOPMngrType
-{
-  AL_GOP_MNGR_DEFAULT,
-  AL_GOP_MNGR_CUSTOM,
-  AL_GOP_MNGR_COMMON,
-  AL_GOP_MNGR_MAX_ENUM,
-}AL_EGopMngrType;
+/*************************************************************************//*!
+   \brief Get the maximum number of reference buffers in the DPB
+   \param[in] pGopParam Pointer to the gop parameters
+   \param[in] eCodec Codec
+   \param[in] eVideoMode Video Mode
+   \param[in] uLookAheadAdditionalRef Add optional references required for lookahead features
+   \return The maximum number of references
+*****************************************************************************/
+uint8_t AL_DPBConstraint_GetMaxRef(const AL_TGopParam* pGopParam, AL_ECodec eCodec, AL_EVideoMode eVideoMode, uint8_t uLookAheadAdditionalRef);
 
 /*************************************************************************//*!
    \brief Get the maximum size of the dpb required for the encoding parameters
    provided
    \param[in] pChParam Pointer to the channel parameters
-   \param[out] The maximum size of the DPB
+   \return The maximum size of the DPB
 *****************************************************************************/
 uint8_t AL_DPBConstraint_GetMaxDPBSize(const AL_TEncChanParam* pChParam);
-
-/*************************************************************************//*!
-   \brief Get the type of GOP Manager used for this encoding parameters
-   \param[in] eMode The GOP control mode
-   \param[in] bIsAom True if the encoding codec is an AOM codec
-   \param[out] The type of GOP Manager used
-*****************************************************************************/
-AL_EGopMngrType AL_GetGopMngrType(AL_EGopCtrlMode eMode, AL_ECodec eCodec, bool bIsLookAhead);
-
-uint8_t AL_DPBConstraint_GetMaxRef_DefaultGopMngr(const AL_TGopParam* pGopParam, AL_ECodec eCodec, AL_EVideoMode eVideoMode);
-uint8_t AL_DPBConstraint_GetMaxRef_GopMngrCustom(const AL_TGopParam* pGopParam, AL_ECodec eCodec, AL_EVideoMode eVideoMode, bool bLookAheadSkipExtraRef);
-uint8_t AL_DPBConstraint_GetMaxRef_GopMngrDefaultAom(const AL_TGopParam* pGopParam, bool bLookAheadSkipExtraRef);
 

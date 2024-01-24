@@ -2782,6 +2782,15 @@ void Y010_To_T608(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 }
 
 /****************************************************************************/
+void Y010_To_T64C(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
+{
+  AL_TDimension tDim = AL_PixMapBuffer_GetDimension(pDst);
+  Plane_Tile_T64<uint16_t, uint8_t>(pSrc, pDst, 10, 12, AL_PLANE_Y, tDim);
+
+  AL_PixMapBuffer_SetFourCC(pDst, FOURCC(T64C));
+}
+
+/****************************************************************************/
 void Y012_To_T608(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 {
   AL_TDimension tDim = AL_PixMapBuffer_GetDimension(pDst);
@@ -2799,12 +2808,6 @@ void P010_To_T608(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
   tDim.iWidth = ((tDim.iWidth + 1) >> 1) << 1;
   tDim.iHeight = (tDim.iHeight + 1) >> 1;
   Plane_Tile_T64<uint16_t, uint8_t>(pSrc, pDst, 10, 8, AL_PLANE_UV, tDim);
-}
-
-/****************************************************************************/
-void Y800_To_T608(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
-{
-  Y800_To_T6m8(pSrc, pDst);
 }
 
 /****************************************************************************/
@@ -3272,6 +3275,13 @@ void I444_To_T64C(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
   Plane_Tile_T64<uint8_t, uint16_t>(pSrc, pDst, 8, 12, AL_PLANE_Y, tDim);
   Plane_Tile_T64<uint8_t, uint16_t>(pSrc, pDst, 8, 12, AL_PLANE_U, tDim);
   Plane_Tile_T64<uint8_t, uint16_t>(pSrc, pDst, 8, 12, AL_PLANE_V, tDim);
+}
+
+/****************************************************************************/
+void Y800_To_T608(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
+{
+  AL_TDimension tDim = AL_PixMapBuffer_GetDimension(pDst);
+  Plane_Tile_T64<uint8_t, uint8_t>(pSrc, pDst, 8, 8, AL_PLANE_Y, tDim);
 }
 
 /****************************************************************************/
@@ -4703,6 +4713,9 @@ static const sFourCCToConvFunc ConversionY012FuncArray[] =
   },
   {
     FOURCC(T62C), Y012_To_T62C
+  },
+  {
+    FOURCC(T6mC), Y012_To_T6mC
   },
 };
 

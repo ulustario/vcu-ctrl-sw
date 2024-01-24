@@ -10,13 +10,11 @@
  *****************************************************************************/
 #pragma once
 
-#ifdef __cplusplus
 extern "C" {
-#endif
-
 #include "lib_common/Allocator.h"
 #include "lib_common/BufferAPI.h"
 #include "lib_common/BufferMeta.h"
+}
 
 /*************************************************************************//*!
    \brief AL_TBufPoolCreateBufCB: Abstraction of buffer creation
@@ -139,9 +137,6 @@ void AL_BufPool_Commit(AL_TBufPool* pBufPool);
 
 /*@}*/
 
-#ifdef __cplusplus
-}
-
 #include <stdexcept>
 class bufpool_decommited_error : public std::runtime_error
 {
@@ -186,4 +181,3 @@ private:
   std::string sName;
 };
 
-#endif

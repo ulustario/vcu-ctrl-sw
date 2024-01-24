@@ -39,5 +39,6 @@ typedef struct
   int iRecoveryCnt;
   AL_THDRSEIs tParsedHDRSEIs; // The last parsed HDR SEIs
   AL_THDRSEIs tActiveHDRSEIs; // The active HDR SEIs in display order
+
 }AL_TAup;
 

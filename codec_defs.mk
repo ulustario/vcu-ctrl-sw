@@ -29,7 +29,7 @@ ifeq ($(ENABLE_64BIT),0)
 endif
 
 ifeq ($(findstring x86_64,$(TARGET)),x86_64)
-ifeq ($(ENABLE_AVX2),1)
+ifneq ($(ENABLE_AVX2),0)
   CFLAGS+=-mavx2
 else
   CFLAGS+=-msse3

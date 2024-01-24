@@ -581,7 +581,7 @@ bool AL_Common_Encoder_Process(AL_TEncCtx* pCtx, AL_TBuffer* pFrame, AL_TBuffer*
   addresses.tSrcInfo.uFormat = AL_GET_SRC_FMT(srcMode);
 
   AL_Buffer_Ref(pFrame);
-  pEI->SrcHandle = (AL_64U)(uintptr_t)pFrame;
+  pEI->SrcHandle = (uint64_t)(uintptr_t)pFrame;
   AddSourceSent(pCtx, pFrame, pFI);
 
   AL_TEncRequestInfo* pReqInfo = getCurrentCommands(&pCtx->tLayerCtx[iLayerID]);
@@ -1271,6 +1271,8 @@ static bool AL_Common_Encoder_SetChannelResolution(AL_TLayerCtx* pLayerCtx, AL_T
     return false;
   pChanParam->uEncWidth = tDim.iWidth;
   pChanParam->uEncHeight = tDim.iHeight;
+  pChanParam->uSrcWidth = tDim.iWidth;
+  pChanParam->uSrcHeight = tDim.iWidth;
   return true;
 }
 
@@ -1441,7 +1443,7 @@ AL_TNalsData AL_ExtractNalsData(AL_TEncCtx* pCtx, int iLayerID, int iPicID)
 }
 
 /****************************************************************************/
-static void EndEncoding(void* pUserParam, AL_TEncPicStatus* pPicStatus, AL_64U streamUserPtr)
+static void EndEncoding(void* pUserParam, AL_TEncPicStatus* pPicStatus, uint64_t streamUserPtr)
 {
   AL_TCbUserParam* pCbUserParam = (AL_TCbUserParam*)pUserParam;
   AL_TEncCtx* pCtx = pCbUserParam->pCtx;

@@ -10,6 +10,7 @@
 
 #include "RbspEncod.h"
 #include "lib_assert/al_assert.h"
+
 #include "lib_common/SyntaxConversion.h"
 
 /*****************************************************************************/

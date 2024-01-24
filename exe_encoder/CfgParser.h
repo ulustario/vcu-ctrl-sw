@@ -44,7 +44,7 @@ typedef AL_INTROSPECT (category = "debug") struct tCfgRunInfo
   bool printPictureType = false;
   bool printRateCtrlStat = false;
   std::string bitrateFile = "";
-  AL_64U uInputSleepInMilliseconds;
+  uint64_t uInputSleepInMilliseconds;
   AL_EGenerateQpMode eGenerateQpMode = AL_GENERATE_UNIFORM_QP;
 }TCfgRunInfo;
 

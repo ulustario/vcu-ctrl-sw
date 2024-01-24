@@ -40,7 +40,7 @@ void AL_DecSettings_SetDefaults(AL_TDecSettings* pSettings)
   pSettings->tStream.eProfile = STREAM_SETTING_UNKNOWN;
   pSettings->tStream.iLevel = STREAM_SETTING_UNKNOWN;
   pSettings->tStream.bDecodeIntraOnly = false;
-  pSettings->tStream.iMaxRef = MAX_REF;
+  pSettings->tStream.iMaxRef = 0;
 }
 
 /***************************************************************************/

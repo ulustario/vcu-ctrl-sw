@@ -1,5 +1,7 @@
-CFLAGS+=-O3
-CFLAGS+=-g0
+OUR_CFLAGS:=-O3 -g0
+THEIR_CFLAGS:=${CFLAGS}
+
+CFLAGS:=${OUR_CFLAGS} ${THEIR_CFLAGS}
 
 SCM_REV:=-D'SCM_REV="$(shell git rev-parse HEAD 2> /dev/null || echo 0)"'
 SCM_BRANCH=-D'SCM_BRANCH="$(shell git rev-parse --abbrev-ref HEAD 2> /dev/null || echo unknown)"'
@@ -55,13 +57,20 @@ BUILD_EXE_FBC=0
 BUILD_EXE_FBD=0
 
 
+BUILD_LIB_BITSTREAM=0
 ifneq ($(ENABLE_ENCODER),0)
--include lib_common_enc/project.mk
--include lib_buf_mngt/project.mk
--include lib_rate_ctrl/project.mk
--include lib_bitstream/project.mk
--include lib_scheduler_enc/project.mk
--include lib_encode/project.mk
+  BUILD_LIB_BITSTREAM=1
+endif
+ifneq ($(BUILD_LIB_BITSTREAM),0)
+  -include lib_bitstream/project.mk
+endif
+
+ifneq ($(ENABLE_ENCODER),0)
+  -include lib_common_enc/project.mk
+  -include lib_buf_mngt/project.mk
+  -include lib_rate_ctrl/project.mk
+  -include lib_scheduler_enc/project.mk
+  -include lib_encode/project.mk
 endif
 
 ifneq ($(BUILD_EXE_FBC),0)
@@ -78,9 +87,18 @@ endif
 
 -include ref.mk
 
+BUILD_LIB_CONV_YUV=0
+ifneq ($(ENABLE_ENCODER), 0)
+  BUILD_LIB_CONV_YUV=1
+endif
+ifneq ($(BUILD_LIB_CONV_YUV), 0)
+  -include lib_conv_yuv/project.mk
+endif
+
 ifneq ($(ENABLE_DECODER),0)
   # AL_Decoder
   -include lib_parsing/project.mk
+
   -include lib_scheduler_dec/project.mk
   -include lib_decode/project.mk
   -include exe_decoder/project.mk
@@ -90,7 +108,6 @@ endif
 
 ifneq ($(ENABLE_ENCODER),0)
   # AL_Encoder
-  -include lib_conv_yuv/project.mk
   -include exe_encoder/project.mk
 endif
 
@@ -103,6 +120,7 @@ ifneq ($(BUILD_EXE_FBD),0)
   -include lib_fbd_standalone/project.mk
   -include exe_decompress/project.mk
 endif
+
 
 
 

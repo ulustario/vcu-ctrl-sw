@@ -21,10 +21,6 @@ enum ETileMode : uint8_t
   TILE_MAX_ENUM,
 };
 
-static constexpr int SUPER_TILE_WIDTH = 4;
-static constexpr int MEGA_MAP_WIDTH = 16;
-static constexpr int SUPER_TILE_SIZE = SUPER_TILE_WIDTH * SUPER_TILE_WIDTH;
-
 ETileMode EFbStorageModeToETileMode(AL_EFbStorageMode eFbStorageMode);
 AL_EFbStorageMode ETileModeToEFbStorageMode(ETileMode eTileMode);
 

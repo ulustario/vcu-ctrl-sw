@@ -13,9 +13,15 @@ bool UnCompFrameReader::ReadFrame(AL_TBuffer* pBuffer)
   return ReadOneFrameYuv(m_recFile, pBuffer, m_bLoopFile, m_uRndDim);
 }
 
-void UnCompFrameReader::GoToFrame(uint32_t iFrameNb)
+void UnCompFrameReader::SeekA(uint32_t uFrameIdx)
 {
   int iPictSize = GetPictureSize(m_tFileInfo);
-  m_recFile.seekg(iPictSize * iFrameNb, std::ios_base::cur);
+  m_recFile.seekg(iPictSize * uFrameIdx, std::ios_base::beg);
+}
+
+void UnCompFrameReader::SeekR(int iFrameDlt)
+{
+  int iPictSize = GetPictureSize(m_tFileInfo);
+  m_recFile.seekg(iPictSize * iFrameDlt, std::ios_base::cur);
 }
 

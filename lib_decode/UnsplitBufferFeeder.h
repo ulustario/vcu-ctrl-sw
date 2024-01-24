@@ -3,8 +3,7 @@
 
 #pragma once
 
-#include "I_Feeder.h"
-#include "DecoderFeeder.h"
+#include "lib_common_dec/I_Feeder.h"
 
 AL_TFeeder* AL_UnsplitBufferFeeder_Create(AL_HANDLE hDec, int uMaxBufNum, AL_TAllocator* pAllocator, int iBufferStreamSize, AL_TBuffer* eosBuffer, bool bForceAccessUnitDestroy);
 

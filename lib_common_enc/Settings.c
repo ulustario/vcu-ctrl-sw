@@ -552,7 +552,6 @@ void AL_Settings_SetDefaults(AL_TEncSettings* pSettings)
 #if (defined(ANDROID) || defined(__ANDROID_API__))
   pChan->eStartCodeBytesAligned = AL_START_CODE_4_BYTES;
 #endif
-
 }
 
 /***************************************************************************/
@@ -593,6 +592,7 @@ void AL_Settings_SetDefaultParam(AL_TEncSettings* pSettings)
 /***************************************************************************/
 int AL_Settings_CheckValidity(AL_TEncSettings* pSettings, AL_TEncChanParam* pChParam, FILE* pOut)
 {
+  (void)pSettings;
   int err = 0;
 
   if(!AL_sSettings_CheckProfile(pChParam->eProfile))
@@ -623,7 +623,7 @@ int AL_Settings_CheckValidity(AL_TEncSettings* pSettings, AL_TEncChanParam* pChP
 
   if(pChParam->bEnableSrcCrop)
   {
-    int HStep = AL_GET_BITDEPTH(pChParam->ePicFormat) == 10 ? 24 : 32; // In 10-bit there are 24 samples every 32 bytes
+    int HStep = AL_GET_BITDEPTH(pChParam->ePicFormat) == 10 ? (HW_IP_BURST_ALIGNMENT * 3) / 4 : HW_IP_BURST_ALIGNMENT; // In 10-bit there are 3 samples every 4 bytes
     int VStep = 1; // should be 2 in 4:2:0 but customer requires it to be 1 in any case !
 
     if((pChParam->uSrcCropPosX % HStep) || (pChParam->uSrcCropPosY % VStep))
@@ -822,7 +822,7 @@ int AL_Settings_CheckValidity(AL_TEncSettings* pSettings, AL_TEncChanParam* pChP
   else if(eResError == CRERROR_HEIGHTCHROMA)
   {
     ++err;
-    MSG_ERROR("Width shall be multiple of 2 on 420 or 422 chroma mode!");
+    MSG_ERROR("Height shall be multiple of 2 on 420 or 422 chroma mode!");
   }
   else if(eResError == CRERROR_64x64_MIN_RES)
   {
@@ -883,9 +883,11 @@ int AL_Settings_CheckValidity(AL_TEncSettings* pSettings, AL_TEncChanParam* pChP
     MSG_ERROR("Invalid parameter: VideoMode");
   }
 
-  if(pChParam->eVideoMode != AL_VM_PROGRESSIVE)
+  if(AL_IS_INTERLACED(pChParam->eVideoMode))
   {
-    if(!AL_IS_HEVC(pChParam->eProfile) && !AL_IS_AVC(pChParam->eProfile))
+    bool isAVCInterlacedSupported = false;
+
+    if(!AL_IS_HEVC(pChParam->eProfile) && !(AL_IS_AVC(pChParam->eProfile) && isAVCInterlacedSupported))
     {
       ++err;
       MSG_ERROR("Interlaced Video mode is not supported in this profile");
@@ -947,17 +949,6 @@ int AL_Settings_CheckValidity(AL_TEncSettings* pSettings, AL_TEncChanParam* pChP
   {
     ++err;
     MSG_ERROR("Output crop region shall fit within the encoded picture");
-  }
-
-  if(AL_IS_VVC(pChParam->eProfile))
-  {
-    if(AL_GET_BITDEPTH(pChParam->ePicFormat) > 8 || eChromaMode == AL_CHROMA_4_4_4 || pChParam->tRCParam.eRCMode != AL_RC_CONST_QP || pSettings->eQpCtrlMode != AL_QP_CTRL_NONE
-       || pSettings->eQpTableMode != AL_QP_TABLE_NONE || pChParam->tGopParam.bEnableLT == true
-       )
-    {
-      ++err;
-      MSG_ERROR("VVC encoder only supports 8bits const_qp simple encoding");
-    }
   }
 
   if(pSettings->bDependentSlice && AL_GET_CODEC(pChParam->eProfile) != AL_CODEC_HEVC)
@@ -1139,6 +1130,11 @@ static void CorrectBitRateParams(AL_TEncChanParam* pChParam, TFourCC tFourCC, in
 {
   if(AL_IS_CBR(pChParam->tRCParam.eRCMode))
   {
+    if(pChParam->tRCParam.uMaxBitRate > pChParam->tRCParam.uTargetBitRate)
+    {
+      MSG_WARNING("The specified MaxBitRate is greater than the [Target]BitRate and will be adjusted as this is a CBR stream");
+      (*numIncoherency)++;
+    }
     pChParam->tRCParam.uMaxBitRate = pChParam->tRCParam.uTargetBitRate;
   }
 
@@ -1301,6 +1297,9 @@ int AL_Settings_CheckCoherency(AL_TEncSettings* pSettings, AL_TEncChanParam* pCh
     pChParam->uCuQPDeltaDepth = 0;
   }
 
+  if(AL_IS_XAVC(pChParam->eProfile))
+    XAVC_CheckCoherency(pSettings);
+
   CorrectBitRateParams(pChParam, tFourCC, iBitDepth, &numIncoherency, pOut);
 
   if(pChParam->tGopParam.uNumB > 0)
@@ -1440,7 +1439,6 @@ int AL_Settings_CheckCoherency(AL_TEncSettings* pSettings, AL_TEncChanParam* pCh
       pChParam->uCuQPDeltaDepth = 0;
       ++numIncoherency;
     }
-
   }
 
   if(pChParam->bForcePpsIdToZero && !(pChParam->tGopParam.eMode & AL_GOP_FLAG_LOW_DELAY) && (pChParam->tGopParam.uNumB != 0))
@@ -1575,7 +1573,7 @@ int AL_Settings_CheckCoherency(AL_TEncSettings* pSettings, AL_TEncChanParam* pCh
   {
     if(pChParam->tRCParam.eRCMode != AL_RC_CONST_QP)
     {
-      uint64_t uCPBSize = ((AL_64U)pChParam->tRCParam.uCPBSize * pChParam->tRCParam.uMaxBitRate) / 90000LL;
+      uint64_t uCPBSize = ((uint64_t)pChParam->tRCParam.uCPBSize * pChParam->tRCParam.uMaxBitRate) / 90000LL;
       uint32_t uMaxCPBSize = AL_sSettings_GetMaxCPBSize(pChParam);
 
       if(uCPBSize > uMaxCPBSize)
@@ -1617,10 +1615,10 @@ int AL_Settings_CheckCoherency(AL_TEncSettings* pSettings, AL_TEncChanParam* pCh
   if(pChParam->tGopParam.eGdrMode == AL_GDR_VERTICAL)
     pChParam->eEncTools |= AL_OPT_CONST_INTRA_PRED;
 
-  if(pChParam->eVideoMode != AL_VM_PROGRESSIVE)
+  if(AL_IS_INTERLACED(pChParam->eVideoMode))
   {
-    AL_Assert(AL_IS_HEVC(pChParam->eProfile));
     pSettings->uEnableSEI |= AL_SEI_PT;
+
   }
 
   if(pSettings->bEnableFirstPassSceneChangeDetection)
@@ -1654,9 +1652,6 @@ int AL_Settings_CheckCoherency(AL_TEncSettings* pSettings, AL_TEncChanParam* pCh
 
   if(pChParam->tRCParam.pMaxPictureSize[AL_SLICE_I] == 0)
     pChParam->tRCParam.pMaxPictureSize[AL_SLICE_I] = pChParam->tRCParam.pMaxPictureSize[AL_SLICE_P];
-
-  if(AL_IS_XAVC(pChParam->eProfile))
-    XAVC_CheckCoherency(pSettings);
 
   return numIncoherency;
 }

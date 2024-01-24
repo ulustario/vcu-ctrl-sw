@@ -135,7 +135,7 @@ void UpdateContextAtEndOfFrame(AL_TDecCtx* pCtx)
 
   pCtx->tConceal.iFirstLCU = -1;
   pCtx->tConceal.bValidFrame = false;
-  pCtx->PictMngr.uNumSlice = 0;
+  pCtx->tCurrentFrameCtx.uNumSlice = 0;
 
   Rtos_Memset(&pCtx->PoolPP[pCtx->uToggle], 0, sizeof(AL_TDecPicParam));
   Rtos_Memset(&pCtx->PoolPB[pCtx->uToggle], 0, sizeof(AL_TDecPicBuffers));

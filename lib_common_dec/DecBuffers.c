@@ -26,8 +26,9 @@ int32_t RndPitch(int32_t iWidth, uint8_t uBitDepth, AL_EFbStorageMode eFrameBuff
 /******************************************************************************/
 int32_t RndHeight(int32_t iHeight)
 {
-  int const iAlignment = 64;
-  return RoundUp(iHeight, iAlignment);
+  // Height alignment required by Xilinx to the LCU size
+  int const iLcuAlignment = 64;
+  return RoundUp(iHeight, iLcuAlignment);
 }
 
 /****************************************************************************/

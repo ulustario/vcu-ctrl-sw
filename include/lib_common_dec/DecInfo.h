@@ -12,6 +12,7 @@
 #include "lib_common_dec/StreamSettings.h"
 #include "lib_common/SliceConsts.h"
 #include "lib_common/PicFormat.h"
+#include "lib_common/Error.h"
 
 /*************************************************************************//*!
    \brief Info on stream decoding

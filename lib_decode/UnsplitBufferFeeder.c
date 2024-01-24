@@ -4,6 +4,7 @@
 #include "UnsplitBufferFeeder.h"
 #include "lib_common/Fifo.h"
 #include "lib_rtos/lib_rtos.h"
+#include "DecoderFeeder.h"
 
 #include "Patchworker.h"
 

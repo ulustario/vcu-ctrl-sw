@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include "lib_decode/I_DecArch.h"
+#include "lib_common_dec/I_DecArch.h"
 
 extern AL_IDecArch decHost;
 

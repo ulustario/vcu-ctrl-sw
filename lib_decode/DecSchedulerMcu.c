@@ -16,7 +16,7 @@
 #include "lib_common/List.h"
 #include "lib_common/Error.h"
 #include "lib_assert/al_assert.h"
-#include "lib_scheduler_dec/SchedulerInfo.h"
+#include "lib_common_dec/SchedulerInfo.h"
 
 #define DCACHE_OFFSET 0x80000000
 

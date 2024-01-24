@@ -114,9 +114,9 @@ int Rtos_Log(int iLogLevel, char const* const sMsg, ...)
 #endif
 
 /****************************************************************************/
-AL_64U Rtos_GetTime()
+uint64_t Rtos_GetTime()
 {
-  AL_64U uCount, uFreq;
+  uint64_t uCount, uFreq;
   QueryPerformanceCounter((LARGE_INTEGER*)&uCount);
   QueryPerformanceFrequency((LARGE_INTEGER*)&uFreq);
 
@@ -304,12 +304,12 @@ typedef struct
 }evt_t;
 
 /****************************************************************************/
-AL_64U Rtos_GetTime()
+uint64_t Rtos_GetTime()
 {
   struct timeval Tv;
   gettimeofday(&Tv, NULL);
 
-  return ((AL_64U)Tv.tv_sec) * 1000 + (Tv.tv_usec / 1000);
+  return ((uint64_t)Tv.tv_sec) * 1000 + (Tv.tv_usec / 1000);
 }
 
 /****************************************************************************/

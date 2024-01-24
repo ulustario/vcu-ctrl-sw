@@ -18,11 +18,12 @@
 #include "lib_common/PixMapBufferInternal.h"
 #include "lib_common/BufferHandleMeta.h"
 
-#include "lib_common_dec/DecHwScalingList.h"
 #include "lib_common_dec/RbspParser.h"
 
 #include "lib_parsing/Avc_PictMngr.h"
+#include "lib_decode/AvcHwBufInitialization.h"
 #include "lib_parsing/Hevc_PictMngr.h"
+#include "lib_decode/HevcHwBufInitialization.h"
 
 #include "lib_assert/al_assert.h"
 
@@ -164,12 +165,13 @@ static void SetBufferHandleMetaData(AL_TDecCtx* pCtx)
   if(pCtx->pInputBuffer == pCtx->eosBuffer)
     return;
 
-  AL_THandleMetaData* pMeta = (AL_THandleMetaData*)AL_Buffer_GetMetaData(pCtx->pRecs.pFrame, AL_META_TYPE_HANDLE);
+  AL_TBuffer* pFrame = pCtx->pRecs.pFrame;
+
+  AL_THandleMetaData* pMeta = (AL_THandleMetaData*)AL_Buffer_GetMetaData(pFrame, AL_META_TYPE_HANDLE);
 
   if(!pMeta)
   {
     pMeta = AL_HandleMetaData_Create(AL_MAX_SLICES_SUBFRAME, sizeof(AL_TDecMetaHandle));
-    AL_TBuffer* pFrame = pCtx->pRecs.pFrame;
     AL_Buffer_AddMetaData(pFrame, (AL_TMetaData*)pMeta);
   }
 
@@ -206,7 +208,7 @@ static void decodeOneSlice(AL_TDecCtx* pCtx, uint16_t uSliceID, AL_TDecPicBuffer
 /*****************************************************************************/
 void AL_LaunchSliceDecoding(AL_TDecCtx* pCtx, bool bIsLastAUNal, bool hasPreviousSlice)
 {
-  uint16_t uSliceID = pCtx->PictMngr.uNumSlice - 1;
+  uint16_t uSliceID = pCtx->tCurrentFrameCtx.uNumSlice - 1;
   AL_TDecSliceParam* pPrevSP = NULL;
 
   UpdateStreamOffset(pCtx);
@@ -234,7 +236,7 @@ void AL_LaunchSliceDecoding(AL_TDecCtx* pCtx, bool bIsLastAUNal, bool hasPreviou
   if(pPrevSP == NULL || !pPrevSP->bIsLastSlice)
     decodeOneSlice(pCtx, uSliceID, &pCtx->BufAddrs);
 
-  pCtx->uCurTileID = 0;
+  pCtx->tCurrentFrameCtx.uCurTileID = 0;
 
   Rtos_GetMutex(pCtx->DecMutex);
   ++pCtx->iNumFrmBlk1;
@@ -249,15 +251,15 @@ void AL_LaunchFrameDecoding(AL_TDecCtx* pCtx)
 
   AL_TDecPicBufferAddrs BufAddrs;
   AL_SetBufferAddrs(pCtx, &BufAddrs);
+  SetBufferHandleMetaData(pCtx);
 
   UpdateStreamOffset(pCtx);
-  SetBufferHandleMetaData(pCtx);
   AL_TDecSliceParam* pSP = (AL_TDecSliceParam*)pCtx->PoolSP[pCtx->uToggle].tMD.pVirtualAddr;
   pSP->uParsingId = 0;
 
   AL_IDecScheduler_DecodeOneFrame(pCtx->pScheduler, pCtx->hChannel, &pCtx->PoolPP[pCtx->uToggle], &BufAddrs, &pCtx->PoolSP[pCtx->uToggle].tMD);
 
-  pCtx->uCurTileID = 0;
+  pCtx->tCurrentFrameCtx.uCurTileID = 0;
 
   Rtos_GetMutex(pCtx->DecMutex);
   ++pCtx->iNumFrmBlk1;
@@ -353,10 +355,10 @@ void AL_TerminatePreviousCommand(AL_TDecCtx* pCtx, AL_TDecPicParam const* pPP, A
   AL_TDecPicBuffers* pBufs = &pCtx->PoolPB[pCtx->uToggle];
   AL_sSaveCommandBlk2(pCtx, pPP, pBufs);
 
-  if(pCtx->PictMngr.uNumSlice == 0)
+  if(pCtx->tCurrentFrameCtx.uNumSlice == 0)
     return;
 
-  AL_TDecSliceParam* pPrevSP = &(((AL_TDecSliceParam*)pCtx->PoolSP[pCtx->uToggle].tMD.pVirtualAddr)[pCtx->PictMngr.uNumSlice - 1]);
+  AL_TDecSliceParam* pPrevSP = &(((AL_TDecSliceParam*)pCtx->PoolSP[pCtx->uToggle].tMD.pVirtualAddr)[pCtx->tCurrentFrameCtx.uNumSlice - 1]);
 
   if(bIsLastVclNalInAU)
     pPrevSP->NextSliceSegment = pPP->LcuPicWidth * pPP->LcuPicHeight;
@@ -374,17 +376,30 @@ void AL_TerminatePreviousCommand(AL_TDecCtx* pCtx, AL_TDecPicParam const* pPP, A
 }
 
 /*****************************************************************************/
+void AL_AVC_InitHWCommandBuffers(AL_TDecCtx* pCtx, AL_TDecSliceParam const* pSP, AL_TAvcSliceHdr const* pSlice, AL_TScl const* pSclLst, AL_EChromaMode eChromaMode, AL_TDecPicBuffers* pBufs)
+{
+  if(pCtx->tCurrentFrameCtx.eBufStatus == DEC_FRAME_BUF_RESERVED)
+  {
+    AL_AVC_PictMngr_GetBuffers(&pCtx->PictMngr, pSP, &pBufs->tListVirtRef, &pBufs->tListRef, &pCtx->POC, &pCtx->MV, &pCtx->pRecs);
+    AL_AVC_InitHWFrameBuffers(pSclLst, eChromaMode, pBufs);
+    pCtx->tCurrentFrameCtx.eBufStatus |= DEC_FRAME_BUF_FILLED;
+  }
+
+  AL_AVC_InitHWSliceBuffers(pCtx->tCurrentFrameCtx.uNumSlice, pSlice, pBufs);
+}
+
+/*****************************************************************************/
 void AL_AVC_PrepareCommand(AL_TDecCtx* pCtx, AL_TScl* pSCL, AL_TDecPicParam* pPP, AL_TDecPicBuffers* pBufs, AL_TDecSliceParam* pSP, AL_TAvcSliceHdr* pSlice, bool bIsLastVclNalInAU, bool bIsValid)
 {
   // fast access
-  uint16_t uSliceID = pCtx->PictMngr.uNumSlice;
+  uint16_t uSliceID = pCtx->tCurrentFrameCtx.uNumSlice;
 
   AL_TDecSliceParam* pPrevSP = uSliceID ? &(((AL_TDecSliceParam*)pCtx->PoolSP[pCtx->uToggle].tMD.pVirtualAddr)[uSliceID - 1]) : NULL;
 
   pPP->iFrmNum = pCtx->iNumFrmBlk1;
   pPP->UserParam = pCtx->uToggle;
 
-  AL_AVC_PictMngr_GetBuffers(&pCtx->PictMngr, pSP, pSlice, (TBufferListRef const*)&pCtx->ListRef, &pBufs->tListVirtRef, &pBufs->tListRef, &pCtx->POC, &pCtx->MV, &pBufs->tWP, &pCtx->pRecs);
+  AL_AVC_InitHWCommandBuffers(pCtx, pSP, pSlice, (AL_TScl const*)pSCL, pPP->ChromaMode, pBufs);
 
   if(pPrevSP && !bIsValid && bIsLastVclNalInAU)
   {
@@ -396,14 +411,11 @@ void AL_AVC_PrepareCommand(AL_TDecCtx* pCtx, AL_TScl* pSCL, AL_TDecPicParam* pPP
   if(pSP->FirstLcuSliceSegment && pSP->eSliceType == AL_SLICE_I)
     pSP->ColocPicID = pPrevSP->ColocPicID;
 
-  if(!pSlice->first_mb_in_slice)
-    AL_AVC_WriteDecHwScalingList((AL_TScl const*)pSCL, pPP->ChromaMode, pBufs->tScl.tMD.pVirtualAddr);
-
   // stock command registers in memory
   AL_TerminatePreviousCommand(pCtx, pPP, pSP, false, true);
 
   if(pSP->SliceFirstLCU)
-    pSP->FirstLcuTileID = pSP->DependentSlice ? pPrevSP->FirstLcuTileID : pCtx->uCurTileID;
+    pSP->FirstLcuTileID = pSP->DependentSlice ? pPrevSP->FirstLcuTileID : pCtx->tCurrentFrameCtx.uCurTileID;
 
   AL_sSaveNalStreamBlk1(pCtx, pSP);
 
@@ -411,17 +423,34 @@ void AL_AVC_PrepareCommand(AL_TDecCtx* pCtx, AL_TScl* pSCL, AL_TDecPicParam* pPP
     AL_TerminateCurrentCommand(pCtx, pPP, pSP);
 }
 
+// static int dumbCounter = 0;
+/*****************************************************************************/
+void AL_HEVC_InitHWCommandBuffers(AL_TDecCtx* pCtx, AL_TDecSliceParam const* pSP, AL_THevcSliceHdr const* pSlice, AL_TScl const* pSclLst, AL_TDecPicBuffers* pBufs)
+{
+  if(pCtx->tCurrentFrameCtx.eBufStatus == DEC_FRAME_BUF_RESERVED)
+  {
+    AL_HEVC_PictMngr_GetBuffers(&pCtx->PictMngr, pSP, &pBufs->tListVirtRef, &pBufs->tListRef, &pCtx->POC, &pCtx->MV, &pCtx->pRecs);
+
+    if(pSlice->first_slice_segment_in_pic_flag)
+      AL_HEVC_InitHWFrameBuffers(pSclLst, pBufs);
+
+    pCtx->tCurrentFrameCtx.eBufStatus |= DEC_FRAME_BUF_FILLED;
+  }
+
+  AL_HEVC_InitHWSliceBuffers(pCtx->tCurrentFrameCtx.uNumSlice, pSlice, pBufs);
+}
+
 /*****************************************************************************/
 void AL_HEVC_PrepareCommand(AL_TDecCtx* pCtx, AL_TScl* pSCL, AL_TDecPicParam* pPP, AL_TDecPicBuffers* pBufs, AL_TDecSliceParam* pSP, AL_THevcSliceHdr* pSlice, bool bIsLastVclNalInAU, bool bIsValid)
 {
   // fast access
-  uint16_t uSliceID = pCtx->PictMngr.uNumSlice;
+  uint16_t uSliceID = pCtx->tCurrentFrameCtx.uNumSlice;
   AL_TDecSliceParam* pPrevSP = uSliceID ? &(((AL_TDecSliceParam*)pCtx->PoolSP[pCtx->uToggle].tMD.pVirtualAddr)[uSliceID - 1]) : NULL;
 
   pPP->iFrmNum = pCtx->iNumFrmBlk1;
   pPP->UserParam = pCtx->uToggle;
 
-  AL_HEVC_PictMngr_GetBuffers(&pCtx->PictMngr, pSP, pSlice, (TBufferListRef const*)&pCtx->ListRef, &pBufs->tListVirtRef, &pBufs->tListRef, &pCtx->POC, &pCtx->MV, &pBufs->tWP, &pCtx->pRecs);
+  AL_HEVC_InitHWCommandBuffers(pCtx, pSP, pSlice, (AL_TScl const*)pSCL, pBufs);
 
   if(pPrevSP && !bIsValid && bIsLastVclNalInAU)
   {
@@ -433,16 +462,13 @@ void AL_HEVC_PrepareCommand(AL_TDecCtx* pCtx, AL_TScl* pSCL, AL_TDecPicParam* pP
   if(pSP->FirstLcuSliceSegment && pSP->eSliceType == AL_SLICE_I)
     pSP->ColocPicID = pPrevSP->ColocPicID;
 
-  if(pSlice->first_slice_segment_in_pic_flag)
-    AL_HEVC_WriteDecHwScalingList((const AL_TScl*)pSCL, pBufs->tScl.tMD.pVirtualAddr);
-
   // stock command registers in memory
   AL_TerminatePreviousCommand(pCtx, pPP, pSP, false, pSP->DependentSlice);
 
   if(pSP->FirstLcuSliceSegment)
   {
     pSP->FirstLcuSlice = pSP->DependentSlice ? pPrevSP->FirstLcuSlice : pSP->FirstLcuSlice;
-    pSP->FirstLcuTileID = pSP->DependentSlice ? pPrevSP->FirstLcuTileID : pCtx->uCurTileID;
+    pSP->FirstLcuTileID = pSP->DependentSlice ? pPrevSP->FirstLcuTileID : pCtx->tCurrentFrameCtx.uCurTileID;
   }
 
   AL_sSaveNalStreamBlk1(pCtx, pSP);

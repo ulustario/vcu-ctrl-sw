@@ -35,7 +35,10 @@ public:
     if(pMeta && pMeta->eOutputID == AL_OUTPUT_MAIN)
     {
       if(m_CrcFile.is_open())
-        m_CrcFile << std::setfill('0') << std::setw(8) << (int)pMeta->uCrc << std::endl;
+      {
+        m_CrcFile << std::setfill('0') << std::setw(8) << (int)pMeta->uCrc;
+        m_CrcFile << std::endl;
+      }
     }
   }
 

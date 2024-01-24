@@ -97,7 +97,7 @@ std::string CMD5::GetMD5()
     m_pBound[m_uBound++] = 0;
 
   // Append length in Bits
-  AL_64U* pAppend = reinterpret_cast<AL_64U*>(m_pBound + m_uBound);
+  uint64_t* pAppend = reinterpret_cast<uint64_t*>(m_pBound + m_uBound);
   *pAppend = (m_uNumBytes << 3);
 
   UpdateBlock(reinterpret_cast<uint32_t*>(m_pBound));

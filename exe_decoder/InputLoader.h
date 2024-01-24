@@ -50,6 +50,7 @@ struct CircBuffer
   int32_t iAvailSize; /*!< Avail Space in Circular Buffer */
 };
 
+/****************************************************************************/
 struct SplitInput : public InputLoader
 {
   SplitInput(int iSize, AL_ECodec eCodec, bool bSliceCut);

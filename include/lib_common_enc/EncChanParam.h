@@ -12,11 +12,12 @@
 #include "lib_common/SliceConsts.h"
 #include "lib_common/VideoMode.h"
 #include "lib_common/PicFormat.h"
+#include "lib_rtos/types.h"
 
 /*************************************************************************//*!
    \brief Encoding parameters buffers (EP1, EP2, EP3 and EP4 buffers) sub buffer information
 *****************************************************************************/
-typedef struct t_BufInfo
+typedef struct
 {
   uint32_t Flag; /*!< Flag used as a bitfield bit position in an EP buffer to identify the sub buffer.*/
   size_t Size; /*!< Size of the sub buffer */
@@ -26,7 +27,7 @@ typedef struct t_BufInfo
 /*************************************************************************//*!
    \brief Lambda Control Mode
 *****************************************************************************/
-typedef enum e_LdaCtrlMode
+typedef enum
 {
   AL_DEFAULT_LDA = 0x00, /*!< default behaviour */
   AL_CUSTOM_LDA = 0x01, /*!< used for test purpose */
@@ -53,7 +54,7 @@ static inline bool AL_LdaIsSane(AL_ELdaCtrlMode lda)
 /*************************************************************************//*!
    \brief GDR (Gradual Decoding Refresh) Mode
 *****************************************************************************/
-typedef enum AL_e_GdrMode
+typedef enum
 {
   AL_GDR_OFF = 0x00,/*!< No GDR */
   AL_GDR_ON = 0x02,/*!< GDR is selected */
@@ -65,7 +66,7 @@ typedef enum AL_e_GdrMode
 /*************************************************************************//*!
    \brief Picture format enum
 *****************************************************************************/
-typedef enum __AL_ALIGNED__ (4) AL_e_PictFormat
+typedef enum
 {
   AL_400_8BITS = 0x0088,
   AL_420_8BITS = 0x0188,
@@ -79,7 +80,7 @@ typedef enum __AL_ALIGNED__ (4) AL_e_PictFormat
   AL_420_12BITS = 0x01CC,
   AL_422_12BITS = 0x02CC,
   AL_444_12BITS = 0x03CC,
-} AL_EPicFormat;
+}AL_EPicFormat;
 
 static inline int AL_GET_BITDEPTH_LUMA(AL_EPicFormat ePicFormat)
 {
@@ -133,7 +134,7 @@ static inline void AL_SET_CHROMA_MODE(AL_EPicFormat* pPicFormat, AL_EChromaMode 
 /*************************************************************************//*!
    \brief Encoding High level syntax enum
 *****************************************************************************/
-typedef enum __AL_ALIGNED__ (4) AL_e_HlsFlag
+typedef enum
 {
   AL_SPS_LOG2_MAX_POC_MASK = 0x0000000F,
   AL_SPS_LOG2_MAX_FRAME_NUM_MASK = 0x000000F0,
@@ -151,7 +152,7 @@ typedef enum __AL_ALIGNED__ (4) AL_e_HlsFlag
   AL_PPS_DISABLE_LF = 0x00002000,
   AL_PPS_SLICE_CHROMA_QP_OFFSET_PRES_FLAG = 0x00004000,
   AL_PPS_CU_QP_DELTA_EN_FLAG = 0x00008000,
-} AL_EHlsFlag;
+}AL_EHlsFlag;
 
 static inline uint32_t AL_GET_SPS_LOG2_MAX_POC(uint32_t uHlsParam)
 {
@@ -244,7 +245,7 @@ static inline uint32_t AL_GetNumberOfRef(uint32_t HlsParam)
 /*************************************************************************//*!
    \brief Encoding option enum
 *****************************************************************************/
-typedef enum __AL_ALIGNED__ (4) AL_e_ChEncOptions
+typedef enum
 {
   AL_OPT_NONE = 0x00000000,
   AL_OPT_QP_TAB_RELATIVE = 0x00000001, /*!< External QP tables provide relative delta-QPs to add for each block on top of the frame-QP */
@@ -260,12 +261,12 @@ typedef enum __AL_ALIGNED__ (4) AL_e_ChEncOptions
   AL_OPT_SCENE_CHANGE_DETECTION = 0x00004000, /*!< Scene change detection based on a lookahead encoding */
   AL_OPT_FORCE_MV_CLIP = 0x00020000, /*!< Forces motion vector clipping in ranges specified in channel parameters */
   AL_OPT_RDO_COST_MODE = 0x00040000, /*!< Reinforces the influence of the chrominance in the RDO choice */
-} AL_EChEncOption;
+}AL_EChEncOption;
 
 /*************************************************************************//*!
    \brief Encoding tools enum
 *****************************************************************************/
-typedef enum __AL_ALIGNED__ (4) AL_e_ChEncTools
+typedef enum
 {
   AL_OPT_WPP = 0x00000001, /*!< DEPRECATED */
   AL_OPT_TILE = 0x00000002, /*!< INTERNAL PARAMETER - Do not tune */
@@ -275,12 +276,12 @@ typedef enum __AL_ALIGNED__ (4) AL_e_ChEncTools
   AL_OPT_SCL_LST = 0x00000020, /*!< INTERNAL PARAMETER - Do not tune */
   AL_OPT_CONST_INTRA_PRED = 0x00000040, /*!< Specifies the value of constrained_intra_pred_flag syntax element */
   AL_OPT_TRANSFO_SKIP = 0x00000080, /*!< Enables the transform skip encoding mode */
-} AL_EChEncTool;
+}AL_EChEncTool;
 
 /*************************************************************************//*!
    \brief Rate Control Mode
 *****************************************************************************/
-typedef enum __AL_ALIGNED__ (4) AL_e_RateCtrlMode
+typedef enum
 {
   AL_RC_CONST_QP = 0x00,
   AL_RC_CBR = 0x01,
@@ -290,12 +291,12 @@ typedef enum __AL_ALIGNED__ (4) AL_e_RateCtrlMode
   AL_RC_BYPASS = 0x3F,
   AL_RC_PLUGIN = 0x40,
   AL_RC_MAX_ENUM,
-} AL_ERateCtrlMode;
+}AL_ERateCtrlMode;
 
 /*************************************************************************//*!
    \brief Rate Control Options
 *****************************************************************************/
-typedef enum __AL_ALIGNED__ (4) AL_e_RateCtrlOption
+typedef enum
 {
   AL_RC_OPT_NONE = 0x00000000, /*!< No Option */
   AL_RC_OPT_SCN_CHG_RES = 0x00000001, /* internal */
@@ -304,15 +305,16 @@ typedef enum __AL_ALIGNED__ (4) AL_e_RateCtrlOption
   AL_RC_OPT_ENABLE_SKIP = 0x00000008, /*!< Show if pictures can be skipped or not */
   AL_RC_OPT_SC_PREVENTION = 0x00000010, /* internal */
   AL_RC_OPT_MAX_ENUM,
-} AL_ERateCtrlOption;
+}AL_ERateCtrlOption;
 
 /*************************************************************************//*!
     \brief Rate Control parameters.
     Contains the user defined constraints on the stream in term of quality and bandwidth.
     Also contains the hardware constraints that will affect the rate control (See AL_RC_OPT_DELAYED)
 *****************************************************************************/
-typedef AL_INTROSPECT (category = "debug") struct __AL_ALIGNED__ (4) AL_t_RCParam
+typedef AL_INTROSPECT (category = "debug") struct
 {
+  __AL_ALIGNED__(4)
   AL_ERateCtrlMode eRCMode;
   uint32_t uInitialRemDelay; /*!< Initial removal delay */
   uint32_t uCPBSize; /*!< Size of the Codec Picture Buffer */
@@ -335,7 +337,7 @@ typedef AL_INTROSPECT (category = "debug") struct __AL_ALIGNED__ (4) AL_t_RCPara
   uint16_t uMaxPSNR;
   uint16_t uMaxPelVal;
   uint32_t pMaxPictureSize[AL_MAX_FRAME_TYPE];
-} AL_TRCParam;
+}AL_TRCParam;
 
 static inline bool AL_IS_HWRC_ENABLED(AL_TRCParam const* pRCParam)
 {
@@ -352,7 +354,7 @@ static inline bool AL_IS_HWRC_ENABLED(AL_TRCParam const* pRCParam)
 #define AL_GOP_FLAG_DEFAULT 0x02
 #define AL_GOP_FLAG_PYRAMIDAL 0x04
 #define AL_GOP_FLAG_LOW_DELAY 0x08
-typedef enum __AL_ALIGNED__ (4) AL_e_GopCtrlMode
+typedef enum
 {
   AL_GOP_MODE_DEFAULT = AL_GOP_FLAG_DEFAULT,
   AL_GOP_MODE_PYRAMIDAL = AL_GOP_FLAG_PYRAMIDAL,
@@ -368,13 +370,14 @@ typedef enum __AL_ALIGNED__ (4) AL_e_GopCtrlMode
   AL_GOP_MODE_BYPASS = 0x20,
 
   AL_GOP_MODE_MAX_ENUM,
-} AL_EGopCtrlMode;
+}AL_EGopCtrlMode;
 
 /*************************************************************************//*!
    \brief Group of Picture parameters.
 *****************************************************************************/
-typedef AL_INTROSPECT (category = "debug") struct AL_t_GopParam
+typedef AL_INTROSPECT (category = "debug") struct
 {
+  __AL_ALIGNED__(4)
   AL_EGopCtrlMode eMode;
   uint16_t uGopLength; /*!< Length of the Group Of Picture in the encoded stream */
   uint8_t uNumB; /*!< Number of B frames per Group of Picture in the encoded stream */
@@ -391,7 +394,7 @@ typedef AL_INTROSPECT (category = "debug") struct AL_t_GopParam
 /*************************************************************************//*!
    \brief First Pass infos parameters
 *****************************************************************************/
-typedef struct AL_t_LookAheadParam
+typedef struct
 {
   int32_t iSCPictureSize;
   int32_t iSCIPRatio;
@@ -402,7 +405,7 @@ typedef struct AL_t_LookAheadParam
 /*************************************************************************//*!
    \brief Max burst size
 *****************************************************************************/
-typedef enum e_MaxBurstSize
+typedef enum
 {
   AL_BURST_256 = 0,
   AL_BURST_128 = 1,
@@ -413,7 +416,8 @@ typedef enum e_MaxBurstSize
 /*************************************************************************//*!
    \brief Source compression type
 *****************************************************************************/
-typedef enum e_SrcConvMode // [0] : CompMode | [3:1] : SourceFormat
+// [0] : CompMode | [3:1] : SourceFormat
+typedef enum
 {
   AL_SRC_RASTER = 0x0,
   AL_SRC_TILE_64x4 = 0x4,
@@ -437,7 +441,7 @@ AL_DEPRECATED_ENUM_VALUE(AL_ESrcMode, AL_SRC_NVX, AL_SRC_RASTER, "Renamed. Use A
 /*************************************************************************//*!
    \brief AOM interpolation filter
 *****************************************************************************/
-typedef enum e_InterP_Filter
+typedef enum
 {
   AL_INTERP_REGULAR,
   AL_INTERP_SMOOTH,
@@ -456,8 +460,9 @@ typedef enum e_InterP_Filter
 /*************************************************************************//*!
    \brief Channel parameters structure
 *****************************************************************************/
-typedef AL_INTROSPECT (category = "debug") struct __AL_ALIGNED__ (4) AL_t_EncChanParam
+typedef AL_INTROSPECT (category = "debug") struct
 {
+  __AL_ALIGNED__(4)
   int iLayerID;
 
   /* Encoding resolution */
@@ -546,7 +551,7 @@ typedef AL_INTROSPECT (category = "debug") struct __AL_ALIGNED__ (4) AL_t_EncCha
   int8_t MaxNumMergeCand;
 
   uint32_t zRcPluginDmaSize; /*!< Size of the rate control plugin dma buffer (user defined data can be given using this buffer) */
-  AL_64U pRcPluginDmaContext; /*!< Physical address of the rate control plugin dma buffer (This is filled by the library, see AL_TEncSettings.hRcPluginDmaContext for the handle you need to allocate in dma) */
+  uint64_t pRcPluginDmaContext; /*!< Physical address of the rate control plugin dma buffer (This is filled by the library, see AL_TEncSettings.hRcPluginDmaContext for the handle you need to allocate in dma) */
 
   bool bEnableOutputCrop;
   uint16_t uOutputCropWidth;
@@ -556,7 +561,7 @@ typedef AL_INTROSPECT (category = "debug") struct __AL_ALIGNED__ (4) AL_t_EncCha
   bool bUseUniformSliceType;
   AL_EStartCodeBytesAlignedMode eStartCodeBytesAligned;
 
-} AL_TEncChanParam;
+}AL_TEncChanParam;
 
 /***************************************************************************/
 #define ROUND_POWER_OF_TWO(value, n) (((value) + (1 << ((n) - 1))) >> (n))

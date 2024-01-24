@@ -240,13 +240,17 @@ static void populateInputSection(ConfigParser& parser, ConfigFile& cfg)
     },
   });
 
-  parser.addArith(curSection, "CropPosX", cfg.Settings.tChParam[0].uSrcCropPosX, "Abscissa of crop window first sample in pixels, and shall be multiple of 2.", {
+  stringstream sCropAlignX, sCropAlignY;
+  sCropAlignX << HW_IP_BURST_ALIGNMENT << " in 8-bit or " << (HW_IP_BURST_ALIGNMENT * 3 / 4) << " in 10-bit";
+  sCropAlignY << "1"; // should be 2 in 4:2:0 but customer requires it to be 1 in any case !
+
+  parser.addArith(curSection, "CropPosX", cfg.Settings.tChParam[0].uSrcCropPosX, "Abscissa of crop window first sample in pixels, and shall be multiple of " + sCropAlignX.str(), {
     { isOnlyCodec(Codec::Avc), 0, AL_ENC_NUM_CORES * AL_ENC_CORE_MAX_WIDTH - 80 },
     { filterCodecs({ Codec::Hevc, Codec::Vvc }), 0, AL_ENC_NUM_CORES * AL_ENC_CORE_MAX_WIDTH - 256 },
     { aomCodecs(), 0, AL_ENC_NUM_CORES * AL_ENC_CORE_MAX_WIDTH - 128 },
     { isOnlyCodec(Codec::Jpeg), 0, AL_ENC_CORE_MAX_WIDTH_JPEG - 16 },
   });
-  parser.addArith(curSection, "CropPosY", cfg.Settings.tChParam[0].uSrcCropPosY, "Ordinate of crop window first sample in pixels, and shall be multiple of 2.", {
+  parser.addArith(curSection, "CropPosY", cfg.Settings.tChParam[0].uSrcCropPosY, "Ordinate of crop window first sample in pixels, and shall be multiple of " + sCropAlignX.str(), {
     { isOnlyCodec(Codec::Avc), 96, 4096 - 96 },
     { filterCodecs({ Codec::Hevc, Codec::Vp9, Codec::Av1, Codec::Vvc }), 128, 4096 - 128 },
     { isOnlyCodec(Codec::Jpeg), 2, 16384 - 2 },
@@ -364,7 +368,7 @@ static void populateRCParam(Section curSection, ConfigParser& parser, AL_TRCPara
   parser.addArithOrEnum(curSection, "SliceQP", RCParam.iInitialQP, sliceQPEnum, "Quantization parameter. When RateCtrlMode == CONST_QP, the specified QP is applied to all slices. In other cases, the specified QP is used as initial QP. When RATECtrlMode = CBR the specified QP is used as initial QP. The SliceQP = AUTO is the recommended mode when RateCtrlMode is CBR or VBR.", qpArithInfo);
   parser.addSeeAlso(curSection, "SliceQP", { curSection, "RateCtrlMode" });
   // parser.addArithOrEnum(curSection, "MaxQP", RCParam.iMaxQP, autoEnum, "Maximum QP value allowed", qpArithInfo);
-  parser.addCustom(curSection, "MaxQP", [&](std::deque<Token>& tokens)
+  parser.addCustom(curSection, "MaxQP", [autoEnum, &RCParam](std::deque<Token>& tokens)
   {
     int val;
     int minMaxQPSize = (int)(sizeof(RCParam.iMaxQP) / sizeof(RCParam.iMaxQP[0]));
@@ -386,7 +390,7 @@ static void populateRCParam(Section curSection, ConfigParser& parser, AL_TRCPara
   parser.addArithOrEnum(curSection, "MaxQP.P", RCParam.iMaxQP[AL_SLICE_P], autoEnum, "Maximum QP value allowed for P slices", qpArithInfo);
   parser.addArithOrEnum(curSection, "MaxQP.B", RCParam.iMaxQP[AL_SLICE_B], autoEnum, "Maximum QP value allowed for B slices", qpArithInfo);
   // parser.addArithOrEnum(curSection, "MinQP", RCParam.iMinQP, autoEnum, "Minimum QP value allowed. This parameter is especially useful when using VBR rate control. In VBR, the value AUTO can be used to let the encoder select the MinQP according to SliceQP", qpArithInfo);
-  parser.addCustom(curSection, "MinQP", [&](std::deque<Token>& tokens)
+  parser.addCustom(curSection, "MinQP", [autoEnum, &RCParam](std::deque<Token>& tokens)
   {
     int val;
     int minMaxQPSize = (int)(sizeof(RCParam.iMaxQP) / sizeof(RCParam.iMaxQP[0]));
@@ -570,6 +574,7 @@ static void populateGopSection(ConfigParser& parser, ConfigFile& cfg)
     { aomCodecs(), 0, 2 },
   });
   string numBNote = "When [GOP]GopCtrlMode != DEFAULT_GOP";
+  numBNote += " and/or [SETTINGS]VideoMode != PROGRESSIVE";
   numBNote += ", [GOP]Gop.NumB may go up to " + to_string(AL_MAX_NUM_B_PICT) + ".";
   numBNote += "When GopCtrlMode is set to DEFAULT_GOP, Gop.NumB shall be in range 0 to 2. When GopCtrlMode is set to PYRAMIDAL_GOP, Gop.NumB shall be 3, 5 or 7";
   parser.addNote(curSection, "Gop.NumB", numBNote.c_str());
@@ -577,6 +582,7 @@ static void populateGopSection(ConfigParser& parser, ConfigFile& cfg)
   The second is, that it increases the latency at both sides: encode and decode. The last one is, that it can also decrease the video quality (depending on the video content) because the P-pictures are then far from their reference picture (the previous P or I picture) \
    and it could be difficult to find the motion vectors.");
   parser.addSeeAlso(curSection, "Gop.NumB", { curSection, "GopCtrlMode" });
+  parser.addSeeAlso(curSection, "Gop.NumB", { Section::Settings, "VideoMode" });
   parser.addArray(curSection, "Gop.TempDQP", GopParam.tempDQP, "Specifies a deltaQP for pictures with temporal id 1 to 4", {
     { ituCodecs(), -51, 51 },
     { aomCodecs(), -128, 127 },

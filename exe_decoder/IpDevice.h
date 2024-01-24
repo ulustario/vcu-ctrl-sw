@@ -5,6 +5,7 @@
 #include <functional>
 #include <set>
 #include "lib_app/utils.h"
+#include "IpDeviceCommon.h"
 
 extern "C"
 {
@@ -12,35 +13,19 @@ extern "C"
 #include "lib_common_dec/DecChanParam.h"
 }
 
-typedef struct AL_t_Allocator AL_TAllocator;
 typedef struct AL_i_DecScheduler AL_IDecScheduler;
-typedef struct AL_t_IpCtrl AL_TIpCtrl;
-typedef struct AL_t_Timer AL_Timer;
-typedef struct AL_t_driver AL_TDriver;
 
 /*****************************************************************************/
-struct CIpDeviceParam
-{
-  int iSchedulerType;
-  bool bTrackDma = false;
-  uint8_t uNumCore = 0;
-  int iHangers = 0;
-  AL_EIpCtrlMode ipCtrlMode;
-  std::string apbFile;
-};
-
-/*****************************************************************************/
-class CIpDevice
+class CIpDevice : public I_IpDevice
 {
 public:
   CIpDevice(CIpDeviceParam const& param, AL_EDeviceType eDeviceType, std::set<std::string> tDevices);
   ~CIpDevice();
 
-  AL_IDecScheduler* GetScheduler();
   AL_EDeviceType GetDeviceType();
-
-  AL_TAllocator* GetAllocator();
-  AL_Timer* GetTimer();
+  void* GetScheduler() override;
+  AL_TAllocator* GetAllocator() override;
+  AL_Timer* GetTimer() override;
 
   CIpDevice(CIpDevice const &) = delete;
   CIpDevice & operator = (CIpDevice const &) = delete;
@@ -56,7 +41,7 @@ private:
   void ConfigureMcu(AL_TDriver* driver, bool useProxy);
 };
 
-inline AL_IDecScheduler* CIpDevice::GetScheduler()
+inline void* CIpDevice::GetScheduler()
 {
   return m_pScheduler;
 }

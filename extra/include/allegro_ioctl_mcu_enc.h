@@ -5,6 +5,7 @@
 #define _AL_ENC_IOCTL_H_
 #include <linux/ioctl.h>
 #include <linux/types.h>
+#include "allegro_ioctl_mcu_codec.h"
 
 #define AL_MCU_CONFIG_CHANNEL  _IOWR('q', 2, struct al5_channel_config)
 #define AL_MCU_DESTROY_CHANNEL  _IO('q', 4)
@@ -29,28 +30,6 @@ struct al5_reconstructed_info
 	__u32 poc;
 	__u32 width;
 	__u32 height;
-};
-
-struct al5_dma_info
-{
-	__u32 fd;
-	__u32 size;
-	/* this should disappear when the last use of phy addr is removed from
-	 * userspace code */
-	__u32 phy_addr;
-};
-
-#define OPAQUE_SIZE 128
-
-struct al5_params
-{
-	__u32 size;
-	__u32 opaque[OPAQUE_SIZE];
-};
-
-struct al5_channel_status
-{
-	__u32 error_code;
 };
 
 struct al5_channel_config

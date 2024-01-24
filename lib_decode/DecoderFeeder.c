@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MIT
 
 #include "DecoderFeeder.h"
-#include "InternalError.h"
+#include "lib_common_dec/InternalError.h"
 
 #include "lib_rtos/lib_rtos.h"
 

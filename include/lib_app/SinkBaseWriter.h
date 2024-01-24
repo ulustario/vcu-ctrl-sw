@@ -27,6 +27,7 @@ protected:
   void WriteBuffer(std::shared_ptr<std::ostream> stream, const uint8_t* pBuf, uint32_t uWriteSize);
   void CheckNotNull(const uint8_t* pBuf);
   void FactorsCalculus();
+  void DimInTileCalculus();
 
   std::shared_ptr<std::ostream> m_recFile;
   AL_EFbStorageMode m_eStorageMode = AL_FB_MAX_ENUM;

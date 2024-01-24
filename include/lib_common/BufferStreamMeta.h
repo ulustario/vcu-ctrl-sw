@@ -12,6 +12,7 @@
 #include "lib_common/StreamSection.h"
 
 #define AL_MAX_SECTION (2 * (AL_MAX_ENC_SLICE + 2))
+#define AL_INVALID_STREAMSECTION_ID -1
 
 /*************************************************************************//*!
    \brief Useful section of the buffer containing the bitstream
@@ -43,7 +44,7 @@ AL_TStreamMetaData* AL_StreamMetaData_Clone(AL_TStreamMetaData* pMeta);
    \param[in] uOffset offset in the stream data of the section
    \param[in] uLength size of the data of the section
    \param[in] eFlags stream section bitfield (see SECTION_xxxxx_FLAG)
-   \return return the id given to the added section, -1 if the section couldn't be added
+   \return return the id given to the added section, AL_INVALID_STREAMSECTION_ID if the section couldn't be added
 *****************************************************************************/
 int AL_StreamMetaData_AddSection(AL_TStreamMetaData* pMetaData, uint32_t uOffset, uint32_t uLength, AL_ESectionFlags eFlags);
 
@@ -76,7 +77,7 @@ void AL_StreamMetaData_ClearAllSections(AL_TStreamMetaData* pMetaData);
    \param[in] isPrefix prefix or a suffix SEI
    \param[in] uOffset offset of the section data in the stream
    \param[in] uLength length of the section data in the stream
-   \return returns the section id, -1 on failure
+   \return returns the section id, AL_INVALID_STREAMSECTION_ID on failure
 *****************************************************************************/
 int AL_StreamMetaData_AddSeiSection(AL_TStreamMetaData* pMetaData, bool isPrefix, uint32_t uOffset, uint32_t uLength);
 

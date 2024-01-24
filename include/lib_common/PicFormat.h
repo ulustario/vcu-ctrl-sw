@@ -41,6 +41,15 @@ typedef struct
 }AL_TWindow;
 
 /*************************************************************************//*!
+   \brief Struct for dimension
+*****************************************************************************/
+typedef struct
+{
+  uint8_t Horizontal;
+  uint8_t Vertical;
+}AL_TPhase;
+
+/*************************************************************************//*!
    \brief Cropping Info on the YUV reconstructed
  *************************************************************************/
 typedef struct t_CropInfo
@@ -110,23 +119,24 @@ typedef enum AL_e_OutputType
   AL_OUTPUT_PRIMARY,
   AL_OUTPUT_MAIN,
   AL_OUTPUT_POSTPROC,
+  AL_OUTPUT_LCEVC_YUV,
+  AL_OUTPUT_LCEVC_STREAM,
   AL_OUTPUT_MAX_ENUM,
 }AL_EOutputType;
 
 /****************************************************************************/
-static inline AL_EChromaOrder GetChromaOrder(AL_EChromaMode eChromaMode)
-{
-  return eChromaMode == AL_CHROMA_MONO ? AL_C_ORDER_NO_CHROMA :
-         (eChromaMode == AL_CHROMA_4_4_4 ? AL_C_ORDER_U_V : AL_C_ORDER_SEMIPLANAR);
-}
+AL_EChromaOrder GetChromaOrder(AL_EChromaMode eChromaMode);
 
 /****************************************************************************/
-static inline bool IsRaster(AL_EFbStorageMode eFBStorageMode)
-{
-  if(eFBStorageMode == AL_FB_RASTER
-     )
-    return true;
-  return false;
-}
+bool IsRaster(AL_EFbStorageMode eFBStorageMode);
+
+/****************************************************************************/
+int GetTileWidth(AL_EFbStorageMode eMode);
+
+/****************************************************************************/
+int GetTileHeight(AL_EFbStorageMode eMode);
+
+/****************************************************************************/
+int GetTileSize(AL_EFbStorageMode eMode, uint8_t uBitDepth);
 
 /*@}*/

@@ -619,7 +619,6 @@ bool AL_PictMngr_Init(AL_TPictMngrCtx* pCtx, AL_TPictMngrParam* pParam)
   pCtx->uRecID = UndefID;
   pCtx->uMvID = UndefID;
 
-  pCtx->uNumSlice = 0;
   pCtx->iPrevFrameNum = -1;
   Rtos_GetMutex(pCtx->FirstInitMutex);
   pCtx->bFirstInit = true;
@@ -1216,7 +1215,7 @@ AL_TBuffer* AL_PictMngr_GetUnusedDisplayBuffer(AL_TPictMngrCtx* pCtx)
 }
 
 /*****************************************************************************/
-static void FillPocAndLongtermLists(AL_TDpb const* pDpb, TBufferPOC* pPoc, AL_TDecSliceParam const* pSP, TBufferListRef const* pListRef)
+static void FillPocAndLongtermLists(AL_TDpb const* pDpb, TBufferPOC* pPoc, AL_TDecSliceParam const* pSP)
 {
   int32_t* pPocList = (int32_t*)(pPoc->tMD.pVirtualAddr);
   uint32_t* pLongTermList = (uint32_t*)(pPoc->tMD.pVirtualAddr + POCBUFF_LONG_TERM_OFFSET);
@@ -1228,20 +1227,14 @@ static void FillPocAndLongtermLists(AL_TDpb const* pDpb, TBufferPOC* pPoc, AL_TD
     *pSubpicList = 0;
 
     for(int i = 0; i < MAX_REF; ++i)
-      pPocList[i] = 0xFFFFFFFF;
+      pPocList[i] = UINT32_MAX;
   }
 
-  AL_ESliceType eType = (AL_ESliceType)pSP->eSliceType;
-
-  if(eType != AL_SLICE_I)
-    AL_Dpb_FillList(pDpb, 0, pListRef, pPocList, pLongTermList, pSubpicList);
-
-  if(eType == AL_SLICE_B)
-    AL_Dpb_FillList(pDpb, 1, pListRef, pPocList, pLongTermList, pSubpicList);
+  AL_Dpb_FillList(pDpb, pPocList, pLongTermList, pSubpicList);
 }
 
 /*****************************************************************************/
-bool AL_PictMngr_GetBuffers(AL_TPictMngrCtx const* pCtx, AL_TDecSliceParam const* pSP, TBufferListRef const* pListRef, TBuffer* pListVirtAddr, TBuffer* pListAddr, TBufferPOC* pPOC, TBufferMV* pMV, AL_TRecBuffers* pRecs)
+bool AL_PictMngr_GetBuffers(AL_TPictMngrCtx const* pCtx, AL_TDecSliceParam const* pSP, TBuffer* pListVirtAddr, TBuffer* pListAddr, TBufferPOC* pPOC, TBufferMV* pMV, AL_TRecBuffers* pRecs)
 {
   (void)pListVirtAddr; // only used for traces
 
@@ -1259,7 +1252,7 @@ bool AL_PictMngr_GetBuffers(AL_TPictMngrCtx const* pCtx, AL_TDecSliceParam const
     pMV->tMD = pCtx->MvBufPool.pMvBufs[pCtx->uMvID].tMD;
     pPOC->tMD = pCtx->MvBufPool.pPocBufs[pCtx->uMvID].tMD;
 
-    FillPocAndLongtermLists(&pCtx->DPB, pPOC, (AL_TDecSliceParam const*)pSP, (TBufferListRef const*)pListRef);
+    FillPocAndLongtermLists(&pCtx->DPB, pPOC, (AL_TDecSliceParam const*)pSP);
   }
 
   TFourCC tFourCC = AL_PixMapBuffer_GetFourCC(pRecs->pFrame);

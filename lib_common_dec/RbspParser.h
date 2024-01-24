@@ -166,7 +166,6 @@ int se(AL_TRbspParser* pRP);
    \brief get the raw data at current offset
 *****************************************************************************/
 uint8_t* get_raw_data(AL_TRbspParser* pRP);
-/******************************************************************************/
 
 /*@}*/
 

@@ -29,6 +29,13 @@ static bool SeiRecoveryPoint(AL_TRbspParser* pRP, AL_TRecoveryPoint* pRecoveryPo
 }
 
 /*****************************************************************************/
+typedef enum
+{
+  AL_UDR_SEI_COUNTRY_CODE_UK = 0xB4,
+  AL_UDR_SEI_COUNTRY_CODE_USA = 0xB5,
+}AL_EUserDataRegisterSEICountryCode;
+
+/*****************************************************************************/
 static bool SeiMasteringDisplayColourVolume(AL_TMasteringDisplayColourVolume* pMDCV, AL_TRbspParser* pRP)
 {
   Rtos_Memset(pMDCV, 0, sizeof(*pMDCV));
@@ -65,30 +72,6 @@ static bool SeiAlternativeTransferCharacteristics(AL_TAlternativeTransferCharact
   pATC->preferred_transfer_characteristics = AL_VUIValueToTransferCharacteristics(u(pRP, 8));
 
   return true;
-}
-
-/*****************************************************************************/
-static AL_EUserDataRegisterSEIType SeiUserDataRegistered(AL_TRbspParser* pRP, uint32_t payload_size)
-{
-#define MIN_SEI_USER_DATA_SIZE 3
-
-  if(u(pRP, 8) != 0xB5 || payload_size < MIN_SEI_USER_DATA_SIZE)
-    return AL_UDR_SEI_UNKNOWN;
-
-  uint16_t itu_t_t35_terminal_provider_code = u(pRP, 16);
-
-  if(itu_t_t35_terminal_provider_code == 0x3B)
-  {
-    if(u(pRP, 32) == 0x00 && u(pRP, 8) == 0x09)
-      return AL_UDR_SEI_ST2094_10;
-  }
-  else if(itu_t_t35_terminal_provider_code == 0x3C)
-  {
-    if(u(pRP, 16) == 0x01)
-      return AL_UDR_SEI_ST2094_40;
-  }
-
-  return AL_UDR_SEI_UNKNOWN;
 }
 
 /*****************************************************************************/
@@ -279,6 +262,36 @@ bool SeiSt2094_40(AL_TDynamicMeta_ST2094_40* pST2094_40, AL_TRbspParser* pRP)
 }
 
 /*****************************************************************************/
+static AL_EUserDataRegisterSEIType SeiUserDataRegistered(AL_TRbspParser* pRP, uint32_t payload_size)
+{
+#define MIN_SEI_USER_DATA_SIZE 3
+
+  if(payload_size < MIN_SEI_USER_DATA_SIZE)
+    return AL_UDR_SEI_UNKNOWN;
+
+  uint8_t itu_t_t35_country_code = u(pRP, 8);
+  uint16_t itu_t_t35_terminal_provider_code = u(pRP, 16);
+
+  AL_EUserDataRegisterSEIType eSeiType = AL_UDR_SEI_UNKNOWN;
+
+  if(itu_t_t35_country_code == AL_UDR_SEI_COUNTRY_CODE_USA)
+  {
+    if(itu_t_t35_terminal_provider_code == 0x3B)
+    {
+      if(u(pRP, 32) == 0x00 && u(pRP, 8) == 0x09)
+        eSeiType = AL_UDR_SEI_ST2094_10;
+    }
+    else if(itu_t_t35_terminal_provider_code == 0x3C)
+    {
+      if(u(pRP, 16) == 0x01)
+        eSeiType = AL_UDR_SEI_ST2094_40;
+    }
+  }
+
+  return eSeiType;
+}
+
+/*****************************************************************************/
 static bool ParseCommonSei(SeiParserParam* pParam, AL_TRbspParser* pRP, AL_ESeiPayloadType ePayloadType, uint32_t uPayloadSize, bool* bCanSendToUser)
 {
   bool bParsingOk = true;
@@ -326,12 +339,14 @@ static bool ParseCommonSei(SeiParserParam* pParam, AL_TRbspParser* pRP, AL_ESeiP
     {
       bParsingOk = SeiSt2094_10(&pParam->pIAup->tParsedHDRSEIs.tST2094_10, pRP);
       pParam->pIAup->tParsedHDRSEIs.bHasST2094_10 = true;
+      bCanSendToUser = false;
       break;
     }
     case AL_UDR_SEI_ST2094_40:
     {
       bParsingOk = SeiSt2094_40(&pParam->pIAup->tParsedHDRSEIs.tST2094_40, pRP);
       pParam->pIAup->tParsedHDRSEIs.bHasST2094_40 = true;
+      bCanSendToUser = false;
       break;
     }
     default:

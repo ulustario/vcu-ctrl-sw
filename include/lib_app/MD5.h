@@ -26,9 +26,9 @@ protected:
     uint8_t m_pHash8[16];
   };
 
-  AL_64U m_uNumBytes;
+  uint64_t m_uNumBytes;
 
-  uint8_t m_pBound[64]; // 512 bits
+  alignas(alignof(uint64_t)) uint8_t m_pBound[64]; // 512 bits
   uint32_t m_uBound;
 };
 

@@ -37,12 +37,6 @@ void DisplayFrameStatus(int iFrameNum)
 }
 
 /*****************************************************************************/
-bool IsConversionNeeded(TFourCC const& FourCC, AL_TPicFormat const& picFmt)
-{
-  return FourCC != AL_GetFourCC(picFmt);
-}
-
-/*****************************************************************************/
 unsigned int ReadNextFrame(ifstream& File)
 {
   string sLine;

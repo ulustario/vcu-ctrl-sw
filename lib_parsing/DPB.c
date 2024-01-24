@@ -776,28 +776,30 @@ uint8_t AL_Dpb_GetNextFreeNode(AL_TDpb const* pDpb)
 }
 
 /*****************************************************************************/
-void AL_Dpb_FillList(AL_TDpb const* pDpb, uint8_t uL0L1, TBufferListRef const* pListRef, int32_t* pPocList, uint32_t* pLongTermList, uint32_t* pSubpicList)
+void AL_Dpb_FillList(AL_TDpb const* pDpb, int32_t* pPocList, uint32_t* pLongTermList, uint32_t* pSubpicList)
 {
   Rtos_GetMutex(pDpb->Mutex);
 
-  for(int i = 0; i < MAX_REF; ++i)
-  {
-    uint8_t uNodeID = (*pListRef)[uL0L1][i].uNodeID;
+  uint8_t uNodeID = pDpb->uHeadPOC;
 
-    if(uNodeID != uEndOfList && !pDpb->Nodes[uNodeID].non_existing)
+  while(uNodeID != uEndOfList)
+  {
+    if(pDpb->Nodes[uNodeID].uPicID != uEndOfList && !pDpb->Nodes[uNodeID].non_existing)
     {
       uint8_t uPicID = pDpb->Nodes[uNodeID].uPicID;
 
-      if(uPicID == uEndOfList || uPicID >= MAX_REF)
-        continue;
+      if(uPicID != uEndOfList && uPicID < MAX_REF)
+      {
+        pPocList[uPicID] = pDpb->Nodes[uNodeID].iFramePOC;
 
-      pPocList[uPicID] = pDpb->Nodes[uNodeID].iFramePOC;
-
-      if(pDpb->Nodes[uNodeID].eMarking_flag == LONG_TERM_REF)
-        *pLongTermList |= (1 << uPicID); // long term flag
-      *pLongTermList |= ((uint32_t)1 << (MAX_REF + uPicID)); // available POC
-      *pSubpicList |= (pDpb->Nodes[uNodeID].uSubpicFlag << uPicID);
+        if(pDpb->Nodes[uNodeID].eMarking_flag == LONG_TERM_REF)
+          *pLongTermList |= (1 << uPicID); // long term flag
+        *pLongTermList |= ((uint32_t)1 << (MAX_REF + uPicID)); // available POC
+        *pSubpicList |= (pDpb->Nodes[uNodeID].uSubpicFlag << uPicID);
+      }
     }
+
+    uNodeID = pDpb->Nodes[uNodeID].uNextPOC;
   }
 
   Rtos_ReleaseMutex(pDpb->Mutex);

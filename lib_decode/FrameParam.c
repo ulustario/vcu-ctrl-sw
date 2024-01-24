@@ -138,14 +138,14 @@ void AL_AVC_FillSliceParameters(const AL_TAvcSliceHdr* pSlice, const AL_TDecCtx*
   pSP->DisableLoopFilter = (pSlice->disable_deblocking_filter_idc & DEBLOCKING_FILTER_DISABLE);
   int const DEBLOCKING_FILTER_SLICE = 0x2;
   pSP->XSliceLoopFilter = !(pSlice->disable_deblocking_filter_idc & DEBLOCKING_FILTER_SLICE);
-  pSP->SliceId = pCtx->PictMngr.uNumSlice;
+  pSP->SliceId = pCtx->tCurrentFrameCtx.uNumSlice;
 
   // Reg 5
   if(pSP->eSliceType == AL_SLICE_CONCEAL)
   {
-    pSP->SliceFirstLCU = pCtx->PictMngr.uNumSlice;
-    pSP->FirstLcuSliceSegment = pCtx->PictMngr.uNumSlice;
-    pSP->FirstLcuSlice = pCtx->PictMngr.uNumSlice;
+    pSP->SliceFirstLCU = pCtx->tCurrentFrameCtx.uNumSlice;
+    pSP->FirstLcuSliceSegment = pCtx->tCurrentFrameCtx.uNumSlice;
+    pSP->FirstLcuSlice = pCtx->tCurrentFrameCtx.uNumSlice;
   }
   else
   {
@@ -341,7 +341,7 @@ void AL_HEVC_FillSliceParameters(const AL_THevcSliceHdr* pSlice, const AL_TDecCt
   pSP->DisableLoopFilter = (bool)pSlice->slice_deblocking_filter_disabled_flag;
   pSP->XSliceLoopFilter = (bool)pSlice->slice_loop_filter_across_slices_enabled_flag;
   pSP->CuChromaQpOffset = (bool)pSlice->cu_chroma_qp_offset_enabled_flag;
-  pSP->SliceId = pCtx->PictMngr.uNumSlice;
+  pSP->SliceId = pCtx->tCurrentFrameCtx.uNumSlice;
 
   // Reg 5
   pSP->NumRefIdxL0Minus1 = pSlice->num_ref_idx_l0_active_minus1;
@@ -357,7 +357,7 @@ void AL_HEVC_FillSliceParameters(const AL_THevcSliceHdr* pSlice, const AL_TDecCt
   if(pSP->eSliceType == AL_SLICE_CONCEAL)
   {
     // search prev slice
-    uint16_t uSliceID = pCtx->PictMngr.uNumSlice;
+    uint16_t uSliceID = pCtx->tCurrentFrameCtx.uNumSlice;
     AL_TDecSliceParam* pPrevSP = uSliceID ? &(((AL_TDecSliceParam*)pCtx->PoolSP[pCtx->uToggle].tMD.pVirtualAddr)[uSliceID - 1]) : NULL;
 
     if(pPrevSP)
@@ -367,8 +367,8 @@ void AL_HEVC_FillSliceParameters(const AL_THevcSliceHdr* pSlice, const AL_TDecCt
     }
     else
     {
-      pSP->FirstLcuSliceSegment = pCtx->PictMngr.uNumSlice;
-      pSP->FirstLcuSlice = pCtx->PictMngr.uNumSlice;
+      pSP->FirstLcuSliceSegment = pCtx->tCurrentFrameCtx.uNumSlice;
+      pSP->FirstLcuSlice = pCtx->tCurrentFrameCtx.uNumSlice;
     }
   }
   else
@@ -376,7 +376,7 @@ void AL_HEVC_FillSliceParameters(const AL_THevcSliceHdr* pSlice, const AL_TDecCt
     pSP->FirstLcuSliceSegment = pSlice->slice_segment_address;
     pSP->FirstLcuSlice = pSlice->slice_segment_address;
   }
-  pSP->FirstLcuTileID = pCtx->uCurTileID;
+  pSP->FirstLcuTileID = pCtx->tCurrentFrameCtx.uCurTileID;
 
   // Reg E
   pSP->WeightedPred = pPps->weighted_pred_flag;

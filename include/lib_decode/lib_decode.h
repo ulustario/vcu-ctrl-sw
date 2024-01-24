@@ -24,6 +24,7 @@
 #include "lib_common/Error.h"
 
 #include "lib_common_dec/DecCallbacks.h"
+#include "lib_common_dec/DecoderArch.h"
 #include "lib_decode/DecSettings.h"
 #include "lib_decode/I_DecSchedulerInfo.h"
 
@@ -80,14 +81,6 @@ typedef struct
   AL_CB_ParsedSei parsedSeiCB; /*!< Called when a SEI is parsed */
   AL_CB_Error errorCB; /*!< Called when an error is encountered */
 }AL_TDecCallBacks;
-
-/*************************************************************************//*!
-   \brief Select control software architecture
-*****************************************************************************/
-typedef enum
-{
-  AL_LIB_DECODER_ARCH_HOST,
-}AL_ELibDecoderArch;
 
 /*************************************************************************//*!
    \brief Initialize decoder library
@@ -175,7 +168,7 @@ AL_ERR AL_Decoder_GetLastError(AL_HDecoder hDec);
    \param[in]  pBuf  Pointer to the decoded picture buffer for which to get the error status
    \return return the frame error status
 *****************************************************************************/
-AL_ERR AL_Decoder_GetFrameError(AL_HDecoder hDec, AL_TBuffer* pBuf);
+AL_ERR AL_Decoder_GetFrameError(AL_HDecoder hDec, AL_TBuffer const* pBuf);
 
 /*************************************************************************//*!
    \brief Preallocates internal buffers.

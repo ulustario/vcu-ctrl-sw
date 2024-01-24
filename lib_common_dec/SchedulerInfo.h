@@ -26,7 +26,7 @@ typedef union
     uint16_t uMinor; /*!< Minor version */
     uint32_t uPatch; /*!< Patch version */
   }version;
-  AL_64U uVersion; /*!< Version */
+  uint64_t uVersion; /*!< Version */
 }AL_TDecSchedulerVersion;
 
 /****************************************************************************/

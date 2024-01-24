@@ -291,7 +291,7 @@ static __u32 getFd(AL_TBuffer* b)
   return (__u32)AL_LinuxDmaAllocator_GetFd((AL_TLinuxDmaAllocator*)b->pAllocator, b->hBufs[0]);
 }
 
-static void createPutStreamMsg(struct al5_buffer* msg, AL_TBuffer* streamBuffer, AL_64U streamUserPtr, uint32_t uOffset)
+static void createPutStreamMsg(struct al5_buffer* msg, AL_TBuffer* streamBuffer, uint64_t streamUserPtr, uint32_t uOffset)
 {
   Rtos_Memset(msg, 0, sizeof(*msg));
   msg->stream_buffer.handle = getFd(streamBuffer);
@@ -306,7 +306,7 @@ static void createPutStreamMsg(struct al5_buffer* msg, AL_TBuffer* streamBuffer,
     msg->external_mv_handle = getFd(pMeta->pMVBuf);
 }
 
-static void API_PutStreamBuffer(AL_IEncScheduler* pScheduler, AL_HANDLE hChannel, AL_TBuffer* streamBuffer, AL_64U streamUserPtr, uint32_t uOffset)
+static void API_PutStreamBuffer(AL_IEncScheduler* pScheduler, AL_HANDLE hChannel, AL_TBuffer* streamBuffer, uint64_t streamUserPtr, uint32_t uOffset)
 {
   AL_Assert(streamBuffer);
   AL_TEncSchedulerMcu* scheduler = (AL_TEncSchedulerMcu*)pScheduler;

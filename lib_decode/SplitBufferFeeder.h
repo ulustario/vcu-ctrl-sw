@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include "lib_decode/I_Feeder.h"
+#include "lib_common_dec/I_Feeder.h"
 
 AL_TFeeder* AL_SplitBufferFeeder_Create(AL_HANDLE hDec, int uMaxBufNum, AL_TBuffer* pEOSBuffer, bool bEOSParsingCB);
 

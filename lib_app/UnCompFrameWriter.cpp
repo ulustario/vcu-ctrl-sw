@@ -62,7 +62,11 @@ void UnCompFrameWriter::ProcessFrame(AL_TBuffer* pBuf)
     pC1 = AL_PixMapBuffer_GetPlaneAddress(pBuf, AL_PLANE_UV);
     iPitchInChroma = AL_PixMapBuffer_GetPlanePitch(pBuf, AL_PLANE_UV);
   }
-  DimInTileCalculusRaster();
+
+  if(AL_IsTiled(m_tFourCC))
+    DimInTileCalculus();
+  else
+    DimInTileCalculusRaster();
 
   WritePix(pY, iPitchInLuma, m_uHeightInTileYFile, m_uPitchYFile);
 

@@ -15,12 +15,14 @@
 #include "lib_common_enc/EncChanParam.h"
 #include "lib_common/BufferAPI.h"
 #include "lib_common_enc/RateCtrlStats.h"
+#include "lib_rtos/types.h"
 
 /*************************************************************************//*!
    \brief Segmentation structure
 *****************************************************************************/
 #define MAX_SEGMENTS 8
-typedef struct AL_t_Segmentation
+
+typedef struct
 {
   bool enable;
   bool update_map;
@@ -33,16 +35,16 @@ typedef struct AL_t_Segmentation
 /*************************************************************************//*!
    \brief Encoding tool enum
 *****************************************************************************/
-typedef enum AL_e_PicEncOption
+typedef enum
 {
   AL_OPT_USE_QP_TABLE = 0x0001,
   AL_OPT_FORCE_LOAD = 0x0002,
   AL_OPT_USE_L2 = 0x0004,
   AL_OPT_DISABLE_INTRA = 0x0008,
   AL_OPT_DEPENDENT_SLICES = 0x0010,
-} AL_EPicEncOption __AL_ALIGNED__ (4);
+}AL_EPicEncOption;
 
-typedef struct AL_t_EncInfo
+typedef struct
 {
   AL_EPicEncOption eEncOptions;
   uint8_t uPpsId;
@@ -50,8 +52,8 @@ typedef struct AL_t_EncInfo
 
   AL_TLookAheadParam tLAParam;
 
-  AL_64U UserParam;
-  AL_64U SrcHandle;
+  uint64_t UserParam;
+  uint64_t SrcHandle;
 
   int8_t iQp1Offset;
   int8_t iQp2Offset;
@@ -114,8 +116,8 @@ typedef struct AL_t_StreamPart
 *****************************************************************************/
 typedef struct AL_t_EncPicStatus
 {
-  AL_64U UserParam;
-  AL_64U SrcHandle;
+  uint64_t UserParam;
+  uint64_t SrcHandle;
 
   bool bSkip;
   bool bIsRef;

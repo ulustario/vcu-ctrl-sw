@@ -2,13 +2,13 @@
 // SPDX-License-Identifier: MIT
 
 #include <stdexcept>
+#include "lib_app/BufPool.h"
+
 extern "C"
 {
 #include "lib_rtos/lib_rtos.h"
 #include "lib_common/Allocator.h"
 }
-
-#include "lib_app/BufPool.h"
 
 static bool Fifo_Init(App_Fifo* pFifo, size_t zMaxElem);
 static void Fifo_Deinit(App_Fifo* pFifo);
@@ -19,6 +19,11 @@ static void Fifo_Commit(App_Fifo* pFifo);
 static size_t Fifo_GetMaxElements(App_Fifo* pFifo);
 
 /****************************************************************************/
+static void AL_sBufPool_QueueBuf(AL_TBufPool* pBufPool, AL_TBuffer* pBuf)
+{
+  Fifo_Queue(&pBufPool->fifo, pBuf, AL_WAIT_FOREVER);
+}
+
 static void AL_sBufPool_FreeBufInPool(AL_TBuffer* pBuf)
 {
   auto pBufPool = (AL_TBufPool*)AL_Buffer_GetUserData(pBuf);
@@ -44,7 +49,7 @@ static bool AL_sBufPool_AddBuf(AL_TBufPool* pBufPool, AL_TBuffer* pBuf)
 
   AL_Buffer_SetUserData(pBuf, pBufPool);
   pBufPool->pPool[pBufPool->uNumBuf++] = pBuf;
-  Fifo_Queue(&pBufPool->fifo, pBuf, AL_WAIT_FOREVER);
+  AL_sBufPool_QueueBuf(pBufPool, pBuf);
   return true;
 }
 
@@ -317,8 +322,6 @@ uint32_t AL_GetWaitMode(AL_EBufMode eMode)
   return Wait;
 }
 
-#ifdef __cplusplus
-
 BaseBufPool::~BaseBufPool()
 {
   AL_BufPool_Deinit(&m_pool);
@@ -405,4 +408,3 @@ uint32_t BufPool::GetNumBuf()
   return uNumBuf;
 }
 
-#endif

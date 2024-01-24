@@ -14,56 +14,6 @@
 #include "lib_parsing/HevcParser.h"
 
 /*****************************************************************************/
-static void AL_HEVC_sFillWPCoeff(AL_VADDR pDataWP, AL_THevcSliceHdr const* pSlice, uint8_t uL0L1)
-{
-  uint8_t uNumRefIdx = (uL0L1 ? pSlice->num_ref_idx_l1_active_minus1 : pSlice->num_ref_idx_l0_active_minus1) + 1;
-  uint32_t* pWP = (uint32_t*)(pDataWP + uL0L1 * WP_ONE_SET_SIZE);
-
-  AL_TWPCoeff const* pWpCoeff = &pSlice->pred_weight_table.tWpCoeff[uL0L1];
-
-  for(uint8_t i = 0; i < uNumRefIdx; ++i)
-  {
-    pWP[0] = ((pWpCoeff->luma_offset[i] & 0x3FF)) |
-             ((pWpCoeff->chroma_offset[i][0] & 0x3FF) << 10) |
-             ((pWpCoeff->chroma_offset[i][1] & 0x3FF) << 20);
-
-    pWP[1] = ((pWpCoeff->luma_delta_weight[i] & 0xFF)) |
-             ((pWpCoeff->chroma_delta_weight[i][0] & 0xFF) << 8) |
-             ((pWpCoeff->chroma_delta_weight[i][1] & 0xFF) << 16) |
-             ((pSlice->pred_weight_table.luma_log2_weight_denom & 0x0F) << 24) |
-             ((pSlice->pred_weight_table.chroma_log2_weight_denom & 0x0F) << 28);
-    pWP += 2 * WP_ONE_SET_SIZE / 4;
-  }
-}
-
-/*************************************************************************//*!
-   \brief this function writes in the motion vector buffer the weighted pred coefficient
-   \param[in]  pCtx     Pointer to a Picture manager context object
-   \param[in]  pSlice   Pointer to the slice header of the current slice
-   \param[out] pWP      Pointer to the weighted pred tables buffer
-*****************************************************************************/
-static void AL_HEVC_sBuildWPCoeff(AL_TPictMngrCtx const* pCtx, AL_THevcSliceHdr const* pSlice, TBuffer* pWP)
-{
-  AL_VADDR pDataWP = pWP->tMD.pVirtualAddr + (pCtx->uNumSlice * WP_SLICE_SIZE);
-
-  // weighted pred case
-  if((pSlice->pPPS->weighted_bipred_flag && pSlice->slice_type == AL_SLICE_B) ||
-     (pSlice->pPPS->weighted_pred_flag && pSlice->slice_type == AL_SLICE_P))
-  {
-    Rtos_Memset(pDataWP, 0, WP_SLICE_SIZE);
-
-    AL_HEVC_sFillWPCoeff(pDataWP, pSlice, 0);
-
-    if(pSlice->slice_type == AL_SLICE_B)
-      AL_HEVC_sFillWPCoeff(pDataWP, pSlice, 1);
-  }
-}
-
-/***************************************************************************/
-/*      H E V C   P i c t u r e    M a n a g e r   f u n c t i o n s       */
-/***************************************************************************/
-
-/*****************************************************************************/
 void AL_HEVC_PictMngr_UpdateRecInfo(AL_TPictMngrCtx* pCtx, AL_THevcSps const* pSPS, AL_EPicStruct ePicStruct)
 {
   AL_TCropInfo cropInfo = AL_HEVC_GetCropInfo(pSPS);
@@ -72,15 +22,9 @@ void AL_HEVC_PictMngr_UpdateRecInfo(AL_TPictMngrCtx* pCtx, AL_THevcSps const* pS
 }
 
 /*****************************************************************************/
-bool AL_HEVC_PictMngr_GetBuffers(AL_TPictMngrCtx const* pCtx, AL_TDecSliceParam const* pSP, AL_THevcSliceHdr const* pSlice, TBufferListRef const* pListRef, TBuffer* pListVirtAddr, TBuffer* pListAddr, TBufferPOC* pPOC, TBufferMV* pMV, TBuffer* pWP, AL_TRecBuffers* pRecs)
+bool AL_HEVC_PictMngr_GetBuffers(AL_TPictMngrCtx const* pCtx, AL_TDecSliceParam const* pSP, TBuffer* pListVirtAddr, TBuffer* pListAddr, TBufferPOC* pPOC, TBufferMV* pMV, AL_TRecBuffers* pRecs)
 {
-  if(!AL_PictMngr_GetBuffers(pCtx, pSP, pListRef, pListVirtAddr, pListAddr, pPOC, pMV, pRecs))
-    return false;
-
-  // Build Weighted Pred Table
-  AL_HEVC_sBuildWPCoeff(pCtx, pSlice, pWP);
-
-  return true;
+  return AL_PictMngr_GetBuffers(pCtx, pSP, pListVirtAddr, pListAddr, pPOC, pMV, pRecs);
 }
 
 /*************************************************************************/

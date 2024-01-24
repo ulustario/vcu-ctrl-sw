@@ -6,7 +6,10 @@
 #include <stdexcept>
 #include <memory>
 #include <set>
+#include <cassert>
 
+#include "IpDevice.h"
+#include "IpDeviceCommon.h"
 #include "lib_app/console.h"
 #include "lib_app/utils.h"
 #include "lib_common/Allocator.h"
@@ -64,11 +67,10 @@ CIpDevice::~CIpDevice()
     AL_Allocator_Destroy(m_pAllocator);
 }
 
-static std::string SelectMcuDevice(std::set<std::string> const& tDevices)
+static std::string SelectMcuDevice(std::set<std::string> const& tDevices, bool bSelectDeviceWithLowestAvailableResources)
 {
-  /* create schedulers */
   std::string best_device;
-  int highest_resources = -1;
+  int32_t selected_resources = bSelectDeviceWithLowestAvailableResources ? INT32_MAX : -1;
 
   for(auto const& device : tDevices)
   {
@@ -84,11 +86,23 @@ static std::string SelectMcuDevice(std::set<std::string> const& tDevices)
     for(int iCore = 0; iCore < AL_DEC_NUM_CORES; iCore++)
       total_resources += tCore.iVideoResource[iCore];
 
-    if(total_resources >= highest_resources)
+    if(!bSelectDeviceWithLowestAvailableResources)
     {
-      highest_resources = total_resources;
-      best_device = device;
+      if(total_resources >= selected_resources)
+      {
+        selected_resources = total_resources;
+        best_device = device;
+      }
     }
+    else
+    {
+      if(total_resources <= selected_resources)
+      {
+        selected_resources = total_resources;
+        best_device = device;
+      }
+    }
+
     AL_IDecScheduler_Destroy(scheduler);
   }
 
@@ -105,7 +119,7 @@ CIpDevice::CIpDevice(CIpDeviceParam const& param, AL_EDeviceType eDeviceType, st
 
   if(param.iSchedulerType == AL_SCHEDULER_TYPE_MCU)
   {
-    this->m_tSelectedDevice = SelectMcuDevice(m_tDevices);
+    this->m_tSelectedDevice = SelectMcuDevice(m_tDevices, param.bSelectDeviceWithLowestAvailableResources);
     ConfigureMcu(AL_GetHardwareDriver(), false);
     return;
   }

@@ -1,7 +1,10 @@
 LIB_BITSTREAM_SRC:=\
 	lib_bitstream/BitStreamLite.c\
-	lib_bitstream/RbspEncod.c\
-  lib_bitstream/Cabac.c\
+	lib_bitstream/RbspEncod.c
+
+ifneq ($(ENABLE_ENC_ITU),0)
+  LIB_BITSTREAM_SRC+=lib_bitstream/Cabac.c
+endif
 
 ifneq ($(ENABLE_ENC_AVC),0)
 	LIB_BITSTREAM_SRC+=lib_bitstream/AVC_RbspEncod.c

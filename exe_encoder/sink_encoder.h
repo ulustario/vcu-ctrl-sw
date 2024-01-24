@@ -472,22 +472,20 @@ private:
     m_done();
   }
 
-  void CheckAndAllocateConversionBuffer(AL_TBuffer* pBuf, std::shared_ptr<AL_TBuffer>& pConvYUV)
+  void CheckAndAllocateConversionBuffer(TFourCC tConvFourCC, AL_TDimension const& tConvDim, std::shared_ptr<AL_TBuffer>& pConvYUV)
   {
-    AL_TDimension tOutputDim = AL_PixMapBuffer_GetDimension(pBuf);
-
     if(pConvYUV != nullptr)
     {
-      AL_TDimension tConvDim = AL_PixMapBuffer_GetDimension(pConvYUV.get());
+      AL_TDimension tCurrentConvDim = AL_PixMapBuffer_GetDimension(pConvYUV.get());
 
-      if(tConvDim.iHeight >= tOutputDim.iHeight && tConvDim.iWidth >= tOutputDim.iWidth)
+      if(tCurrentConvDim.iHeight >= tConvDim.iHeight && tCurrentConvDim.iWidth >= tConvDim.iWidth)
         return;
     }
 
-    AL_TBuffer* pYuv = AllocateDefaultYuvIOBuffer(tOutputDim, m_cfg.RecFourCC);
+    AL_TBuffer* pYuv = AllocateDefaultYuvIOBuffer(tConvDim, tConvFourCC);
 
     if(pYuv == nullptr)
-      assert("Couldn't allocate reconstruct conversion buffer");
+      throw std::runtime_error("Couldn't allocate reconstruct conversion buffer");
 
     pConvYUV = std::shared_ptr<AL_TBuffer>(pYuv, &AL_Buffer_Destroy);
 
@@ -501,10 +499,10 @@ private:
     AL_PixMapBuffer_SetDimension(pYuv, AL_PixMapBuffer_GetDimension(pRec));
 
     if(!pFunc)
-      assert("Can't find a conversion function suitable for format");
+      throw std::runtime_error("Can't find a conversion function suitable for format");
 
     if(AL_IsTiled(tRecFourCC) == false)
-      assert("FourCC must be in Tile mode");
+      throw std::runtime_error("FourCC must be in Tile mode");
     return pFunc(pRec, pYuv);
   }
 
@@ -541,6 +539,7 @@ private:
 
       if(buf)
       {
+        TFourCC tFileRecFourCC = m_cfg.RecFourCC;
         AL_Buffer_InvalidateMemory(buf);
 
         TFourCC fourCC = AL_PixMapBuffer_GetFourCC(buf);
@@ -549,11 +548,11 @@ private:
           RecOutput[iRecId]->ProcessFrame(buf);
         else
         {
-          if(AL_PixMapBuffer_GetFourCC(buf) != m_cfg.RecFourCC)
+          if(AL_PixMapBuffer_GetFourCC(buf) != tFileRecFourCC)
           {
             std::shared_ptr<AL_TBuffer> bufPostConv;
-            CheckAndAllocateConversionBuffer(buf, bufPostConv);
-            RecToYuv(buf, bufPostConv.get(), m_cfg.RecFourCC);
+            CheckAndAllocateConversionBuffer(tFileRecFourCC, AL_PixMapBuffer_GetDimension(buf), bufPostConv);
+            RecToYuv(buf, bufPostConv.get(), tFileRecFourCC);
             RecOutput[iRecId]->ProcessFrame(bufPostConv.get());
           }
           else

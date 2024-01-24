@@ -104,6 +104,7 @@ static const TFourCCMapping FourCCMappings[] =
   , AL_FOURCC_MAPPING(FOURCC2('X', 'V', '1', '0'), AL_CHROMA_4_0_0, 10, AL_FB_RASTER, AL_C_ORDER_NO_CHROMA, false, true)
   , AL_FOURCC_MAPPING(FOURCC2('X', 'V', '1', '5'), AL_CHROMA_4_2_0, 10, AL_FB_RASTER, AL_C_ORDER_SEMIPLANAR, false, true)
   , AL_FOURCC_MAPPING(FOURCC2('X', 'V', '2', '0'), AL_CHROMA_4_2_2, 10, AL_FB_RASTER, AL_C_ORDER_SEMIPLANAR, false, true)
+
 };
 
 static int const FourCCMappingSize = sizeof(FourCCMappings) / sizeof(FourCCMappings[0]);
@@ -227,8 +228,12 @@ bool AL_IsCompressed(TFourCC tFourCC)
 /*****************************************************************************/
 bool AL_IsTiled(TFourCC tFourCC)
 {
-  AL_TPicFormat tPicFormat;
-  return AL_GetPicFormat(tFourCC, &tPicFormat) && (tPicFormat.eStorageMode != AL_FB_RASTER);
+  AL_EFbStorageMode eStorageMode = AL_GetStorageMode(tFourCC);
+
+  if(eStorageMode == AL_FB_TILE_32x4 || eStorageMode == AL_FB_TILE_64x4)
+    return true;
+
+  return false;
 }
 
 /*****************************************************************************/

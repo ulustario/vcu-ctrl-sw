@@ -406,6 +406,14 @@ void AL_Dpb_ModifLongTerm(AL_TDpb const* pDpb, AL_TAvcSliceHdr const* pSlice, ui
 int AL_Dpb_GetNumExistingRef(AL_TDpb const* pDpb, TBufferListRef const* pListRef);
 
 /*************************************************************************//*!
+   \brief Retrieves the POCs of really existing reference pictures
+   \param[in] pDpb      Pointer to a DPB context object
+   \param[in] pListRef  Pointer on the reference picture list object
+   \param[in] pPOCs     Array that will be filled with the reference POCs
+*****************************************************************************/
+void AL_Dpb_FillExistingRef(AL_TDpb const* pDpb, TBufferRef const* pRef, uint32_t* pPOCs);
+
+/*************************************************************************//*!
    \brief Gets the first free node in the list (arrival order)
    \param[in,out] pDpb Pointer to a DPB context object
    \return the first free node index
@@ -429,7 +437,7 @@ uint8_t AL_Dpb_ConvertPicIDToNodeID(AL_TDpb const* pDpb, uint8_t uPicID);
    \param[out] pLongTermList Reference picture marking status output buffer
    \param[out] pSubpicList   Reference picture subpics flags output buffer
 *****************************************************************************/
-void AL_Dpb_FillList(AL_TDpb const* pDpb, uint8_t uL0L1, TBufferListRef const* pListRef, int32_t* pPocList, uint32_t* pLongTermList, uint32_t* pSubpicList);
+void AL_Dpb_FillList(AL_TDpb const* pDpb, int32_t* pPocList, uint32_t* pLongTermList, uint32_t* pSubpicList);
 
 /*************************************************************************//*!
    \brief Searches the picture with the given poc_lsb in the dpb with the corresponding marking flag

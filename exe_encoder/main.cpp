@@ -563,25 +563,53 @@ shared_ptr<AL_TBuffer> ReadSourceFrame(BaseBufPool* pBufPool, AL_TBuffer* conver
   return sourceBuffer;
 }
 
-bool ConvertSrcBuffer(AL_TEncChanParam& tChParam, TYUVFileInfo& FileInfo, shared_ptr<AL_TBuffer>& SrcYuv)
+AL_TPicFormat GetSrcPicFormat(AL_TEncChanParam const& tChParam)
 {
   auto eChromaMode = AL_GET_CHROMA_MODE(tChParam.ePicFormat);
 
   auto eStorageMode = AL_GetSrcStorageMode(tChParam.eSrcMode);
   auto bIsCompressed = AL_IsSrcCompressed(tChParam.eSrcMode);
 
-  auto const picFmt = AL_EncGetSrcPicFormat(eChromaMode, tChParam.uSrcBitDepth, eStorageMode, bIsCompressed);
-  bool shouldConvert = IsConversionNeeded(FileInfo.FourCC, picFmt);
+  return AL_EncGetSrcPicFormat(eChromaMode, tChParam.uSrcBitDepth, eStorageMode, bIsCompressed);
+}
 
-  if(shouldConvert)
+struct SrcConverterParams
+{
+  AL_TDimension tDim;
+  TFourCC tFileFourCC;
+  AL_TPicFormat tSrcPicFmt;
+  AL_ESrcFormat eSrcFormat;
+};
+
+unique_ptr<IConvSrc> AllocateSrcConverter(SrcConverterParams const& tSrcConverterParams, shared_ptr<AL_TBuffer>& pFileReaderYuv)
+{
+  pFileReaderYuv = nullptr;
+
+  const TFourCC tSrcFourCC = AL_GetFourCC(tSrcConverterParams.tSrcPicFmt);
+  bool bIsConversionNeeded = tSrcConverterParams.tFileFourCC != tSrcFourCC;
+
+  if(!bIsConversionNeeded)
+    return nullptr;
+
+  // ********** Allocate the YUV buffer to read in the file **********
+  pFileReaderYuv = AllocateConversionBuffer(tSrcConverterParams.tDim.iWidth, tSrcConverterParams.tDim.iHeight, tSrcConverterParams.tFileFourCC);
+
+  if(pFileReaderYuv == nullptr)
+    throw runtime_error("Couldn't allocate source conversion buffer");
+
+  // ********** Allocate the YUV converter **********
+  TFrameInfo tSrcFrameInfo = { tSrcConverterParams.tDim, tSrcConverterParams.tSrcPicFmt.uBitDepth, tSrcConverterParams.tSrcPicFmt.eChromaMode };
+  (void)tSrcFrameInfo;
+
+  switch(tSrcConverterParams.eSrcFormat)
   {
-    SrcYuv = AllocateConversionBuffer(AL_GetSrcWidth(tChParam), AL_GetSrcHeight(tChParam), FileInfo.FourCC);
-
-    if(SrcYuv == nullptr)
-      throw runtime_error("Couldn't allocate source conversion buffer");
+  case AL_SRC_FORMAT_RASTER:
+    return make_unique<CYuvSrcConv>(tSrcFrameInfo);
+  default:
+    throw runtime_error("Unsupported source conversion.");
   }
 
-  return shouldConvert;
+  return nullptr;
 }
 
 static int ComputeYPitch(int iWidth, const AL_TPicFormat& tPicFormat)
@@ -631,18 +659,6 @@ AL_ESrcMode SrcFormatToSrcMode(AL_ESrcFormat eSrcFormat)
     return AL_SRC_RASTER;
   default:
     throw runtime_error("Unsupported source format.");
-  }
-}
-
-unique_ptr<IConvSrc> CreateSrcConverter(TFrameInfo const& FrameInfo, AL_ESrcFormat eSrcFormat, AL_TEncChanParam& tChParam)
-{
-  (void)tChParam;
-  switch(eSrcFormat)
-  {
-  case AL_SRC_FORMAT_RASTER:
-    return make_unique<CYuvSrcConv>(FrameInfo);
-  default:
-    throw runtime_error("Unsupported source conversion.");
   }
 }
 
@@ -787,18 +803,6 @@ static bool InitStreamBufPool(BufPool& pool, AL_TEncSettings& Settings, int iLay
 }
 
 /*****************************************************************************/
-static TFrameInfo GetFrameInfo(AL_TEncChanParam& tChParam)
-{
-  TFrameInfo tFrameInfo;
-
-  tFrameInfo.tDimension = { AL_GetSrcWidth(tChParam), AL_GetSrcHeight(tChParam) };
-  tFrameInfo.iBitDepth = tChParam.uSrcBitDepth;
-  tFrameInfo.eCMode = AL_GET_CHROMA_MODE(tChParam.ePicFormat);
-
-  return tFrameInfo;
-}
-
-/*****************************************************************************/
 static void InitSrcBufPool(PixMapBufPool& SrcBufPool, AL_TAllocator* pAllocator, TFrameInfo& FrameInfo, AL_ESrcMode eSrcMode, int frameBuffersCount, AL_ECodec eCodec)
 {
   auto srcBufDesc = GetSrcBufDescription(FrameInfo.tDimension, FrameInfo.iBitDepth, FrameInfo.eCMode, eSrcMode, eCodec);
@@ -840,16 +844,14 @@ struct LayerResources
   PixMapBufPool SrcBufPool;
 
   // Input/Output Format conversion
+  ifstream YuvFile;
+  ifstream MapFile;
+  unique_ptr<FrameReader> frameReader;
+  unique_ptr<IConvSrc> pSrcConv;
   shared_ptr<AL_TBuffer> SrcYuv;
 
   vector<uint8_t> RecYuvBuffer;
-
   unique_ptr<IFrameSink> frameWriter;
-  unique_ptr<FrameReader> frameReader;
-
-  ifstream YuvFile;
-  ifstream MapFile;
-  unique_ptr<IConvSrc> pSrcConv;
 
   int iPictCount = 0;
   int iReadCount = 0;
@@ -936,22 +938,23 @@ void LayerResources::Init(ConfigFile& cfg, AL_TEncoderInfo tEncInfo, int iLayerI
   // --------------------------------------------------------------------------------
   // Application Input/Output Format conversion
   // --------------------------------------------------------------------------------
-  bool shouldConvert = ConvertSrcBuffer(Settings.tChParam[iLayerID], layerInputs[iInputIdx].FileInfo, SrcYuv);
-
-  TFrameInfo FrameInfo = GetFrameInfo(Settings.tChParam[iLayerID]);
-  pSrcConv = CreateSrcConverter(FrameInfo, cfg.eSrcFormat, Settings.tChParam[iLayerID]);
+  const AL_TPicFormat tSrcPicFmt = GetSrcPicFormat(Settings.tChParam[iLayerID]);
+  const SrcConverterParams tSrcConverterParams =
+  {
+    { AL_GetSrcWidth(Settings.tChParam[iLayerID]), AL_GetSrcHeight(Settings.tChParam[iLayerID]) },
+    layerInputs[iInputIdx].FileInfo.FourCC,
+    tSrcPicFmt,
+    cfg.eSrcFormat,
+  };
+  pSrcConv = AllocateSrcConverter(tSrcConverterParams, SrcYuv);
+  TFrameInfo tSrcFrameInfo = { tSrcConverterParams.tDim, tSrcConverterParams.tSrcPicFmt.uBitDepth, tSrcConverterParams.tSrcPicFmt.eChromaMode };
 
   // --------------------------------------------------------------------------------
   // Source Buffers
   // --------------------------------------------------------------------------------
   int srcBuffersCount = max(frameBuffersCount, g_numFrameToRepeat);
 
-  InitSrcBufPool(SrcBufPool, pAllocator, FrameInfo, eSrcMode, srcBuffersCount, static_cast<AL_ECodec>(AL_GET_CODEC(Settings.tChParam[0].eProfile)));
-
-  if(!shouldConvert)
-  {
-    pSrcConv.reset(nullptr);
-  }
+  InitSrcBufPool(SrcBufPool, pAllocator, tSrcFrameInfo, eSrcMode, srcBuffersCount, static_cast<AL_ECodec>(AL_GET_CODEC(Settings.tChParam[0].eProfile)));
 
   iPictCount = 0;
   iReadCount = 0;
@@ -1059,7 +1062,7 @@ unique_ptr<FrameReader> LayerResources::InitializeFrameReader(ConfigFile& cfg, i
 
   if(bIsMapFileEmpty)
     pFrameReader = unique_ptr<FrameReader>(new UnCompFrameReader(YuvFile, FileInfo, cfg.RunInfo.bLoop));
-  pFrameReader->GoToFrame(cfg.RunInfo.iFirstPict + iReadCount);
+  pFrameReader->SeekA(cfg.RunInfo.iFirstPict + iReadCount);
 
   return pFrameReader;
 }
@@ -1227,12 +1230,12 @@ void SafeChannelMain(ConfigFile& cfg, CIpDevice* pIpDevice, CIpDeviceParam& para
 
   while(hasInputAndNoError)
   {
-    AL_64U uBeforeTime = Rtos_GetTime();
+    uint64_t uBeforeTime = Rtos_GetTime();
 
     for(int i = 0; i < Settings.NumLayer; ++i)
       hasInputAndNoError = layerResources[i].SendInput(cfg, firstSink, pTraceHook) && hasInputAndNoError;
 
-    AL_64U uAfterTime = Rtos_GetTime();
+    uint64_t uAfterTime = Rtos_GetTime();
 
     if((uAfterTime - uBeforeTime) < RunInfo.uInputSleepInMilliseconds)
       Rtos_Sleep(RunInfo.uInputSleepInMilliseconds - (uAfterTime - uBeforeTime));

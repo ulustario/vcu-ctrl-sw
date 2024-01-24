@@ -5,10 +5,10 @@
 
 V?=0
 
-ifeq ($(V),0)
-	Q=@
-else
+ifneq ($(V),0)
 	Q=
+else
+	Q=@
 endif
 
 LINK_COMPAT:=

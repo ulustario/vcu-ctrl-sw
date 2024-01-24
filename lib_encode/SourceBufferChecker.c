@@ -16,8 +16,9 @@ void AL_SrcBuffersChecker_Init(AL_TSrcBufferChecker* pCtx, AL_TEncChanParam cons
   pCtx->currentDim = pCtx->maxDim;
 
   AL_EChromaMode eChromaMode = AL_GET_CHROMA_MODE(pChParam->ePicFormat);
-  pCtx->picFmt = AL_EncGetSrcPicFormat(eChromaMode, pChParam->uSrcBitDepth, AL_GetSrcStorageMode(pChParam->eSrcMode), AL_IsSrcCompressed(pChParam->eSrcMode));
-  pCtx->fourCC = AL_GetFourCC(pCtx->picFmt);
+  AL_TPicFormat tPicFormat = AL_EncGetSrcPicFormat(eChromaMode, pChParam->uSrcBitDepth, AL_GetSrcStorageMode(pChParam->eSrcMode), AL_IsSrcCompressed(pChParam->eSrcMode));
+  pCtx->fourCC = AL_GetFourCC(tPicFormat);
+  pCtx->bMonochrome = tPicFormat.eChromaMode == AL_CHROMA_MONO;
   pCtx->srcMode = pChParam->eSrcMode;
 }
 
@@ -27,6 +28,15 @@ bool AL_SrcBuffersChecker_UpdateResolution(AL_TSrcBufferChecker* pCtx, AL_TDimen
     return false;
   pCtx->currentDim = tNewDim;
   return true;
+}
+
+static TFourCC GetMonochromeFourCC(TFourCC tFourCC)
+{
+  AL_TPicFormat tPicFmt;
+  AL_GetPicFormat(tFourCC, &tPicFmt);
+  tPicFmt.eChromaMode = AL_CHROMA_4_0_0;
+  tPicFmt.eChromaOrder = AL_C_ORDER_NO_CHROMA;
+  return AL_GetFourCC(tPicFmt);
 }
 
 static bool CheckMetaData(AL_TSrcBufferChecker* pCtx, AL_TBuffer* pBuf)
@@ -43,10 +53,13 @@ static bool CheckMetaData(AL_TSrcBufferChecker* pCtx, AL_TBuffer* pBuf)
   if(tDim.iHeight != pCtx->currentDim.iHeight)
     return false;
 
-  if(tFourCC != pCtx->fourCC)
-    return false;
-
-  return true;
+  /*
+    We can inject buffer with chroma for monochrome encoding. This assumes encoder sources
+    always have luma and chroma in different planes.
+  */
+  bool bValidFormat = tFourCC == pCtx->fourCC ||
+                      (pCtx->bMonochrome && GetMonochromeFourCC(tFourCC) == pCtx->fourCC);
+  return bValidFormat;
 }
 
 static uint32_t GetSrcPlaneSize(AL_TDimension tDim, AL_EChromaMode eChromaMode, AL_ESrcMode eSrcFmt, int iPitchY, int iStrideHeight, AL_EPlaneId ePlaneId)

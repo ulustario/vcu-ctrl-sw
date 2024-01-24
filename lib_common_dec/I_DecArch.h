@@ -12,6 +12,8 @@
 #pragma once
 
 /****************************************************************************/
+typedef AL_HANDLE AL_HDecoder;
+
 typedef struct AL_i_DecArchVtable AL_IDecArchVtable;
 
 typedef struct AL_i_DecArch
@@ -22,7 +24,7 @@ typedef struct AL_i_DecArch
 typedef struct AL_i_DecArchVtable
 {
   void (* Deinit)(void);
-  AL_ERR (* DecoderCreate)(AL_HDecoder* hDec, AL_IDecScheduler* pScheduler, AL_TAllocator* pAllocator, AL_TDecSettings* pSettings, AL_TDecCallBacks* pCB);
+  AL_ERR (* DecoderCreate)(AL_HDecoder* hDec, void* pScheduler, AL_TAllocator* pAllocator, void* pSettings, void* pCB);
   void (* DecoderDestroy)(AL_HDecoder hDec);
   void (* DecoderSetParam)(AL_HDecoder hDec, const char* sPrefix, int iFrmID, int iNumFrm, bool bForceCleanBuffers, bool bShouldPrintFrameDelimiter);
   bool (* DecoderPushStreamBuffer)(AL_HDecoder hDec, AL_TBuffer* pBuf, size_t uSize, uint8_t uFlags);
@@ -32,7 +34,7 @@ typedef struct AL_i_DecArchVtable
   AL_ECodec (* DecoderGetCodec)(AL_HDecoder hDec);
   int (* DecoderGetMaxBD)(AL_HDecoder hDec);
   AL_ERR (* DecoderGetLastError)(AL_HDecoder hDec);
-  AL_ERR (* DecoderGetFrameError)(AL_HDecoder hDec, AL_TBuffer* pBuf);
+  AL_ERR (* DecoderGetFrameError)(AL_HDecoder hDec, AL_TBuffer const* pBuf);
   bool (* DecoderPreallocateBuffers)(AL_HDecoder hDec);
   uint32_t (* DecoderGetMinPitch)(uint32_t uWidth, uint8_t uBitDepth, AL_EFbStorageMode eFrameBufferStorageMode);
   uint32_t (* DecoderGetMinStrideHeight)(uint32_t uHeight);

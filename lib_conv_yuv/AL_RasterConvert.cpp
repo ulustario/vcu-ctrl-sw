@@ -46,11 +46,14 @@ static void convertToY010(AL_TBuffer const* pSrcIn, TFourCC inFourCC, AL_TBuffer
   {
   case FOURCC(I0AL):
   case FOURCC(I2AL):
+  case FOURCC(I4AL):
   case FOURCC(P010):
   case FOURCC(P210):
+  case FOURCC(P410):
     return I0AL_To_Y010(pSrcIn, pSrcOut);
   case FOURCC(I420):
   case FOURCC(I422):
+  case FOURCC(I444):
   case FOURCC(NV12):
   case FOURCC(NV16):
   case FOURCC(Y800):
@@ -66,6 +69,7 @@ static void convertToY012(AL_TBuffer const* pSrcIn, TFourCC inFourCC, AL_TBuffer
   {
   case FOURCC(I0CL):
   case FOURCC(I2CL):
+  case FOURCC(I4CL):
     return I0CL_To_Y012(pSrcIn, pSrcOut);
   default: return NoConversionFound(inFourCC, FOURCC(Y012));
   }
@@ -79,6 +83,7 @@ static void convertToY800(AL_TBuffer const* pSrcIn, TFourCC inFourCC, AL_TBuffer
   case FOURCC(I0AL): return I0AL_To_Y800(pSrcIn, pSrcOut);
   case FOURCC(I420):
   case FOURCC(I422):
+  case FOURCC(I444):
     return I420_To_Y800(pSrcIn, pSrcOut);
   default: return NoConversionFound(inFourCC, FOURCC(Y800));
   }
@@ -400,6 +405,7 @@ static void convertToT64C(AL_TBuffer const* pSrcIn, TFourCC inFourCC, AL_TBuffer
   case FOURCC(I444): return I444_To_T64C(pSrcIn, pSrcOut);
   case FOURCC(I4AL): return I4AL_To_T64C(pSrcIn, pSrcOut);
   case FOURCC(I4CL): return I4CL_To_T64C(pSrcIn, pSrcOut);
+  case FOURCC(Y010): return Y010_To_T64C(pSrcIn, pSrcOut);
 
   case FOURCC(T64C): CopyPixMapBuffer(pSrcIn, pSrcOut);
     return;
@@ -412,11 +418,14 @@ static void convertToT6m8(AL_TBuffer const* pSrcIn, TFourCC inFourCC, AL_TBuffer
 {
   switch(inFourCC)
   {
-  case FOURCC(Y800): return Y800_To_T6m8(pSrcIn, pSrcOut);
-  case FOURCC(I420): return I420_To_T6m8(pSrcIn, pSrcOut);
+  case FOURCC(Y800):
+  case FOURCC(I420):
+  case FOURCC(I422):
+  case FOURCC(I444):
+    return Y800_To_T6m8(pSrcIn, pSrcOut);
   case FOURCC(T6m8): CopyPixMapBuffer(pSrcIn, pSrcOut);
     return;
-  default: return NoConversionFound(inFourCC, FOURCC(T64C));
+  default: return NoConversionFound(inFourCC, FOURCC(T6m8));
   }
 }
 
@@ -425,11 +434,14 @@ static void convertToT6mA(AL_TBuffer const* pSrcIn, TFourCC inFourCC, AL_TBuffer
 {
   switch(inFourCC)
   {
-  case FOURCC(Y010): return Y010_To_T6mA(pSrcIn, pSrcOut);
-  case FOURCC(I0AL): return I0AL_To_T6mA(pSrcIn, pSrcOut);
+  case FOURCC(Y010):
+  case FOURCC(I0AL):
+  case FOURCC(I2AL):
+  case FOURCC(I4AL):
+    return Y010_To_T6mA(pSrcIn, pSrcOut);
   case FOURCC(T6mA): CopyPixMapBuffer(pSrcIn, pSrcOut);
     return;
-  default: return NoConversionFound(inFourCC, FOURCC(T64C));
+  default: return NoConversionFound(inFourCC, FOURCC(T6mA));
   }
 }
 
@@ -438,11 +450,13 @@ static void convertToT6mC(AL_TBuffer const* pSrcIn, TFourCC inFourCC, AL_TBuffer
 {
   switch(inFourCC)
   {
-  case FOURCC(Y012): return Y012_To_T6mC(pSrcIn, pSrcOut);
-  case FOURCC(I0CL): return I0CL_To_T6mC(pSrcIn, pSrcOut);
+  case FOURCC(Y012):
+  case FOURCC(I0CL):
+  case FOURCC(I2CL):
+  case FOURCC(I4CL): return I0CL_To_T6mC(pSrcIn, pSrcOut);
   case FOURCC(T6mC): CopyPixMapBuffer(pSrcIn, pSrcOut);
     return;
-  default: return NoConversionFound(inFourCC, FOURCC(T64C));
+  default: return NoConversionFound(inFourCC, FOURCC(T6mC));
   }
 }
 

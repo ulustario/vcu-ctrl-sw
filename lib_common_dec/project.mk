@@ -13,3 +13,7 @@ ifneq ($(ENABLE_HIGH_DYNAMIC_RANGE),0)
 endif
 endif
 
+
+ifneq ($(ENABLE_DEC_CODEC),0)
+  LIB_COMMON_DEC_SRC+=lib_common_dec/BufferStatisticsMeta.c
+endif

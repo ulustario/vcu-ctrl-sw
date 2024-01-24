@@ -5,8 +5,8 @@
 #include "lib_decode/lib_decode.h"
 #include "lib_decode/DefaultDecoder.h"
 #include "lib_common_dec/DecBuffersInternal.h"
-#include "lib_decode/I_DecArch.h"
 #include "lib_rtos/types.h"
+#include "lib_common_dec/I_DecArch.h"
 
 AL_ERR CreateAvcDecoder(AL_TDecoder** hDec, AL_IDecScheduler* pScheduler, AL_TAllocator* pAllocator, AL_TDecSettings* pSettings, AL_TDecCallBacks* pCB);
 AL_ERR CreateHevcDecoder(AL_TDecoder** hDec, AL_IDecScheduler* pScheduler, AL_TAllocator* pAllocator, AL_TDecSettings* pSettings, AL_TDecCallBacks* pCB);
@@ -25,10 +25,14 @@ static bool CheckVersion(AL_TIDecSchedulerVersion const* pVersion)
 }
 
 /****************************************************************************/
-static AL_ERR AL_Decoder_Create_Host(AL_HDecoder* hDec, AL_IDecScheduler* pScheduler, AL_TAllocator* pAllocator, AL_TDecSettings* pSettings, AL_TDecCallBacks* pCB)
+static AL_ERR AL_Decoder_Create_Host(AL_HDecoder* hDec, void* pSch, AL_TAllocator* pAllocator, void* pSet, void* pCallBacks)
 {
-  if(!pSettings || !pCB || !pAllocator || !pScheduler || !hDec)
+  if(!pSet || !pCallBacks || !pAllocator || !pSch || !hDec)
     return AL_ERROR;
+
+  AL_IDecScheduler* pScheduler = (AL_IDecScheduler*)pSch;
+  AL_TDecSettings* pSettings = (AL_TDecSettings*)pSet;
+  AL_TDecCallBacks* pCB = (AL_TDecCallBacks*)pCallBacks;
 
   AL_TIDecSchedulerVersion tVersion;
   AL_IDecScheduler_Get(pScheduler, AL_IDECSCHEDULER_VERSION, &tVersion);
@@ -107,7 +111,7 @@ static AL_ERR AL_Decoder_GetLastError_Host(AL_HDecoder hDec)
 }
 
 /*****************************************************************************/
-static AL_ERR AL_Decoder_GetFrameError_Host(AL_HDecoder hDec, AL_TBuffer* pBuf)
+static AL_ERR AL_Decoder_GetFrameError_Host(AL_HDecoder hDec, AL_TBuffer const* pBuf)
 {
   AL_TDecoder* pDec = (AL_TDecoder*)hDec;
   return AL_Default_Decoder_GetFrameError(pDec, pBuf);

@@ -16,27 +16,23 @@ LIB_COMMON_SRC:=\
   lib_common/HardwareConfig.c\
   lib_common/Error.c\
   lib_common/DisplayInfoMeta.c\
+  lib_common/PicFormat.c\
 
 
-HAS_CODEC=0
 ifneq ($(ENABLE_AVC),0)
   LIB_COMMON_SRC+=lib_common/AvcLevelsLimit.c
   LIB_COMMON_SRC+=lib_common/AvcUtils.c
-  HAS_CODEC=1
 endif
 
 ifneq ($(ENABLE_HEVC),0)
   LIB_COMMON_SRC+=lib_common/HevcLevelsLimit.c
   LIB_COMMON_SRC+=lib_common/HevcUtils.c
-  HAS_CODEC=1
 endif
 
 
 
 
-
-
-ifneq ($(HAS_CODEC),0)
+ifneq ($(ENABLE_CODEC),0)
   LIB_COMMON_SRC+=lib_common/LevelLimit.c
   LIB_COMMON_SRC+=lib_common/StreamBuffer.c
   LIB_COMMON_SRC+=lib_common/ChannelResources.c
@@ -47,7 +43,6 @@ ifneq ($(HAS_CODEC),0)
   LIB_COMMON_SRC+=lib_common/BufferPictureMeta.c
   LIB_COMMON_SRC+=lib_common/BufferPictureDecMeta.c
   LIB_COMMON_SRC+=lib_common/BufferSeiMeta.c
-  LIB_COMMON_SRC+=lib_common/BufferStatisticsMeta.c
 
 
   LIB_COMMON_SRC+=lib_common/BufferLookAheadMeta.c

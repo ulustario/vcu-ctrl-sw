@@ -31,7 +31,8 @@ public:
 
   virtual bool ReadFrame(AL_TBuffer* pFrameBuffer) = 0;
 
-  virtual void GoToFrame(uint32_t iFrameNb) = 0;
+  virtual void SeekA(uint32_t uFrameIdx) = 0; // seek to Absolution position from the beginning
+  virtual void SeekR(int iFrameDlt) = 0;      // seek to Relative position from the current position (both direction allowed)
 
   int GotoNextPicture(int iFileFrameRate, int iEncFrameRate, int iFilePictCount, int iEncPictCount);
 

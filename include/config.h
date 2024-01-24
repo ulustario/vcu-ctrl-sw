@@ -80,6 +80,6 @@
 
 #define AL_CONFIGURE_COMMANDLINE "./configure --config-blob customers/Xilinx/config.ini"
 #define AL_VERSION_MAJOR 0
-#define AL_VERSION_MINOR 38
+#define AL_VERSION_MINOR 39
 #define AL_VERSION_PATCH 0
 

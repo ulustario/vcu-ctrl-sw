@@ -13,7 +13,7 @@ GCC_IS_OLD:=$(shell test $(GCC_MAJOR_VER) -lt 8 && echo 1 || echo 0)
 # resulting in switch statement jumping to the wrong address
 
 CFLAGS+=-Os
-ifeq ($(GCC_IS_OLD),1)
+ifneq ($(GCC_IS_OLD),0)
 	LDFLAGS+=-Wl,--no-relax
 else
 	# The Os optim doesn't do aggressive inline anymore and this impacts runtime in the firmware

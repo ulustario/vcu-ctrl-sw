@@ -17,6 +17,7 @@ typedef struct
 void AL_CoreConstraint_Init(AL_CoreConstraint* constraint, int coreFrequency, int margin, int const* hardwareCyclesCounts, int minWidth, int maxWidth, int lcuSize);
 int AL_CoreConstraint_GetExpectedNumberOfCores(AL_CoreConstraint* constraint, int width, int height, int chromaModeIdc, int frameRate, int clockRatio);
 int AL_CoreConstraint_GetMinCoresCount(AL_CoreConstraint* constraint, int width);
+int AL_CoreConstraint_GetCoreResources(int coreFrequency, int margin);
 
 uint64_t AL_GetResources(int width, int height, int frameRate, int clockRatio, int cycles32x32);
 

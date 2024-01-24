@@ -368,6 +368,7 @@ SplitInput::SplitInput(int iSize, AL_ECodec eCodec, bool bSliceCut) : m_eCodec(e
   m_CircBuf.tBuf.pBuf = m_Stream.data();
 }
 
+/******************************************************************************/
 void AddSeiMetaData(AL_TBuffer* pBufStream)
 {
   if(AL_Buffer_GetMetaData(pBufStream, AL_META_TYPE_SEI))

@@ -109,8 +109,6 @@ typedef struct t_PictMngrCtx
   AL_TMvBufPool MvBufPool;
   AL_TDpb DPB;
 
-  uint16_t uNumSlice;
-
   // Current Buffers/index
   uint8_t uRecID;    /*!< Index of the Frame buffer currently used as reconstructed buffer */
   uint8_t uMvID;     /*!< Index of the Motionvector buffers currently used */
@@ -352,7 +350,7 @@ void AL_PictMngr_DecommitPool(AL_TPictMngrCtx* pCtx);
 void AL_PictMngr_UnlockID(AL_TPictMngrCtx* pCtx, int iFrameID, int iMotionVectorID);
 
 /*****************************************************************************/
-bool AL_PictMngr_GetBuffers(AL_TPictMngrCtx const* pCtx, AL_TDecSliceParam const* pSP, TBufferListRef const* pListRef, TBuffer* pListVirtAddr, TBuffer* pListAddr, TBufferPOC* pPOC, TBufferMV* pMV, AL_TRecBuffers* pRecs);
+bool AL_PictMngr_GetBuffers(AL_TPictMngrCtx const* pCtx, AL_TDecSliceParam const* pSP, TBuffer* pListVirtAddr, TBuffer* pListAddr, TBufferPOC* pPOC, TBufferMV* pMV, AL_TRecBuffers* pRecs);
 
 /*@}*/
 

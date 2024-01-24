@@ -13,7 +13,7 @@
 
 #include "lib_decode/lib_decode.h"
 #include "I_DecoderCtx.h"
-#include "InternalError.h"
+#include "lib_common_dec/InternalError.h"
 #include "lib_common_dec/DecInfo.h"
 #include "lib_rtos/types.h"
 
@@ -126,7 +126,7 @@ void AL_Default_Decoder_Flush(AL_TDecoder* pAbsDec);
 bool AL_Default_Decoder_PutDecPict(AL_TDecoder* pAbsDec, AL_TBuffer* pDecPict);
 int AL_Default_Decoder_GetMaxBD(AL_TDecoder* pAbsDec);
 AL_ERR AL_Default_Decoder_GetLastError(AL_TDecoder* pAbsDec);
-AL_ERR AL_Default_Decoder_GetFrameError(AL_TDecoder* pAbsDec, AL_TBuffer* pBuf);
+AL_ERR AL_Default_Decoder_GetFrameError(AL_TDecoder* pAbsDec, AL_TBuffer const* pBuf);
 bool AL_Default_Decoder_PreallocateBuffers(AL_TDecoder* pAbsDec);
 
 int AL_Default_Decoder_GetStrOffset(AL_TDecoder* pAbsDec);
