@@ -12,6 +12,15 @@
 #include "lib_common/Allocator.h"
 
 /*************************************************************************//*!
+   \brief Addresses
+*****************************************************************************/
+typedef struct AL_TAddress
+{
+  AL_VADDR pVirtualAddr; /*!< Virtual Address of the allocated memory buffer */
+  AL_PADDR uPhysicalAddr; /*!< Physical Address of the allocated memory buffer */
+}AL_TAddress;
+
+/*************************************************************************//*!
    \brief Memory descriptor
 *****************************************************************************/
 typedef struct t_MemDesc

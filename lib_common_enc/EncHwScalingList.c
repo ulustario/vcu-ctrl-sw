@@ -46,7 +46,7 @@ static void AL_sWriteInvCoeff(const uint8_t* pSrc, const int* pScan, int iSize, 
 }
 
 /******************************************************************************/
-void AL_AVC_WriteEncHwScalingList(AL_TSCLParam const* pSclLst, AL_THwScalingList const* pHwSclLst, uint8_t chroma_format_idc, uint8_t* pBuf)
+void AL_AVC_WriteEncHwScalingList(AL_TSCLParam const* pSclLst, AL_THwScalingList(*pHwSclLst)[2][6], uint8_t chroma_format_idc, uint8_t* pBuf)
 {
   uint8_t const* pSrcInv;
   uint32_t const* pSrcFwd;
@@ -148,7 +148,7 @@ void AL_AVC_WriteEncHwScalingList(AL_TSCLParam const* pSclLst, AL_THwScalingList
 }
 
 /******************************************************************************/
-void AL_HEVC_WriteEncHwScalingList(AL_TSCLParam const* pSclLst, AL_THwScalingList* pHwSclLst, uint8_t* pBuf)
+void AL_HEVC_WriteEncHwScalingList(AL_TSCLParam const* pSclLst, AL_THwScalingList(*pHwSclLst)[2][6], uint8_t* pBuf)
 {
   uint8_t const* pSrcInv;
   uint32_t const* pSrcFwd;

@@ -17,7 +17,7 @@
 extern "C"
 {
 #include "lib_fpga/DmaAlloc.h"
-#include "lib_log/Logger.h"
+#include "lib_log/LoggerInterface.h"
 #include "lib_log/TimerSoftware.h"
 }
 
@@ -63,6 +63,9 @@ CIpDevice::~CIpDevice()
 {
   if(m_pScheduler)
     AL_IDecScheduler_Destroy(m_pScheduler);
+
+  if(m_pTimer)
+    AL_ITimer_Deinit(m_pTimer);
 
   if(m_pAllocator)
     AL_Allocator_Destroy(m_pAllocator);

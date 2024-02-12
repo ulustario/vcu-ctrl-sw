@@ -46,7 +46,7 @@ typedef struct AL_THevcScalingList
 /*************************************************************************//*!
    \brief Scaling List Matrices in hardware preprocessed format
 *****************************************************************************/
-typedef struct t_HwScalingList
+typedef struct AL_THwScalingList
 {
   AL_TLevels8x8 t32x32;
   AL_TLevels8x8 t16x16Y;
@@ -59,7 +59,7 @@ typedef struct t_HwScalingList
   AL_TLevels4x4 t4x4Cb;
   AL_TLevels4x4 t4x4Cr;
   AL_TLevelsDC tDC;
-}AL_THwScalingList[2][6];
+}AL_THwScalingList;
 
 /*************************************************************************//*!
    \brief Diagonal scanning order

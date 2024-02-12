@@ -9,10 +9,8 @@
    @{
    \file
  *****************************************************************************/
-#pragma once
-
 #include "lib_common/SliceConsts.h"
-typedef struct t_Aud
+typedef struct AL_TAud
 {
   AL_ESliceType eType;
 }AL_TAud;

@@ -10,7 +10,7 @@
 extern "C"
 {
 #include "lib_fpga/DmaAlloc.h"
-#include "lib_log/Logger.h"
+#include "lib_log/LoggerDefault.h"
 #include "lib_log/TimerSoftware.h"
 }
 using namespace std;
@@ -49,6 +49,9 @@ CIpDevice::~CIpDevice()
 {
   if(m_pScheduler)
     AL_IEncScheduler_Destroy(m_pScheduler);
+
+  if(m_pTimer)
+    AL_ITimer_Deinit(m_pTimer);
 
   if(m_pAllocator)
     AL_Allocator_Destroy(m_pAllocator);

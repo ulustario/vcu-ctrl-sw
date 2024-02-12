@@ -10,10 +10,10 @@
  *****************************************************************************/
 #pragma once
 
+#include "I_DecoderCtx.h"
+
 #include "lib_parsing/AvcParser.h"
 #include "lib_parsing/HevcParser.h"
-
-typedef struct t_Dec_Ctx AL_TDecCtx;
 
 uint32_t GetNonVclSize(TCircBuffer* pBufStream);
 void UpdateContextAtEndOfFrame(AL_TDecCtx* pCtx);

@@ -17,7 +17,7 @@
 /*************************************************************************//*!
    \brief Mimics structure to represent the exp colomb syntax elements NAL parser
 *****************************************************************************/
-typedef struct t_RbspParser
+typedef struct AL_TRbspParser
 {
   uint32_t iTrailingBitOneIndex;
   uint32_t iTotalBitIndex;

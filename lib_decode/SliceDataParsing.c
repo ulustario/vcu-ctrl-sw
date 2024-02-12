@@ -11,6 +11,7 @@
 
 #include "SliceDataParsing.h"
 #include "I_DecoderCtx.h"
+#include "NalUnitParser.h"
 
 #include "lib_decode/lib_decode.h"
 #include "lib_decode/I_DecScheduler.h"
@@ -350,9 +351,8 @@ void AL_SetConcealParameters(AL_TDecCtx* pCtx, AL_TDecSliceParam* pSP)
 }
 
 /*****************************************************************************/
-void AL_TerminatePreviousCommand(AL_TDecCtx* pCtx, AL_TDecPicParam const* pPP, AL_TDecSliceParam* pSP, bool bIsLastVclNalInAU, bool bNextIsDependent)
+void AL_TerminatePreviousCommand(AL_TDecCtx* pCtx, AL_TDecPicParam const* pPP, AL_TDecSliceParam* pSP, AL_TDecPicBuffers* pBufs, bool bIsLastVclNalInAU, bool bNextIsDependent)
 {
-  AL_TDecPicBuffers* pBufs = &pCtx->PoolPB[pCtx->uToggle];
   AL_sSaveCommandBlk2(pCtx, pPP, pBufs);
 
   if(pCtx->tCurrentFrameCtx.uNumSlice == 0)
@@ -403,7 +403,7 @@ void AL_AVC_PrepareCommand(AL_TDecCtx* pCtx, AL_TScl* pSCL, AL_TDecPicParam* pPP
 
   if(pPrevSP && !bIsValid && bIsLastVclNalInAU)
   {
-    AL_TerminatePreviousCommand(pCtx, pPP, pSP, bIsLastVclNalInAU, true);
+    AL_TerminatePreviousCommand(pCtx, pPP, pSP, pBufs, bIsLastVclNalInAU, true);
     return;
   }
 
@@ -412,7 +412,7 @@ void AL_AVC_PrepareCommand(AL_TDecCtx* pCtx, AL_TScl* pSCL, AL_TDecPicParam* pPP
     pSP->ColocPicID = pPrevSP->ColocPicID;
 
   // stock command registers in memory
-  AL_TerminatePreviousCommand(pCtx, pPP, pSP, false, true);
+  AL_TerminatePreviousCommand(pCtx, pPP, pSP, pBufs, false, true);
 
   if(pSP->SliceFirstLCU)
     pSP->FirstLcuTileID = pSP->DependentSlice ? pPrevSP->FirstLcuTileID : pCtx->tCurrentFrameCtx.uCurTileID;
@@ -454,7 +454,7 @@ void AL_HEVC_PrepareCommand(AL_TDecCtx* pCtx, AL_TScl* pSCL, AL_TDecPicParam* pP
 
   if(pPrevSP && !bIsValid && bIsLastVclNalInAU)
   {
-    AL_TerminatePreviousCommand(pCtx, pPP, pSP, bIsLastVclNalInAU, true);
+    AL_TerminatePreviousCommand(pCtx, pPP, pSP, pBufs, bIsLastVclNalInAU, true);
     return;
   }
 
@@ -463,7 +463,7 @@ void AL_HEVC_PrepareCommand(AL_TDecCtx* pCtx, AL_TScl* pSCL, AL_TDecPicParam* pP
     pSP->ColocPicID = pPrevSP->ColocPicID;
 
   // stock command registers in memory
-  AL_TerminatePreviousCommand(pCtx, pPP, pSP, false, pSP->DependentSlice);
+  AL_TerminatePreviousCommand(pCtx, pPP, pSP, pBufs, false, pSP->DependentSlice);
 
   if(pSP->FirstLcuSliceSegment)
   {

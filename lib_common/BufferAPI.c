@@ -290,6 +290,26 @@ AL_TMetaData* AL_Buffer_GetMetaData(AL_TBuffer const* hBuf, AL_EMetaType eType)
 }
 
 /****************************************************************************/
+bool AL_Buffer_CloneMetaData(AL_TBuffer const* pBufSrc, AL_TBuffer* pBufDest, AL_EMetaType eType)
+{
+  AL_TMetaData* pMeta = AL_Buffer_GetMetaData(pBufSrc, eType);
+
+  if(pMeta == NULL)
+    return true;
+
+  AL_TMetaData* pClonedMeta = AL_MetaData_Clone(pMeta);
+
+  if(pClonedMeta == NULL)
+    return false;
+
+  if(AL_Buffer_AddMetaData(pBufDest, pClonedMeta))
+    return true;
+
+  AL_MetaData_Destroy(pClonedMeta);
+  return false;
+}
+
+/****************************************************************************/
 bool AL_Buffer_AddMetaData(AL_TBuffer* hBuf, AL_TMetaData* pMeta)
 {
   AL_TBufferImpl* pBuf = (AL_TBufferImpl*)hBuf;

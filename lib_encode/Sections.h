@@ -10,7 +10,7 @@
 #include "lib_common/AUD.h"
 #include "lib_common/HDR.h"
 
-typedef struct t_nuts
+typedef struct AL_TNuts
 {
   AL_TNalHeader (* GetNalHeader)(uint8_t uNUT, uint8_t uNalRefIdc, uint8_t uLayerId, uint8_t uTempId);
   int spsNut;

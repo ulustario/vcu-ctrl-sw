@@ -663,6 +663,10 @@ void DecoderContext::AttachMetaDataToBaseDecoderRecBuffer(AL_TStreamSettings con
 
   if(bAddHDRMetaData)
     AddHDRMetaData(pDecPict);
+
+  AL_TPictureDecMetaData* pPictureDecMeta = AL_PictureDecMetaData_Create();
+  AL_Buffer_AddMetaData(pDecPict, (AL_TMetaData*)pPictureDecMeta);
+
   AL_TDisplayInfoMetaData* pDisplayInfoMeta = AL_DisplayInfoMetaData_Create();
   AL_Buffer_AddMetaData(pDecPict, (AL_TMetaData*)pDisplayInfoMeta);
 }

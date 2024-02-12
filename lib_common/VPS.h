@@ -12,7 +12,7 @@
 
 #include "common_syntax_elements.h"
 
-typedef struct t_RepFormat
+typedef struct AL_TRepFormat
 {
   uint16_t pic_width_vps_in_luma_samples;
   uint16_t pic_height_vps_in_luma_samples;
@@ -34,7 +34,7 @@ typedef struct t_RepFormat
 /*************************************************************************//*!
    \brief Mimics structure described in spec sec. 7.3.2.1.
 *****************************************************************************/
-typedef struct t_HevcVps
+typedef struct AL_THevcVps
 {
   uint8_t vps_video_parameter_set_id;
   uint8_t vps_base_layer_internal_flag;

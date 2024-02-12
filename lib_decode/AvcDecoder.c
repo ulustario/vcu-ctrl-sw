@@ -6,6 +6,7 @@
 
 #include "DefaultDecoder.h"
 #include "SliceDataParsing.h"
+#include "NalUnitParser.h"
 #include "NalUnitParserPrivate.h"
 
 #include "lib_common/Utils.h"
@@ -538,10 +539,11 @@ static void finishPreviousFrame(AL_TDecCtx* pCtx)
   AL_TAvcSliceHdr* pSlice = &pCtx->AvcSliceHdr[pCtx->uCurID];
   AL_TDecPicParam* pPP = &pCtx->PoolPP[pCtx->uToggle];
   AL_TDecSliceParam* pSP = &(((AL_TDecSliceParam*)pCtx->PoolSP[pCtx->uToggle].tMD.pVirtualAddr)[pCtx->tCurrentFrameCtx.uNumSlice - 1]);
+  AL_TDecPicBuffers* pBufs = &pCtx->PoolPB[pCtx->uToggle];
 
   /* AVC doesn't have Dependent */
   bool const bUsedDependent = false;
-  AL_TerminatePreviousCommand(pCtx, pPP, pSP, true, bUsedDependent);
+  AL_TerminatePreviousCommand(pCtx, pPP, pSP, pBufs, true, bUsedDependent);
 
   // copy stream offset from previous command
   pCtx->iStreamOffset[pCtx->iNumFrmBlk1 % pCtx->iStackSize] = pCtx->iStreamOffset[(pCtx->iNumFrmBlk1 + pCtx->iStackSize - 1) % pCtx->iStackSize];

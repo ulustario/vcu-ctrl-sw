@@ -16,7 +16,7 @@
 /*************************************************************************//*!
    \brief Mimics structure for AVC SEI buffering period
 *****************************************************************************/
-typedef struct t_avc_sei_buffering_period
+typedef struct AL_TAvcBufPeriod
 {
   uint8_t seq_parameter_set_id;
   uint32_t initial_cpb_removal_delay[32]; // E.2.2 : cpb_cnt_minus1 shall be in the range of 0 to 31, inclusive
@@ -26,7 +26,7 @@ typedef struct t_avc_sei_buffering_period
 /*************************************************************************//*!
    \brief Mimics structure for HEVC SEI buffering period
 *****************************************************************************/
-typedef struct t_hevc_buffering_period_s
+typedef struct AL_THevcBufPeriod
 {
   uint8_t bp_seq_parameter_set_id;
   uint8_t rap_cpb_params_present_flag;
@@ -51,7 +51,7 @@ typedef struct t_hevc_buffering_period_s
 /*************************************************************************//*!
    \brief Mimics structure for AVC picture timing
 *****************************************************************************/
-typedef struct t_sei_clock_ts
+typedef struct AL_TSeiClockTS
 {
   uint8_t clock_time_stamp_flag;
   uint8_t ct_type;
@@ -75,7 +75,7 @@ typedef struct t_sei_clock_ts
 }AL_TSeiClockTS;
 
 /*************************************************************************/
-typedef struct t_avc_sei_pic_timing
+typedef struct AL_TAvcPicTiming
 {
   uint32_t cpb_removal_delay;
   uint32_t dpb_output_delay;
@@ -84,7 +84,7 @@ typedef struct t_avc_sei_pic_timing
 }AL_TAvcPicTiming;
 
 /*************************************************************************/
-typedef struct t_sei_recovery_point
+typedef struct AL_TRecoveryPoint
 {
   int32_t recovery_cnt;
   bool exact_match;
@@ -94,7 +94,7 @@ typedef struct t_sei_recovery_point
 /*************************************************************************//*!
    \brief Mimics structure for HEVC picture timing
 *****************************************************************************/
-typedef struct t_hevc_pic_timing_s
+typedef struct AL_THevcPicTiming
 {
   uint8_t pic_struct;
   uint8_t source_scan_type;
@@ -114,7 +114,7 @@ typedef struct t_hevc_pic_timing_s
 /*************************************************************************//*!
    \brief AVC Supplemental enhancement information structure
 *****************************************************************************/
-typedef struct t_avc_sei
+typedef struct AL_TAvcSei
 {
   AL_ESeiFlag present_flags;
   AL_TAvcPicTiming picture_timing;
@@ -125,7 +125,7 @@ typedef struct t_avc_sei
 /*************************************************************************//*!
    \brief HEVC Supplemental enhancement information structure
 *****************************************************************************/
-typedef struct t_Hevc_Sei
+typedef struct AL_THevcSei
 {
   AL_ESeiFlag present_flags;
   AL_THevcPicTiming picture_timing;

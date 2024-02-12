@@ -8,7 +8,8 @@
 extern "C"
 {
 #include "lib_encode/lib_encoder.h"
-#include "lib_log/Logger.h"
+#include "lib_log/LoggerInterface.h"
+#include "lib_log/TimerInterface.h"
 }
 
 typedef struct AL_TAllocator AL_TAllocator;

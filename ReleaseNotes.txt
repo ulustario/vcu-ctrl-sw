@@ -840,7 +840,7 @@
       - Error concealement
     -- Several minors bugs
 
-2023-01-11 (v1.0.77)
+2024-01-11 (v1.0.77)
 --------------------
   Added Features:
     -- Alignment for Windows
@@ -860,4 +860,20 @@
     -- Decoder:
       - Split-input with multiple configuration
       - Error concealement
+    -- Several minors bugs
+
+2024-02-01 (v1.0.78)
+--------------------
+  Added Features:
+    -- Introduce AL_ILogger interface
+    -- Introduce AL_ITimer interface
+    -- Introduce AL_Buffer_CloneMetaData
+
+  API:
+    -- Version of the API is now 0.41.0
+
+  Fixes:
+    -- structs and enum naming convention
+    -- VBR algorithm
+    -- Typos
     -- Several minors bugs

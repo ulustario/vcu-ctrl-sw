@@ -32,7 +32,7 @@
 /*************************************************************************//*!
    \brief Mimics structure described in spec sec. 7.3.3
 *****************************************************************************/
-typedef struct t_AvcSliceHeader
+typedef struct AL_TAvcSliceHdr
 {
   uint16_t num_line_in_slice;
   int first_mb_in_slice;
@@ -87,7 +87,7 @@ typedef struct t_AvcSliceHeader
   AL_TAvcSps* pSPS;
 }AL_TAvcSliceHdr;
 
-typedef struct t_AvcHdrSvcExt // nal_unit_header_svc_extension
+typedef struct AL_TAvcHdrSvcExt // nal_unit_header_svc_extensiont
 {
   uint8_t idr_flag;
   uint8_t priority_id;
@@ -103,7 +103,7 @@ typedef struct t_AvcHdrSvcExt // nal_unit_header_svc_extension
 /*************************************************************************//*!
    \brief Mimics structure described in spec sec. 7.3.3
 *****************************************************************************/
-typedef struct t_HevcSliceHeader
+typedef struct AL_THevcSliceHdr
 {
   uint8_t nal_unit_type;
   uint8_t nuh_layer_id;

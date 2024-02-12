@@ -104,10 +104,10 @@ void AL_AVC_SelectScalingList(AL_TSps* pISPS, AL_TEncSettings const* pSettings)
 /****************************************************************************/
 void AL_AVC_PreprocessScalingList(AL_TSCLParam const* pSclLst, uint8_t chroma_format_idc, TBufferEP* pBufEP)
 {
-  AL_THwScalingList HwSclLst;
+  AL_THwScalingList HwSclLst[2][6];
 
   AL_AVC_GenerateHwScalingList(pSclLst, chroma_format_idc, &HwSclLst);
-  AL_AVC_WriteEncHwScalingList(pSclLst, (AL_THwScalingList const*)&HwSclLst, chroma_format_idc, pBufEP->tMD.pVirtualAddr + EP1_BUF_SCL_LST.Offset);
+  AL_AVC_WriteEncHwScalingList(pSclLst, &HwSclLst, chroma_format_idc, pBufEP->tMD.pVirtualAddr + EP1_BUF_SCL_LST.Offset);
 
   pBufEP->uFlags |= EP1_BUF_SCL_LST.Flag;
 }

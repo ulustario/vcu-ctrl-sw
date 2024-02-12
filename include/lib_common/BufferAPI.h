@@ -246,6 +246,22 @@ size_t AL_Buffer_GetSizeChunk(const AL_TBuffer* pBuf, int iChunkIdx);
 bool AL_Buffer_AddMetaData(AL_TBuffer* pBuf, AL_TMetaData* pMeta);
 
 /*************************************************************************//*!
+   \brief Clones a metadata from a buffer to another
+
+   Retrieves the metadata of type eType from the buffer pBufSrc, clone its
+   content and adds it into the pBufDest buffer.
+
+   \param[in] pBufSrc Pointer to the source AL_TBuffer
+   \param[in] pBufDest Pointer to the destination AL_TBuffer
+   \param[in] eType Type of metadata to clone
+
+   \return Returns true on success (whether there is a metadata to copy or not).
+   Returns false if cloning the metadata fails or if adding the cloned metadata
+   fails. Thread-safe.
+*****************************************************************************/
+bool AL_Buffer_CloneMetaData(AL_TBuffer const* pBufSrc, AL_TBuffer* pBufDest, AL_EMetaType eType);
+
+/*************************************************************************//*!
    \brief Unbinds a metadata from a buffer
 
    Takes back ownership of the metadata.

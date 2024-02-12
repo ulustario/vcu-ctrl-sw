@@ -21,7 +21,7 @@
    \param[out] pHwSclLst pointer to Hardware formatted Scaling list that receives
    the preprocessed matrices
 *****************************************************************************/
-void AL_AVC_GenerateHwScalingList(AL_TSCLParam const* pSclLst, uint8_t chroma_format_idc, AL_THwScalingList* pHwSclLst);
+void AL_AVC_GenerateHwScalingList(AL_TSCLParam const* pSclLst, uint8_t chroma_format_idc, AL_THwScalingList(*pHwSclLst)[2][6]);
 
 /*************************************************************************//*!
    \brief Converts HEVC Scaling List matrices from software user-friendly format to
@@ -30,6 +30,6 @@ void AL_AVC_GenerateHwScalingList(AL_TSCLParam const* pSclLst, uint8_t chroma_fo
    \param[out] pHwSclLst pointer to Hardware formatted Scaling list that receives
    the preprocessed matrices
 *****************************************************************************/
-void AL_HEVC_GenerateHwScalingList(AL_TSCLParam const* pSclLst, AL_THwScalingList* pHwSclLst);
+void AL_HEVC_GenerateHwScalingList(AL_TSCLParam const* pSclLst, AL_THwScalingList(*pHwSclLst)[2][6]);
 
 /*@}*/

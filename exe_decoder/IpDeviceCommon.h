@@ -8,7 +8,7 @@
 extern "C"
 {
 #include "lib_fpga/DmaAlloc.h"
-#include "lib_log/Logger.h"
+#include "lib_log/LoggerDefault.h"
 #include "lib_common_dec/DecoderTraceHook.h"
 }
 

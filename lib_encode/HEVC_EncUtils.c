@@ -143,7 +143,7 @@ static void AL_HEVC_SelectScalingList(AL_TSps* pISPS, AL_TEncSettings const* pSe
 /****************************************************************************/
 void AL_HEVC_PreprocessScalingList(AL_TSCLParam const* pSclLst, TBufferEP* pBufEP)
 {
-  AL_THwScalingList HwSclLst;
+  AL_THwScalingList HwSclLst[2][6];
 
   AL_HEVC_GenerateHwScalingList(pSclLst, &HwSclLst);
   AL_HEVC_WriteEncHwScalingList(pSclLst, &HwSclLst, pBufEP->tMD.pVirtualAddr + EP1_BUF_SCL_LST.Offset);

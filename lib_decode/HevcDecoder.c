@@ -684,8 +684,9 @@ static void finishPreviousFrame(AL_TDecCtx* pCtx)
   AL_THevcSliceHdr* pSlice = &pCtx->HevcSliceHdr[pCtx->uCurID];
   AL_TDecPicParam* pPP = &pCtx->PoolPP[pCtx->uToggle];
   AL_TDecSliceParam* pSP = &(((AL_TDecSliceParam*)pCtx->PoolSP[pCtx->uToggle].tMD.pVirtualAddr)[pCtx->tCurrentFrameCtx.uNumSlice - 1]);
+  AL_TDecPicBuffers* pBufs = &pCtx->PoolPB[pCtx->uToggle];
 
-  AL_TerminatePreviousCommand(pCtx, pPP, pSP, true, false);
+  AL_TerminatePreviousCommand(pCtx, pPP, pSP, pBufs, true, false);
 
   // copy stream offset from previous command
   pCtx->iStreamOffset[pCtx->iNumFrmBlk1 % pCtx->iStackSize] = pCtx->iStreamOffset[(pCtx->iNumFrmBlk1 + pCtx->iStackSize - 1) % pCtx->iStackSize];

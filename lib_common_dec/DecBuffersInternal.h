@@ -52,7 +52,7 @@ static const int POCBUFF_SUBPIC_OFFSET = 68;  // Frame with subpicture flag List
 /*************************************************************************//*!
    \brief List of references frame buffer
 *****************************************************************************/
-typedef struct t_BufferRef
+typedef struct TBufferRef
 {
   AL_TBuffer RefBuf; // address of the corresponding frame buffer
   uint8_t uNodeID;
@@ -61,7 +61,7 @@ typedef struct t_BufferRef
 /*************************************************************************//*!
    \brief Offsets to the data in the reference frame list
 *****************************************************************************/
-typedef struct t_RefListOffsets
+typedef struct TRefListOffsets
 {
   uint32_t uColocPocOffset;
   uint32_t uColocMVOffset;

@@ -116,7 +116,7 @@ static void AL_AVC_sGenFwdLvl8x8(uint8_t const* pMtx, int iQpRem, AL_TLevels8x8*
 }
 
 /******************************************************************************/
-void AL_AVC_GenerateHwScalingList(AL_TSCLParam const* pSclLst, uint8_t chroma_format_idc, AL_THwScalingList* pHwSclLst)
+void AL_AVC_GenerateHwScalingList(AL_TSCLParam const* pSclLst, uint8_t chroma_format_idc, AL_THwScalingList(*pHwSclLst)[2][6])
 {
   for(int iQpRem = 0; iQpRem < 6; iQpRem++)
   {
@@ -166,7 +166,7 @@ static void AL_HEVC_sGenFwdLvl8x8(uint8_t const* pMtx, int iQpRem, AL_TLevels8x8
 }
 
 /******************************************************************************/
-void AL_HEVC_GenerateHwScalingList(AL_TSCLParam const* pSclLst, AL_THwScalingList* pHwSclLst)
+void AL_HEVC_GenerateHwScalingList(AL_TSCLParam const* pSclLst, AL_THwScalingList(*pHwSclLst)[2][6])
 {
   for(int iQpRem = 0; iQpRem < 6; iQpRem++)
   {

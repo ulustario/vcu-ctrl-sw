@@ -14,12 +14,12 @@
 #include "lib_common_dec/StartCodeParam.h"
 #include "lib_common_dec/ChannelState.h"
 #include "lib_common_dec/I_Feeder.h"
+#include "lib_common_dec/RbspParser.h"
 
 #include "lib_parsing/I_PictMngr.h"
 #include "lib_parsing/Concealment.h"
 #include "lib_parsing/Aup.h"
 #include "lib_common/BufferSeiMeta.h"
-#include "NalUnitParser.h"
 #include "lib_decode/I_DecScheduler.h"
 #include "lib_decode/DecoderFrameCtx.h"
 #include "lib_decode/lib_decode.h"
@@ -48,6 +48,8 @@ typedef struct
   AL_ENut eob;
 }AL_NonVclNuts;
 
+typedef struct t_Dec_Ctx AL_TDecCtx;
+
 typedef struct
 {
   void (* parseDps)(AL_TAup*, AL_TRbspParser*);
@@ -71,7 +73,7 @@ typedef struct
 /*************************************************************************//*!
    \brief Decoder Context structure
 *****************************************************************************/
-typedef struct t_Dec_Ctx
+struct t_Dec_Ctx
 {
   AL_TFeeder* Feeder;
   AL_EDecInputMode eInputMode;
@@ -187,7 +189,7 @@ typedef struct t_Dec_Ctx
 
   TMemDesc tMDChanParam;
   AL_NalParser parser;
-}AL_TDecCtx;
+};
 
 /****************************************************************************/
 
