@@ -31,6 +31,8 @@ static const int OUTPUT_BD_STREAM = -2;
 static const int SEI_NOT_ASSOCIATED_WITH_FRAME = -1;
 static uint32_t constexpr uDefaultNumBuffersHeldByNextComponent = 1; /* We need at least 1 buffer to copy the output on a file */
 
+static const int DEFAULT_DEC_APB_ID = 2;
+
 /******************************************************************************/
 struct Config
 {
@@ -43,6 +45,8 @@ struct Config
   string sCrc;
 
   AL_TDecSettings tDecSettings {};
+  AL_TDecOutputSettings tUserOutputSettings {};
+  bool bEnableCrop = false;
 
   AL_EDeviceType iDeviceType = AL_DEVICE_TYPE_BOARD; // board
   AL_ESchedulerType iSchedulerType = AL_SCHEDULER_TYPE_MCU;
@@ -79,4 +83,5 @@ struct Config
 
 /******************************************************************************/
 Config ParseCommandLine(int argc, char* argv[]);
-AL_EFbStorageMode GetMainOutputStorageMode(const AL_TDecSettings& decSettings, bool& bOutputCompression, uint8_t uBitDepth);
+AL_EFbStorageMode GetMainOutputStorageMode(AL_TDecOutputSettings tUserOutputSettings, AL_EFbStorageMode eOutstorageMode);
+bool IsOutputStorageModeCompressed(AL_TDecOutputSettings tUserOutputSettings, bool bMainOutputCompressed);

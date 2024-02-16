@@ -13,23 +13,20 @@
    Restriction: The strideHeight is supposed to be the minimum stride height
    \param[in] tDim dimensions of the picture
    \param[in] iPitch luma pitch in bytes of the picture
-   \param[in] eChromaMode chroma mode of the picture
-   \param[in] bFrameBufferCompression will the frame buffer be compressed
-   \param[in] eFbStorage frame buffer storage mode
+   \param[in] tPicFormat picture format of the frame buffer
    \return return the size of the reconstructed picture buffer
 *****************************************************************************/
-int AL_DecGetAllocSize_Frame(AL_TDimension tDim, int iPitch, AL_EChromaMode eChromaMode, bool bFrameBufferCompression, AL_EFbStorageMode eFbStorage);
+int AL_DecGetAllocSize_Frame(AL_TDimension tDim, int iPitch, AL_TPicFormat tPicFormat);
 
 /*************************************************************************//*!
    \brief Give the size of one pixel component of a reconstructed picture buffer
-   \param[in] eFbStorage frame buffer storage modes
+   \param[in] pPicFormat picture format of the frame
    \param[in] tDim dimensions of the picture
    \param[in] iPitch component pitch in bytes of the picture
-   \param[in] eChromaMode Chroma Mode
    \param[in] ePlaneId The pixel plane type. Must not be a map plane.
    \return return the size of the pixel component of the reconstruct
 *****************************************************************************/
-int AL_DecGetAllocSize_Frame_PixPlane(AL_EFbStorageMode eFbStorage, AL_TDimension tDim, int iPitch, AL_EChromaMode eChromaMode, AL_EPlaneId ePlaneId);
+int AL_DecGetAllocSize_Frame_PixPlane(AL_TPicFormat const* pPicFormat, AL_TDimension tDim, int iPitch, AL_EPlaneId ePlaneId);
 
 /*************************************************************************//*!
    \brief Create the AL_TMetaData associated to the reconstruct buffers

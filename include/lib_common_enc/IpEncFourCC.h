@@ -9,6 +9,7 @@
 
 #pragma once
 #include "lib_common/FourCC.h"
+#include "lib_common_enc/EncChanParam.h"
 
 /*************************************************************************//*!
    \brief Returns the FOURCC identifier of the framebuffer the encoder is expecting
@@ -23,11 +24,10 @@ TFourCC AL_EncGetSrcFourCC(AL_TPicFormat const picFmt);
    according to the chosen encoding chroma mode, bitdepth, storage and compression mode.
    \param[in] eChromaMode source picture chroma mode
    \param[in] uBitDepth source picture bit depth
-   \param[in] eStorageMode source picture storage mode
-   \param[in] bIsCompressed true if source picture is compressed, false otherwise
+   \param[in] eSrcMode source mode mode of the picture
    \return Returns the corresponding TPicFormat
 *****************************************************************************/
-AL_TPicFormat AL_EncGetSrcPicFormat(AL_EChromaMode eChromaMode, uint8_t uBitDepth, AL_EFbStorageMode eStorageMode, bool bIsCompressed);
+AL_TPicFormat AL_EncGetSrcPicFormat(AL_EChromaMode eChromaMode, uint8_t uBitDepth, AL_ESrcMode eSrcMode);
 
 /*************************************************************************//*!
    \brief Returns the FOURCC identifier of the reconstructed frame buffer

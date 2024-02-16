@@ -511,7 +511,7 @@ void SetMoreDefaults(ConfigFile& cfg)
     if(AL_GetPicFormat(FileInfo.FourCC, &tOutPicFormat))
     {
       tOutPicFormat.eChromaMode = AL_GET_CHROMA_MODE(Settings.tChParam[0].ePicFormat);
-      tOutPicFormat.eChromaOrder = tOutPicFormat.eChromaMode == AL_CHROMA_MONO ? AL_C_ORDER_NO_CHROMA : tOutPicFormat.eChromaOrder;
+      tOutPicFormat.ePlaneMode = tOutPicFormat.eChromaMode == AL_CHROMA_MONO ? AL_PLANE_MODE_MONOPLANE : tOutPicFormat.ePlaneMode;
       tOutPicFormat.uBitDepth = AL_GET_BITDEPTH(Settings.tChParam[0].ePicFormat);
       RecFourCC = AL_GetFourCC(tOutPicFormat);
     }
@@ -565,12 +565,10 @@ shared_ptr<AL_TBuffer> ReadSourceFrame(BaseBufPool* pBufPool, AL_TBuffer* conver
 
 AL_TPicFormat GetSrcPicFormat(AL_TEncChanParam const& tChParam)
 {
+  AL_ESrcMode eSrcMode = tChParam.eSrcMode;
   auto eChromaMode = AL_GET_CHROMA_MODE(tChParam.ePicFormat);
 
-  auto eStorageMode = AL_GetSrcStorageMode(tChParam.eSrcMode);
-  auto bIsCompressed = AL_IsSrcCompressed(tChParam.eSrcMode);
-
-  return AL_EncGetSrcPicFormat(eChromaMode, tChParam.uSrcBitDepth, eStorageMode, bIsCompressed);
+  return AL_EncGetSrcPicFormat(eChromaMode, tChParam.uSrcBitDepth, eSrcMode);
 }
 
 struct SrcConverterParams
@@ -597,7 +595,7 @@ unique_ptr<IConvSrc> AllocateSrcConverter(SrcConverterParams const& tSrcConverte
   if(pFileReaderYuv == nullptr)
     throw runtime_error("Couldn't allocate source conversion buffer");
 
-  // ********** Allocate the YUV converter **********
+  // ************* Allocate the YUV converter *************
   TFrameInfo tSrcFrameInfo = { tSrcConverterParams.tDim, tSrcConverterParams.tSrcPicFmt.uBitDepth, tSrcConverterParams.tSrcPicFmt.eChromaMode };
   (void)tSrcFrameInfo;
 
@@ -614,7 +612,7 @@ unique_ptr<IConvSrc> AllocateSrcConverter(SrcConverterParams const& tSrcConverte
 
 static int ComputeYPitch(int iWidth, const AL_TPicFormat& tPicFormat)
 {
-  auto iPitch = AL_EncGetMinPitch(iWidth, tPicFormat.uBitDepth, tPicFormat.eStorageMode);
+  auto iPitch = AL_EncGetMinPitch(iWidth, &tPicFormat);
 
   if(g_Stride != -1)
   {
@@ -689,7 +687,7 @@ static SrcBufDesc GetSrcBufDescription(AL_TDimension tDimension, uint8_t uBitDep
 {
   (void)eCodec;
 
-  auto const tPicFormat = AL_EncGetSrcPicFormat(eCMode, uBitDepth, AL_GetSrcStorageMode(eSrcMode), AL_IsSrcCompressed(eSrcMode));
+  AL_TPicFormat const tPicFormat = AL_EncGetSrcPicFormat(eCMode, uBitDepth, eSrcMode);
 
   SrcBufDesc srcBufDesc =
   {
@@ -705,13 +703,13 @@ static SrcBufDesc GetSrcBufDescription(AL_TDimension tDimension, uint8_t uBitDep
   SrcBufChunk srcChunk = {};
 
   AL_EPlaneId usedPlanes[AL_MAX_BUFFER_PLANES];
-  int iNbPlanes = AL_Plane_GetBufferPixelPlanes(tPicFormat.eChromaOrder, usedPlanes);
+  int iNbPlanes = AL_Plane_GetBufferPixelPlanes(tPicFormat, usedPlanes);
 
   for(int iPlane = 0; iPlane < iNbPlanes; iPlane++)
   {
     int iPitch = usedPlanes[iPlane] == AL_PLANE_Y ? iPitchY : AL_GetChromaPitch(srcBufDesc.tFourCC, iPitchY);
     srcChunk.vPlaneDesc.push_back(AL_TPlaneDescription { usedPlanes[iPlane], srcChunk.iChunkSize, iPitch });
-    srcChunk.iChunkSize += AL_GetAllocSizeSrc_PixPlane(eSrcMode, iPitchY, iStrideHeight, tPicFormat.eChromaMode, usedPlanes[iPlane]);
+    srcChunk.iChunkSize += AL_GetAllocSizeSrc_PixPlane(&tPicFormat, iPitchY, iStrideHeight, usedPlanes[iPlane]);
 
     if(g_MultiChunk)
     {

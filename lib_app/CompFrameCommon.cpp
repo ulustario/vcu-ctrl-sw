@@ -4,8 +4,9 @@
 #include <stdexcept>
 #include "include/lib_app/CompFrameCommon.h"
 
-ETileMode EFbStorageModeToETileMode(AL_EFbStorageMode eFbStorageMode)
+ETileMode EFbStorageModeToETileMode(AL_EFbStorageMode eFbStorageMode, uint8_t uBitDepth)
 {
+  (void)uBitDepth;
   switch(eFbStorageMode)
   {
   case AL_FB_TILE_32x4: return TILE_32x4_v1;

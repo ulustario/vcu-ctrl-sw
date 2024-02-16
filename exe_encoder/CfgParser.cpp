@@ -612,6 +612,7 @@ static void populateSettingsSection(ConfigParser& parser, ConfigFile& cfg, Tempo
   auto curSection = Section::Settings;
   map<string, EnumDescription<int>> profiles;
 
+  profiles["HEVC_MONO12"] = { AL_PROFILE_HEVC_MONO12, "See HEVC/H.265 specification", isOnlyCodec(Codec::Hevc) };
   profiles["HEVC_MONO10"] = { AL_PROFILE_HEVC_MONO10, "See HEVC/H.265 specification", isOnlyCodec(Codec::Hevc) };
   profiles["HEVC_MONO"] = { AL_PROFILE_HEVC_MONO, "See HEVC/H.265 specification", isOnlyCodec(Codec::Hevc) };
   profiles["HEVC_MAIN_422_10_INTRA"] = { AL_PROFILE_HEVC_MAIN_422_10_INTRA, "See HEVC/H.265 specification", isOnlyCodec(Codec::Hevc) };

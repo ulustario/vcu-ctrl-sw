@@ -578,7 +578,7 @@ bool AL_PictMngr_PreInit(AL_TPictMngrCtx* pCtx)
 }
 
 /*****************************************************************************/
-bool AL_PictMngr_Init(AL_TPictMngrCtx* pCtx, AL_TPictMngrParam* pParam)
+bool AL_PictMngr_BasicInit(AL_TPictMngrCtx* pCtx, AL_TPictMngrParam* pParam)
 {
   if(!pCtx)
     return false;
@@ -587,12 +587,6 @@ bool AL_PictMngr_Init(AL_TPictMngrCtx* pCtx, AL_TPictMngrParam* pParam)
     return false;
 
   if(!sMvBufPool_Init(&pCtx->MvBufPool, pParam->iNumMV))
-    return false;
-
-  bool bEnableSecondOutput = false;
-  AL_TAllocator* pAllocator = NULL;
-
-  if(!sFrmBufPool_Init(&pCtx->FrmBufPool, pAllocator, bEnableSecondOutput))
     return false;
 
   AL_TDpbCallback tCallbacks =
@@ -628,6 +622,11 @@ bool AL_PictMngr_Init(AL_TPictMngrCtx* pCtx, AL_TPictMngrParam* pParam)
   pCtx->tOutputPosition = pParam->tOutputPosition;
 
   return true;
+}
+
+bool AL_PictMngr_CompleteInit(AL_TPictMngrCtx* pCtx, AL_TAllocator* pAllocator, bool bEnableSecondOutput)
+{
+  return sFrmBufPool_Init(&pCtx->FrmBufPool, pAllocator, bEnableSecondOutput);
 }
 
 /*****************************************************************************/
@@ -701,13 +700,16 @@ static void ChangePictChromaMode(AL_TBuffer* pBuf, AL_EChromaMode eChromaMode)
   bool const bSuccess = AL_GetPicFormat(tFourCC, &tPicFmt);
   (void)bSuccess;
   AL_Assert(bSuccess);
-  tPicFmt = AL_GetDecPicFormat(eChromaMode, tPicFmt.uBitDepth, tPicFmt.eStorageMode, tPicFmt.bCompressed);
+
+  if(eChromaMode == tPicFmt.eChromaMode)
+    return;
+  tPicFmt = AL_GetDecPicFormat(eChromaMode, tPicFmt.uBitDepth, tPicFmt.eStorageMode, tPicFmt.bCompressed, AL_PLANE_MODE_MAX_ENUM);
   tFourCC = AL_GetDecFourCC(tPicFmt);
   AL_PixMapBuffer_SetFourCC(pBuf, tFourCC);
 }
 
 /***************************************************************************/
-bool AL_PictMngr_BeginFrame(AL_TPictMngrCtx* pCtx, bool bStartsNewCVS, AL_TDimension tDim, AL_EChromaMode eChromaMode)
+bool AL_PictMngr_BeginFrame(AL_TPictMngrCtx* pCtx, bool bStartsNewCVS, AL_TDimension tDim, AL_EChromaMode eDecodedChromaMode)
 {
   pCtx->uRecID = sFrmBufPoolFifo_Pop(&pCtx->FrmBufPool);
 
@@ -720,7 +722,8 @@ bool AL_PictMngr_BeginFrame(AL_TPictMngrCtx* pCtx, bool bStartsNewCVS, AL_TDimen
   AL_TRecBuffers tBuffers = sFrmBufPool_GetBufferFromID(&pCtx->FrmBufPool, pCtx->uRecID);
 
   AL_PixMapBuffer_SetDimension(tBuffers.pFrame, tDim);
-  ChangePictChromaMode(tBuffers.pFrame, eChromaMode);
+
+  ChangePictChromaMode(tBuffers.pFrame, eDecodedChromaMode);
 
   pCtx->FrmBufPool.array[pCtx->uRecID].bStartsNewCVS = bStartsNewCVS;
 
@@ -1256,13 +1259,15 @@ bool AL_PictMngr_GetBuffers(AL_TPictMngrCtx const* pCtx, AL_TDecSliceParam const
   }
 
   TFourCC tFourCC = AL_PixMapBuffer_GetFourCC(pRecs->pFrame);
-  AL_EChromaOrder eChromaOrder = AL_GetChromaOrder(tFourCC);
-  AL_EPlaneId eFirstCPlane = eChromaOrder == AL_C_ORDER_U_V ? AL_PLANE_U : AL_PLANE_UV;
+  AL_TPicFormat tPicFormat;
+  AL_GetPicFormat(tFourCC, &tPicFormat);
+
+  AL_EPlaneId eFirstCPlane = AL_PLANE_MODE_PLANAR == tPicFormat.ePlaneMode ? AL_PLANE_U : AL_PLANE_UV;
 
   if(pListAddr && pListAddr->tMD.pVirtualAddr)
   {
     TRefListOffsets tRefListOffsets;
-    AL_GetRefListOffsets(&tRefListOffsets, AL_CODEC_INVALID, eChromaOrder, sizeof(AL_PADDR));
+    AL_GetRefListOffsets(&tRefListOffsets, AL_CODEC_INVALID, tPicFormat, sizeof(AL_PADDR));
 
     AL_PADDR* pAddr = (AL_PADDR*)pListAddr->tMD.pVirtualAddr;
     AL_PADDR* pColocMvList = (AL_PADDR*)(pListAddr->tMD.pVirtualAddr + tRefListOffsets.uColocMVOffset);

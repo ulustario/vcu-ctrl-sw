@@ -33,11 +33,32 @@ typedef uint32_t TFourCC;
 AL_EChromaMode AL_GetChromaMode(TFourCC tFourCC);
 
 /*************************************************************************//*!
-   \brief Returns the ChromaOrder identifier according to the tFourCC parameter
+   \brief Returns the AlphaMode identifier according to the tFourCC parameter
    \param[in] tFourCC FourCC format of the current picture
-   \return return the ChromaOrder according to the tFourCC parameter
+   \return return the AlphaMode according to the tFourCC parameter
 *****************************************************************************/
-AL_EChromaOrder AL_GetChromaOrder(TFourCC tFourCC);
+AL_EAlphaMode AL_GetAlphaMode(TFourCC tFourCC);
+
+/*************************************************************************//*!
+   \brief Returns the PlaneMode identifier according to the tFourCC parameter
+   \param[in] tFourCC FourCC format of the current picture
+   \return return the PlaneMode according to the tFourCC parameter
+*****************************************************************************/
+AL_EPlaneMode AL_GetPlaneMode(TFourCC tFourCC);
+
+/*************************************************************************//*!
+   \brief Returns the PlaneOrder identifier according to the tFourCC parameter
+   \param[in] tFourCC FourCC format of the current picture
+   \return return the PlaneOrder according to the tFourCC parameter
+*****************************************************************************/
+AL_EComponentOrder AL_GetPlaneOrder(TFourCC tFourCC);
+
+/*************************************************************************//*!
+   \brief Returns the samplePackMode identifier according to the tFourCC parameter
+   \param[in] tFourCC FourCC format of the current picture
+   \return return the samplePackMode according to the tFourCC parameter
+*****************************************************************************/
+AL_ESamplePackMode AL_GetSamplePackMode(TFourCC tFourCC);
 
 /*************************************************************************//*!
    \brief Returns the bitDepth according to the tFourCC parameter
@@ -62,13 +83,6 @@ int AL_GetPixelSize(TFourCC tFourCC);
 void AL_GetSubsampling(TFourCC tFourCC, int* sx, int* sy);
 
 /*************************************************************************//*!
-   \brief Returns true if YUV format specified by tFourCC is 10bit packed
-   \param[in] tFourCC FourCC format of the current picture
-   \return return the ChomaMode according to the tFourCC parameter
-*****************************************************************************/
-bool AL_Is10bitPacked(TFourCC tFourCC);
-
-/*************************************************************************//*!
    \brief Returns true if YUV format specified by tFourCC is monochrome
    \param[in] tFourCC FourCC format of the current picture
    \return true if YUV is monochrome according to the tFourCC parameter
@@ -81,6 +95,13 @@ bool AL_IsMonochrome(TFourCC tFourCC);
    \return true if YUV is semiplanar according to the tFourCC parameter
 *****************************************************************************/
 bool AL_IsSemiPlanar(TFourCC tFourCC);
+
+/*************************************************************************//*!
+   \brief Returns true if YUV format specified by tFourCC is 444 interleaved
+   \param[in] tFourCC FourCC format of the current picture
+   \return true if YUV is interleaved according to the tFourCC parameter
+*****************************************************************************/
+bool AL_IsInterleaved(TFourCC tFourCC);
 
 /*************************************************************************//*!
    \brief Returns true if YUV format specified by tFourCC is tiled
@@ -109,6 +130,13 @@ AL_EFbStorageMode AL_GetStorageMode(TFourCC tFourCC);
    \return return true tFourCC indicates buffer compression enabled
 *****************************************************************************/
 bool AL_IsCompressed(TFourCC tFourCC);
+
+/*************************************************************************//*!
+   \brief Returns true if tFourCC specifies that the yuv buffer is 10 bit packed
+   \param[in] tFourCC FourCC format of the current picture
+   \return return true tFourCC indicates that buffer is 10bit packed
+*****************************************************************************/
+bool AL_Is10bPacked(TFourCC tFourCC);
 
 /*************************************************************************//*!
    \brief Returns FourCC from AL_TPicFormat

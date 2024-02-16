@@ -10,8 +10,8 @@ extern "C"
 #include "lib_common/Error.h"
 #include "lib_common_enc/Settings.h"
 }
-
 #include <string>
+
 #include "ROIMngr.h"
 
 typedef enum e_GenerateQpMode

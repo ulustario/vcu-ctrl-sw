@@ -18,6 +18,10 @@ LIB_COMMON_SRC:=\
   lib_common/DisplayInfoMeta.c\
   lib_common/PicFormat.c\
 
+HAS_COLOR_SPACE_CONVERSION=0
+
+
+
 
 ifneq ($(ENABLE_AVC),0)
   LIB_COMMON_SRC+=lib_common/AvcLevelsLimit.c

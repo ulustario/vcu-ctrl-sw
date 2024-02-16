@@ -15,6 +15,7 @@
 #include "lib_common_dec/DecDpbMode.h"
 #include "lib_common_dec/DecSynchro.h"
 #include "lib_common_dec/StreamSettings.h"
+#include "lib_common_dec/DecOutputSettings.h"
 
 /*************************************************************************//*!
    \brief Decoder Input Mode
@@ -89,3 +90,16 @@ int AL_DecSettings_CheckValidity(AL_TDecSettings const* pSettings, FILE* pOut);
  *****************************************************************************/
 int AL_DecSettings_CheckCoherency(AL_TDecSettings* pSettings, FILE* pOut);
 /*@}*/
+
+/*************************************************************************//*!
+   \brief Checks that decoder output settings are valid
+   \param[in] pDecOutSettings Pointer to TDecOutputSettings to be checked
+   \param[in] eCodec Codec
+   \param[in] pOut Optional standard stream on which verbose messages are
+   written.
+   \return If pDecOutSettings points to valid parameters the function returns false
+   If pDecOutSettings points to invalid parameters the function returns
+   the number of invalid parameters found (true) and they can not be used
+   with IP decoder.
+*****************************************************************************/
+int AL_DecOutputSettings_CheckValidity(AL_TDecOutputSettings const* pDecOutSettings, AL_ECodec eCodec, FILE* pOut);

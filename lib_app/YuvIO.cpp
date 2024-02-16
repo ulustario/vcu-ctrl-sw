@@ -53,8 +53,25 @@ static uint32_t GetIOLumaRowSize(TFourCC tFourCC, uint32_t uWidth)
     auto iBitDepth = AL_GetBitDepth(tFourCC);
     uRowSizeLuma = uRndWidth * iBitDepth / 8;
   }
-  else if(AL_Is10bitPacked(tFourCC))
+  else if(tFourCC == FOURCC(Y410))
+    uRowSizeLuma = uWidth * 4;
+  else if(AL_GetSamplePackMode(tFourCC) == AL_SAMPLE_PACK_MODE_PACKED_XV)
     uRowSizeLuma = (uWidth + 2) / 3 * 4;
+  else if(AL_GetPlaneMode(tFourCC) == AL_PLANE_MODE_INTERLEAVED && AL_GetChromaMode(tFourCC) != AL_CHROMA_4_0_0)
+  {
+    int const iHorizontalScale = AL_GetChromaMode(tFourCC) == AL_CHROMA_4_4_4 ? 1 : 2;
+    int iPixSize = sizeof(uint32_t);
+
+    bool bHasAlpha = AL_GetAlphaMode(tFourCC) == AL_ALPHA_MODE_BEFORE || AL_GetAlphaMode(tFourCC) == AL_ALPHA_MODE_AFTER;
+
+    if((bHasAlpha && AL_GetBitDepth(tFourCC) == 8)
+       || (AL_GetSamplePackMode(tFourCC) == AL_SAMPLE_PACK_MODE_PACKED && AL_GetBitDepth(tFourCC) == 10))
+      iPixSize = sizeof(uint32_t);
+
+    if(AL_GetSamplePackMode(tFourCC) == AL_SAMPLE_PACK_MODE_BYTE && (AL_GetBitDepth(tFourCC) == 12 || AL_GetBitDepth(tFourCC) == 10))
+      iPixSize = sizeof(uint64_t);
+    uRowSizeLuma = uWidth * iPixSize / iHorizontalScale;
+  }
   else
     uRowSizeLuma = uWidth * AL_GetPixelSize(tFourCC);
   return uRowSizeLuma;
@@ -78,13 +95,16 @@ AL_TBuffer* AllocateDefaultYuvIOBuffer(AL_TDimension const& tDimension, TFourCC 
   int iPitch = GetIOLumaRowSize(tFourCC, static_cast<uint32_t>(tRoundedDim.iWidth));
 
   AL_EPlaneId usedPlanes[AL_MAX_BUFFER_PLANES];
-  int iNbPlanes = AL_Plane_GetBufferPlanes(AL_GetChromaOrder(tFourCC), false, usedPlanes);
+  AL_TPicFormat tPicFormat;
+  AL_GetPicFormat(tFourCC, &tPicFormat);
+
+  int iNbPlanes = AL_Plane_GetBufferPlanes(tPicFormat, usedPlanes);
 
   for(int iPlane = 0; iPlane < iNbPlanes; iPlane++)
   {
     AL_EPlaneId ePlaneId = usedPlanes[iPlane];
-    int iComponentPitch = ePlaneId == AL_PLANE_Y ? iPitch : AL_GetChromaPitch(tFourCC, iPitch);
-    int iComponentHeight = ePlaneId == AL_PLANE_Y ? tRoundedDim.iHeight : AL_GetChromaHeight(tFourCC, tRoundedDim.iHeight);
+    int iComponentPitch = (ePlaneId == AL_PLANE_Y || ePlaneId == AL_PLANE_YUV) ? iPitch : AL_GetChromaPitch(tFourCC, iPitch);
+    int iComponentHeight = (ePlaneId == AL_PLANE_Y || ePlaneId == AL_PLANE_YUV) ? tRoundedDim.iHeight : AL_GetChromaHeight(tFourCC, tRoundedDim.iHeight);
     vPlaneDesc.push_back(AL_TPlaneDescription { ePlaneId, iSrcSize, iComponentPitch });
     iSrcSize += iComponentPitch * iComponentHeight;
   }
@@ -114,7 +134,7 @@ int GetPictureSize(TYUVFileInfo FI)
 
     int iChromaSize = uNumRowC * uRowSizeC;
 
-    if(tPicFormat.eChromaOrder != AL_C_ORDER_SEMIPLANAR)
+    if(tPicFormat.ePlaneMode != AL_PLANE_MODE_SEMIPLANAR)
       iChromaSize *= 2;
 
     iPictSize += iChromaSize;
@@ -150,7 +170,7 @@ static TPaddingParams GetColumnPaddingParameters(TFourCC tFourCC, AL_TDimension 
   {
     tPadParams.uPadValue <<= 2;
 
-    if(AL_Is10bitPacked(tFourCC))
+    if(AL_GetSamplePackMode(tFourCC) == AL_SAMPLE_PACK_MODE_PACKED_XV)
     {
       if(AL_GetBitDepth(tFourCC) != 10)
         throw runtime_error("BitDepth (" + to_string(AL_GetBitDepth(tFourCC)) + ") should be equal to 10");
@@ -179,7 +199,7 @@ static TPaddingParams GetColumnPaddingParameters(TFourCC tFourCC, AL_TDimension 
 /*****************************************************************************/
 static void PadBuffer(char* pTmp, TPaddingParams tPadParams, TFourCC tFourCC)
 {
-  if(AL_Is10bitPacked(tFourCC))
+  if(AL_GetSamplePackMode(tFourCC) == AL_SAMPLE_PACK_MODE_PACKED_XV)
   {
     uint32_t* pTmp32 = (uint32_t*)pTmp;
 
@@ -208,8 +228,10 @@ static void ReadFileLuma(ifstream& File, AL_TBuffer* pBuf, uint32_t uFileRowSize
 {
   TFourCC tFourCC = AL_PixMapBuffer_GetFourCC(pBuf);
   AL_TDimension tDim = AL_PixMapBuffer_GetDimension(pBuf);
-  int iPitch = AL_PixMapBuffer_GetPlanePitch(pBuf, AL_PLANE_Y);
-  char* pTmp = reinterpret_cast<char*>(AL_PixMapBuffer_GetPlaneAddress(pBuf, AL_PLANE_Y));
+
+  AL_EPlaneId ePlaneId = AL_PLANE_Y;
+  int iPitch = AL_PixMapBuffer_GetPlanePitch(pBuf, ePlaneId);
+  char* pTmp = reinterpret_cast<char*>(AL_PixMapBuffer_GetPlaneAddress(pBuf, ePlaneId));
 
   TPaddingParams tPadParams = GetColumnPaddingParameters(tFourCC, tDim, iPitch, uFileRowSize, true);
 
@@ -312,14 +334,15 @@ static void ReadFile(ifstream& File, AL_TBuffer* pBuf, uint32_t uFileRowSize, ui
   ReadFileLuma(File, pBuf, uFileRowSize, uFileNumRow, uRoundedNumRow);
 
   TFourCC tFourCC = AL_PixMapBuffer_GetFourCC(pBuf);
-  AL_EChromaOrder eChromaOrder = AL_GetChromaOrder(tFourCC);
+  AL_TPicFormat tPicFormat;
+  AL_GetPicFormat(tFourCC, &tPicFormat);
 
-  if(eChromaOrder == AL_C_ORDER_SEMIPLANAR)
+  if(tPicFormat.ePlaneMode == AL_PLANE_MODE_SEMIPLANAR)
     ReadFileChroma(File, pBuf, AL_PLANE_UV, uFileRowSize, uFileNumRow, uRoundedNumRow);
-  else if(eChromaOrder != AL_C_ORDER_NO_CHROMA)
+  else if(tPicFormat.eChromaMode != AL_CHROMA_MONO)
   {
-    ReadFileChroma(File, pBuf, eChromaOrder == AL_C_ORDER_U_V ? AL_PLANE_U : AL_PLANE_V, uFileRowSize, uFileNumRow, uRoundedNumRow);
-    ReadFileChroma(File, pBuf, eChromaOrder == AL_C_ORDER_U_V ? AL_PLANE_V : AL_PLANE_U, uFileRowSize, uFileNumRow, uRoundedNumRow);
+    ReadFileChroma(File, pBuf, tPicFormat.eComponentOrder == AL_COMPONENT_ORDER_YUV ? AL_PLANE_U : AL_PLANE_V, uFileRowSize, uFileNumRow, uRoundedNumRow);
+    ReadFileChroma(File, pBuf, tPicFormat.eComponentOrder == AL_COMPONENT_ORDER_YUV ? AL_PLANE_V : AL_PLANE_U, uFileRowSize, uFileNumRow, uRoundedNumRow);
   }
 }
 
@@ -399,20 +422,21 @@ bool WriteOneFrame(ofstream& File, const AL_TBuffer* pBuf)
   int iHeight = tDim.iHeight;
   WritePlane(File, pBuf, AL_PLANE_Y, iIORowSize, iRowsInPitch, iHeight);
 
-  AL_EChromaOrder eChromaOrder = AL_GetChromaOrder(tFourCC);
+  AL_TPicFormat tPicFormat;
+  AL_GetPicFormat(tFourCC, &tPicFormat);
 
-  if(eChromaOrder == AL_C_ORDER_NO_CHROMA)
+  if(tPicFormat.eChromaMode == AL_CHROMA_MONO)
     return true;
 
   iIORowSize = AL_GetChromaPitch(tFourCC, iIORowSize);
   iHeight = AL_GetChromaHeight(tFourCC, iHeight);
 
-  if(eChromaOrder == AL_C_ORDER_SEMIPLANAR)
+  if(tPicFormat.ePlaneMode == AL_PLANE_MODE_SEMIPLANAR)
     WritePlane(File, pBuf, AL_PLANE_UV, iIORowSize, iRowsInPitch, iHeight);
   else
   {
-    WritePlane(File, pBuf, eChromaOrder == AL_C_ORDER_U_V ? AL_PLANE_U : AL_PLANE_V, iIORowSize, iRowsInPitch, iHeight);
-    WritePlane(File, pBuf, eChromaOrder == AL_C_ORDER_U_V ? AL_PLANE_V : AL_PLANE_U, iIORowSize, iRowsInPitch, iHeight);
+    WritePlane(File, pBuf, tPicFormat.eComponentOrder == AL_COMPONENT_ORDER_YUV ? AL_PLANE_U : AL_PLANE_V, iIORowSize, iRowsInPitch, iHeight);
+    WritePlane(File, pBuf, tPicFormat.eComponentOrder == AL_COMPONENT_ORDER_YUV ? AL_PLANE_V : AL_PLANE_U, iIORowSize, iRowsInPitch, iHeight);
   }
 
   return true;
@@ -471,24 +495,30 @@ void ComputeMd5SumFrame(AL_TBuffer* pBuf, CMD5& pMD5)
     iIORowSize *= iLinesInPitch;
     iHeight /= iLinesInPitch;
   }
-  ComputeMd5Plane(pBuf, AL_PLANE_Y, iIORowSize, iHeight, pMD5);
 
-  AL_EChromaOrder eChromaOrder = AL_GetChromaOrder(tFourCC);
+  AL_EPlaneId eFistPlaneId = AL_PLANE_Y;
 
-  if(eChromaOrder == AL_C_ORDER_NO_CHROMA)
-  {
+  if(AL_GetPlaneMode(tFourCC) == AL_PLANE_MODE_INTERLEAVED)
+    eFistPlaneId = AL_PLANE_YUV;
+
+  ComputeMd5Plane(pBuf, eFistPlaneId, iIORowSize, iHeight, pMD5);
+
+  AL_TPicFormat tPicFormat;
+  AL_GetPicFormat(tFourCC, &tPicFormat);
+
+  if(tPicFormat.eChromaMode == AL_CHROMA_MONO || tPicFormat.ePlaneMode == AL_PLANE_MODE_INTERLEAVED)
     return;
-  }
+
   iIORowSize = AL_GetChromaPitch(tFourCC, iIORowSize);
   iHeight = AL_GetChromaHeight(tFourCC, iHeight);
 
-  if(eChromaOrder == AL_C_ORDER_SEMIPLANAR)
+  if(tPicFormat.ePlaneMode == AL_PLANE_MODE_SEMIPLANAR)
   {
     ComputeMd5Plane(pBuf, AL_PLANE_UV, iIORowSize, iHeight, pMD5);
   }
   else
   {
-    ComputeMd5Plane(pBuf, eChromaOrder == AL_C_ORDER_U_V ? AL_PLANE_U : AL_PLANE_V, iIORowSize, iHeight, pMD5);
-    ComputeMd5Plane(pBuf, eChromaOrder == AL_C_ORDER_U_V ? AL_PLANE_V : AL_PLANE_U, iIORowSize, iHeight, pMD5);
+    ComputeMd5Plane(pBuf, tPicFormat.eComponentOrder == AL_COMPONENT_ORDER_YUV ? AL_PLANE_U : AL_PLANE_V, iIORowSize, iHeight, pMD5);
+    ComputeMd5Plane(pBuf, tPicFormat.eComponentOrder == AL_COMPONENT_ORDER_YUV ? AL_PLANE_V : AL_PLANE_U, iIORowSize, iHeight, pMD5);
   }
 }

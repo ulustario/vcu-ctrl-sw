@@ -1042,7 +1042,7 @@ AL_EProfile getHevcMinimumProfile(int iBitDepth, AL_EChromaMode eChroma)
   case 12:
     switch(eChroma)
     {
-    // case AL_CHROMA_4_0_0: return AL_PROFILE_HEVC_MONO12;
+    case AL_CHROMA_4_0_0: return AL_PROFILE_HEVC_MONO12;
     case AL_CHROMA_4_2_0: return AL_PROFILE_HEVC_MAIN12;
     case AL_CHROMA_4_2_2: return AL_PROFILE_HEVC_MAIN_422_12;
     case AL_CHROMA_4_4_4: return AL_PROFILE_HEVC_MAIN_444_12;

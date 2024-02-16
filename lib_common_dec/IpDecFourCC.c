@@ -8,31 +8,40 @@ TFourCC AL_GetDecFourCC(AL_TPicFormat const picFmt)
 {
   if(AL_FB_RASTER == picFmt.eStorageMode)
   {
-    AL_Assert(picFmt.eChromaMode == AL_CHROMA_MONO || picFmt.eChromaMode == AL_CHROMA_4_4_4 || picFmt.eChromaOrder == AL_C_ORDER_SEMIPLANAR);
-    AL_Assert(picFmt.uBitDepth == 8 || picFmt.b10bPacked);
+    AL_Assert(picFmt.eChromaMode == AL_CHROMA_MONO || picFmt.eChromaMode == AL_CHROMA_4_4_4 || picFmt.ePlaneMode == AL_PLANE_MODE_SEMIPLANAR);
+    AL_Assert(picFmt.uBitDepth == 8 || (AL_SAMPLE_PACK_MODE_PACKED_XV == picFmt.eSamplePackMode));
   }
 
   return AL_GetFourCC(picFmt);
 }
 
-AL_EChromaOrder AL_ChromaModeToChromaOrder(AL_EChromaMode eChromaMode)
+AL_EPlaneMode AL_ChromaModeToPlaneMode(AL_EChromaMode eChromaMode)
 {
-  return GetChromaOrder(eChromaMode);
+  return GetInternalBufPlaneMode(eChromaMode);
 }
 
-AL_TPicFormat AL_GetDecPicFormat(AL_EChromaMode eChromaMode, uint8_t uBitDepth, AL_EFbStorageMode eStorageMode, bool bIsCompressed)
+AL_TPicFormat AL_GetDecPicFormat(AL_EChromaMode eChromaMode, uint8_t uBitDepth, AL_EFbStorageMode eStorageMode, bool bIsCompressed, AL_EPlaneMode ePlaneMode)
 {
-  bool b10bPacked = false;
-  b10bPacked = AL_FB_RASTER == eStorageMode && 10 == uBitDepth;
+  AL_EPlaneMode eAdjustedPlaneMode = (AL_PLANE_MODE_MAX_ENUM == ePlaneMode) ? GetInternalBufPlaneMode(eChromaMode) : ePlaneMode;
+  AL_ESamplePackMode eSamplePackMode = AL_SAMPLE_PACK_MODE_BYTE;
+
+  if(eStorageMode == AL_FB_TILE_32x4 || eStorageMode == AL_FB_TILE_64x4)
+    eSamplePackMode = AL_SAMPLE_PACK_MODE_PACKED;
+
+  if(AL_FB_RASTER == eStorageMode && 10 == uBitDepth)
+    eSamplePackMode = AL_SAMPLE_PACK_MODE_PACKED_XV;
 
   AL_TPicFormat picFormat =
   {
     eChromaMode,
+    AL_ALPHA_MODE_DISABLED,
     uBitDepth,
     eStorageMode,
-    AL_ChromaModeToChromaOrder(eChromaMode),
+    eAdjustedPlaneMode,
+    AL_COMPONENT_ORDER_YUV,
+    eSamplePackMode,
     bIsCompressed,
-    b10bPacked
+    false
   };
   return picFormat;
 }

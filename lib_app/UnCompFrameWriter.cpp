@@ -48,7 +48,12 @@ void UnCompFrameWriter::ProcessFrame(AL_TBuffer* pBuf)
   uint8_t* pC1 = nullptr;
   uint8_t* pC2 = nullptr;
 
-  if(m_tPicFormat.eChromaOrder == AL_C_ORDER_U_V)
+  if(m_tPicFormat.ePlaneMode == AL_PLANE_MODE_INTERLEAVED)
+  {
+    pY = AL_PixMapBuffer_GetPlaneAddress(pBuf, AL_PLANE_YUV);
+    iPitchInLuma = AL_PixMapBuffer_GetPlanePitch(pBuf, AL_PLANE_YUV);
+  }
+  else if(m_tPicFormat.ePlaneMode == AL_PLANE_MODE_PLANAR && m_tPicFormat.eChromaMode != AL_CHROMA_4_0_0)
   {
     pC1 = AL_PixMapBuffer_GetPlaneAddress(pBuf, AL_PLANE_U);
     pC2 = AL_PixMapBuffer_GetPlaneAddress(pBuf, AL_PLANE_V);
@@ -57,7 +62,7 @@ void UnCompFrameWriter::ProcessFrame(AL_TBuffer* pBuf)
     if(int(iPitchInChroma) != AL_PixMapBuffer_GetPlanePitch(pBuf, AL_PLANE_V))
       throw std::runtime_error(ErrorMessagePitch);
   }
-  else if(m_tPicFormat.eChromaOrder == AL_C_ORDER_SEMIPLANAR)
+  else if(m_tPicFormat.ePlaneMode == AL_PLANE_MODE_SEMIPLANAR)
   {
     pC1 = AL_PixMapBuffer_GetPlaneAddress(pBuf, AL_PLANE_UV);
     iPitchInChroma = AL_PixMapBuffer_GetPlanePitch(pBuf, AL_PLANE_UV);
@@ -70,12 +75,12 @@ void UnCompFrameWriter::ProcessFrame(AL_TBuffer* pBuf)
 
   WritePix(pY, iPitchInLuma, m_uHeightInTileYFile, m_uPitchYFile);
 
-  if(m_tPicFormat.eChromaOrder == AL_C_ORDER_U_V)
+  if(m_tPicFormat.ePlaneMode == AL_PLANE_MODE_PLANAR && m_tPicFormat.eChromaMode != AL_CHROMA_4_0_0)
   {
     WritePix(pC1, iPitchInChroma, m_uHeightInTileCFile, m_uPitchCFile);
     WritePix(pC2, iPitchInChroma, m_uHeightInTileCFile, m_uPitchCFile);
   }
-  else if(m_tPicFormat.eChromaOrder == AL_C_ORDER_SEMIPLANAR)
+  else if(m_tPicFormat.ePlaneMode == AL_PLANE_MODE_SEMIPLANAR)
     WritePix(pC1, iPitchInChroma, m_uHeightInTileCFile, m_uPitchCFile);
 }
 
@@ -88,7 +93,7 @@ void UnCompFrameWriter::DimInTileCalculusRaster()
   m_uHeightInTileYFile = m_tPicDim.iHeight;
   m_uHeightInTileCFile = AL_RoundUp(m_uHeightInTileYFile, m_iChromaVertScale) / m_iChromaVertScale;
 
-  if(m_tPicFormat.eChromaOrder == AL_C_ORDER_SEMIPLANAR)
+  if(m_tPicFormat.ePlaneMode == AL_PLANE_MODE_SEMIPLANAR)
     m_uPitchCFile = m_uPitchYFile;
   else
     m_uPitchCFile = ((m_tPicDim.iWidth + m_iChromaHorzScale - 1) / m_iChromaHorzScale) * m_iNbBytesPerPix;

@@ -22,7 +22,11 @@ const std::string BaseFrameSink::ErrorMessagePitch = "U and V plane pitches must
 /****************************************************************************/
 void BaseFrameSink::FactorsCalculus()
 {
-  m_iNbBytesPerPix = m_tPicFormat.uBitDepth > 8 ? 2 : 1;
+  if(m_tPicFormat.ePlaneMode == AL_PLANE_MODE_INTERLEAVED)
+    m_iNbBytesPerPix = (m_tPicFormat.uBitDepth == 8 || (m_tPicFormat.uBitDepth == 10 && m_tPicFormat.eSamplePackMode == AL_SAMPLE_PACK_MODE_PACKED)) ? sizeof(uint32_t) : sizeof(uint64_t);
+  else
+    m_iNbBytesPerPix = m_tPicFormat.uBitDepth > 8 ? sizeof(uint16_t) : sizeof(uint8_t);
+
   m_iChromaVertScale = m_tPicFormat.eChromaMode == AL_CHROMA_4_2_0 ? 2 : 1;
   m_iChromaHorzScale = m_tPicFormat.eChromaMode == AL_CHROMA_4_4_4 ? 1 : 2;
 }
@@ -32,7 +36,7 @@ void BaseFrameSink::DimInTileCalculus()
 {
   static const uint32_t MIN_HEIGHT_ROUNDING = 8;
 
-  int iTileWidth = GetTileWidth(m_tPicFormat.eStorageMode);
+  int iTileWidth = GetTileWidth(m_tPicFormat.eStorageMode, m_tPicFormat.uBitDepth);
   int iTileHeight = GetTileHeight(m_tPicFormat.eStorageMode);
 
   FactorsCalculus();
@@ -44,7 +48,7 @@ void BaseFrameSink::DimInTileCalculus()
   m_uPitchCFile = m_uPitchYFile;
   m_uHeightInTileYFile = AL_RoundUpAndDivide(m_tPicDim.iHeight, std::max(uint32_t(iTileHeight), MIN_HEIGHT_ROUNDING), iTileHeight);
 
-  if(m_tPicFormat.eChromaOrder == AL_C_ORDER_SEMIPLANAR)
+  if(m_tPicFormat.ePlaneMode == AL_PLANE_MODE_SEMIPLANAR)
     m_uHeightInTileCFile = AL_RoundUp(m_uHeightInTileYFile, m_iChromaVertScale) / m_iChromaVertScale;
   else
   {

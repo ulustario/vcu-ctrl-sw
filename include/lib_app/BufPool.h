@@ -15,6 +15,7 @@ extern "C" {
 #include "lib_common/BufferAPI.h"
 #include "lib_common/BufferMeta.h"
 }
+#include <string>
 
 /*************************************************************************//*!
    \brief AL_TBufPoolCreateBufCB: Abstraction of buffer creation

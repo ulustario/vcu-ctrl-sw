@@ -21,5 +21,5 @@ enum ETileMode : uint8_t
   TILE_MAX_ENUM,
 };
 
-ETileMode EFbStorageModeToETileMode(AL_EFbStorageMode eFbStorageMode);
+ETileMode EFbStorageModeToETileMode(AL_EFbStorageMode eFbStorageMode, uint8_t uBitDepth);
 AL_EFbStorageMode ETileModeToEFbStorageMode(ETileMode eTileMode);

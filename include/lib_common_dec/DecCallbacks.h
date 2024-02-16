@@ -66,7 +66,7 @@ typedef struct
 *****************************************************************************/
 typedef struct
 {
-  AL_ERR (* func)(int BufferNumber, int BufferSize, AL_TStreamSettings const* pSettings, AL_TCropInfo const* pCropInfo, void* pUserParam);
+  AL_ERR (* func)(int BufferNumber, AL_TStreamSettings const* pSettings, AL_TCropInfo const* pCropInfo, void* pUserParam);
   void* userParam;
 }AL_CB_ResolutionFound;
 

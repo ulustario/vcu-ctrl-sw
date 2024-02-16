@@ -428,13 +428,8 @@ typedef enum
 AL_DEPRECATED_ENUM_VALUE(AL_ESrcMode, AL_SRC_NVX, AL_SRC_RASTER, "Renamed. Use AL_SRC_RASTER.");
 
 #define MASK_SRC_COMP 0x01
-#define MASK_SRC_FMT 0x0E
-
 #define AL_GET_COMP_MODE(SrcConvFmt) ((SrcConvFmt) & MASK_SRC_COMP)
-#define AL_GET_SRC_FMT(SrcConvFmt) (((SrcConvFmt) & MASK_SRC_FMT) >> 1)
-
 #define AL_SET_COMP_MODE(SrcConvFmt, CompMode) (SrcConvFmt) = ((SrcConvFmt) & ~MASK_SRC_COMP) | ((CompMode) & MASK_SRC_COMP)
-#define AL_SET_SRC_FMT(SrcConvFmt, SrcFmt) (SrcConvFmt) = ((SrcConvFmt) & ~MASK_SRC_FMT) | (((SrcFmt) << 1) & MASK_SRC_FMT)
 
 /*************************************************************************//*!
    \brief AOM interpolation filter

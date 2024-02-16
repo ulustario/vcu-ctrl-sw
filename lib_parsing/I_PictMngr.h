@@ -16,6 +16,7 @@
 
 #include "lib_common_dec/DecSliceParam.h"
 #include "lib_common_dec/DecInfo.h"
+#include "include/lib_common_dec/DecOutputSettings.h"
 #include "DPB.h"
 
 /*************************************************************************//*!
@@ -103,6 +104,8 @@ typedef struct t_PictMngrCtx
   bool bFirstInit;
   bool bForceOutput;
   AL_EFbStorageMode eFbStorageMode;
+  AL_TDecOutputSettings tDecOutputSettings;
+  bool bEnablePostproc;
   int iBitdepth;
 
   AL_TFrmBufPool FrmBufPool;
@@ -127,7 +130,7 @@ typedef struct t_PictMngrCtx
   int32_t iTopFieldOrderCnt;
   int32_t iBotFieldOrderCnt;
   bool bLastIsIDR;
-
+  bool bOutSettingsConfigured;
   union
   {
     AL_THevcRefPicCtx HevcRef;
@@ -166,7 +169,16 @@ bool AL_PictMngr_PreInit(AL_TPictMngrCtx* pCtx);
    \param[in] pParam      Picture manager parameters
    \return If the function succeeds the return true. Return false otherwise
 *****************************************************************************/
-bool AL_PictMngr_Init(AL_TPictMngrCtx* pCtx, AL_TPictMngrParam* pParam);
+bool AL_PictMngr_BasicInit(AL_TPictMngrCtx* pCtx, AL_TPictMngrParam* pParam);
+
+/*************************************************************************//*!
+   \brief Initialize the PictureManager.
+   \param[in] pCtx        Pointer to a Picture manager context object
+   \param[in] pAllocator  Pointer to the memory allocator
+   \param[in] bEnableSecondOutput  True if the second output is enabled, false otherwise
+   \return If the function succeeds the return true. Return false otherwise
+*****************************************************************************/
+bool AL_PictMngr_CompleteInit(AL_TPictMngrCtx* pCtx, AL_TAllocator* pAllocator, bool bEnableSecondOutput);
 
 /*************************************************************************//*!
    \brief Flush all pictures so all buffers are fully released
@@ -228,7 +240,7 @@ int32_t AL_PictMngr_GetCurrentPOC(AL_TPictMngrCtx const* pCtx);
    \param[in] eChromaMode   Picture chroma mode
    \return return true if a new frame has been reserved, false otherwise
 *****************************************************************************/
-bool AL_PictMngr_BeginFrame(AL_TPictMngrCtx* pCtx, bool bStartsNewCVS, AL_TDimension tDim, AL_EChromaMode eChromaMode);
+bool AL_PictMngr_BeginFrame(AL_TPictMngrCtx* pCtx, bool bStartsNewCVS, AL_TDimension tDim, AL_EChromaMode eDecodedChromaMode);
 
 /*************************************************************************//*!
    \brief This function prepares the Picture Manager context to new frame

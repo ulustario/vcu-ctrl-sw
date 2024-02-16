@@ -7,15 +7,17 @@
 #include <memory>
 #include <set>
 #include <cassert>
+#include <iostream>
+#include <string>
 
 #include "IpDevice.h"
 #include "IpDeviceCommon.h"
 #include "lib_app/console.h"
 #include "lib_app/utils.h"
-#include "lib_common/Allocator.h"
 
 extern "C"
 {
+#include "lib_common/Allocator.h"
 #include "lib_fpga/DmaAlloc.h"
 #include "lib_log/LoggerInterface.h"
 #include "lib_log/TimerSoftware.h"
@@ -71,13 +73,59 @@ CIpDevice::~CIpDevice()
     AL_Allocator_Destroy(m_pAllocator);
 }
 
-static std::string SelectMcuDevice(std::set<std::string> const& tDevices, bool bSelectDeviceWithLowestAvailableResources)
+#if defined(__linux__)
+#include <dirent.h>
+#endif
+
+#if defined(_WIN32)
+#include "extra/dirent/include/dirent.h"
+#endif
+#include <cstring>
+
+static int CountIPDevices()
+{
+  static const char* decDevice = "allegroDecodeIP";
+
+  DIR* devPath = opendir("/dev");
+
+  if(devPath == nullptr)
+  {
+    throw std::runtime_error("Error: could not open directory");
+  }
+
+  struct dirent* entry;
+  int iCount = 0;
+
+  while((entry = readdir(devPath)) != nullptr)
+  {
+    if(std::strncmp(entry->d_name, decDevice, strlen(decDevice) - 1) == 0)
+    {
+      ++iCount;
+    }
+  }
+
+  closedir(devPath);
+
+  return iCount;
+}
+
+std::string CIpDevice::SelectMcuDevice(std::set<std::string> const& tDevices)
 {
   std::string best_device;
-  int32_t selected_resources = bSelectDeviceWithLowestAvailableResources ? INT32_MAX : -1;
+  int32_t selected_resources = m_bSelectDeviceWithLowestAvailableResources ? INT32_MAX : -1;
+
+  int nDeviceIndex = 0;
 
   for(auto const& device : tDevices)
   {
+    if(nDeviceIndex >= m_numDevices)
+      break;
+
+    if(IsDeviceFailed(device))
+    {
+      nDeviceIndex++;
+      continue;
+    }
     AL_IDecScheduler* scheduler = AL_DecSchedulerMcu_Create(AL_GetHardwareDriver(), device.c_str());
 
     if(scheduler == nullptr)
@@ -90,7 +138,7 @@ static std::string SelectMcuDevice(std::set<std::string> const& tDevices, bool b
     for(int iCore = 0; iCore < AL_DEC_NUM_CORES; iCore++)
       total_resources += tCore.iVideoResource[iCore];
 
-    if(!bSelectDeviceWithLowestAvailableResources)
+    if(!m_bSelectDeviceWithLowestAvailableResources)
     {
       if(total_resources >= selected_resources)
       {
@@ -116,6 +164,50 @@ static std::string SelectMcuDevice(std::set<std::string> const& tDevices, bool b
   return best_device;
 }
 
+bool CIpDevice::IsDeviceFailed(std::string const& device)
+{
+  return m_FailedDevices.count(device) > 0;
+}
+
+void CIpDevice::SelectNextDevice()
+{
+  m_nDevices++;
+
+  cout << string("Checking with the next available IpDevice") << endl;
+  this->m_tSelectedDevice = SelectMcuDevice(m_tDevices);
+
+  if(!this->m_tSelectedDevice.empty())
+    ConfigureMcu(AL_GetHardwareDriver(), false);
+
+  m_SelectedDevices[m_nDevices] = this->m_tSelectedDevice;
+}
+
+bool CIpDevice::HandleDeviceFailure()
+{
+  bool bCheckNextDevice = false;
+
+  cout << endl << string("Unavailable Resource on: ") << m_SelectedDevices[m_nDevices] << endl;
+  m_FailedDevices.insert(m_SelectedDevices[m_nDevices]);
+
+  if(m_nDevices < m_numDevices - 1)
+  {
+    bCheckNextDevice = true;
+  }
+  else
+  {
+    cout << "All devices failed";
+
+    for(int i = 0; i < m_numDevices; i++)
+    {
+      cout << " - DeviceIP" << i;
+    }
+
+    cout << " have unavailable resources" << endl;
+    bCheckNextDevice = false;
+  }
+  return bCheckNextDevice;
+}
+
 CIpDevice::CIpDevice(CIpDeviceParam const& param, AL_EDeviceType eDeviceType, std::set<std::string> tDevices) :
   m_tDevices(tDevices)
 {
@@ -123,7 +215,10 @@ CIpDevice::CIpDevice(CIpDeviceParam const& param, AL_EDeviceType eDeviceType, st
 
   if(param.iSchedulerType == AL_SCHEDULER_TYPE_MCU)
   {
-    this->m_tSelectedDevice = SelectMcuDevice(m_tDevices, param.bSelectDeviceWithLowestAvailableResources);
+    m_numDevices = CountIPDevices();
+    m_bSelectDeviceWithLowestAvailableResources = param.bSelectDeviceWithLowestAvailableResources;
+    this->m_tSelectedDevice = SelectMcuDevice(m_tDevices);
+    m_SelectedDevices[m_nDevices] = this->m_tSelectedDevice;
     ConfigureMcu(AL_GetHardwareDriver(), false);
     return;
   }

@@ -7,10 +7,10 @@ vector<AL_TPlaneDescription> getPlaneDescription(TFourCC tFourCC, int iPitch, in
 {
   vector<AL_TPlaneDescription> outputPlaneDescription;
   AL_EPlaneId usedPlanes[AL_MAX_BUFFER_PLANES];
-  AL_EChromaOrder eChromaOrderOutput = AL_GetChromaOrder(tFourCC);
-  bool bComp = iPitchMap != 0 ? true : false;
-  int iNbPlanes = AL_Plane_GetBufferPlanes(eChromaOrderOutput, bComp, usedPlanes);
+  AL_TPicFormat tPicFormat;
+  AL_GetPicFormat(tFourCC, &tPicFormat);
 
+  int iNbPlanes = AL_Plane_GetBufferPlanes(tPicFormat, usedPlanes);
   int offset = 0;
 
   for(int iPlane = 0; iPlane < iNbPlanes; iPlane++)
@@ -33,6 +33,11 @@ vector<AL_TPlaneDescription> getPlaneDescription(TFourCC tFourCC, int iPitch, in
 
     case AL_PLANE_UV:
       planeIdx = 1;
+      pitch = iPitch;
+      break;
+
+    case AL_PLANE_YUV:
+      planeIdx = 0;
       pitch = iPitch;
       break;
 

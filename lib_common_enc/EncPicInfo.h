@@ -178,9 +178,8 @@ typedef struct AL_TEncPicStatus
 *****************************************************************************/
 typedef struct AL_TSrcInfo
 {
-  uint8_t uBitDepth;
   uint32_t uPitch;
-  uint8_t uFormat;
+  uint8_t uBitDepth;
 }AL_TSrcInfo;
 
 typedef struct AL_TSrcAddrs

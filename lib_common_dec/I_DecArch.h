@@ -36,8 +36,9 @@ typedef struct AL_IDecArchVtable
   AL_ERR (* DecoderGetLastError)(AL_HDecoder hDec);
   AL_ERR (* DecoderGetFrameError)(AL_HDecoder hDec, AL_TBuffer const* pBuf);
   bool (* DecoderPreallocateBuffers)(AL_HDecoder hDec);
-  uint32_t (* DecoderGetMinPitch)(uint32_t uWidth, uint8_t uBitDepth, AL_EFbStorageMode eFrameBufferStorageMode);
+  uint32_t (* DecoderGetMinPitch)(uint32_t uWidth, AL_TPicFormat const* pPicFormat);
   uint32_t (* DecoderGetMinStrideHeight)(uint32_t uHeight);
+  bool (* DecoderSetDecOutputSettings)(AL_HDecoder hDec, AL_TDecOutputSettings const* pDecOutputSettings);
 }AL_IDecArchVtable;
 
 /*@}*/

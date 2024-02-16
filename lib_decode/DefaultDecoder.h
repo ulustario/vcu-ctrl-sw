@@ -123,6 +123,7 @@ void AL_Default_Decoder_SetParam(AL_TDecoder* pAbsDec, const char* sPrefix, int 
 bool AL_Default_Decoder_PushStreamBuffer(AL_TDecoder* pAbsDec, AL_TBuffer* pBuf, size_t uSize, uint8_t uFlags);
 bool AL_Default_Decoder_PushBuffer(AL_TDecoder* pAbsDec, AL_TBuffer* pBuf, size_t uSize);
 void AL_Default_Decoder_Flush(AL_TDecoder* pAbsDec);
+bool AL_Default_Decoder_ConfigureOutputSettings(AL_TDecoder* pAbsDec, AL_TDecOutputSettings const* pDecOutputSettings);
 bool AL_Default_Decoder_PutDecPict(AL_TDecoder* pAbsDec, AL_TBuffer* pDecPict);
 int AL_Default_Decoder_GetMaxBD(AL_TDecoder* pAbsDec);
 AL_ERR AL_Default_Decoder_GetLastError(AL_TDecoder* pAbsDec);

@@ -167,3 +167,13 @@ int GetAlignedStreamBufferSize(int iStreamBufferSize)
   static int const BITSTREAM_REQUEST_SIZE = 4096;
   return RoundUp(iStreamBufferSize, BITSTREAM_REQUEST_SIZE);
 }
+
+int AL_DecOutputSettings_CheckValidity(AL_TDecOutputSettings const* pDecOutSettings, AL_ECodec eCodec, FILE* pOut)
+{
+  AL_Assert(pDecOutSettings);
+  (void)eCodec;
+  (void)pOut;
+  int err = 0;
+
+  return err;
+}

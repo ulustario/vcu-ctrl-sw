@@ -511,7 +511,8 @@ void AL_Default_Decoder_Destroy(AL_TDecoder* pAbsDec)
   AL_TDecCtx* pCtx = &pDec->ctx;
   AL_Assert(pCtx);
 
-  AL_PictMngr_DecommitPool(&pCtx->PictMngr);
+  if(pDec->ctx.PictMngr.bOutSettingsConfigured)
+    AL_PictMngr_DecommitPool(&pCtx->PictMngr);
 
   if(pCtx->Feeder)
     AL_Feeder_Destroy(pCtx->Feeder);
@@ -896,7 +897,7 @@ bool AL_DecodeOneNal(AL_TAup* pAUP, AL_TDecCtx* pCtx, AL_ENut nut, uint32_t uNut
     }
   }
 
-  if((nut == nuts.seiPrefix || (nut == nuts.seiSuffix && pCtx->bIsBuffersAllocated)) && parser.parseSei)
+  if((nut == nuts.seiPrefix || (nut == nuts.seiSuffix && pCtx->bAreBuffersAllocated)) && parser.parseSei)
   {
     bool bIsPrefix = (nut == nuts.seiPrefix);
     AL_TSeiMetaData* pMeta = GetSeiMetaData(pCtx);
@@ -1559,16 +1560,31 @@ static bool CheckDisplayBufferCanBeUsed(AL_TDecCtx* pCtx, AL_TBuffer* pBuf)
   if(iPitchY % 64 != 0)
     return false;
 
-  AL_TStreamSettings const* pSettings = &pCtx->tStreamSettings;
+  AL_TStreamSettings const* pSettings = &pCtx->tCurrentStreamSettings;
   bool bEnableDisplayCompression;
   AL_EFbStorageMode const eDisplayStorageMode = AL_Default_Decoder_GetDisplayStorageMode(pCtx, pSettings->iBitDepth, &bEnableDisplayCompression);
+  AL_ESamplePackMode eSamplePackMode = AL_SAMPLE_PACK_MODE_BYTE;
 
-  if(iPitchY < (int)AL_Decoder_GetMinPitch(pSettings->tDim.iWidth, pSettings->iBitDepth, eDisplayStorageMode))
+  if(eDisplayStorageMode == AL_FB_TILE_32x4 || eDisplayStorageMode == AL_FB_TILE_64x4)
+    eSamplePackMode = AL_SAMPLE_PACK_MODE_PACKED;
+
+  AL_TPicFormat tPicFormat;
+  tPicFormat.ePlaneMode = GetInternalBufPlaneMode(pSettings->eChroma);
+  tPicFormat.eComponentOrder = AL_COMPONENT_ORDER_YUV;
+  tPicFormat.eChromaMode = pSettings->eChroma;
+  tPicFormat.eStorageMode = eDisplayStorageMode;
+  tPicFormat.uBitDepth = pSettings->iBitDepth;
+  tPicFormat.eAlphaMode = AL_ALPHA_MODE_DISABLED;
+  tPicFormat.eSamplePackMode = eSamplePackMode;
+  tPicFormat.bCompressed = false;
+  tPicFormat.bMSB = false;
+
+  if(iPitchY < (int)AL_Decoder_GetMinPitch(pSettings->tDim.iWidth, &tPicFormat))
     return false;
 
   AL_TDimension tOutputDim = pSettings->tDim;
 
-  if(iPitchY < (int)AL_Decoder_GetMinPitch(tOutputDim.iWidth, pSettings->iBitDepth, eDisplayStorageMode))
+  if(iPitchY < (int)AL_Decoder_GetMinPitch(tOutputDim.iWidth, &tPicFormat))
     return false;
 
   if(pSettings->eChroma == AL_CHROMA_4_4_4)
@@ -1586,6 +1602,76 @@ static bool CheckDisplayBufferCanBeUsed(AL_TDecCtx* pCtx, AL_TBuffer* pBuf)
     if(iPitchY != iPitchUV)
       return false;
   }
+  return true;
+}
+
+/* This function should be a basis for checking if output settings set by the user are supported */
+static AL_ERR CheckOutputSettingsValidity(AL_TStreamSettings const* pStreamSettings, AL_TDecOutputSettings const* pDecOutputSettings, AL_ECodec eCodec)
+{
+  (void)pStreamSettings;
+  (void)pDecOutputSettings;
+  (void)eCodec;
+  AL_ERR err = AL_SUCCESS;
+
+  return err;
+}
+
+static bool CheckErrorCode(AL_TDecCtx* pCtx, AL_ERR err)
+{
+  if(AL_SUCCESS != err)
+  {
+    AL_Default_Decoder_SetError(pCtx, err, -1, true);
+    return false;
+  }
+
+  return true;
+}
+
+static bool ApplyOutputSettings(AL_TDecCtx* pCtx, AL_TDecOutputSettings const* pDecOutputSettings, bool bEnablePostproc)
+{
+  AL_TAllocator* pAllocator = NULL;
+  bool bEnableSecondOutput = false;
+
+  pCtx->PictMngr.tDecOutputSettings = *pDecOutputSettings;
+  pCtx->PictMngr.bEnablePostproc = bEnablePostproc;
+
+  if(!AL_PictMngr_CompleteInit(&pCtx->PictMngr, pAllocator, bEnableSecondOutput))
+    return false;
+
+  return true;
+}
+
+/*****************************************************************************/
+bool AL_Default_Decoder_ConfigureOutputSettings(AL_TDecoder* pAbsDec, AL_TDecOutputSettings const* pDecOutputSettings)
+{
+  AL_TDecoder* pDec = (AL_TDecoder*)pAbsDec;
+  AL_TDecCtx* pCtx = &pDec->ctx;
+  AL_TDecOutputSettings tDecOutputSettings = *pDecOutputSettings;
+
+  /* For the moment, output parameters can only be set once, but the function returns true
+     when its called a second time to avoid causing an error during pre-allocation. */
+  if(pCtx->PictMngr.bOutSettingsConfigured)
+    return true;
+
+  if(!pCtx)
+    return false;
+
+  AL_ERR err = CheckOutputSettingsValidity(&pCtx->tCurrentStreamSettings, pDecOutputSettings, pCtx->pChanParam->eCodec);
+
+  if(!CheckErrorCode(pCtx, err))
+    return false;
+
+  bool bPostProcEnabled = false;
+
+  pCtx->pChanParam->tOutputSettings = tDecOutputSettings;
+
+  bool (* pfnConfiguration)(AL_TDecCtx*, AL_TDecOutputSettings const*, bool) = ApplyOutputSettings;
+
+  if(!pfnConfiguration(pCtx, &tDecOutputSettings, bPostProcEnabled))
+    return false;
+
+  pCtx->PictMngr.bOutSettingsConfigured = true;
+
   return true;
 }
 
@@ -1610,7 +1696,7 @@ int AL_Default_Decoder_GetMaxBD(AL_TDecoder* pAbsDec)
   AL_TDecoder* pDec = (AL_TDecoder*)pAbsDec;
   AL_TDecCtx* pCtx = AL_sGetContext(pDec);
 
-  return pCtx->tStreamSettings.iBitDepth;
+  return pCtx->tInitialStreamSettings.iBitDepth;
 }
 
 /*****************************************************************************/
@@ -1673,16 +1759,16 @@ bool AL_Default_Decoder_PreallocateBuffers(AL_TDecoder* pAbsDec)
 {
   AL_TDecoder* pDec = (AL_TDecoder*)pAbsDec;
   AL_TDecCtx* pCtx = &pDec->ctx;
-  AL_Assert(!pCtx->bIsBuffersAllocated);
+  AL_Assert(!pCtx->bAreBuffersAllocated);
 
   AL_ERR error = AL_ERR_NO_MEMORY;
-  pCtx->tInitialStreamSettings = pCtx->tStreamSettings;
+  pCtx->tInitialStreamSettings = pCtx->tCurrentStreamSettings;
   AL_TStreamSettings const* pStreamSettings = &pCtx->tInitialStreamSettings;
 
   if(!CheckStreamSettings(pStreamSettings))
     return false;
 
-  int iSPSMaxSlices = RoundUp(pCtx->tStreamSettings.tDim.iHeight, 16) / 16;
+  int iSPSMaxSlices = RoundUp(pCtx->tCurrentStreamSettings.tDim.iHeight, 16) / 16;
 
   if(isAVC(pCtx->pChanParam->eCodec))
     iSPSMaxSlices = AL_AVC_GetMaxNumberOfSlices(pStreamSettings->eProfile, pStreamSettings->iLevel,
@@ -1735,29 +1821,27 @@ bool AL_Default_Decoder_PreallocateBuffers(AL_TDecoder* pAbsDec)
       goto fail_alloc;
   }
 
-  AL_TPictMngrParam tPictMngrParam =
-  {
-    iDpbMaxBuf, pCtx->eDpbMode, pCtx->pChanParam->eFBStorageMode, pStreamSettings->iBitDepth,
-    iMaxBuf, iSizeMV,
-    pCtx->pChanParam->bUseEarlyCallback,
-    pCtx->tOutputPosition,
-  };
+  AL_TPictMngrParam tPictMngrParam;
+  tPictMngrParam.iNumDPBRef = iDpbMaxBuf;
+  tPictMngrParam.eDPBMode = pCtx->eDpbMode;
+  tPictMngrParam.eFbStorageMode = pCtx->pChanParam->eFBStorageMode;
+  tPictMngrParam.iBitdepth = pStreamSettings->iBitDepth;
+  tPictMngrParam.iNumMV = iMaxBuf;
+  tPictMngrParam.iSizeMV = iSizeMV;
+  tPictMngrParam.bForceOutput = pCtx->pChanParam->bUseEarlyCallback;
+  tPictMngrParam.tOutputPosition = pCtx->tOutputPosition;
 
-  if(!AL_PictMngr_Init(&pCtx->PictMngr, &tPictMngrParam))
+  if(!AL_PictMngr_BasicInit(&pCtx->PictMngr, &tPictMngrParam))
     goto fail_alloc;
 
-  bool bEnableDisplayCompression;
-  AL_EFbStorageMode const eDisplayStorageMode = AL_Default_Decoder_GetDisplayStorageMode(pCtx, pStreamSettings->iBitDepth, &bEnableDisplayCompression);
-
-  int iSizeYuv = AL_GetAllocSize_Frame(pStreamSettings->tDim, pStreamSettings->eChroma, pStreamSettings->iBitDepth, bEnableDisplayCompression, eDisplayStorageMode);
   AL_TCropInfo tCropInfo = { false, 0, 0, 0, 0 };
 
-  error = pCtx->tDecCB.resolutionFoundCB.func(iMaxBuf, iSizeYuv, pStreamSettings, &tCropInfo, pCtx->tDecCB.resolutionFoundCB.userParam);
+  error = pCtx->tDecCB.resolutionFoundCB.func(iMaxBuf, pStreamSettings, &tCropInfo, pCtx->tDecCB.resolutionFoundCB.userParam);
 
   if(!AL_IS_SUCCESS_CODE(error))
     goto fail_alloc;
 
-  pCtx->bIsBuffersAllocated = true;
+  pCtx->bAreBuffersAllocated = true;
 
   return true;
   fail_alloc:
@@ -1871,7 +1955,7 @@ static void AssignSettings(AL_TDecCtx* pCtx, AL_TDecSettings const* pSettings)
   pCtx->bForceFrameRate = pSettings->bForceFrameRate;
   pCtx->uConcealMaxFps = pSettings->uConcealMaxFps;
   pCtx->eDpbMode = pSettings->eDpbMode;
-  pCtx->tStreamSettings = pSettings->tStream;
+  pCtx->tCurrentStreamSettings = pSettings->tStream;
   pCtx->bUseIFramesAsSyncPoint = pSettings->bUseIFramesAsSyncPoint;
 
   AL_TDecChanParam* pChan = pCtx->pChanParam;
@@ -1932,9 +2016,10 @@ bool AL_Default_Decoder_AllocPool(AL_TDecCtx* pCtx, int iALFSize, int iLmcsSize,
   int iPoolSize = pCtx->bStillPictureProfile ? 1 : pCtx->iStackSize;
 
   AL_ECodec const eCodec = pCtx->pChanParam->eCodec;
-  AL_TStreamSettings const* pStreamSettings = &pCtx->tStreamSettings;
-  AL_EChromaOrder eChromaOrder = AL_ChromaModeToChromaOrder(pStreamSettings->eChroma);
-  const uint32_t uRefListSize = AL_GetRefListOffsets(NULL, eCodec, eChromaOrder, sizeof(AL_PADDR));
+  AL_TPicFormat tPicFormat = GetDefaultPicFormat();
+  tPicFormat.eChromaMode = pCtx->tCurrentStreamSettings.eChroma;
+  tPicFormat.ePlaneMode = GetInternalBufPlaneMode(pCtx->tCurrentStreamSettings.eChroma);
+  const uint32_t uRefListSize = AL_GetRefListOffsets(NULL, eCodec, tPicFormat, sizeof(AL_PADDR));
 
   // Alloc Decoder buffers
   for(int i = 0; i < iPoolSize; ++i)
@@ -2077,7 +2162,7 @@ AL_ERR AL_CreateDefaultDecoder(AL_TDecoder** hDec, AL_IDecScheduler* pScheduler,
   pCtx->uNoRaslOutputFlag = 1;
   pCtx->bIsFirstPicture = true;
   pCtx->bIsFirstSPSChecked = false;
-  pCtx->bIsBuffersAllocated = false;
+  pCtx->bAreBuffersAllocated = false;
   pCtx->uNumSC = 0;
   pCtx->iNumSlicesRemaining = 0;
 
@@ -2143,7 +2228,7 @@ AL_ERR AL_CreateDefaultDecoder(AL_TDecoder** hDec, AL_IDecScheduler* pScheduler,
     int iBufferStreamSize = pSettings->iStreamBufSize;
 
     if(iBufferStreamSize == 0)
-      iBufferStreamSize = GetCircularBufferSize(pCtx->pChanParam->eCodec, pCtx->iStackSize, &pCtx->tStreamSettings);
+      iBufferStreamSize = GetCircularBufferSize(pCtx->pChanParam->eCodec, pCtx->iStackSize, &pCtx->tCurrentStreamSettings);
 
     bool bForceAccessUnitDestroy = true;
 

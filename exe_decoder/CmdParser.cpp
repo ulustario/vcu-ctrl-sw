@@ -256,11 +256,7 @@ static void ParsePreAllocArgs(AL_TStreamSettings* settings, AL_ECodec codec, str
 /******************************************************************************/
 static bool IsPrimaryOutputFormatAllowed(AL_EFbStorageMode mode)
 {
-  bool bAllowed = true;
-
-  (void)mode;
-
-  return bAllowed;
+  return AL_FB_RASTER == mode || AL_FB_TILE_32x4 == mode || AL_FB_TILE_64x4 == mode;
 }
 
 /******************************************************************************/
@@ -365,6 +361,8 @@ Config ParseCommandLine(int argc, char* argv[])
   string sOutputBitDepth = "";
   string sOutputFormat = "";
   std::set<std::string> const sDecDefaultDevicePath(DECODER_DEVICES);
+
+  SetDefaultDecOutputSettings(&config.tUserOutputSettings);
 
   auto opt = CommandLineParser(ShouldShowAdvancedFeatures());
 
@@ -524,13 +522,14 @@ Config ParseCommandLine(int argc, char* argv[])
 
   ProcessOutputArgs(config, sRasterOut);
 
-  bool bMainOutputCompression;
-  GetMainOutputStorageMode(config.tDecSettings, bMainOutputCompression, 8);
+  bool bMainOutputCompression = IsOutputStorageModeCompressed(config.tUserOutputSettings, config.tDecSettings.bFrameBufferCompression);
 
-  if(bMainOutputCompression)
+  if(bMainOutputCompression && config.bCertCRC)
+    throw runtime_error("Certification CRC unavailable with fbc");
+
+  if(!config.sDecDevicePath.empty() && config.bSelectDeviceWithLowestAvailableResources)
   {
-    if(config.bCertCRC)
-      throw runtime_error("Certification CRC unavailable with fbc");
+    throw runtime_error("Cannot use both --device and --select-device-with-lowest-available-resources flags together");
   }
 
   if(config.sDecDevicePath.empty())
@@ -545,7 +544,8 @@ Config ParseCommandLine(int argc, char* argv[])
   if(!config.sSplitSizesFile.empty())
     config.tDecSettings.eInputMode = AL_DEC_SPLIT_INPUT;
 
-  if(!sOutputBitDepth.empty())
+  if(!sOutputBitDepth.empty()
+     )
   {
     config.iOutputBitDepth = ParseOutputBD(sOutputBitDepth);
   }
@@ -585,12 +585,20 @@ Config ParseCommandLine(int argc, char* argv[])
   return config;
 }
 
-/******************************************************************************/
-AL_EFbStorageMode GetMainOutputStorageMode(const AL_TDecSettings& decSettings, bool& bOutputCompression, uint8_t uBitDepth)
+bool IsOutputStorageModeCompressed(AL_TDecOutputSettings tUserOutputSettings, bool bMainOutputCompressed)
 {
-  (void)uBitDepth;
-  AL_EFbStorageMode eOutputStorageMode = decSettings.eFBStorageMode;
-  bOutputCompression = decSettings.bFrameBufferCompression;
+  (void)tUserOutputSettings;
+
+  bool bOutputCompression = bMainOutputCompressed;
+
+  return bOutputCompression;
+}
+
+/******************************************************************************/
+AL_EFbStorageMode GetMainOutputStorageMode(AL_TDecOutputSettings tUserOutputSettings, AL_EFbStorageMode eOutstorageMode)
+{
+  (void)tUserOutputSettings;
+  AL_EFbStorageMode eOutputStorageMode = eOutstorageMode;
 
   return eOutputStorageMode;
 }

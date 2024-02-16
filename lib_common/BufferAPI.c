@@ -316,6 +316,14 @@ bool AL_Buffer_AddMetaData(AL_TBuffer* hBuf, AL_TMetaData* pMeta)
 
   Rtos_GetMutex(pBuf->pLock);
 
+  AL_TMetaData* pOldMeta = (AL_TMetaData*)AL_Buffer_GetMetaData(hBuf, pMeta->eType);
+
+  if(pOldMeta)
+  {
+    AL_Buffer_RemoveMetaData(hBuf, pOldMeta);
+    AL_MetaData_Destroy(pOldMeta);
+  }
+
   if(pBuf->iMetaCount == pBuf->iAllocatedMetaCount)
   {
     size_t const zOldSize = sizeof(AL_TMetaData*) * pBuf->iAllocatedMetaCount;

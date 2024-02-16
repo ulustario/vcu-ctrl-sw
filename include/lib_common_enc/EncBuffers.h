@@ -48,36 +48,33 @@ uint32_t AL_GetAllocSize_Src(AL_TDimension tDim, uint8_t uBitDepth, AL_EChromaMo
 /*************************************************************************//*!
    \brief Retrieves the size of a Source YUV frame buffer
    \param[in] tDim Frame size in pixels
-   \param[in] eChromaMode Chroma Mode
-   \param[in] eSrcFmt Source format used by the HW IP
+   \param[in] pPicFormat picture format of the frame
    \param[in] iPitch Pitch / stride of the source frame buffer
    \param[in] iStrideHeight The height used for buffer allocation. Might be
    greater than the frame height when frame-height is non 8-multiple, or to
    customize offset between luma and chroma.
    \return maximum size (in bytes) needed for the YUV frame buffer
 *****************************************************************************/
-uint32_t AL_GetAllocSizeSrc(AL_TDimension tDim, AL_EChromaMode eChromaMode, AL_ESrcMode eSrcFmt, int iPitch, int iStrideHeight);
+uint32_t AL_GetAllocSizeSrc(AL_TDimension tDim, AL_TPicFormat const* pPicFormat, int iPitch, int iStrideHeight);
 
 /*************************************************************************//*!
    \brief Retrieves the size of one pixel component of a YUV frame buffer
-   \param[in] eSrcFmt Source format used by the HW IP
+   \param[in] pPicFormat picture format of the frame
    \param[in] iPitch Pitch / stride of the source frame buffer
    \param[in] iStrideHeight The height used for buffer allocation
-   \param[in] eChromaMode Chroma Mode
    \param[in] ePlaneId The pixel plane type. Must not be a map plane.
    \return maximum size (in bytes) needed for the component
 *****************************************************************************/
-uint32_t AL_GetAllocSizeSrc_PixPlane(AL_ESrcMode eSrcFmt, int iPitch, int iStrideHeight, AL_EChromaMode eChromaMode, AL_EPlaneId ePlaneId);
+uint32_t AL_GetAllocSizeSrc_PixPlane(AL_TPicFormat const* pPicFormat, int iPitch, int iStrideHeight, AL_EPlaneId ePlaneId);
 
 /*************************************************************************//*!
    \brief Retrieves the minimal pitch value supported by the ip depending
    on the source format
    \param[in] iWidth Frame width in pixel unit
-   \param[in] uBitDepth YUV bit-depth
-   \param[in] eStorageMode Source Storage Mode
+   \param[in] pPicFormat Picture format of the frame
    \return pitch value in bytes
 *****************************************************************************/
-int AL_EncGetMinPitch(int iWidth, uint8_t uBitDepth, AL_EFbStorageMode eStorageMode);
+int AL_EncGetMinPitch(int iWidth, AL_TPicFormat const* pPicFormat);
 
 /*************************************************************************//*!
    \brief Retrieves the Source frame buffer storage mode depending on Source mode
@@ -87,11 +84,25 @@ int AL_EncGetMinPitch(int iWidth, uint8_t uBitDepth, AL_EFbStorageMode eStorageM
 AL_EFbStorageMode AL_GetSrcStorageMode(AL_ESrcMode eSrcMode);
 
 /*************************************************************************//*!
-   \brief Check if the Source frame buffer is compressed depending on Source mode
+   \brief Check if the Source frame buffer is compressed depending on the Source mode
    \param[in] eSrcMode Source Mode
-   \return Source Storage Mode
+   \return true if Source is compressed, false otherwise
 *****************************************************************************/
 bool AL_IsSrcCompressed(AL_ESrcMode eSrcMode);
+
+/*************************************************************************//*!
+   \brief Check if the Source frame buffer is interleaved depending on the Source mode
+   \param[in] eSrcMode Source Mode
+   \return true if source mode is interleaved, false otherwise
+*****************************************************************************/
+bool AL_IsSrcInterleaved(AL_ESrcMode eSrcMode);
+
+/*************************************************************************//*!
+   \brief Check if the Source frame buffer is in MSB format depending on the Source mode
+   \param[in] eSrcMode Source Mode
+   \return true if source mode is in MSB (Most Significant Bit) format, false otherwise
+*****************************************************************************/
+bool AL_IsSrcMSB(AL_ESrcMode eSrcMode);
 
 AL_DEPRECATED("Renamed as AL_EncGetMinPitch, Will be removed in 0.9")
 int AL_CalculatePitchValue(int iWidth, uint8_t uBitDepth, AL_EFbStorageMode eStorageMode);

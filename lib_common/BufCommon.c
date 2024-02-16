@@ -26,8 +26,9 @@ int AL_GetNumLinesInPitch(AL_EFbStorageMode eFrameBufferStorageMode)
 }
 
 /******************************************************************************/
-static inline int GetWidthRound(AL_EFbStorageMode eStorageMode)
+static inline int GetWidthRound(AL_EFbStorageMode eStorageMode, uint8_t uBitDepth)
 {
+  (void)uBitDepth;
   switch(eStorageMode)
   {
   case AL_FB_RASTER: return 1;
@@ -42,27 +43,49 @@ static inline int GetWidthRound(AL_EFbStorageMode eStorageMode)
 }
 
 /******************************************************************************/
-int32_t ComputeRndPitch(int32_t iWidth, uint8_t uBitDepth, AL_EFbStorageMode eFrameBufferStorageMode, int iBurstAlignment)
+int32_t ComputeRndPitch(int32_t iWidth, AL_TPicFormat const* pPicFormat, int iBurstAlignment)
 {
   int32_t iVal = 0;
-  int const iRndWidth = RoundUp(iWidth, GetWidthRound(eFrameBufferStorageMode));
-  switch(eFrameBufferStorageMode)
+  int const iRndWidth = RoundUp(iWidth, GetWidthRound(pPicFormat->eStorageMode, pPicFormat->uBitDepth));
+  switch(pPicFormat->eStorageMode)
   {
   case AL_FB_RASTER:
   {
-    if(uBitDepth == 8)
+    if(pPicFormat->ePlaneMode == AL_PLANE_MODE_INTERLEAVED && pPicFormat->eChromaMode != AL_CHROMA_4_0_0)
+    {
+      int iPixSize = sizeof(uint32_t);
+      int iHorizontalScale = pPicFormat->eChromaMode == AL_CHROMA_4_4_4 ? 1 : 2;
+
+      bool bHasAlpha = pPicFormat->eAlphaMode == AL_ALPHA_MODE_BEFORE || pPicFormat->eAlphaMode == AL_ALPHA_MODE_AFTER;
+
+      /* This checks mainly AYUV and Y410 formats*/
+      if((bHasAlpha && pPicFormat->uBitDepth == 8)
+         || (pPicFormat->eSamplePackMode == AL_SAMPLE_PACK_MODE_PACKED && pPicFormat->uBitDepth == 10))
+        iPixSize = sizeof(uint32_t);
+
+      /* This checks mainly Y416 format*/
+      if(pPicFormat->eSamplePackMode == AL_SAMPLE_PACK_MODE_BYTE && (pPicFormat->uBitDepth == 12 || pPicFormat->uBitDepth == 10))
+        iPixSize = sizeof(uint64_t);
+      iVal = iRndWidth * iPixSize / iHorizontalScale;
+      break;
+    }
+
+    if(pPicFormat->uBitDepth == 8)
       iVal = iRndWidth;
     else
     {
-      iVal = (iRndWidth + 2) / 3 * 4;
+      iVal = iRndWidth * 2;
+
+      if(pPicFormat->eSamplePackMode == AL_SAMPLE_PACK_MODE_PACKED_XV)
+        iVal = (iRndWidth + 2) / 3 * 4;
     }
     break;
   }
   case AL_FB_TILE_32x4:
   case AL_FB_TILE_64x4:
   {
-    uBitDepth = (uBitDepth + 1) & 0xFE; // Prevent 9 and 11 bitdepth -> 10/12
-    iVal = iRndWidth * AL_GetNumLinesInPitch(eFrameBufferStorageMode) * uBitDepth / 8;
+    uint8_t uBitDepth = (pPicFormat->uBitDepth + 1) & 0xFE; // Prevent 9 and 11 bitdepth -> 10/12
+    iVal = iRndWidth * AL_GetNumLinesInPitch(pPicFormat->eStorageMode) * uBitDepth / 8;
     break;
   }
   default:
@@ -86,7 +109,7 @@ int AL_GetChromaPitch(TFourCC tFourCC, int iLumaPitch)
   if(tPicFormat.eChromaMode == AL_CHROMA_MONO)
     return 0;
 
-  int iNumPlanes = tPicFormat.eChromaOrder == AL_C_ORDER_SEMIPLANAR ? 2 : 1;
+  int iNumPlanes = tPicFormat.ePlaneMode == AL_PLANE_MODE_SEMIPLANAR ? 2 : 1;
   int iChromaPitch = iLumaPitch;
 
   if(tPicFormat.eChromaMode != AL_CHROMA_4_4_4)
@@ -110,7 +133,7 @@ int AL_GetChromaWidth(TFourCC tFourCC, int iLumaWidth)
   if(tPicFormat.eChromaMode == AL_CHROMA_MONO)
     return 0;
 
-  int iNumPlanes = tPicFormat.eChromaOrder == AL_C_ORDER_SEMIPLANAR ? 2 : 1;
+  int iNumPlanes = tPicFormat.ePlaneMode == AL_PLANE_MODE_SEMIPLANAR ? 2 : 1;
   int iHrzScale = tPicFormat.eChromaMode == AL_CHROMA_4_4_4 ? 1 : 2;
   return ((iLumaWidth + iHrzScale - 1) / iHrzScale) * iNumPlanes;
 }

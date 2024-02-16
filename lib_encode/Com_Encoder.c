@@ -547,13 +547,14 @@ bool AL_Common_Encoder_Process(AL_TEncCtx* pCtx, AL_TBuffer* pFrame, AL_TBuffer*
 
   Rtos_FlushCacheMemory(AL_Buffer_GetData(pFrame), AL_Buffer_GetSize(pFrame));
 
-  addresses.tSrcAddrs.pY = AL_PixMapBuffer_GetPlanePhysicalAddress(pFrame, AL_PLANE_Y);
+  AL_EPlaneId ePlaneId = AL_PLANE_Y;
+  addresses.tSrcAddrs.pY = AL_PixMapBuffer_GetPlanePhysicalAddress(pFrame, ePlaneId);
   addresses.tSrcAddrs.pC1 = 0;
 
-  if(tPicFormat.eChromaOrder == AL_C_ORDER_SEMIPLANAR)
+  if(AL_PLANE_MODE_SEMIPLANAR == tPicFormat.ePlaneMode)
     addresses.tSrcAddrs.pC1 = AL_PixMapBuffer_GetPlanePhysicalAddress(pFrame, AL_PLANE_UV);
 
-  addresses.tSrcInfo.uPitch = AL_PixMapBuffer_GetPlanePitch(pFrame, AL_PLANE_Y);
+  addresses.tSrcInfo.uPitch = AL_PixMapBuffer_GetPlanePitch(pFrame, ePlaneId);
 
   if(pChParam->bEnableSrcCrop)
   {
@@ -566,19 +567,16 @@ bool AL_Common_Encoder_Process(AL_TEncCtx* pCtx, AL_TBuffer* pFrame, AL_TBuffer*
       iPosY *= 2;
     }
 
-    addresses.tSrcAddrs.pY += iPosY * AL_PixMapBuffer_GetPlanePitch(pFrame, AL_PLANE_Y) + iPosX;
+    addresses.tSrcAddrs.pY += iPosY * addresses.tSrcInfo.uPitch + iPosX;
 
     if(AL_GET_CHROMA_MODE(pChParam->ePicFormat) == AL_CHROMA_4_2_0)
       iPosY /= 2;
 
-    if(tPicFormat.eChromaOrder == AL_C_ORDER_SEMIPLANAR)
+    if(AL_PLANE_MODE_SEMIPLANAR == tPicFormat.ePlaneMode)
       addresses.tSrcAddrs.pC1 += iPosY * AL_PixMapBuffer_GetPlanePitch(pFrame, AL_PLANE_UV) + iPosX;
   }
 
   addresses.tSrcInfo.uBitDepth = tPicFormat.uBitDepth;
-  AL_ESrcMode srcMode = pChParam->eSrcMode;
-
-  addresses.tSrcInfo.uFormat = AL_GET_SRC_FMT(srcMode);
 
   AL_Buffer_Ref(pFrame);
   pEI->SrcHandle = (AL_64U)(uintptr_t)pFrame;

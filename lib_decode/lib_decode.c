@@ -94,6 +94,13 @@ bool AL_Decoder_PutDisplayPicture(AL_HDecoder hDec, AL_TBuffer* pDisplay)
   return pArch->vtable->DecoderPutDisplayPicture(hDec, pDisplay);
 }
 
+bool AL_Decoder_ConfigureOutputSettings(AL_HDecoder hDec, AL_TDecOutputSettings const* pDecOutputSettings)
+{
+  if(!pArch)
+    return false;
+  return pArch->vtable->DecoderSetDecOutputSettings(hDec, pDecOutputSettings);
+}
+
 /*****************************************************************************/
 AL_ECodec AL_Decoder_GetCodec(AL_HDecoder hDec)
 {
@@ -140,12 +147,12 @@ bool AL_Decoder_PreallocateBuffers(AL_HDecoder hDec)
 }
 
 /*****************************************************************************/
-uint32_t AL_Decoder_GetMinPitch(uint32_t uWidth, uint8_t uBitDepth, AL_EFbStorageMode eFrameBufferStorageMode)
+uint32_t AL_Decoder_GetMinPitch(uint32_t uWidth, AL_TPicFormat const* pPicFormat)
 {
   if(!pArch)
     return 0;
 
-  return pArch->vtable->DecoderGetMinPitch(uWidth, uBitDepth, eFrameBufferStorageMode);
+  return pArch->vtable->DecoderGetMinPitch(uWidth, pPicFormat);
 }
 
 /*****************************************************************************/

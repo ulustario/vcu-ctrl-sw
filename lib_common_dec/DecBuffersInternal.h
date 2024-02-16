@@ -13,11 +13,13 @@
 #include "lib_common/BufCommonInternal.h"
 #include "lib_common/BufferAPI.h"
 #include "lib_common_dec/DecBuffers.h"
+#include "lib_common_dec/DecOutputSettings.h"
 
 #define SIZE_PIXEL sizeof(uint16_t)
 
 // Limitation on old decoder ips
 #define AL_MAX_HEIGHT 8192
+#define AL_MAX_HEIGHT_JPEG 32768
 #define SIZE_LCU_INFO 16   /*!< LCU compressed size + LCU offset                  */
 #define SCD_SIZE 128 /*!< size of start code detector output                */
 
@@ -121,13 +123,13 @@ int AL_GetAllocSize_Frame(AL_TDimension tDim, AL_EChromaMode eChromaMode, uint8_
    \brief Get offsets to the different data of the reference list buffer
    \param[out] pOffset the data offsets in the reference list buffer
    \param[in] eCodec Current codec
-   \param[in] eChromaOrder Chroma order
+   \param[in] eChromaMode Chroma mode
    \param[in] uAddrSizeInBytes References list's buffer address size in bytes.
    \return the total size of the RefListBuffer
 *****************************************************************************/
-uint32_t AL_GetRefListOffsets(TRefListOffsets* pOffsets, AL_ECodec eCodec, AL_EChromaOrder eChromaOrder, uint8_t uAddrSizeInBytes);
+uint32_t AL_GetRefListOffsets(TRefListOffsets* pOffsets, AL_ECodec eCodec, AL_TPicFormat tPicFormat, uint8_t uAddrSizeInBytes);
 
-int32_t RndPitch(int32_t iWidth, uint8_t uBitDepth, AL_EFbStorageMode eFrameBufferStorageMode);
+int32_t RndPitch(int32_t iWidth, AL_TPicFormat const* pPicFormat);
 int32_t RndHeight(int32_t iHeight);
 
 /*@}*/

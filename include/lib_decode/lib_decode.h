@@ -143,6 +143,15 @@ void AL_Decoder_Flush(AL_HDecoder hDec);
 bool AL_Decoder_PutDisplayPicture(AL_HDecoder hDec, AL_TBuffer* pDisplay);
 
 /*************************************************************************//*!
+   \brief Sets the decoder output settings to be applied on the reconstructed yuv
+   \param[in] hDec   Handle to a decoder object.
+   \param[in] pDecOutputSettings Pointer to the output settings
+   \return return true if output settings are successfully added or already added,
+    false otherwise
+*****************************************************************************/
+bool AL_Decoder_ConfigureOutputSettings(AL_HDecoder hDec, AL_TDecOutputSettings const* pDecOutputSettings);
+
+/*************************************************************************//*!
    \brief Retrieves the codec of the specified decoder instance
    \param[in] hDec   Handle to a decoder object.
 *****************************************************************************/
@@ -189,10 +198,9 @@ bool AL_Decoder_PreallocateBuffers(AL_HDecoder hDec);
 /*************************************************************************//*!
    \brief Give the minimum stride supported by the decoder for its reconstructed buffers
    \param[in] uWidth width of the reconstructed buffers in pixels
-   \param[in] uBitDepth of the stream (8 or 10)
-   \param[in] eFrameBufferStorageMode frame buffer storage mode
+   \param[in] pPicFormat picture format of the buffer
 *****************************************************************************/
-uint32_t AL_Decoder_GetMinPitch(uint32_t uWidth, uint8_t uBitDepth, AL_EFbStorageMode eFrameBufferStorageMode);
+uint32_t AL_Decoder_GetMinPitch(uint32_t uWidth, AL_TPicFormat const* pPicFormat);
 
 /*************************************************************************//*!
    \brief Give the minimum stride height supported by the decoder

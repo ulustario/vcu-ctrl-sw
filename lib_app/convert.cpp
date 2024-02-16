@@ -62,8 +62,30 @@ void CopyPixMapPlane(AL_TBuffer const* pSrc, AL_TBuffer* pDst, AL_EPlaneId ePlan
   int iPitchDst = AL_PixMapBuffer_GetPlanePitch(pDst, ePlaneType);
   uint8_t* pSrcData = AL_PixMapBuffer_GetPlaneAddress(pSrc, ePlaneType);
   uint8_t* pDstData = AL_PixMapBuffer_GetPlaneAddress(pDst, ePlaneType);
+  TFourCC tFourCC = AL_PixMapBuffer_GetFourCC(pSrc);
+
+  AL_TPicFormat tPicFormat;
+  AL_GetPicFormat(tFourCC, &tPicFormat);
 
   int iByteWidth = iWidth * (uBitDepth >= 10 ? 2 : 1);
+
+  if(tPicFormat.ePlaneMode == AL_PLANE_MODE_INTERLEAVED && tPicFormat.eChromaMode != AL_CHROMA_4_0_0)
+  {
+    int iPixSize = sizeof(uint32_t);
+    int iHorizontalScale = (tPicFormat.eChromaMode == AL_CHROMA_4_4_4) ? 1 : 2;
+
+    bool bHasAlpha = tPicFormat.eAlphaMode == AL_ALPHA_MODE_BEFORE || tPicFormat.eAlphaMode == AL_ALPHA_MODE_AFTER;
+
+    if((bHasAlpha && tPicFormat.uBitDepth == 8)
+       || (tPicFormat.eSamplePackMode == AL_SAMPLE_PACK_MODE_PACKED && tPicFormat.uBitDepth == 10))
+      iPixSize = sizeof(uint32_t);
+
+    if(tPicFormat.eSamplePackMode == AL_SAMPLE_PACK_MODE_BYTE && (tPicFormat.uBitDepth == 12 || tPicFormat.uBitDepth == 10))
+      iPixSize = sizeof(uint64_t);
+    iByteWidth = iWidth * iPixSize / iHorizontalScale;
+  }
+  else if(AL_SAMPLE_PACK_MODE_PACKED_XV == tPicFormat.eSamplePackMode)
+    iByteWidth = (iWidth + 2) / 3 * sizeof(uint32_t);
 
   for(int iH = 0; iH < iHeight; iH++)
   {
@@ -4033,10 +4055,16 @@ bool CopyPixMapBuffer(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
   AL_TPicFormat tPicFormat;
   bool const bSuccess = AL_GetPicFormat(tFourCC, &tPicFormat);
 
-  if(!bSuccess || tPicFormat.b10bPacked || tPicFormat.bCompressed)
+  if(!bSuccess || tPicFormat.bCompressed)
     return false;
 
   AL_PixMapBuffer_SetDimension(pDst, tDim);
+
+  if(tPicFormat.ePlaneMode == AL_PLANE_MODE_INTERLEAVED)
+  {
+    CopyPixMapPlane(pSrc, pDst, AL_PLANE_YUV, tDim.iWidth, tDim.iHeight, tPicFormat.uBitDepth);
+    return true;
+  }
 
   // Luma
   CopyPixMapPlane(pSrc, pDst, AL_PLANE_Y, tDim.iWidth, tDim.iHeight, tPicFormat.uBitDepth);
@@ -4048,7 +4076,7 @@ bool CopyPixMapBuffer(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
   int iChromaWidth = tDim.iWidth;
   int iChromaHeight = tPicFormat.eChromaMode == AL_CHROMA_4_2_0 ? (tDim.iHeight + 1) / 2 : tDim.iHeight;
 
-  if(tPicFormat.eChromaOrder == AL_C_ORDER_SEMIPLANAR)
+  if(tPicFormat.ePlaneMode == AL_PLANE_MODE_SEMIPLANAR)
   {
     if(tPicFormat.eChromaMode == AL_CHROMA_4_4_4)
       iChromaWidth *= 2;
@@ -4065,6 +4093,185 @@ bool CopyPixMapBuffer(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
   CopyPixMapPlane(pSrc, pDst, AL_PLANE_U, iChromaWidth, iChromaHeight, tPicFormat.uBitDepth);
   CopyPixMapPlane(pSrc, pDst, AL_PLANE_V, iChromaWidth, iChromaHeight, tPicFormat.uBitDepth);
   return true;
+}
+
+void AYUV_To_I444(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
+{
+  // The AYUV format defined by microsoft is actually VUYA
+  AL_TDimension dim = AL_PixMapBuffer_GetDimension(pSrc);
+  uint32_t* pSrcWord = (uint32_t*)AL_PixMapBuffer_GetPlaneAddress(pSrc, AL_PLANE_YUV);
+  int iSrcPitch = AL_PixMapBuffer_GetPlanePitch(pSrc, AL_PLANE_YUV) / sizeof(uint32_t);
+  uint8_t* pDstY = AL_PixMapBuffer_GetPlaneAddress(pDst, AL_PLANE_Y);
+  int iDstYPitch = AL_PixMapBuffer_GetPlanePitch(pDst, AL_PLANE_Y);
+  uint8_t* pDstU = AL_PixMapBuffer_GetPlaneAddress(pDst, AL_PLANE_U);
+  int iDstUPitch = AL_PixMapBuffer_GetPlanePitch(pDst, AL_PLANE_U);
+  uint8_t* pDstV = AL_PixMapBuffer_GetPlaneAddress(pDst, AL_PLANE_V);
+  int iDstVPitch = AL_PixMapBuffer_GetPlanePitch(pDst, AL_PLANE_V);
+
+  for(int H = 0; H < dim.iHeight; H++)
+  {
+    for(int W = 0; W < dim.iWidth; W++)
+    {
+      uint32_t currentWord = pSrcWord[H * iSrcPitch + W];
+      pDstY[H * iDstYPitch + W] = (currentWord >> 16) & 0xFF;
+      pDstU[H * iDstUPitch + W] = (currentWord >> 8) & 0xFF;
+      pDstV[H * iDstVPitch + W] = currentWord & 0xFF;
+    }
+  }
+}
+
+void AYUV_To_NV24(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
+{
+  // The AYUV format defined by microsoft is actually VUYA
+  AL_TDimension dim = AL_PixMapBuffer_GetDimension(pSrc);
+  uint32_t* pSrcWord = (uint32_t*)AL_PixMapBuffer_GetPlaneAddress(pSrc, AL_PLANE_YUV);
+  int iSrcPitch = AL_PixMapBuffer_GetPlanePitch(pSrc, AL_PLANE_YUV) / sizeof(uint32_t);
+  uint8_t* pDstY = AL_PixMapBuffer_GetPlaneAddress(pDst, AL_PLANE_Y);
+  int iDstYPitch = AL_PixMapBuffer_GetPlanePitch(pDst, AL_PLANE_Y);
+  uint8_t* pDstUV = AL_PixMapBuffer_GetPlaneAddress(pDst, AL_PLANE_UV);
+  int iDstUVPitch = AL_PixMapBuffer_GetPlanePitch(pDst, AL_PLANE_UV);
+
+  for(int H = 0; H < dim.iHeight; H++)
+  {
+    for(int W = 0; W < dim.iWidth; W++)
+    {
+      uint32_t currentWord = pSrcWord[H * iSrcPitch + W];
+      pDstY[H * iDstYPitch + W] = (currentWord >> 16) & 0xFF;
+      pDstUV[H * iDstUVPitch + 2 * W] = (currentWord >> 8) & 0xFF;
+      pDstUV[H * iDstUVPitch + 2 * W + 1] = currentWord & 0xFF;
+    }
+  }
+}
+
+void Y410_To_I4AL(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
+{
+  AL_TDimension dim = AL_PixMapBuffer_GetDimension(pSrc);
+  uint32_t* pSrcWord = (uint32_t*)AL_PixMapBuffer_GetPlaneAddress(pSrc, AL_PLANE_YUV);
+  int iSrcPitch = AL_PixMapBuffer_GetPlanePitch(pSrc, AL_PLANE_YUV) / sizeof(uint32_t);
+  uint16_t* pDstY = (uint16_t*)AL_PixMapBuffer_GetPlaneAddress(pDst, AL_PLANE_Y);
+  int iDstYPitch = AL_PixMapBuffer_GetPlanePitch(pDst, AL_PLANE_Y) / sizeof(uint16_t);
+  uint16_t* pDstU = (uint16_t*)AL_PixMapBuffer_GetPlaneAddress(pDst, AL_PLANE_U);
+  int iDstUPitch = AL_PixMapBuffer_GetPlanePitch(pDst, AL_PLANE_U) / sizeof(uint16_t);
+  uint16_t* pDstV = (uint16_t*)AL_PixMapBuffer_GetPlaneAddress(pDst, AL_PLANE_V);
+  int iDstVPitch = AL_PixMapBuffer_GetPlanePitch(pDst, AL_PLANE_V) / sizeof(uint16_t);
+
+  for(int H = 0; H < dim.iHeight; H++)
+  {
+    for(int W = 0; W < dim.iWidth; W++)
+    {
+      uint32_t currentWord = pSrcWord[H * iSrcPitch + W];
+      pDstY[H * iDstYPitch + W] = (currentWord >> 10) & 0x3FF;
+      pDstU[H * iDstUPitch + W] = currentWord & 0x3FF;
+      pDstV[H * iDstVPitch + W] = (currentWord >> 20) & 0x3FF;
+    }
+  }
+}
+
+void Y4XX_To_I4XL(AL_TBuffer const* pSrc, AL_TBuffer* pDst, int iBitDepth, bool bIsMsb)
+{
+  AL_TDimension dim = AL_PixMapBuffer_GetDimension(pSrc);
+  uint64_t* pSrcWord = (uint64_t*)AL_PixMapBuffer_GetPlaneAddress(pSrc, AL_PLANE_YUV);
+  int iSrcPitch = AL_PixMapBuffer_GetPlanePitch(pSrc, AL_PLANE_YUV) / sizeof(uint64_t);
+  uint16_t* pDstY = (uint16_t*)AL_PixMapBuffer_GetPlaneAddress(pDst, AL_PLANE_Y);
+  int iDstYPitch = AL_PixMapBuffer_GetPlanePitch(pDst, AL_PLANE_Y) / sizeof(uint16_t);
+  uint16_t* pDstU = (uint16_t*)AL_PixMapBuffer_GetPlaneAddress(pDst, AL_PLANE_U);
+  int iDstUPitch = AL_PixMapBuffer_GetPlanePitch(pDst, AL_PLANE_U) / sizeof(uint16_t);
+  uint16_t* pDstV = (uint16_t*)AL_PixMapBuffer_GetPlaneAddress(pDst, AL_PLANE_V);
+  int iDstVPitch = AL_PixMapBuffer_GetPlanePitch(pDst, AL_PLANE_V) / sizeof(uint16_t);
+  int iShift = 0;
+
+  if(bIsMsb)
+    iShift = 16 - iBitDepth;
+
+  for(int H = 0; H < dim.iHeight; H++)
+  {
+    for(int W = 0; W < dim.iWidth; W++)
+    {
+      uint16_t* currentWord = (uint16_t*)&pSrcWord[H * iSrcPitch + W];
+      pDstY[H * iDstYPitch + W] = currentWord[1] >> iShift;
+      pDstU[H * iDstUPitch + W] = currentWord[0] >> iShift;
+      pDstV[H * iDstVPitch + W] = currentWord[2] >> iShift;
+    }
+  }
+}
+
+void Y4AL_To_I4AL(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
+{
+  Y4XX_To_I4XL(pSrc, pDst, 10, false);
+}
+
+void Y4AM_To_I4AL(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
+{
+  Y4XX_To_I4XL(pSrc, pDst, 10, true);
+}
+
+void Y4CL_To_I4CL(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
+{
+  Y4XX_To_I4XL(pSrc, pDst, 12, false);
+}
+
+void Y4CM_To_I4CL(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
+{
+  Y4XX_To_I4XL(pSrc, pDst, 12, true);
+}
+
+void RGB3_To_I444(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
+{
+  CopyPixMapBuffer(pSrc, pDst);
+}
+
+void ARGB_To_I444(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
+{
+  AYUV_To_I444(pSrc, pDst);
+}
+
+void AB30_To_I4AL(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
+{
+  AL_TDimension dim = AL_PixMapBuffer_GetDimension(pSrc);
+  uint32_t* pSrcWord = (uint32_t*)AL_PixMapBuffer_GetPlaneAddress(pSrc, AL_PLANE_YUV);
+  int iSrcPitch = AL_PixMapBuffer_GetPlanePitch(pSrc, AL_PLANE_YUV) / sizeof(uint32_t);
+  uint16_t* pDstY = (uint16_t*)AL_PixMapBuffer_GetPlaneAddress(pDst, AL_PLANE_Y);
+  int iDstYPitch = AL_PixMapBuffer_GetPlanePitch(pDst, AL_PLANE_Y) / sizeof(uint16_t);
+  uint16_t* pDstU = (uint16_t*)AL_PixMapBuffer_GetPlaneAddress(pDst, AL_PLANE_U);
+  int iDstUPitch = AL_PixMapBuffer_GetPlanePitch(pDst, AL_PLANE_U) / sizeof(uint16_t);
+  uint16_t* pDstV = (uint16_t*)AL_PixMapBuffer_GetPlaneAddress(pDst, AL_PLANE_V);
+  int iDstVPitch = AL_PixMapBuffer_GetPlanePitch(pDst, AL_PLANE_V) / sizeof(uint16_t);
+
+  for(int H = 0; H < dim.iHeight; H++)
+  {
+    for(int W = 0; W < dim.iWidth; W++)
+    {
+      uint32_t currentWord = pSrcWord[H * iSrcPitch + W];
+      pDstY[H * iDstYPitch + W] = currentWord & 0x3FF;
+      pDstU[H * iDstUPitch + W] = (currentWord >> 10) & 0x3FF;
+      pDstV[H * iDstVPitch + W] = (currentWord >> 20) & 0x3FF;
+    }
+  }
+}
+
+void UYVY_To_I422(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
+{
+  AL_TDimension dim = AL_PixMapBuffer_GetDimension(pSrc);
+  uint32_t* pSrcWord = (uint32_t*)AL_PixMapBuffer_GetPlaneAddress(pSrc, AL_PLANE_YUV);
+  int iSrcPitch = AL_PixMapBuffer_GetPlanePitch(pSrc, AL_PLANE_YUV) / sizeof(uint32_t);
+  uint8_t* pDstY = AL_PixMapBuffer_GetPlaneAddress(pDst, AL_PLANE_Y);
+  int iDstYPitch = AL_PixMapBuffer_GetPlanePitch(pDst, AL_PLANE_Y);
+  uint8_t* pDstU = AL_PixMapBuffer_GetPlaneAddress(pDst, AL_PLANE_U);
+  int iDstUPitch = AL_PixMapBuffer_GetPlanePitch(pDst, AL_PLANE_U);
+  uint8_t* pDstV = AL_PixMapBuffer_GetPlaneAddress(pDst, AL_PLANE_V);
+  int iDstVPitch = AL_PixMapBuffer_GetPlanePitch(pDst, AL_PLANE_V);
+
+  for(int H = 0; H < dim.iHeight; H++)
+  {
+    for(int W = 0; W < dim.iWidth / 2; W++)
+    {
+      uint8_t* currentWord = (uint8_t*)&pSrcWord[H * iSrcPitch + W];
+      pDstU[H * iDstUPitch + W] = currentWord[0];
+      pDstY[H * iDstYPitch + 2 * W] = currentWord[1];
+      pDstV[H * iDstVPitch + W] = currentWord[2];
+      pDstY[H * iDstYPitch + 2 * W + 1] = currentWord[3];
+    }
+  }
 }
 
 struct sFourCCToConvFunc
@@ -4898,6 +5105,79 @@ static const sFourCCToConvFunc ConversionXV20FuncArray[] =
   },
 };
 
+static const sFourCCToConvFunc ConversionAYUVFuncArray[] =
+{
+  {
+    FOURCC(I444), AYUV_To_I444
+  },
+  {
+    FOURCC(NV24), AYUV_To_NV24
+  },
+};
+
+static const sFourCCToConvFunc ConversionY410FuncArray[] =
+{
+  {
+    FOURCC(I4AL), Y410_To_I4AL
+  },
+};
+
+static const sFourCCToConvFunc ConversionY4ALFuncArray[] =
+{
+  {
+    FOURCC(I4AL), Y4AL_To_I4AL
+  },
+};
+
+static const sFourCCToConvFunc ConversionY4AMFuncArray[] =
+{
+  {
+    FOURCC(I4AL), Y4AM_To_I4AL
+  },
+};
+
+static const sFourCCToConvFunc ConversionY4CLFuncArray[] =
+{
+  {
+    FOURCC(I4CL), Y4CL_To_I4CL
+  },
+};
+
+static const sFourCCToConvFunc ConversionY4CMFuncArray[] =
+{
+  {
+    FOURCC(I4CL), Y4CM_To_I4CL
+  },
+};
+
+static const sFourCCToConvFunc ConversionRGB3FuncArray[] =
+{
+  {
+    FOURCC(I444), RGB3_To_I444
+  },
+};
+
+static const sFourCCToConvFunc ConversionARGBFuncArray[] =
+{
+  {
+    FOURCC(I444), ARGB_To_I444
+  },
+};
+
+static const sFourCCToConvFunc ConversionAB30FuncArray[] =
+{
+  {
+    FOURCC(I4AL), AB30_To_I4AL
+  },
+};
+
+static const sFourCCToConvFunc ConversionUYVYFuncArray[] =
+{
+  {
+    FOURCC(I422), UYVY_To_I422
+  },
+};
+
 #define CONV_FOURCC_ARRAY(array) array, ARRAY_SIZE(array)
 
 struct sConvFourCCArray
@@ -4945,6 +5225,13 @@ static const sConvFourCCArray ConvMatchArray[] =
   { FOURCC(XV10), CONV_FOURCC_ARRAY(ConversionXV10FuncArray) },
   { FOURCC(XV15), CONV_FOURCC_ARRAY(ConversionXV15FuncArray) },
   { FOURCC(XV20), CONV_FOURCC_ARRAY(ConversionXV20FuncArray) },
+  { FOURCC(AYUV), CONV_FOURCC_ARRAY(ConversionAYUVFuncArray) },
+  { FOURCC(Y410), CONV_FOURCC_ARRAY(ConversionY410FuncArray) },
+  { FOURCC(Y4AL), CONV_FOURCC_ARRAY(ConversionY4ALFuncArray) },
+  { FOURCC(Y4AM), CONV_FOURCC_ARRAY(ConversionY4AMFuncArray) },
+  { FOURCC(Y4CL), CONV_FOURCC_ARRAY(ConversionY4CLFuncArray) },
+  { FOURCC(Y4CM), CONV_FOURCC_ARRAY(ConversionY4CMFuncArray) },
+  { FOURCC(UYVY), CONV_FOURCC_ARRAY(ConversionUYVYFuncArray) },
 };
 
 typedef union
@@ -4983,7 +5270,7 @@ tConvFourCCFunc GetConvFourCCFunc(TFourCC tInFourCC, TFourCC tOutFourCC)
     AL_TPicFormat tPicFormat;
     bool bSuccess = AL_GetPicFormat(tInFourCC, &tPicFormat);
 
-    if(!bSuccess || tPicFormat.b10bPacked || tPicFormat.bCompressed)
+    if(!bSuccess || tPicFormat.bCompressed)
       return nullptr;
 
     if(AL_IsTiled(tInFourCC))

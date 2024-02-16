@@ -11,6 +11,7 @@
 #include "lib_common/SliceConsts.h"
 #include "lib_common/PicFormat.h"
 #include "lib_common_dec/DecSynchro.h"
+#include "lib_common_dec/DecOutputSettings.h"
 
 /*************************************************************************//*!
    \brief Channel Parameter structure
@@ -24,6 +25,7 @@ typedef struct AL_TDecChannelParam
   uint32_t uClkRatio;
   uint32_t uMaxLatency;
   uint8_t uNumCore;
+  uint8_t uPostProcId;
   bool bNonRealtime;
   uint8_t uDDRWidth;
   bool bLowLat;
@@ -37,6 +39,7 @@ typedef struct AL_TDecChannelParam
   int32_t iMaxSlices;
   int32_t iMaxTiles;
   AL_EDecUnit eDecUnit;
+  AL_TDecOutputSettings tOutputSettings;
 }AL_TDecChanParam;
 
 /*@}*/

@@ -93,6 +93,12 @@ static bool AL_Decoder_PutDisplayPicture_Host(AL_HDecoder hDec, AL_TBuffer* pDis
 }
 
 /*****************************************************************************/
+static bool AL_Decoder_ConfigureOutputSettings_Host(AL_HDecoder hDec, AL_TDecOutputSettings const* pDecOutputSettings)
+{
+  return AL_Default_Decoder_ConfigureOutputSettings((AL_TDecoder*)hDec, pDecOutputSettings);
+}
+
+/*****************************************************************************/
 static int AL_Decoder_GetMaxBD_Host(AL_HDecoder hDec)
 {
   return AL_Default_Decoder_GetMaxBD((AL_TDecoder*)hDec);
@@ -124,9 +130,9 @@ static bool AL_Decoder_PreallocateBuffers_Host(AL_HDecoder hDec)
   return AL_Default_Decoder_PreallocateBuffers(pDec);
 }
 
-static uint32_t AL_Decoder_GetMinPitch_Host(uint32_t uWidth, uint8_t uBitDepth, AL_EFbStorageMode eFrameBufferStorageMode)
+static uint32_t AL_Decoder_GetMinPitch_Host(uint32_t uWidth, AL_TPicFormat const* pPicFormat)
 {
-  return RndPitch(uWidth, uBitDepth, eFrameBufferStorageMode);
+  return RndPitch(uWidth, pPicFormat);
 }
 
 static uint32_t AL_Decoder_GetMinStrideHeight_Host(uint32_t uHeight)
@@ -136,7 +142,11 @@ static uint32_t AL_Decoder_GetMinStrideHeight_Host(uint32_t uHeight)
 
 uint32_t AL_Decoder_RoundPitch(uint32_t uWidth, uint8_t uBitDepth, AL_EFbStorageMode eFrameBufferStorageMode)
 {
-  return AL_Decoder_GetMinPitch(uWidth, uBitDepth, eFrameBufferStorageMode);
+  AL_TPicFormat tPicFormat;
+  Rtos_Memset(&tPicFormat, 0, sizeof(tPicFormat));
+  tPicFormat.uBitDepth = uBitDepth;
+  tPicFormat.eStorageMode = eFrameBufferStorageMode;
+  return AL_Decoder_GetMinPitch(uWidth, &tPicFormat);
 }
 
 uint32_t AL_Decoder_RoundHeight(uint32_t uHeight)
@@ -197,6 +207,7 @@ static AL_IDecArchVtable vtable =
   .DecoderPreallocateBuffers = AL_Decoder_PreallocateBuffers_Host,
   .DecoderGetMinPitch = AL_Decoder_GetMinPitch_Host,
   .DecoderGetMinStrideHeight = AL_Decoder_GetMinStrideHeight_Host,
+  .DecoderSetDecOutputSettings = AL_Decoder_ConfigureOutputSettings_Host,
 };
 
 AL_IDecArch decHost =

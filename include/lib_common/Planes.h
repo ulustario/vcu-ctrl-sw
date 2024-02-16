@@ -69,39 +69,38 @@ bool AL_Plane_IsMapPlane(AL_EPlaneId ePlaneId);
 
 /*************************************************************************//*!
    \brief Get the list of pixel planes contained in a frame buffer
-   \param[in] eChromaOrder Chroma order of the frame buffer
+   \param[in] tPicFormat Picture format of the frame buffer
    \param[out] usedPlanes Filled with the list of pixel plane ids contained in
               the frame buffer
    \return Returns the number of pixel planes contained in the frame buffer
 *****************************************************************************/
-int AL_Plane_GetBufferPixelPlanes(AL_EChromaOrder eChromaOrder, AL_EPlaneId usedPlanes[AL_MAX_BUFFER_PLANES]);
+int AL_Plane_GetBufferPixelPlanes(AL_TPicFormat tPicFormat, AL_EPlaneId usedPlanes[AL_MAX_BUFFER_PLANES]);
 
 /*************************************************************************//*!
    \brief Get the list of map planes contained in a frame buffer
-   \param[in] eChromaOrder Chroma order of the frame buffer
+   \param[in] tPicFormat Picture format of the frame buffer
    \param[out] usedPlanes Filled with the list of map plane ids contained in
    the frame buffer
    \return Returns the number of map planes contained in the frame buffer
 *****************************************************************************/
-int AL_Plane_GetBufferMapPlanes(AL_EChromaOrder eChromaOrder, AL_EPlaneId usedPlanes[AL_MAX_BUFFER_PLANES]);
+int AL_Plane_GetBufferMapPlanes(AL_TPicFormat tPicFormat, AL_EPlaneId usedPlanes[AL_MAX_BUFFER_PLANES]);
 
 /*************************************************************************//*!
    \brief Get the list of planes contained in a frame buffer
-   \param[in] eChromaOrder Chroma order of the frame buffer
-   \param[in] bIsCompressed True if the frame buffer is compressed
+   \param[in] tPicFormat Picture format of the frame buffer
    \param[out] usedPlanes Filled with the list of plane ids contained in the frame
               buffer
    \return Returns the number of planes contained in the frame buffer
 *****************************************************************************/
-int AL_Plane_GetBufferPlanes(AL_EChromaOrder eChromaOrder, bool bIsCompressed, AL_EPlaneId usedPlanes[AL_MAX_BUFFER_PLANES]);
+int AL_Plane_GetBufferPlanes(AL_TPicFormat tPicFormat, AL_EPlaneId usedPlanes[AL_MAX_BUFFER_PLANES]);
 
 /*************************************************************************//*!
    \brief Check that a plane is contained in a frame buffer
-   \param[in] eChromaOrder Chroma order of the frame buffer
+   \param[in] ePlaneMode Plane mode of the frame buffer
    \param[in] bIsCompressed True if the frame buffer is compressed
    \param[out] ePlaneId The type of plane
    \return Returns true if the plane is contained in the buffer, false otherwise
 *****************************************************************************/
-bool AL_Plane_Exists(AL_EChromaOrder eChromaOrder, bool bIsCompressed, AL_EPlaneId ePlaneId);
+bool AL_Plane_Exists(AL_EPlaneMode ePlaneMode, bool bIsCompressed, AL_EPlaneId ePlaneId);
 
 /*@}*/

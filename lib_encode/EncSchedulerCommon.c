@@ -18,7 +18,9 @@ void SetChannelInfo(AL_TCommonChannelInfo* pChanInfo, const AL_TEncChanParam* pC
   pChanInfo->bIsAvc = AL_IS_AVC(pChParam->eProfile);
 
   AL_EPlaneId usedPlanes[AL_MAX_BUFFER_PLANES];
-  pChanInfo->iNbPlanes = AL_Plane_GetBufferPlanes(pChanInfo->tRecPicFormat.eChromaOrder, pChanInfo->tRecPicFormat.bCompressed, usedPlanes);
+  AL_TPicFormat tPicFormatCopy = pChanInfo->tRecPicFormat;
+  tPicFormatCopy.bCompressed = pChanInfo->tRecPicFormat.bCompressed;
+  pChanInfo->iNbPlanes = AL_Plane_GetBufferPlanes(tPicFormatCopy, usedPlanes);
 
   for(int iPlane = 0; iPlane < pChanInfo->iNbPlanes; iPlane++)
   {

@@ -19,14 +19,14 @@ typedef enum
     if(!(cond)) \
       return AL_CONCEAL; \
   } \
-  while(0) \
+  while(0)
 
 #define COMPLY_ID(cond) \
   do { \
     if(!(cond)) \
       return AL_BAD_ID; \
   } \
-  while(0) \
+  while(0)
 
 #define COMPLY_WITH_LOG(cond, log) \
   do { \
@@ -36,4 +36,4 @@ typedef enum
       return AL_CONCEAL; \
     } \
   } \
-  while(0) \
+  while(0)

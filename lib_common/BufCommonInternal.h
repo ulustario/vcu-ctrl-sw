@@ -52,4 +52,4 @@ static inline void CircBuffer_Init(TCircBuffer* pBuf)
   pBuf->iAvailSize = 0;
 }
 
-int32_t ComputeRndPitch(int32_t iWidth, uint8_t uBitDepth, AL_EFbStorageMode eFrameBufferStorageMode, int iAlignment);
+int32_t ComputeRndPitch(int32_t iWidth, AL_TPicFormat const* pPicFormat, int iAlignment);
