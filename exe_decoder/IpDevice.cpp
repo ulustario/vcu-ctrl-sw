@@ -155,6 +155,7 @@ std::string CIpDevice::SelectMcuDevice(std::set<std::string> const& tDevices)
       }
     }
 
+    nDeviceIndex++;
     AL_IDecScheduler_Destroy(scheduler);
   }
 
