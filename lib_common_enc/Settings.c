@@ -553,6 +553,7 @@ void AL_Settings_SetDefaults(AL_TEncSettings* pSettings)
 #if (defined(ANDROID) || defined(__ANDROID_API__))
   pChan->eStartCodeBytesAligned = AL_START_CODE_4_BYTES;
 #endif
+
 }
 
 /***************************************************************************/
@@ -751,12 +752,6 @@ int AL_Settings_CheckValidity(AL_TEncSettings* pSettings, AL_TEncChanParam* pChP
       ++err;
       MSG_ERROR("Invalid parameter: BitRate");
     }
-  }
-
-  if(AL_IS_AV1(pChParam->eProfile) && AL_IS_HWRC_ENABLED(&pChParam->tRCParam))
-  {
-    ++err;
-    MSG_ERROR("Hardware Rate Control (LOW_LATENCY or MaxPictureSize) is not supported in AV1");
   }
 
   if(pChParam->tRCParam.eRCMode == AL_RC_LOW_LATENCY)

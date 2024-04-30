@@ -90,7 +90,7 @@ private:
   }
 };
 
-std::unique_ptr<IFrameSink> createYuvMd5Calculator(std::string path, ConfigFile& cfg_)
+IFrameSink* createYuvMd5Calculator(std::string path, ConfigFile& cfg_)
 {
-  return std::unique_ptr<IFrameSink>(new YuvMd5Calculator(path, cfg_));
+  return new YuvMd5Calculator(path, cfg_);
 }

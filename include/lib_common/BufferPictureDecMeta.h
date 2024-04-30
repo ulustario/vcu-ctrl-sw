@@ -17,7 +17,7 @@
 typedef struct AL_TPictureDecMetaData
 {
   AL_TMetaData tMeta;
-  bool bLastFrameFromInputPayload; /*< picture is the last frame from the input payload, used for split-input */
+  bool bLastFrameFromInputPayload; /*!< picture is the last frame from the input payload, used for split-input */
 }AL_TPictureDecMetaData;
 
 /*************************************************************************//*!

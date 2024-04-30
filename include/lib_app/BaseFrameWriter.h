@@ -12,13 +12,20 @@ extern "C"
 #include "lib_common/BufferAPI.h"
 #include "lib_common/FourCC.h"
 #include "lib_common/RoundUp.h"
+#include "lib_common/SliceConsts.h"
 }
 
-struct BaseFrameSink
+struct IFrameWriter
 {
-  ~BaseFrameSink();
+  virtual ~IFrameWriter() = default;
+  virtual void WriteFrame(AL_TBuffer* pBuf, AL_TCropInfo* pCrop = nullptr, AL_EPicStruct ePicStruct = AL_PS_FRM) = 0;
+};
 
-  BaseFrameSink(std::shared_ptr<std::ostream> recFile, AL_EFbStorageMode eStorageMode, AL_EOutputType outputID);
+struct BaseFrameWriter
+{
+  ~BaseFrameWriter();
+
+  BaseFrameWriter(std::shared_ptr<std::ostream> recFile, AL_EFbStorageMode eStorageMode);
 
 protected:
   template<typename T>
@@ -31,7 +38,6 @@ protected:
 
   std::shared_ptr<std::ostream> m_recFile;
   AL_EFbStorageMode m_eStorageMode = AL_FB_MAX_ENUM;
-  AL_EOutputType m_iOutputID = AL_OUTPUT_MAIN;
   uint32_t m_uPitchYFile;
   uint32_t m_uPitchCFile;
   uint16_t m_uHeightInTileYFile;
@@ -50,7 +56,7 @@ protected:
 
 /****************************************************************************/
 template<typename T>
-void BaseFrameSink::WriteValue(std::shared_ptr<std::ostream> stream, T pVal)
+void BaseFrameWriter::WriteValue(std::shared_ptr<std::ostream> stream, T pVal)
 {
   if(stream->fail())
     throw printf("Invalid output file");

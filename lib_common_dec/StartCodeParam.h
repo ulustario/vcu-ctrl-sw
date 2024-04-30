@@ -26,6 +26,7 @@ typedef struct AL_TSCParam
                           2 -> stop after finding a NAL with temporal ID equal to StopParam
                           3 -> stop after finding StopParam number of entire Access Unit >!*/
   uint16_t MaxSize;    /*!< Size of the output start code buffer (in bytes) */
+  uint8_t ChannelID;  /*!< Specifies the channel number */
 }AL_TScParam;
 
 /*************************************************************************//*!

@@ -76,7 +76,7 @@ uint32_t ComputePlaneCRC(AL_TBuffer* pYUV, AL_EPlaneId ePlane, AL_TDimension tDi
 class CSCrcCalculator : public IFrameSink
 {
 public:
-  CSCrcCalculator(std::string& path)
+  CSCrcCalculator(const std::string& path)
   {
     if(!path.empty())
     {
@@ -131,7 +131,7 @@ private:
   std::ofstream ofCrcFile;
 };
 
-std::unique_ptr<IFrameSink> createCSCrcCalculator(std::string path)
+IFrameSink* createCSCrcCalculator(const std::string path)
 {
-  return std::unique_ptr<IFrameSink>(new CSCrcCalculator(path));
+  return new CSCrcCalculator(path);
 }

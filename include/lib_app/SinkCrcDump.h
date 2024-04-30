@@ -5,4 +5,4 @@
 
 #include "lib_app/Sink.h"
 
-std::unique_ptr<IFrameSink> createStreamCrcDump(std::string path);
+IFrameSink* createStreamCrcDump(std::string path);

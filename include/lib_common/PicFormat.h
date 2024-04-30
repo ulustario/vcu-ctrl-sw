@@ -61,11 +61,21 @@ typedef struct t_CropInfo
   uint32_t uCropOffsetBottom; /*!< Bottom offset of the cropping window */
 }AL_TCropInfo;
 
+/****************************************************************************/
+static inline void ResetCropInfo(AL_TCropInfo* pCropInfo)
+{
+  pCropInfo->bCropping = false;
+  pCropInfo->uCropOffsetLeft = 0;
+  pCropInfo->uCropOffsetRight = 0;
+  pCropInfo->uCropOffsetTop = 0;
+  pCropInfo->uCropOffsetBottom = 0;
+}
+
 /*************************************************************************//*!
    \brief Chroma mode. Describes how many chroma samples we have relatively
    to the luma samples.
 *****************************************************************************/
-typedef enum e_ChromaMode
+typedef enum
 {
   AL_CHROMA_MONO = 0, /*!< Monochrome */
   AL_CHROMA_4_0_0 = AL_CHROMA_MONO, /*!< 4:0:0 = Monochrome */
@@ -79,7 +89,7 @@ typedef enum e_ChromaMode
    \brief Frame buffer storage mode. It describes the scan order of the
    samples inside the frame buffer.
 *****************************************************************************/
-typedef enum AL_e_FbStorageMode
+typedef enum
 {
   AL_FB_RASTER,     /*!< Samples are stored in raster scan order */
   AL_FB_TILE_32x4,  /*!< Samples are stored going raster inside 4x4 blocks, themselves inside 32x4 tiles */
@@ -89,13 +99,14 @@ typedef enum AL_e_FbStorageMode
 
 /*************************************************************************//*!
    \brief Frame buffer plane mode. A plane is a contiguous memory chunk that
-   can contain one or more components of the frame buffer.
+   can contain one or more components of the frame buffer. Components can be
+   for instance Y/U/V, or R/G/B.
 *****************************************************************************/
-typedef enum e_PlaneMode
+typedef enum
 {
   AL_PLANE_MODE_PLANAR, /*!< Each component is stored its own separated plane */
   AL_PLANE_MODE_MONOPLANE = AL_PLANE_MODE_PLANAR,  /*!< There is only one component, and thus only one plane  */
-  AL_PLANE_MODE_SEMIPLANAR, /*!< There is one plane for the luma component, and one plane for interleaved chroma-Cr and chroma-Cb components */
+  AL_PLANE_MODE_SEMIPLANAR, /*!< There is one plane for the luma component, and one plane for interleaved chroma-U and chroma-V components */
   AL_PLANE_MODE_INTERLEAVED, /*!< All components are stored in a single unique plane, in an interleaved fashion */
   AL_PLANE_MODE_MAX_ENUM, /* sentinel */
 }AL_EPlaneMode;
@@ -110,7 +121,7 @@ AL_DEPRECATED_ENUM_VALUE(AL_EPlaneMode, AL_C_ORDER_PACKED, AL_PLANE_MODE_INTERLE
    of the planes. In case of a semiplanar or interleaved frame buffer, it
    will describe the order of component inside a plane.
 *****************************************************************************/
-typedef enum e_ComponentOrder
+typedef enum
 {
   AL_COMPONENT_ORDER_YUV,
   AL_COMPONENT_ORDER_YVU,
@@ -134,7 +145,7 @@ typedef enum e_ComponentOrder
    \brief Frame buffer sample pack mode. Describes on how many bits each sample
    is stored.
 *****************************************************************************/
-typedef enum e_SamplePackMode
+typedef enum
 {
   AL_SAMPLE_PACK_MODE_BYTE, /*!< 8 bits samples stored on 8 bits, 10/12 on 16 bits */
   AL_SAMPLE_PACK_MODE_PACKED, /*!< n bits samples stored exactly on n bits */
@@ -146,7 +157,7 @@ typedef enum e_SamplePackMode
   \brief Frame buffer alpha mode. Describes if buffer contains alpha information,
   and if so, describes its position relatively to other samples.
 *************************************************************************/
-typedef enum e_AlphaMode
+typedef enum
 {
   AL_ALPHA_MODE_DISABLED, /*!< No alpha */
   AL_ALPHA_MODE_BEFORE, /*!< Alpha is stored before other components */
@@ -173,18 +184,20 @@ typedef struct AL_TPicFormat
 /*************************************************************************//*!
    \brief Output type
  *************************************************************************/
-typedef enum AL_e_OutputType
+typedef enum
 {
   AL_OUTPUT_PRIMARY,
   AL_OUTPUT_MAIN,
   AL_OUTPUT_POSTPROC,
-  AL_OUTPUT_LCEVC_YUV,
-  AL_OUTPUT_LCEVC_STREAM,
+  AL_OUTPUT_LCEVC,
   AL_OUTPUT_MAX_ENUM,
 }AL_EOutputType;
 
 /****************************************************************************/
 AL_EPlaneMode GetInternalBufPlaneMode(AL_EChromaMode eChromaMode);
+
+/****************************************************************************/
+AL_ESamplePackMode GetInternalBufSamplePackMode(AL_EFbStorageMode eFbStorageMode, uint8_t uBitDepth);
 
 /****************************************************************************/
 int GetTileWidth(AL_EFbStorageMode eMode, uint8_t uBitDepth);
@@ -200,5 +213,8 @@ bool IsRgbComponentOrder(AL_EComponentOrder eComponentOrder);
 
 /****************************************************************************/
 AL_TPicFormat GetDefaultPicFormat(void);
+
+/*****************************************************************************/
+bool IsTile(AL_EFbStorageMode eStorageMode);
 
 /*@}*/

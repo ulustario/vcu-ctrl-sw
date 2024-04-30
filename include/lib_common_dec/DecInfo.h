@@ -45,6 +45,7 @@ bool AL_NeedsCropping(AL_TCropInfo const* pInfo);
    \param[in] pStreamSettings Settings describing the stream to decode
    \param[in] iStack Number of requests that should be stacked inside the decoder
    at the same time (affects performances)
+   \param[in] iSPSMaxRef The maximum number of reference given in the SPS
    \return Returns the minimum number of output buffers required to decode
    the AVC stream in the specified dpb mode
  ***************************************************************************/

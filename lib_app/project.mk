@@ -17,7 +17,9 @@ LIB_APP_SRC:=\
   lib_app/UnCompFrameReader.cpp\
   lib_app/UnCompFrameWriter.cpp\
   lib_app/CompFrameCommon.cpp\
-  lib_app/SinkBaseWriter.cpp\
+  lib_app/BaseFrameWriter.cpp\
+	lib_app/SinkFrame.cpp\
+	lib_app/SinkCrop.cpp\
   lib_app/SinkCrcDump.cpp\
   lib_app/SinkStreamMd5.cpp\
   lib_app/PlaneUtils.cpp\

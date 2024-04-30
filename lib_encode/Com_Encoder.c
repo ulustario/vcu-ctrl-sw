@@ -1258,15 +1258,25 @@ bool AL_Common_Encoder_SetAutoQP(AL_TEncCtx* pCtx, bool useAutoQP)
 }
 
 /****************************************************************************/
+static bool IsResolutionChangeSupported(AL_TEncChanParam const* pChanParam)
+{
+  (void)pChanParam;
+
+  return true;
+}
+
+/****************************************************************************/
 static bool AL_Common_Encoder_SetChannelResolution(AL_TLayerCtx* pLayerCtx, AL_TEncChanParam* pChanParam, AL_TDimension tDim)
 {
   AL_EChromaMode eChromaMode = AL_GET_CHROMA_MODE(pChanParam->ePicFormat);
 
   if(
-    (AL_ParamConstraints_CheckResolution(pChanParam->eProfile, eChromaMode, 1 << pChanParam->uLog2MaxCuSize, tDim.iWidth, tDim.iHeight) != CRERROR_OK)
+    (!IsResolutionChangeSupported(pChanParam))
+    || (AL_ParamConstraints_CheckResolution(pChanParam->eProfile, eChromaMode, 1 << pChanParam->uLog2MaxCuSize, tDim.iWidth, tDim.iHeight) != CRERROR_OK)
     || (!AL_SrcBuffersChecker_UpdateResolution(&pLayerCtx->srcBufferChecker, tDim))
     )
     return false;
+
   pChanParam->uEncWidth = tDim.iWidth;
   pChanParam->uEncHeight = tDim.iHeight;
   pChanParam->uSrcWidth = tDim.iWidth;

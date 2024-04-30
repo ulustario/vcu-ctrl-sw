@@ -12,7 +12,7 @@
 #endif
 
 #if defined(_WIN32)
-#include <windows.h>
+#include "extra/dirent/include/dirent.h"
 #endif
 
 #include "lib_app/FileUtils.h"

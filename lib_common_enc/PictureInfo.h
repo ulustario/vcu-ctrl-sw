@@ -55,7 +55,21 @@ typedef struct AL_TPictureInfo
   AL_ESliceType eType; /*!< The type of the current slice (I, P, B, ...) */
   AL_EPicStruct ePicStruct; /*!< Identifies the pic_struct field */
   AL_EMarkingRef eMarking; /*!< Reference picture status */
-  uint8_t uTempId; /*!< Temporal ID */
+
+  /*
+    Hierarchical-Level: describes the level of the picture in the interprediction dependency
+    hierarchy. It is used by the encoder-library to characterize the type/importance of pictures,
+    but is not encoded in the bitstream. See Pyramidal-GOP mode for typical usage.
+  */
+  uint8_t uHierarchicalLevel;
+  /*
+    Temporal ID: it is similar to the Hierarchical-Level, but it is this time encoded in the bitstream.
+    It allows a decoder to decode only a subset of the frames, as access-units with temporal-id N are
+    guaranteed not to depend on access-units with temporal-id (N+1). Often, it is identical to the
+    Hierarchical-Level. In some cases though, we cannot follow the Hierarchical-Level because of ITU
+    specification constraints (ex.: interlaced).
+  */
+  uint8_t uTempId;
 
   bool bForceLT[2]; /*!< Specifies if a following reference picture need to be marked as long-term */
 

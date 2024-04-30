@@ -7,4 +7,4 @@
 #include "lib_app/Sink.h"
 #include "CfgParser.h"
 
-std::unique_ptr<IFrameSink> createBitstreamWriter(std::string path, ConfigFile const& cfg);
+IFrameSink* createBitstreamWriter(std::string path, ConfigFile const& cfg);

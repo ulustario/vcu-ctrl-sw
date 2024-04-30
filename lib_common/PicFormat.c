@@ -14,6 +14,24 @@ AL_EPlaneMode GetInternalBufPlaneMode(AL_EChromaMode eChromaMode)
          (eChromaMode == AL_CHROMA_4_4_4 ? AL_PLANE_MODE_PLANAR : AL_PLANE_MODE_SEMIPLANAR);
 }
 
+/****************************************************************************/
+AL_ESamplePackMode GetInternalBufSamplePackMode(AL_EFbStorageMode eFbStorageMode, uint8_t uBitDepth)
+{
+  (void)uBitDepth;
+
+  if(IsTile(eFbStorageMode))
+    return AL_SAMPLE_PACK_MODE_PACKED;
+
+  return uBitDepth == 10 ? AL_SAMPLE_PACK_MODE_PACKED_XV : AL_SAMPLE_PACK_MODE_BYTE;
+}
+
+/*****************************************************************************/
+bool IsTile(AL_EFbStorageMode eStorageMode)
+{
+  bool bIsTile = AL_FB_TILE_32x4 == eStorageMode || AL_FB_TILE_64x4 == eStorageMode;
+  return bIsTile;
+}
+
 /*****************************************************************************/
 int GetTileWidth(AL_EFbStorageMode eMode, uint8_t uBitDepth)
 {

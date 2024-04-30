@@ -5,4 +5,4 @@
 
 #include "lib_app/Sink.h"
 
-std::unique_ptr<IFrameSink> createYuvMd5Calculator(std::string path);
+IFrameSink* createYuvMd5Calculator(std::string path);

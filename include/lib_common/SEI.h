@@ -11,7 +11,7 @@
 #pragma once
 
 /****************************************************************************/
-typedef enum e_SeiFlag
+typedef enum
 {
   AL_SEI_NONE = 0x00000000, // !< no SEI
   // prefix (16 LSBs)

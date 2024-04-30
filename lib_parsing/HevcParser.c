@@ -928,39 +928,36 @@ bool AL_HEVC_ParseSEI(AL_TAup* pIAup, AL_TRbspParser* pRP, bool bIsPrefix, AL_CB
 }
 
 /*****************************************************************************/
-AL_TCropInfo AL_HEVC_GetCropInfo(AL_THevcSps const* pSPS)
+void AL_HEVC_GetCropInfo(AL_THevcSps const* pSPS, AL_TCropInfo* pCropInfo)
 {
-  // update cropping information
-  AL_TCropInfo cropInfo =
-  {
-    0
-  };
-  cropInfo.bCropping = pSPS->conformance_window_flag;
-
   if(pSPS->conformance_window_flag)
   {
+    pCropInfo->bCropping = true;
+
     if(pSPS->chroma_format_idc == 1 || pSPS->chroma_format_idc == 2)
     {
-      cropInfo.uCropOffsetLeft += 2 * pSPS->conf_win_left_offset;
-      cropInfo.uCropOffsetRight += 2 * pSPS->conf_win_right_offset;
+      pCropInfo->uCropOffsetLeft = 2 * pSPS->conf_win_left_offset;
+      pCropInfo->uCropOffsetRight = 2 * pSPS->conf_win_right_offset;
     }
     else
     {
-      cropInfo.uCropOffsetLeft += pSPS->conf_win_left_offset;
-      cropInfo.uCropOffsetRight += pSPS->conf_win_right_offset;
+      pCropInfo->uCropOffsetLeft = pSPS->conf_win_left_offset;
+      pCropInfo->uCropOffsetRight = pSPS->conf_win_right_offset;
     }
 
     if(pSPS->chroma_format_idc == 1)
     {
-      cropInfo.uCropOffsetTop += 2 * pSPS->conf_win_top_offset;
-      cropInfo.uCropOffsetBottom += 2 * pSPS->conf_win_bottom_offset;
+      pCropInfo->uCropOffsetTop = 2 * pSPS->conf_win_top_offset;
+      pCropInfo->uCropOffsetBottom = 2 * pSPS->conf_win_bottom_offset;
     }
     else
     {
-      cropInfo.uCropOffsetTop += pSPS->conf_win_top_offset;
-      cropInfo.uCropOffsetBottom += pSPS->conf_win_bottom_offset;
+      pCropInfo->uCropOffsetTop = pSPS->conf_win_top_offset;
+      pCropInfo->uCropOffsetBottom = pSPS->conf_win_bottom_offset;
     }
   }
-
-  return cropInfo;
+  else
+  {
+    ResetCropInfo(pCropInfo);
+  }
 }

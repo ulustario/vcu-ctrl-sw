@@ -11,10 +11,10 @@
 /*************************************************************************//*!
    \brief Decoder synchronization mode
 *****************************************************************************/
-typedef enum AL_e_DecUnit
+typedef enum
 {
-  AL_AU_UNIT = 0, /*< decode at the Access Unit level (frame) */
-  AL_VCL_NAL_UNIT = 1, /*< decode at the NAL Unit level (slice) */
+  AL_AU_UNIT = 0, /*!< decode at the Access Unit level (frame) */
+  AL_VCL_NAL_UNIT = 1, /*!< decode at the NAL Unit level (slice) */
   AL_DEC_UNIT_MAX_ENUM,
 }AL_EDecUnit;
 

@@ -14,10 +14,9 @@
 #include "lib_parsing/HevcParser.h"
 
 /*****************************************************************************/
-void AL_HEVC_PictMngr_UpdateRecInfo(AL_TPictMngrCtx* pCtx, AL_THevcSps const* pSPS, AL_EPicStruct ePicStruct)
+void AL_HEVC_PictMngr_UpdateRecInfo(AL_TPictMngrCtx* pCtx, AL_TCropInfo const* pCropInfo, AL_EPicStruct ePicStruct)
 {
-  AL_TCropInfo cropInfo = AL_HEVC_GetCropInfo(pSPS);
-  AL_PictMngr_UpdateDisplayBufferCrop(pCtx, pCtx->uRecID, cropInfo);
+  AL_PictMngr_UpdateDisplayBufferCrop(pCtx, pCtx->uRecID, pCropInfo);
   AL_PictMngr_UpdateDisplayBufferPicStruct(pCtx, pCtx->uRecID, ePicStruct);
 }
 

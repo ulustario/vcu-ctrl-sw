@@ -17,6 +17,7 @@
 
 #include "lib_common_dec/RbspParser.h"
 #include "lib_common_dec/DecInfo.h"
+#include "lib_common_dec/DecInfoInternal.h"
 #include "lib_common_dec/Defines_mcu.h"
 #include "lib_common_dec/DecHardwareConfig.h"
 #include "lib_common_dec/StreamSettingsInternal.h"
@@ -196,12 +197,6 @@ static bool isIntraProfileSPS(AL_THevcSps const* pSPS)
 }
 
 /*****************************************************************************/
-int AL_HEVC_GetMaxDpbBuffers(AL_TStreamSettings const* pCurrentStreamSettings)
-{
-  return Max(AL_HEVC_GetMaxDPBSize(pCurrentStreamSettings->iLevel, pCurrentStreamSettings->tDim.iWidth, pCurrentStreamSettings->tDim.iHeight, AL_IS_INTRA_PROFILE(pCurrentStreamSettings->eProfile), AL_IS_STILL_PROFILE(pCurrentStreamSettings->eProfile), pCurrentStreamSettings->bDecodeIntraOnly), pCurrentStreamSettings->iMaxRef);
-}
-
-/*****************************************************************************/
 static AL_ERR resolutionFound(AL_TDecCtx* pCtx, AL_TStreamSettings const* pCurrentStreamSettings, AL_TCropInfo const* pCropInfo)
 {
   int iMaxBuf = AL_HEVC_GetMinOutputBuffersNeeded(pCurrentStreamSettings, pCtx->iStackSize);
@@ -368,7 +363,8 @@ static bool allocateBuffers(AL_TDecCtx* pCtx, AL_THevcSps const* pSPS)
   if(!AL_PictMngr_BasicInit(&pCtx->PictMngr, &tPictMngrParam))
     goto fail_alloc;
 
-  AL_TCropInfo tCropInfo = AL_HEVC_GetCropInfo(pSPS);
+  AL_TCropInfo tCropInfo;
+  AL_HEVC_GetCropInfo(pSPS, &tCropInfo);
   error = resolutionFound(pCtx, pStreamSettings, &tCropInfo);
 
   if(AL_IS_ERROR_CODE(error))
@@ -411,20 +407,7 @@ static bool initChannel(AL_TDecCtx* pCtx, AL_THevcSps const* pSPS)
     }
   }
 
-  AL_TDecScheduler_CB_EndParsing endParsingCallback = { AL_Default_Decoder_EndParsing, pCtx };
-  AL_TDecScheduler_CB_EndDecoding endDecodingCallback = { AL_Default_Decoder_EndDecoding, pCtx };
-  AL_ERR eError = AL_IDecScheduler_CreateChannel(&pCtx->hChannel, pCtx->pScheduler, &pCtx->tMDChanParam, endParsingCallback, endDecodingCallback);
-
-  if(AL_IS_ERROR_CODE(eError))
-  {
-    AL_Default_Decoder_SetError(pCtx, eError, -1, true);
-    pCtx->eChanState = CHAN_INVALID;
-    return false;
-  }
-
-  pCtx->eChanState = CHAN_CONFIGURED;
-
-  return true;
+  return AL_Default_Decoder_CreateChannel(pCtx, AL_Default_Decoder_EndParsing, AL_Default_Decoder_EndDecoding);
 }
 
 /******************************************************************************/
@@ -736,6 +719,14 @@ static bool hevcInitFrameBuffers(AL_TDecCtx* pCtx, bool bStartsNewCVS, const AL_
 }
 
 /*****************************************************************************/
+static void hevcGetCropInfo(AL_TDecCtx* pCtx, AL_THevcSps const* pSPS, AL_TCropInfo* pCropInfo)
+{
+  (void)pCtx;
+
+  AL_HEVC_GetCropInfo(pSPS, pCropInfo);
+}
+
+/*****************************************************************************/
 static bool decodeSliceData(AL_TAup* pIAUP, AL_TDecCtx* pCtx, AL_ENut eNUT, bool bIsLastAUNal, int* iNumSlice)
 {
   AL_TDecFrameCtx* pFrmCtx = &pCtx->tCurrentFrameCtx;
@@ -839,7 +830,8 @@ static bool decodeSliceData(AL_TAup* pIAUP, AL_TDecCtx* pCtx, AL_ENut eNUT, bool
     }
     else if(spsSettings.tDim.iWidth != pStreamSettings->tDim.iWidth || spsSettings.tDim.iHeight != pStreamSettings->tDim.iHeight)
     {
-      AL_TCropInfo tCropInfo = AL_HEVC_GetCropInfo(pSPS);
+      AL_TCropInfo tCropInfo;
+      AL_HEVC_GetCropInfo(pSPS, &tCropInfo);
       AL_ERR error = resolutionFound(pCtx, &spsSettings, &tCropInfo);
 
       if(error != AL_SUCCESS)
@@ -918,8 +910,11 @@ static bool decodeSliceData(AL_TAup* pIAUP, AL_TDecCtx* pCtx, AL_ENut eNUT, bool
   {
     if(!hevcInitFrameBuffers(pCtx, bIsRAP, pSlice->pSPS, pPP, pBufs))
       return false;
+
+    AL_TCropInfo tCropInfo;
+    hevcGetCropInfo(pCtx, pSlice->pSPS, &tCropInfo);
     pFrmCtx->eBufStatus = DEC_FRAME_BUF_RESERVED;
-    AL_HEVC_PictMngr_UpdateRecInfo(&pCtx->PictMngr, pSlice->pSPS, pAUP->ePicStruct);
+    AL_HEVC_PictMngr_UpdateRecInfo(&pCtx->PictMngr, &tCropInfo, pAUP->ePicStruct);
   }
 
   bool bLastSlice = *iNumSlice >= pCtx->pChanParam->iMaxSlices;

@@ -46,7 +46,7 @@ private:
   std::ofstream m_CrcFile;
 };
 
-std::unique_ptr<IFrameSink> createStreamCrcDump(std::string path)
+IFrameSink* createStreamCrcDump(std::string path)
 {
-  return std::unique_ptr<IFrameSink>(new StreamCrcDump(path));
+  return new StreamCrcDump(path);
 }

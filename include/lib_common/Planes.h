@@ -31,7 +31,7 @@
   AL_PLANE_MAP_V, \
   AL_PLANE_MAP_UV \
 
-typedef enum AL_e_PlaneId
+typedef enum
 {
   AL_PLANE_PIXEL_LIST,
   AL_PLANE_MAP_LIST,

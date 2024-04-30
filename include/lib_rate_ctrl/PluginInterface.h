@@ -15,8 +15,7 @@
  *****************************************************************************/
 #pragma once
 
-#include <stddef.h>
-#include <stdint.h>
+#include "lib_rtos/types.h"
 #include "lib_common/Allocator.h"
 #include "lib_common/SliceConsts.h"
 #include "lib_common_enc/RateCtrlStats.h"
@@ -26,7 +25,7 @@
     Contains the user defined constraints on the stream in term of quality and bandwidth.
     Also contains the hardware constraints that will affect the rate control (See AL_RC_OPT_DELAYED)
 *****************************************************************************/
-typedef struct Plugin_t_RCParam
+typedef struct
 {
   uint32_t uInitialRemDelay; /*!< Initial removal delay */
   uint32_t uCPBSize; /*!< Size of the Codec Picture Buffer */
@@ -47,7 +46,7 @@ typedef struct Plugin_t_RCParam
     Contains information about the structure of the GOP. Its length and how many
     B frames are in it. Also how many frame we have to wait before we get a new IDR.
 *****************************************************************************/
-typedef struct Plugin_t_GopParam
+typedef struct
 {
   uint32_t uFreqIDR; /*!< Frequency of the Instantaneous Decoding Refresh Picture */
   uint16_t uGopLength; /*!< Length of the Group Of Picture in the encoded stream */
@@ -57,7 +56,7 @@ typedef struct Plugin_t_GopParam
 /*************************************************************************//*!
     \brief Information about the picture and how it was/will be added in the stream.
 *****************************************************************************/
-typedef struct Plugin_t_PictureInfo
+typedef struct
 {
   uint32_t uSrcOrder; /*!< Source picture number in display order */
   uint32_t uFlags; /*!< Bitfield containing information about this picture (For example AL_PICT_INFO_IS_REF or AL_PICT_INFO_IS_IDR) \see include/lib_common_enc/PictureInfo.h for the full list */
@@ -75,7 +74,7 @@ typedef AL_RateCtrl_Statistics Plugin_Statistics;
      It is used by the firmware to call your rate control plugin implementation.
      You should fill it with your functions when the RC_Plugin_Init function is called.
 *****************************************************************************/
-typedef struct t_RC_Plugin_Vtable
+typedef struct
 {
 /*************************************************************************//*!
    \brief First initialization step: Initialize the rate control with the stream parameters.
@@ -178,7 +177,7 @@ typedef struct t_RC_Plugin_Vtable
      The trace function is useful to debug your plugin behavior
      The invalidateCache function has to be used before you access dma buffers allocated on the CPU.
 *****************************************************************************/
-typedef struct t_Mcu_Export_Vtable
+typedef struct
 {
 /*************************************************************************//*!
    \brief Print function that can be used to debug the plugin rate control

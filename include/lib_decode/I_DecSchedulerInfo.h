@@ -34,7 +34,8 @@ typedef enum
 {
   AL_IDECSCHEDULER_VERSION, /*!< reference: AL_TIDecSchedulerVersion */
   AL_IDECSCHEDULER_CORE, /*!< reference: AL_TIDecSchedulerCore */
-  AL_IDECSCHEDULER_CHANNEL_TRACE_CALLBACK, /*!< reference: AL_TIDecSchedulerChannelTraceCallback */
+  AL_IDECSCHEDULER_SCD_TRACE_CALLBACK, /*!< reference: AL_TIDecSchedulerTraceCallback */
+  AL_IDECSCHEDULER_CHANNEL_TRACE_CALLBACK, /*!< reference: AL_TIDecSchedulerTraceCallback */
   AL_IDECSCHEDULER_MAX_ENUM,
 }AL_EIDecSchedulerInfo;
 
@@ -43,6 +44,7 @@ static inline char const* ToStringIDecSchedulerInfo(AL_EIDecSchedulerInfo eInfo)
   switch(eInfo)
   {
   case AL_IDECSCHEDULER_CORE: return "AL_IDECSCHEDULER_CORE";
+  case AL_IDECSCHEDULER_SCD_TRACE_CALLBACK: return "AL_IDECSCHEDULER_SCD_TRACE_CALLBACK";
   case AL_IDECSCHEDULER_CHANNEL_TRACE_CALLBACK: return "AL_IDECSCHEDULER_CHANNEL_TRACE_CALLBACK";
   case AL_IDECSCHEDULER_VERSION: return "AL_IDECSCHEDULER_VERSION";
   case AL_IDECSCHEDULER_MAX_ENUM: return "AL_IDECSCHEDULER_MAX_ENUM";

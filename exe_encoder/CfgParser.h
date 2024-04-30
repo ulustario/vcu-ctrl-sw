@@ -73,7 +73,7 @@ typedef AL_INTROSPECT (category = "debug") struct tConfigYUVInput
 /*************************************************************************//*!
    \brief Source format
 *****************************************************************************/
-typedef enum e_SrcFormat
+typedef enum
 {
   AL_SRC_FORMAT_RASTER,
   AL_SRC_FORMAT_TILE_64x4,

@@ -23,7 +23,7 @@ AL_ERR AL_Lib_Encoder_Init(AL_ELibEncoderArch eArch)
 }
 
 /*****************************************************************************/
-void AL_Lib_Encoder_DeInit()
+void AL_Lib_Encoder_DeInit(void)
 {
   if(pArch)
     pArch->vtable->Deinit();

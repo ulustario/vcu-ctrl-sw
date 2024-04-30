@@ -161,7 +161,7 @@ void AL_HEVC_GenerateVPS(AL_TVps* pIVPS, AL_TEncSettings const* pSettings, int i
   int vps_max_layers_minus1 = 0;
   pVPS->vps_max_layers_minus1 = vps_max_layers_minus1;
   AL_TGopParam const* const pGopParam = &pSettings->tChParam[0].tGopParam;
-  int const iNumTemporalLayer = DeduceNumTemporalLayer(pGopParam);
+  int const iNumTemporalLayer = DeduceNumTemporalLayer(pGopParam, AL_CODEC_HEVC, pSettings->tChParam[0].eVideoMode);
   pVPS->vps_max_sub_layers_minus1 = iNumTemporalLayer - 1;
   pVPS->vps_temporal_id_nesting_flag = 1;
 
@@ -213,7 +213,7 @@ static void AL_HEVC_UpdateHrdParameters(AL_THevcSps* pSPS, AL_TSubHrdParam* pSub
 
   AL_TGopParam const* const pGopParam = &pSettings->tChParam[0].tGopParam;
 
-  for(int i = 0; i < DeduceNumTemporalLayer(pGopParam); ++i)
+  for(int i = 0; i < DeduceNumTemporalLayer(pGopParam, AL_CODEC_HEVC, pSettings->tChParam[0].eVideoMode); ++i)
   {
     pSPS->vui_param.hrd_param.fixed_pic_rate_general_flag[i] = 0;
     pSPS->vui_param.hrd_param.fixed_pic_rate_within_cvs_flag[i] = 0;
@@ -296,7 +296,7 @@ void AL_HEVC_GenerateSPS(AL_TSps* pISPS, AL_TEncSettings const* pSettings, AL_TE
   AL_EChromaMode eChromaMode = AL_GET_CHROMA_MODE(pChParam->ePicFormat);
   pSPS->sps_video_parameter_set_id = 0;
   AL_TGopParam const* const pGopParam = &pSettings->tChParam[0].tGopParam;
-  int const iNumTemporalLayer = DeduceNumTemporalLayer(pGopParam);
+  int const iNumTemporalLayer = DeduceNumTemporalLayer(pGopParam, AL_CODEC_HEVC, pSettings->tChParam[0].eVideoMode);
 
   if(iLayerId == 0)
     pSPS->sps_max_sub_layers_minus1 = iNumTemporalLayer - 1;

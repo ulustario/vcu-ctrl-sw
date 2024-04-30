@@ -530,53 +530,53 @@ bool AL_AVC_ParseSEI(AL_TAup* pIAup, AL_TRbspParser* pRP, bool bIsPrefix, AL_CB_
 }
 
 /*****************************************************************************/
-AL_TCropInfo AL_AVC_GetCropInfo(AL_TAvcSps const* pSPS)
+void AL_AVC_GetCropInfo(AL_TAvcSps const* pSPS, AL_TCropInfo* pCropInfo)
 {
-  AL_TCropInfo tCropInfo = { false, 0, 0, 0, 0 };
-
-  if(!pSPS->frame_cropping_flag)
-    return tCropInfo;
-
-  tCropInfo.bCropping = true;
-
-  int iCropUnitX = 0;
-  int iCropUnitY = 0;
-  switch(pSPS->chroma_format_idc)
+  if(pSPS->frame_cropping_flag)
   {
-  case 0:  // monochrome
-    AL_Assert((pSPS->separate_colour_plane_flag == 0) && " pSPS->separate_colour_plane_flag != 0 is not allowed in Monochrome");
-    iCropUnitX = 1;
-    iCropUnitY = 1;
-    break;
+    pCropInfo->bCropping = true;
 
-  case 1:  // 4:2:0
-    AL_Assert((pSPS->separate_colour_plane_flag == 0) && " pSPS->separate_colour_plane_flag != 0 is not allowed in 4:2:0");
-    iCropUnitX = 2;
-    iCropUnitY = 2;
-    break;
+    int iCropUnitX = 0;
+    int iCropUnitY = 0;
+    switch(pSPS->chroma_format_idc)
+    {
+    case 0:  // monochrome
+      AL_Assert((pSPS->separate_colour_plane_flag == 0) && " pSPS->separate_colour_plane_flag != 0 is not allowed in Monochrome");
+      iCropUnitX = 1;
+      iCropUnitY = 1;
+      break;
 
-  case 2:  // 4:2:2
-    AL_Assert((pSPS->separate_colour_plane_flag == 0) && " pSPS->separate_colour_plane_flag != 0 is not allowed in 4:2:2");
-    iCropUnitX = 2;
-    iCropUnitY = 1;
-    break;
+    case 1:  // 4:2:0
+      AL_Assert((pSPS->separate_colour_plane_flag == 0) && " pSPS->separate_colour_plane_flag != 0 is not allowed in 4:2:0");
+      iCropUnitX = 2;
+      iCropUnitY = 2;
+      break;
 
-  case 3:  // 4:4:4
-    iCropUnitX = 1;
-    iCropUnitY = 1;
-    break;
+    case 2:  // 4:2:2
+      AL_Assert((pSPS->separate_colour_plane_flag == 0) && " pSPS->separate_colour_plane_flag != 0 is not allowed in 4:2:2");
+      iCropUnitX = 2;
+      iCropUnitY = 1;
+      break;
 
-  default:
-    AL_Assert(0 && "invalid pSPS->chroma_format_idc");
+    case 3:  // 4:4:4
+      iCropUnitX = 1;
+      iCropUnitY = 1;
+      break;
+
+    default:
+      AL_Assert(0 && "invalid pSPS->chroma_format_idc");
+    }
+
+    iCropUnitY *= (2 - pSPS->frame_mbs_only_flag);
+
+    pCropInfo->uCropOffsetLeft = iCropUnitX * pSPS->frame_crop_left_offset;
+    pCropInfo->uCropOffsetRight = iCropUnitX * pSPS->frame_crop_right_offset;
+
+    pCropInfo->uCropOffsetTop = iCropUnitY * pSPS->frame_crop_top_offset;
+    pCropInfo->uCropOffsetBottom = iCropUnitY * pSPS->frame_crop_bottom_offset;
   }
-
-  iCropUnitY *= (2 - pSPS->frame_mbs_only_flag);
-
-  tCropInfo.uCropOffsetLeft = iCropUnitX * pSPS->frame_crop_left_offset;
-  tCropInfo.uCropOffsetRight = iCropUnitX * pSPS->frame_crop_right_offset;
-
-  tCropInfo.uCropOffsetTop = iCropUnitY * pSPS->frame_crop_top_offset;
-  tCropInfo.uCropOffsetBottom = iCropUnitY * pSPS->frame_crop_bottom_offset;
-
-  return tCropInfo;
+  else
+  {
+    ResetCropInfo(pCropInfo);
+  }
 }

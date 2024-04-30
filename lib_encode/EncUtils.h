@@ -142,7 +142,7 @@ void AL_UpdateSarAspectRatio(AL_TVuiParam* pVuiParam, uint32_t uWidth, uint32_t 
 bool AL_IsGdrEnabled(AL_TEncChanParam const* pChParam);
 
 void AL_UpdateVuiTimingInfo(AL_TVuiParam* pVUI, int iLayerId, AL_TRCParam const* pRCParam, int iTimeScaleFactor);
-int DeduceNumTemporalLayer(AL_TGopParam const* pGop);
+int DeduceNumTemporalLayer(AL_TGopParam const* pGop, AL_ECodec eCodec, AL_EVideoMode eVideoMode);
 bool HasCuQpDeltaDepthEnabled(AL_TEncSettings const* pSettings, AL_TEncChanParam const* pChParam);
 
 /****************************************************************************/

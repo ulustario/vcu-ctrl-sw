@@ -6,7 +6,7 @@
 #include "lib_common_enc/EncPicInfo.h"
 #include "lib_common/PicFormat.h"
 
-typedef enum AL_e_CheckResolutionError
+typedef enum
 {
   CRERROR_OK,
   CRERROR_WIDTHCHROMA,

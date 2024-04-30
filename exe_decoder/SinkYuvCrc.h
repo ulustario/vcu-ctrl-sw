@@ -5,4 +5,4 @@
 
 #include "lib_app/Sink.h"
 
-std::unique_ptr<IFrameSink> createCSCrcCalculator(std::string path);
+IFrameSink* createCSCrcCalculator(const std::string path);

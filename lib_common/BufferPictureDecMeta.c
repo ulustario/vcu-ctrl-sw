@@ -31,7 +31,7 @@ static AL_TMetaData* PictureDecMeta_Clone(AL_TMetaData* pMeta)
   return (AL_TMetaData*)AL_PictureDecMetaData_Clone((AL_TPictureDecMetaData*)pMeta);
 }
 
-AL_TPictureDecMetaData* AL_PictureDecMetaData_Create()
+AL_TPictureDecMetaData* AL_PictureDecMetaData_Create(void)
 {
   AL_TPictureDecMetaData* pMeta = (AL_TPictureDecMetaData*)Rtos_Malloc(sizeof(*pMeta));
 

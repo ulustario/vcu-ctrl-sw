@@ -11,7 +11,7 @@
 #include "Profiles.h"
 
 #define AL_MAX_NUM_REF 16
-#define AL_MAX_NUM_B_PICT 15
+#define AL_MAX_NUM_B_PICT 30
 
 /*************************************************************************//*!
    \brief Maximum number of frame type i.e. (I, P, B)
@@ -21,7 +21,7 @@
 /*************************************************************************//*!
    \brief Identifies the slice coding type
 *****************************************************************************/
-typedef enum e_SliceType
+typedef enum
 {
   AL_SLICE_SI = 4, /*!< AVC SI Slice */
   AL_SLICE_SP = 3, /*!< AVC SP Slice */
@@ -39,7 +39,7 @@ typedef enum e_SliceType
 /*************************************************************************//*!
    \brief Identifies pic_struct (subset of table D-2)
 *****************************************************************************/
-typedef enum e_PicStruct
+typedef enum
 {
   AL_PS_FRM = 0,
   AL_PS_TOP_FLD = 1,
@@ -60,7 +60,7 @@ typedef enum e_PicStruct
 /*************************************************************************//*!
    \brief identifies the entropy coding method
 *****************************************************************************/
-typedef enum e_EntropyMode
+typedef enum
 {
   AL_MODE_CAVLC, /*!< Use the CAVLC entropy */
   AL_MODE_CABAC, /*!< Use the CABAC entropy */
@@ -70,7 +70,7 @@ typedef enum e_EntropyMode
 /*************************************************************************//*!
    \brief Weighted Pred Mode
 *****************************************************************************/
-typedef enum e_WPMode
+typedef enum
 {
   AL_WP_DEFAULT,
   AL_WP_EXPLICIT,
@@ -92,7 +92,7 @@ typedef struct
 /*************************************************************************//*!
    \brief Filler Data Control Mode
 *****************************************************************************/
-typedef enum e_FillerCtrlMode
+typedef enum
 {
   AL_FILLER_DISABLE,
   AL_FILLER_ENC, /*!< 0xFF data filled by encoder it-self */
@@ -102,7 +102,7 @@ typedef enum e_FillerCtrlMode
 /*************************************************************************//*!
    \brief Start code bytes aligned mode
 *****************************************************************************/
-typedef enum e_StartCodeBytesAlignedMode
+typedef enum
 {
   AL_START_CODE_AUTO,
   AL_START_CODE_3_BYTES,

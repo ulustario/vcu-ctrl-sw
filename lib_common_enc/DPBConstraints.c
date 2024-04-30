@@ -117,8 +117,31 @@ uint8_t AL_DPBConstraint_GetMaxRef_LowDelayGop(const AL_TGopParam* pGopParam, AL
 }
 
 /****************************************************************************/
+static uint8_t AL_DPBConstraint_AdjustMaxRefInterlaced(AL_ECodec eCodec, uint8_t uProgressiveMaxRef)
+{
+  uint8_t uInterleavedMaxRef;
+
+  if(eCodec == AL_CODEC_AVC)
+  {
+    // In AVC, top and bottom fields holds in a single reference. Yet, we still need to
+    // add a reference to keep the current buffer as reference when dealing with the
+    // second field.
+    uInterleavedMaxRef = uProgressiveMaxRef + 1;
+  }
+  else
+  {
+    // In HEVC, each field is handled as a separated reference.
+    uInterleavedMaxRef = 2 * uProgressiveMaxRef;
+  }
+
+  return uInterleavedMaxRef;
+}
+
+/****************************************************************************/
 uint8_t AL_DPBConstraint_GetMaxRef(const AL_TGopParam* pGopParam, AL_ECodec eCodec, AL_EVideoMode eVideoMode, uint8_t uLookAheadAdditionalRef)
 {
+  (void)eVideoMode;
+
   uint8_t uMaxRef = 0;
 
   if((pGopParam->eMode & AL_GOP_FLAG_DEFAULT) || (pGopParam->eMode == AL_GOP_MODE_ADAPTIVE))
@@ -132,9 +155,8 @@ uint8_t AL_DPBConstraint_GetMaxRef(const AL_TGopParam* pGopParam, AL_ECodec eCod
     AL_Assert(0);
   }
 
-  // The current buffer is used as reference when dealing with the second field
-  if(eCodec == AL_CODEC_AVC && eVideoMode != AL_VM_PROGRESSIVE)
-    ++uMaxRef;
+  if(eVideoMode != AL_VM_PROGRESSIVE)
+    uMaxRef = AL_DPBConstraint_AdjustMaxRefInterlaced(eCodec, uMaxRef);
 
   uMaxRef += uLookAheadAdditionalRef;
 

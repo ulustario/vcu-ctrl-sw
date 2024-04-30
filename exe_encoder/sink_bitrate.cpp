@@ -91,8 +91,8 @@ struct BitrateWriter : IFrameSink
   std::ofstream m_file;
 };
 
-std::unique_ptr<IFrameSink> createBitrateWriter(std::string path, ConfigFile const& cfg)
+IFrameSink* createBitrateWriter(std::string path, ConfigFile const& cfg)
 {
   auto const frameRate = (float)cfg.Settings.tChParam[0].tRCParam.uFrameRate / cfg.Settings.tChParam[0].tRCParam.uClkRatio * 1000;
-  return std::unique_ptr<IFrameSink>(new BitrateWriter(path, frameRate));
+  return new BitrateWriter(path, frameRate);
 }

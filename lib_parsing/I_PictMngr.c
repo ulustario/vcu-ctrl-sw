@@ -443,8 +443,7 @@ static uint8_t sMvBufPool_GetFreeBufID(AL_TMvBufPool* pPool)
   AL_Assert(pPool->iAccessCnt[uMvID] == 0);
   pPool->iAccessCnt[uMvID] = 1;
 
-  if(AL_CLEAN_BUFFERS)
-    Rtos_Memset(pPool->pMvBufs[uMvID].tMD.pVirtualAddr, 0, pPool->pMvBufs[uMvID].tMD.uSize);
+  AL_CleanupMemory(pPool->pMvBufs[uMvID].tMD.pVirtualAddr, pPool->pMvBufs[uMvID].tMD.uSize);
 
   Rtos_ReleaseMutex(pPool->Mutex);
 
@@ -618,6 +617,7 @@ bool AL_PictMngr_BasicInit(AL_TPictMngrCtx* pCtx, AL_TPictMngrParam* pParam)
   pCtx->bFirstInit = true;
   Rtos_ReleaseMutex(pCtx->FirstInitMutex);
   pCtx->bForceOutput = pParam->bForceOutput;
+  pCtx->bCompleteInit = false;
 
   pCtx->tOutputPosition = pParam->tOutputPosition;
 
@@ -626,7 +626,16 @@ bool AL_PictMngr_BasicInit(AL_TPictMngrCtx* pCtx, AL_TPictMngrParam* pParam)
 
 bool AL_PictMngr_CompleteInit(AL_TPictMngrCtx* pCtx, AL_TAllocator* pAllocator, bool bEnableSecondOutput)
 {
-  return sFrmBufPool_Init(&pCtx->FrmBufPool, pAllocator, bEnableSecondOutput);
+  bool bSuccess = sFrmBufPool_Init(&pCtx->FrmBufPool, pAllocator, bEnableSecondOutput);
+  pCtx->bCompleteInit = bSuccess;
+  return bSuccess;
+}
+
+/*****************************************************************************/
+
+bool AL_PictMngr_IsInitComplete(AL_TPictMngrCtx const* pCtx)
+{
+  return pCtx->bCompleteInit;
 }
 
 /*****************************************************************************/
@@ -808,10 +817,10 @@ static void sFrmBufPool_UpdateCRC(AL_TFrmBufPool* pPool, int iFrameID, uint32_t 
 }
 
 /***************************************************************************/
-static void sFrmBufPool_UpdateCrop(AL_TFrmBufPool* pPool, int iFrameID, AL_TCropInfo tCrop)
+static void sFrmBufPool_UpdateCrop(AL_TFrmBufPool* pPool, int iFrameID, AL_TCropInfo const* pCrop)
 {
-  AL_Assert(iFrameID >= 0 && iFrameID < FRM_BUF_POOL_SIZE);
-  pPool->array[iFrameID].tCrop = tCrop;
+  AL_Assert(iFrameID >= 0 && iFrameID < FRM_BUF_POOL_SIZE && pCrop);
+  pPool->array[iFrameID].tCrop = *pCrop;
 }
 
 /***************************************************************************/
@@ -835,9 +844,9 @@ void AL_PictMngr_UpdateDisplayBufferCRC(AL_TPictMngrCtx* pCtx, int iFrameID, uin
 }
 
 /***************************************************************************/
-void AL_PictMngr_UpdateDisplayBufferCrop(AL_TPictMngrCtx* pCtx, int iFrameID, AL_TCropInfo tCrop)
+void AL_PictMngr_UpdateDisplayBufferCrop(AL_TPictMngrCtx* pCtx, int iFrameID, AL_TCropInfo const* pCrop)
 {
-  sFrmBufPool_UpdateCrop(&pCtx->FrmBufPool, iFrameID, tCrop);
+  sFrmBufPool_UpdateCrop(&pCtx->FrmBufPool, iFrameID, pCrop);
 }
 
 /***************************************************************************/
@@ -1173,7 +1182,8 @@ void AL_PictMngr_DecommitPool(AL_TPictMngrCtx* pCtx)
   }
   Rtos_ReleaseMutex(pCtx->FirstInitMutex);
 
-  sFrmBufPoolFifo_Decommit(&pCtx->FrmBufPool);
+  if(pCtx->bCompleteInit)
+    sFrmBufPoolFifo_Decommit(&pCtx->FrmBufPool);
 }
 
 /*****************************************************************************/

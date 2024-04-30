@@ -212,6 +212,7 @@ bool CIpDevice::HandleDeviceFailure()
 CIpDevice::CIpDevice(CIpDeviceParam const& param, AL_EDeviceType eDeviceType, std::set<std::string> tDevices) :
   m_tDevices(tDevices)
 {
+  (void)param;
   this->m_eDeviceType = eDeviceType;
 
   if(param.iSchedulerType == AL_SCHEDULER_TYPE_MCU)

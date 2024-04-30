@@ -894,3 +894,16 @@
     -- Several races conditions
     -- Typos
     -- Several minors bugs
+
+2024-03-22 (v1.0.80)
+--------------------
+  Added Features:
+    -- Encoder:
+	  - Support HEVC Pyramidal GOP in interlaced video-mode
+
+  API:
+    -- Version of the API is now 0.43.0
+	-- lib_log: changed timer initialization functions
+
+  Fixes:
+    -- Minors bug and typos fixes and types

@@ -14,7 +14,7 @@ extern "C"
 
 #include "ROIMngr.h"
 
-typedef enum e_GenerateQpMode
+typedef enum
 {
   // exclusive modes
   AL_GENERATE_UNIFORM_QP = 0x00, /*!< default behaviour */

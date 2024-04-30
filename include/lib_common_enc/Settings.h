@@ -20,7 +20,7 @@
 /*************************************************************************//*!
    \brief Aspect Ratio identifier
 *****************************************************************************/
-typedef enum e_AspectRatio
+typedef enum
 {
   AL_ASPECT_RATIO_AUTO,
   AL_ASPECT_RATIO_1_1,
@@ -33,7 +33,7 @@ typedef enum e_AspectRatio
 /*************************************************************************//*!
    \brief QP Control Mode
 *****************************************************************************/
-typedef enum e_QpCtrlMode
+typedef enum
 {
   AL_QP_CTRL_NONE,
   AL_QP_CTRL_AUTO,
@@ -49,7 +49,7 @@ static inline bool AL_IS_AUTO_OR_ADAPTIVE_QP_CTRL(AL_EQpCtrlMode eMode)
 /*************************************************************************//*!
    \brief QP Table Mode
 *****************************************************************************/
-typedef enum e_QpTableMode
+typedef enum
 {
   AL_QP_TABLE_NONE,
   AL_QP_TABLE_RELATIVE,
@@ -65,7 +65,7 @@ static inline bool AL_IS_QP_TABLE_REQUIRED(AL_EQpTableMode eMode)
 /*************************************************************************//*!
    \brief Scaling List identifier
 *****************************************************************************/
-typedef enum e_ScalingList
+typedef enum
 {
   AL_SCL_FLAT, /*!< All matrices coefficients set to 16 */
   AL_SCL_DEFAULT, /*!< Use default matrices coefficients as defined in the codec specification */

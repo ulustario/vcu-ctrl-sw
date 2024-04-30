@@ -23,6 +23,6 @@ typedef struct
   AL_MUTEX mutex;
 }AL_TDefaultLogger;
 
-AL_ILogger* AL_DefaultLogger_Init(AL_TDefaultLogger* logger, AL_ITimer* timer, LogEvent* buffer, int maxCount);
+AL_ILogger* AL_DefaultLogger_Init(AL_TDefaultLogger* logger, AL_ITimer* timer, LogEvent* events, int maxCount);
 
-extern AL_TDefaultLogger g_DefaultLogger;
+AL_TDefaultLogger* AL_DefaultLogger_Get(void);

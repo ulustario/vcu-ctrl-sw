@@ -130,7 +130,7 @@ typedef struct t_PictMngrCtx
   int32_t iTopFieldOrderCnt;
   int32_t iBotFieldOrderCnt;
   bool bLastIsIDR;
-  bool bOutSettingsConfigured;
+  bool bCompleteInit;
   union
   {
     AL_THevcRefPicCtx HevcRef;
@@ -159,7 +159,7 @@ typedef struct AL_TPictMngrParam
           another thread may call AL_PictMngr_Init()
    \param[in] pCtx        Pointer to a Picture manager context object
    \param[in] pParam      Picture manager parameters
-   \return If the function succeeds the return true. Return false otherwise
+   \return If the function succeeds then return true. Return false otherwise
 *****************************************************************************/
 bool AL_PictMngr_PreInit(AL_TPictMngrCtx* pCtx);
 
@@ -167,7 +167,7 @@ bool AL_PictMngr_PreInit(AL_TPictMngrCtx* pCtx);
    \brief Initialize the PictureManager.
    \param[in] pCtx        Pointer to a Picture manager context object
    \param[in] pParam      Picture manager parameters
-   \return If the function succeeds the return true. Return false otherwise
+   \return If the function succeeds then return true. Return false otherwise
 *****************************************************************************/
 bool AL_PictMngr_BasicInit(AL_TPictMngrCtx* pCtx, AL_TPictMngrParam* pParam);
 
@@ -176,9 +176,16 @@ bool AL_PictMngr_BasicInit(AL_TPictMngrCtx* pCtx, AL_TPictMngrParam* pParam);
    \param[in] pCtx        Pointer to a Picture manager context object
    \param[in] pAllocator  Pointer to the memory allocator
    \param[in] bEnableSecondOutput  True if the second output is enabled, false otherwise
-   \return If the function succeeds the return true. Return false otherwise
+   \return If the function succeeds then return true. Return false otherwise
 *****************************************************************************/
 bool AL_PictMngr_CompleteInit(AL_TPictMngrCtx* pCtx, AL_TAllocator* pAllocator, bool bEnableSecondOutput);
+
+/*************************************************************************//*!
+   \brief Check if the PictureManager initialization is complete.
+   \param[in] pCtx        Pointer to a Picture manager context object
+   \return If the PictureManager is fully initialized then return true. Return false otherwise
+*****************************************************************************/
+bool AL_PictMngr_IsInitComplete(AL_TPictMngrCtx const* pCtx);
 
 /*************************************************************************//*!
    \brief Flush all pictures so all buffers are fully released
@@ -352,7 +359,7 @@ AL_TBuffer* AL_PictMngr_GetRecBufferFromID(AL_TPictMngrCtx const* pCtx, int iFra
 bool AL_PictMngr_GetFrameEncodingError(AL_TPictMngrCtx const* pCtx, AL_TBuffer const* pBuf, AL_ERR* pError);
 
 void AL_PictMngr_UpdateDisplayBufferCRC(AL_TPictMngrCtx* pCtx, int iFrameID, uint32_t uCRC);
-void AL_PictMngr_UpdateDisplayBufferCrop(AL_TPictMngrCtx* pCtx, int iFrameID, AL_TCropInfo tCrop);
+void AL_PictMngr_UpdateDisplayBufferCrop(AL_TPictMngrCtx* pCtx, int iFrameID, AL_TCropInfo const* pCrop);
 void AL_PictMngr_UpdateDisplayBufferPicStruct(AL_TPictMngrCtx* pCtx, int iFrameID, AL_EPicStruct ePicStruct);
 void AL_PictMngr_UpdateDisplayBufferError(AL_TPictMngrCtx* pCtx, int iFrameID, AL_ERR eError);
 void AL_PictMngr_SignalCallbackDisplayIsDone(AL_TPictMngrCtx* pCtx);

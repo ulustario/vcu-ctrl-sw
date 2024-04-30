@@ -3,6 +3,7 @@
 
 #pragma once
 #include "lib_app/timing.h"
+#include "lib_app/Sink.h"
 #include "QPGenerator.h"
 #include "EncCmdMngr.h"
 #include "CommandsSender.h"

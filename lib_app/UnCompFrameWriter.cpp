@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <algorithm>
+#include <assert.h>
 
 #include "lib_app/UnCompFrameWriter.h"
 
@@ -16,35 +17,35 @@ extern "C"
 using namespace std;
 
 /****************************************************************************/
-UnCompFrameWriter::UnCompFrameWriter(std::shared_ptr<std::ostream> recFile, AL_EFbStorageMode eStorageMode, AL_EOutputType outputID) :
-  BaseFrameSink(recFile, eStorageMode, outputID)
+UnCompFrameWriter::UnCompFrameWriter(std::shared_ptr<std::ostream> recFile, AL_EFbStorageMode eStorageMode) :
+  BaseFrameWriter(recFile, eStorageMode)
 {
 }
 
 /****************************************************************************/
-void UnCompFrameWriter::ProcessFrame(AL_TBuffer* pBuf)
+void UnCompFrameWriter::WriteFrame(AL_TBuffer* pBuf, AL_TCropInfo* pCrop, AL_EPicStruct ePicStruct)
 {
-  AL_EOutputType eOutputID = AL_OUTPUT_MAIN;
-  AL_TDisplayInfoMetaData* pMeta = reinterpret_cast<AL_TDisplayInfoMetaData*>(AL_Buffer_GetMetaData(pBuf, AL_META_TYPE_DISPLAY_INFO));
+  (void)ePicStruct;
 
-  if(pMeta)
-    eOutputID = pMeta->eOutputID;
+  AL_TCropInfo tCrop {};
+
+  if(pCrop)
+    tCrop = *pCrop;
 
   m_tFourCC = AL_PixMapBuffer_GetFourCC(pBuf);
   AL_GetPicFormat(m_tFourCC, &m_tPicFormat);
 
   AL_EFbStorageMode currentStorageMode = AL_GetStorageMode(m_tFourCC);
 
-  if(currentStorageMode != m_eStorageMode || eOutputID != m_iOutputID)
+  if(currentStorageMode != m_eStorageMode)
     return;
 
   m_tPicDim = AL_PixMapBuffer_GetDimension(pBuf);
 
-  int32_t iPitchInLuma = AL_PixMapBuffer_GetPlanePitch(pBuf, AL_PLANE_Y);
+  int32_t iPitchInLuma = 0;
   int32_t iPitchInChroma = 0;
 
-  uint8_t* pY = AL_PixMapBuffer_GetPlaneAddress(pBuf, AL_PLANE_Y);
-
+  uint8_t* pY = nullptr;
   uint8_t* pC1 = nullptr;
   uint8_t* pC2 = nullptr;
 
@@ -53,19 +54,31 @@ void UnCompFrameWriter::ProcessFrame(AL_TBuffer* pBuf)
     pY = AL_PixMapBuffer_GetPlaneAddress(pBuf, AL_PLANE_YUV);
     iPitchInLuma = AL_PixMapBuffer_GetPlanePitch(pBuf, AL_PLANE_YUV);
   }
-  else if(m_tPicFormat.ePlaneMode == AL_PLANE_MODE_PLANAR && m_tPicFormat.eChromaMode != AL_CHROMA_4_0_0)
+  else
   {
-    pC1 = AL_PixMapBuffer_GetPlaneAddress(pBuf, AL_PLANE_U);
-    pC2 = AL_PixMapBuffer_GetPlaneAddress(pBuf, AL_PLANE_V);
-    iPitchInChroma = AL_PixMapBuffer_GetPlanePitch(pBuf, AL_PLANE_U);
+    pY = AL_PixMapBuffer_GetPlaneAddress(pBuf, AL_PLANE_Y);
+    iPitchInLuma = AL_PixMapBuffer_GetPlanePitch(pBuf, AL_PLANE_Y);
 
-    if(int(iPitchInChroma) != AL_PixMapBuffer_GetPlanePitch(pBuf, AL_PLANE_V))
-      throw std::runtime_error(ErrorMessagePitch);
+    if(m_tPicFormat.ePlaneMode == AL_PLANE_MODE_PLANAR && m_tPicFormat.eChromaMode != AL_CHROMA_4_0_0)
+    {
+      pC1 = AL_PixMapBuffer_GetPlaneAddress(pBuf, AL_PLANE_U);
+      pC2 = AL_PixMapBuffer_GetPlaneAddress(pBuf, AL_PLANE_V);
+      iPitchInChroma = AL_PixMapBuffer_GetPlanePitch(pBuf, AL_PLANE_U);
+
+      if(int(iPitchInChroma) != AL_PixMapBuffer_GetPlanePitch(pBuf, AL_PLANE_V))
+        throw std::runtime_error(ErrorMessagePitch);
+    }
+    else if(m_tPicFormat.ePlaneMode == AL_PLANE_MODE_SEMIPLANAR)
+    {
+      pC1 = AL_PixMapBuffer_GetPlaneAddress(pBuf, AL_PLANE_UV);
+      iPitchInChroma = AL_PixMapBuffer_GetPlanePitch(pBuf, AL_PLANE_UV);
+    }
   }
-  else if(m_tPicFormat.ePlaneMode == AL_PLANE_MODE_SEMIPLANAR)
+
+  if(tCrop.bCropping)
   {
-    pC1 = AL_PixMapBuffer_GetPlaneAddress(pBuf, AL_PLANE_UV);
-    iPitchInChroma = AL_PixMapBuffer_GetPlanePitch(pBuf, AL_PLANE_UV);
+    m_tPicDim.iWidth -= tCrop.uCropOffsetLeft + tCrop.uCropOffsetRight;
+    m_tPicDim.iHeight -= tCrop.uCropOffsetTop + tCrop.uCropOffsetBottom;
   }
 
   if(AL_IsTiled(m_tFourCC))
@@ -73,15 +86,35 @@ void UnCompFrameWriter::ProcessFrame(AL_TBuffer* pBuf)
   else
     DimInTileCalculusRaster();
 
+  if(tCrop.bCropping)
+    pY += tCrop.uCropOffsetTop * iPitchInLuma + tCrop.uCropOffsetLeft * m_iNbBytesPerPix;
+
   WritePix(pY, iPitchInLuma, m_uHeightInTileYFile, m_uPitchYFile);
 
-  if(m_tPicFormat.ePlaneMode == AL_PLANE_MODE_PLANAR && m_tPicFormat.eChromaMode != AL_CHROMA_4_0_0)
+  if(m_tPicFormat.eChromaMode != AL_CHROMA_4_0_0)
   {
-    WritePix(pC1, iPitchInChroma, m_uHeightInTileCFile, m_uPitchCFile);
-    WritePix(pC2, iPitchInChroma, m_uHeightInTileCFile, m_uPitchCFile);
+    tCrop.uCropOffsetTop /= 2;
+    tCrop.uCropOffsetLeft /= 2;
+
+    if(m_tPicFormat.ePlaneMode == AL_PLANE_MODE_PLANAR)
+    {
+      if(tCrop.bCropping)
+      {
+        pC1 += tCrop.uCropOffsetTop * iPitchInChroma + tCrop.uCropOffsetLeft * m_iNbBytesPerPix;
+        pC2 += tCrop.uCropOffsetTop * iPitchInChroma + tCrop.uCropOffsetLeft * m_iNbBytesPerPix;
+      }
+
+      WritePix(pC1, iPitchInChroma, m_uHeightInTileCFile, m_uPitchCFile);
+      WritePix(pC2, iPitchInChroma, m_uHeightInTileCFile, m_uPitchCFile);
+    }
+    else if(m_tPicFormat.ePlaneMode == AL_PLANE_MODE_SEMIPLANAR)
+    {
+      if(tCrop.bCropping)
+        pC1 += tCrop.uCropOffsetTop * iPitchInChroma + tCrop.uCropOffsetLeft * m_iNbBytesPerPix * 2;
+
+      WritePix(pC1, iPitchInChroma, m_uHeightInTileCFile, m_uPitchCFile);
+    }
   }
-  else if(m_tPicFormat.ePlaneMode == AL_PLANE_MODE_SEMIPLANAR)
-    WritePix(pC1, iPitchInChroma, m_uHeightInTileCFile, m_uPitchCFile);
 }
 
 /****************************************************************************/

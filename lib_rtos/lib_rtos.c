@@ -114,7 +114,7 @@ int Rtos_Log(int iLogLevel, char const* const sMsg, ...)
 #endif
 
 /****************************************************************************/
-AL_64U Rtos_GetTime()
+AL_64U Rtos_GetTime(void)
 {
   AL_64U uCount, uFreq;
   QueryPerformanceCounter((LARGE_INTEGER*)&uCount);
@@ -130,7 +130,7 @@ void Rtos_Sleep(uint32_t uMillisecond)
 }
 
 /****************************************************************************/
-AL_MUTEX Rtos_CreateMutex()
+AL_MUTEX Rtos_CreateMutex(void)
 {
   return (AL_MUTEX)CreateMutex(NULL, false, NULL);
 }
@@ -304,7 +304,7 @@ typedef struct
 }evt_t;
 
 /****************************************************************************/
-AL_64U Rtos_GetTime()
+AL_64U Rtos_GetTime(void)
 {
   struct timeval Tv;
   gettimeofday(&Tv, NULL);
@@ -319,7 +319,7 @@ void Rtos_Sleep(uint32_t uMillisecond)
 }
 
 /****************************************************************************/
-AL_MUTEX Rtos_CreateMutex()
+AL_MUTEX Rtos_CreateMutex(void)
 {
   pthread_mutex_t* pMutex = (AL_MUTEX)Rtos_Malloc(sizeof(pthread_mutex_t));
 
@@ -616,7 +616,7 @@ int Rtos_DriverPoll(void* drv, Rtos_PollCtx* ctx)
 /* semaphore cases should be carefully solved case by case */
 
 /****************************************************************************/
-AL_MUTEX Rtos_CreateMutex()
+AL_MUTEX Rtos_CreateMutex(void)
 {
   AL_MUTEX validHandle = (AL_MUTEX)1;
   return validHandle;

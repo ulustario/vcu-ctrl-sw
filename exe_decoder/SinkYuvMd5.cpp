@@ -34,7 +34,7 @@ public:
   }
 };
 
-std::unique_ptr<IFrameSink> createYuvMd5Calculator(std::string path)
+IFrameSink* createYuvMd5Calculator(std::string path)
 {
-  return std::unique_ptr<IFrameSink>(new YuvMd5Calculator(path));
+  return new YuvMd5Calculator(path);
 }

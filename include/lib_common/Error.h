@@ -69,6 +69,8 @@ typedef enum
   AL_ERR_TOO_MANY_SLICES = AL_DEF_ERROR(9),
   /*! A timeout occurred while processing the request */
   AL_ERR_WATCHDOG_TIMEOUT = AL_DEF_ERROR(11),
+  /*! A invalid channel ID has ben used */
+  AL_ERR_INVALID_CHANNEL_ID = AL_DEF_ERROR(12),
   /*! The scheduler can't handle more channel (fixed limit of AL_SCHEDULER_MAX_CHANNEL) */
   AL_ERR_CHAN_CREATION_NO_CHANNEL_AVAILABLE = AL_DEF_ERROR(13),
   /*! The processing power of the available cores is insufficient to handle this channel */

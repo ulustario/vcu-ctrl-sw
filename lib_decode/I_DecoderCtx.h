@@ -70,6 +70,14 @@ typedef struct
   bool (* canNalBeReordered)(AL_ENut);
 }AL_NalParser;
 
+/****************************************************************************/
+typedef struct
+{
+  TBuffer StreamBuf;
+  AL_TCircMetaData StreamMeta;
+  TBuffer ScdBufOut;
+}AL_TDecScdBuffers;
+
 /*************************************************************************//*!
    \brief Decoder Context structure
 *****************************************************************************/

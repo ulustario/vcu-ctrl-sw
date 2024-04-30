@@ -23,7 +23,7 @@ AL_ERR AL_Lib_Decoder_Init(AL_ELibDecoderArch eArch)
 }
 
 /*****************************************************************************/
-void AL_Lib_Decoder_DeInit()
+void AL_Lib_Decoder_DeInit(void)
 {
   if(pArch)
     pArch->vtable->Deinit();

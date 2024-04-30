@@ -13,7 +13,7 @@
 /*************************************************************************//*!
    \brief Colour Description identifier (See ISO/IEC 23091-4 or ITU-T H.273)
 *****************************************************************************/
-typedef enum e_ColourDescription
+typedef enum
 {
   AL_COLOUR_DESC_RESERVED,
   AL_COLOUR_DESC_UNSPECIFIED,
@@ -34,7 +34,7 @@ typedef enum e_ColourDescription
 /************************************//*!
    \brief Transfer Function identifier
 ****************************************/
-typedef enum e_TransferCharacteristics
+typedef enum
 {
   AL_TRANSFER_CHARAC_BT_709 = 1,
   AL_TRANSFER_CHARAC_UNSPECIFIED = 2,
@@ -59,7 +59,7 @@ typedef enum e_TransferCharacteristics
 /*******************************************************************************//*!
    \brief Matrix coefficient identifier used for luma/chroma computation from RGB
 ***********************************************************************************/
-typedef enum e_ColourMatrixCoefficients
+typedef enum
 {
   AL_COLOUR_MAT_COEFF_GBR = 0,
   AL_COLOUR_MAT_COEFF_BT_709 = 1,

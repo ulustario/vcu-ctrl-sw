@@ -19,11 +19,10 @@ extern "C"
 /*************************************************************************//*!
    \brief Chroma sampling format for video source file
 *****************************************************************************/
-typedef enum e_FileFormat
+typedef enum
 {
-  FILE_MONOCHROME, /*!< YUV file is monochrome and contains only luma samples*/
-  FILE_YUV_4_2_0,  /*!< YUV file contains 4:2:0 chroma samples and is stored
-                      in planar IYUV (also called I420) format */
+  FILE_MONOCHROME, /*!< YUV file is monochrome and contains only luma samples */
+  FILE_YUV_4_2_0,  /*!< YUV file contains 4:2:0 chroma samples and is stored in planar IYUV (also called I420) format */
 }EFileFormat;
 
 /*************************************************************************//*!

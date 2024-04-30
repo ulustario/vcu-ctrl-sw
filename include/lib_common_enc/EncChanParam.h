@@ -338,7 +338,7 @@ typedef AL_INTROSPECT (category = "debug") struct __AL_ALIGNED__ (4) AL_TRCParam
   uint32_t pMaxPictureSize[AL_MAX_FRAME_TYPE];
 } AL_TRCParam;
 
-static inline bool AL_IS_HWRC_ENABLED(AL_TRCParam const* pRCParam)
+static inline bool AL_IS_ENC_HW_RATE_CTRL_ENABLED(AL_TRCParam const* pRCParam)
 {
   return (pRCParam->eRCMode == AL_RC_LOW_LATENCY)
          || (pRCParam->pMaxPictureSize[AL_SLICE_I] > 0)

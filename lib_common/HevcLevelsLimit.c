@@ -12,7 +12,8 @@ bool AL_HEVC_CheckLevel(int level)
          || ((level >= 30) && (level <= 31))
          || ((level >= 40) && (level <= 41))
          || ((level >= 50) && (level <= 52))
-         || ((level >= 60) && (level <= 62));
+         || ((level >= 60) && (level <= 63))
+         || ((level >= 70) && (level <= 72));
 }
 
 /****************************************************************************/
@@ -29,11 +30,15 @@ uint32_t AL_HEVC_GetMaxNumberOfSlices(int level)
   case 41: return 75;
   case 50:
   case 51:
-  case 52: return 200;
+  case 52:
+  default: return 200;
   case 60:
   case 61:
   case 62:
-  default: return 600;
+  case 63: return 600;
+  case 70:
+  case 71:
+  case 72: return 1800;
   }
 }
 
@@ -51,8 +56,15 @@ uint32_t AL_HEVC_GetMaxTileColumns(int level)
   case 41: return 5;
   case 50:
   case 51:
-  case 52: return 10;
-  default: return 20;
+  case 52:
+  default: return 10;
+  case 60:
+  case 61:
+  case 62:
+  case 63: return 20;
+  case 70:
+  case 71:
+  case 72: return 40;
   }
 }
 
@@ -70,8 +82,15 @@ uint32_t AL_HEVC_GetMaxTileRows(int level)
   case 41: return 5;
   case 50:
   case 51:
-  case 52: return 11;
-  default: return 22;
+  case 52:
+  default: return 11;
+  case 60:
+  case 61:
+  case 62:
+  case 63: return 22;
+  case 70:
+  case 71:
+  case 72: return 44;
   }
 }
 
@@ -90,12 +109,16 @@ uint32_t AL_HEVC_GetMaxCPBSize(int level, int tier)
     case 40: return 30000u;
     case 41: return 50000u;
     case 50: return 100000u;
-    case 51: return 160000u;
+    case 51:
+    default: return 160000u;
     case 52: return 240000u;
     case 60: return 240000u;
     case 61: return 480000u;
-    case 62:
-    default: return 800000u;
+    case 62: return 800000u;
+    case 63:
+    case 70: return 1600000u;
+    case 71: return 3200000u;
+    case 72: return 6400000u;
     }
   }
   else
@@ -110,12 +133,16 @@ uint32_t AL_HEVC_GetMaxCPBSize(int level, int tier)
     case 40: return 12000u;
     case 41: return 20000u;
     case 50: return 25000u;
-    case 51: return 40000u;
+    case 51:
+    default: return 40000u;
     case 52: return 60000u;
     case 60: return 60000u;
     case 61: return 120000u;
     case 62:
-    default: return 240000u;
+    case 63:
+    case 70: return 240000u;
+    case 71: return 480000u;
+    case 72: return 960000u;
     }
   }
 }
@@ -139,6 +166,10 @@ static int getMaxLumaPS(int iLevel)
   case 60:
   case 61:
   case 62: return 35651584;
+  case 63: return 80216064;
+  case 70:
+  case 71:
+  case 72: return 142606336;
   }
 }
 
@@ -177,7 +208,9 @@ const AL_TLevelLimit AL_HEVC_MAX_PIX_PER_FRAME[] =
   { 983040u, 31u },
   { 2228224u, 40u },
   { 8912896u, 50u },
-  { 35651584u, 60u }
+  { 35651584u, 60u },
+  { 80216064u, 63u },
+  { 142606336u, 70u },
 };
 
 // Max MB processing rate
@@ -194,7 +227,10 @@ const AL_TLevelLimit HEVC_MAX_PIX_RATE[] =
   { 534773760u, 51u },
   { 1069547520u, 52u },
   { 2139095040u, 61u },
-  { 4278190080u, 62u }
+  { 4278190080u, 62u },
+  { 4812963840u, 63u },
+  { 8556380160u, 71u },
+  { 17112760320u, 72u },
 };
 
 // Max Video processing rate - High Tier
@@ -211,7 +247,10 @@ const AL_TLevelLimit HEVC_MAX_VIDEO_BITRATE_HIGH[] =
   { 160000u, 51u },
   { 240000u, 52u },
   { 480000u, 61u },
-  { 800000u, 62u }
+  { 800000u, 62u },
+  { 1600000u, 63u },
+  { 3200000u, 71u },
+  { 6400000u, 72u }
 };
 
 // Max Video processing rate - MainTier
@@ -228,7 +267,11 @@ const AL_TLevelLimit HEVC_MAX_VIDEO_BITRATE_MAIN[] =
   { 40000u, 51u },
   { 60000u, 52u },
   { 120000u, 61u },
-  { 240000u, 62u }
+  { 240000u, 62u },
+  { 320000u, 63u },
+  { 320000u, 70u },
+  { 480000u, 71u },
+  { 960000u, 72u },
 };
 
 // Max number of tile columns
@@ -240,6 +283,7 @@ const AL_TLevelLimit HEVC_MAX_TILE_COLS[] =
   { 5u, 40u },
   { 10u, 50u },
   { 20u, 60u },
+  { 40u, 70u },
 };
 
 #define NUM_LIMIT(array) (sizeof(array) / sizeof(AL_TLevelLimit))

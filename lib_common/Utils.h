@@ -143,7 +143,7 @@ AL_HANDLE AlignedAlloc(AL_TAllocator* pAllocator, const char* pBufName, uint32_t
 /*************************************************************************//*!
    \brief Reference picture status
  ***************************************************************************/
-typedef enum e_MarkingRef
+typedef enum
 {
   SHORT_TERM_REF,
   LONG_TERM_REF,

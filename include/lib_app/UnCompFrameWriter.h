@@ -3,8 +3,7 @@
 
 #pragma once
 
-#include "Sink.h"
-#include "SinkBaseWriter.h"
+#include "BaseFrameWriter.h"
 
 extern "C"
 {
@@ -13,11 +12,11 @@ extern "C"
 }
 
 /****************************************************************************/
-struct UnCompFrameWriter final : IFrameSink, BaseFrameSink
+struct UnCompFrameWriter final : IFrameWriter, BaseFrameWriter
 {
-  UnCompFrameWriter(std::shared_ptr<std::ostream> recFile, AL_EFbStorageMode eStorageMode, AL_EOutputType outputID);
+  UnCompFrameWriter(std::shared_ptr<std::ostream> recFile, AL_EFbStorageMode eStorageMode);
 
-  void ProcessFrame(AL_TBuffer* pBuf) override;
+  void WriteFrame(AL_TBuffer* pBuf, AL_TCropInfo* pCrop = nullptr, AL_EPicStruct ePicStruct = AL_PS_FRM);
 
 private:
   void DimInTileCalculusRaster();

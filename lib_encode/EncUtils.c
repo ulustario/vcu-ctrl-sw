@@ -239,9 +239,22 @@ void AL_UpdateVuiTimingInfo(AL_TVuiParam* pVUI, int iLayerId, AL_TRCParam const*
 }
 
 /****************************************************************************/
-int DeduceNumTemporalLayer(AL_TGopParam const* pGop)
+static bool AreTemporalLevelsHandled(AL_TGopParam const* pGop, AL_ECodec eCodec, AL_EVideoMode eVideoMode)
 {
-  if((pGop->eMode & AL_GOP_FLAG_PYRAMIDAL) == 0)
+  (void)eCodec;
+  (void)eVideoMode;
+
+  bool bTemporalLevelsHandled = (pGop->eMode & AL_GOP_FLAG_PYRAMIDAL) != 0;
+  bTemporalLevelsHandled = bTemporalLevelsHandled &&
+                           !(eCodec != AL_CODEC_AVC && eVideoMode != AL_VM_PROGRESSIVE);
+
+  return bTemporalLevelsHandled;
+}
+
+/****************************************************************************/
+int DeduceNumTemporalLayer(AL_TGopParam const* pGop, AL_ECodec eCodec, AL_EVideoMode eVideoMode)
+{
+  if(!AreTemporalLevelsHandled(pGop, eCodec, eVideoMode))
     return 1;
 
   int iNumTemporalLayers;

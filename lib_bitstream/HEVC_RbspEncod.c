@@ -875,7 +875,7 @@ static IRbspWriter writer =
   AL_RbspEncoding_WriteUserDataUnregistered,
 };
 
-IRbspWriter* AL_GetHevcRbspWriter()
+IRbspWriter* AL_GetHevcRbspWriter(void)
 {
   return &writer;
 }

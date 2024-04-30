@@ -34,6 +34,7 @@ typedef enum
 {
   AL_DEC_SCHEDULER_VERSION, /*!< reference: AL_TDecSchedulerVersion */
   AL_DEC_SCHEDULER_CORE, /*!< reference: AL_TDecSchedulerCore */
-  AL_DEC_SCHEDULER_CHANNEL_TRACE_CALLBACK, /*!< reference: AL_TDecSchedulerChannelTraceCallback */
+  AL_DEC_SCHEDULER_SCD_TRACE_CALLBACK, /*!< reference: AL_TDecSchedulerTraceCallback */
+  AL_DEC_SCHEDULER_CHANNEL_TRACE_CALLBACK, /*!< reference: AL_TDecSchedulerTraceCallback */
   AL_DEC_SCHEDULER_MAX_ENUM,
 }AL_EDecSchedulerInfo;

@@ -55,11 +55,11 @@ struct BitstreamWriter : IFrameSink
   ConfigFile const cfg;
 };
 
-unique_ptr<IFrameSink> createBitstreamWriter(string path, ConfigFile const& cfg)
+IFrameSink* createBitstreamWriter(string path, ConfigFile const& cfg)
 {
 
   if(cfg.Settings.TwoPass == 1)
-    return unique_ptr<IFrameSink>(new NullFrameSink);
+    return new NullFrameSink;
 
-  return make_unique<BitstreamWriter>(path, cfg);
+  return new BitstreamWriter(path, cfg);
 }

@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
-#include "lib_app/SinkBaseWriter.h"
+#include "lib_app/BaseFrameWriter.h"
 #include "lib_app/CompFrameCommon.h"
 
 extern "C"
@@ -15,12 +15,12 @@ extern "C"
 using namespace std;
 
 /****************************************************************************/
-const std::string BaseFrameSink::ErrorMessageWrite = "Error writing in compressed YUV file.";
-const std::string BaseFrameSink::ErrorMessageBuffer = "Null buffer provided.";
-const std::string BaseFrameSink::ErrorMessagePitch = "U and V plane pitches must be identical.";
+const std::string BaseFrameWriter::ErrorMessageWrite = "Error writing in compressed YUV file.";
+const std::string BaseFrameWriter::ErrorMessageBuffer = "Null buffer provided.";
+const std::string BaseFrameWriter::ErrorMessagePitch = "U and V plane pitches must be identical.";
 
 /****************************************************************************/
-void BaseFrameSink::FactorsCalculus()
+void BaseFrameWriter::FactorsCalculus()
 {
   if(m_tPicFormat.ePlaneMode == AL_PLANE_MODE_INTERLEAVED)
     m_iNbBytesPerPix = (m_tPicFormat.uBitDepth == 8 || (m_tPicFormat.uBitDepth == 10 && m_tPicFormat.eSamplePackMode == AL_SAMPLE_PACK_MODE_PACKED)) ? sizeof(uint32_t) : sizeof(uint64_t);
@@ -32,7 +32,7 @@ void BaseFrameSink::FactorsCalculus()
 }
 
 /****************************************************************************/
-void BaseFrameSink::DimInTileCalculus()
+void BaseFrameWriter::DimInTileCalculus()
 {
   static const uint32_t MIN_HEIGHT_ROUNDING = 8;
 
@@ -58,7 +58,7 @@ void BaseFrameSink::DimInTileCalculus()
 }
 
 /****************************************************************************/
-void BaseFrameSink::WritePix(const uint8_t* pPix, uint32_t iPitchInPix, uint16_t uHeightInTile, uint32_t uPitchFile)
+void BaseFrameWriter::WritePix(const uint8_t* pPix, uint32_t iPitchInPix, uint16_t uHeightInTile, uint32_t uPitchFile)
 {
   CheckNotNull(pPix);
 
@@ -70,26 +70,26 @@ void BaseFrameSink::WritePix(const uint8_t* pPix, uint32_t iPitchInPix, uint16_t
 }
 
 /****************************************************************************/
-void BaseFrameSink::WriteBuffer(std::shared_ptr<std::ostream> stream, const uint8_t* pBuf, uint32_t uWriteSize)
+void BaseFrameWriter::WriteBuffer(std::shared_ptr<std::ostream> stream, const uint8_t* pBuf, uint32_t uWriteSize)
 {
   stream->write(reinterpret_cast<const char*>(pBuf), uWriteSize);
 }
 
 /****************************************************************************/
-void BaseFrameSink::CheckNotNull(const uint8_t* pBuf)
+void BaseFrameWriter::CheckNotNull(const uint8_t* pBuf)
 {
   if(nullptr == pBuf)
     throw std::runtime_error(ErrorMessageBuffer);
 }
 
 /****************************************************************************/
-BaseFrameSink::BaseFrameSink(std::shared_ptr<std::ostream> recFile, AL_EFbStorageMode eStorageMode, AL_EOutputType outputID) :
-  m_recFile(recFile), m_eStorageMode(eStorageMode), m_iOutputID(outputID)
+BaseFrameWriter::BaseFrameWriter(std::shared_ptr<std::ostream> recFile, AL_EFbStorageMode eStorageMode) :
+  m_recFile(recFile), m_eStorageMode(eStorageMode)
 {
 }
 
 /****************************************************************************/
-BaseFrameSink::~BaseFrameSink()
+BaseFrameWriter::~BaseFrameWriter()
 {
   m_recFile->flush();
 }

@@ -35,11 +35,11 @@
 /*************************************************************************//*!
    \brief Picture status enum
 *****************************************************************************/
-typedef enum e_PicStatus
+typedef enum
 {
   AL_NOT_NEEDED_FOR_OUTPUT,
   AL_NOT_READY_FOR_OUTPUT,
-  AL_READY_FOR_OUTPUT
+  AL_READY_FOR_OUTPUT,
 }AL_EPicStatus;
 
 /*************************************************************************//*!

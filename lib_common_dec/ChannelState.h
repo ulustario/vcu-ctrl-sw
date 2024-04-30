@@ -3,7 +3,7 @@
 
 #pragma once
 
-typedef enum AL_e_ChanState
+typedef enum
 {
   CHAN_UNINITIALIZED,
   CHAN_CONFIGURED,

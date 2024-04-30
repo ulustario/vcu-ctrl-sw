@@ -429,7 +429,7 @@ static IRbspWriter writer =
   AL_RbspEncoding_WriteUserDataUnregistered,
 };
 
-IRbspWriter* AL_GetAvcRbspWriter()
+IRbspWriter* AL_GetAvcRbspWriter(void)
 {
   return &writer;
 }

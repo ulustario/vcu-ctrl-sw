@@ -8,4 +8,4 @@
 #include "lib_app/Sink.h"
 #include "CfgParser.h"
 
-std::unique_ptr<IFrameSink> createBitrateWriter(std::string path, ConfigFile const& cfg);
+IFrameSink* createBitrateWriter(std::string path, ConfigFile const& cfg);

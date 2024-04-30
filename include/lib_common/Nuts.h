@@ -6,7 +6,7 @@
 /*************************************************************************//*!
    \brief Nal unit type enum
  *************************************************************************/
-typedef enum e_NalUnitType
+typedef enum
 {
   AL_AVC_NUT_UNSPEC_0 = 0,
   AL_AVC_NUT_VCL_NON_IDR = 1,

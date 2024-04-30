@@ -48,6 +48,22 @@ typedef struct AL_TRbspParser
 void InitRbspParser(TCircBuffer const* pStream, uint8_t* pNoAESizeBuffer, int32_t iNoAESize, bool bHasSC, AL_TRbspParser* pRP);
 
 /*************************************************************************//*!
+   \brief The get_avail_size function returns the number of bit still
+          available (including the anti-emulation bytes if any).
+   \param[in] pRP       Pointer to NAL parser
+   \return    return the number of available bits
+*****************************************************************************/
+uint32_t get_avail_size(AL_TRbspParser* pRP);
+
+/*************************************************************************//*!
+   \brief The get_cur_pos function returns the current read position in the
+          bitstream buffer
+   \param[in] pRP       Pointer to NAL parser
+   \return    return the current position (in byte) in the stream buffer
+*****************************************************************************/
+uint32_t get_cur_pos(AL_TRbspParser* pRP);
+
+/*************************************************************************//*!
    \brief The read_bit function read the bit_index'th bit of the current NAL
    \param[in] pRP       Pointer to NAL parser
    \param[in] bit_index position of the desired bit

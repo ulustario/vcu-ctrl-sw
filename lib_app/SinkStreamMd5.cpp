@@ -44,7 +44,7 @@ public:
   }
 };
 
-std::unique_ptr<IFrameSink> createStreamMd5Calculator(std::string path)
+IFrameSink* createStreamMd5Calculator(std::string path)
 {
-  return std::unique_ptr<IFrameSink>(new StreamMd5Calculator(path));
+  return new StreamMd5Calculator(path);
 }
