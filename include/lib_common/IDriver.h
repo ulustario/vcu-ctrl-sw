@@ -8,7 +8,7 @@
  *****************************************************************************/
 #pragma once
 
-typedef enum
+typedef enum AL_EDriverError
 {
   DRIVER_SUCCESS,
   DRIVER_ERROR_UNKNOWN,
@@ -26,16 +26,16 @@ typedef enum
     \see AL_GetHardwareDriver for the kernel driver implementation
 *****************************************************************************/
 typedef struct AL_TDriver AL_TDriver;
-typedef struct
+typedef struct AL_TDriverVTable
 {
   int (* pfnOpen)(AL_TDriver* driver, const char* device);
   void (* pfnClose)(AL_TDriver* driver, int fd);
   AL_EDriverError (* pfnPostMessage)(AL_TDriver* driver, int fd, long unsigned int messageId, void* data, bool isBlocking);
-}AL_DriverVtable;
+}AL_TDriverVTable;
 
 struct AL_TDriver
 {
-  const AL_DriverVtable* vtable;
+  AL_TDriverVTable const* vtable;
 };
 
 static inline
@@ -51,15 +51,15 @@ void AL_Driver_Close(AL_TDriver* driver, int fd)
 }
 
 static inline
-AL_EDriverError AL_Driver_PostMessage(AL_TDriver* driver, int fd, long unsigned int messageId, void* data)
+AL_EDriverError AL_Driver_PostBlockingMessage(AL_TDriver* driver, int fd, long unsigned int messageId, void* data)
 {
   return driver->vtable->pfnPostMessage(driver, fd, messageId, data, true);
 }
 
 static inline
-AL_EDriverError AL_Driver_PostMessage2(AL_TDriver* driver, int fd, long unsigned int messageId, void* data, bool isBlocking)
+AL_EDriverError AL_Driver_PostNonBlockingMessage(AL_TDriver* driver, int fd, long unsigned int messageId, void* data)
 {
-  return driver->vtable->pfnPostMessage(driver, fd, messageId, data, isBlocking);
+  return driver->vtable->pfnPostMessage(driver, fd, messageId, data, false);
 }
 
 /*@}*/

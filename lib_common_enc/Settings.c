@@ -67,6 +67,7 @@ static bool AL_sSettings_CheckProfile(AL_EProfile eProfile)
   case AL_PROFILE_HEVC_MAIN_STILL:
   case AL_PROFILE_HEVC_MONO:
   case AL_PROFILE_HEVC_MONO10:
+  case AL_PROFILE_HEVC_MONO12:
   case AL_PROFILE_HEVC_MAIN_422:
   case AL_PROFILE_HEVC_MAIN_422_10:
   case AL_PROFILE_HEVC_MAIN_422_12:
@@ -449,7 +450,6 @@ void AL_Settings_SetDefaultRCParam(AL_TRCParam* pRCParam)
   pRCParam->uIPDelta = -1;
   pRCParam->uPBDelta = -1;
   pRCParam->uMaxPelVal = 255;
-  pRCParam->uMinPSNR = 3300;
   pRCParam->uMaxPSNR = 4200;
   pRCParam->eOptions = AL_RC_OPT_NONE;
 
@@ -603,13 +603,13 @@ int AL_Settings_CheckValidity(AL_TEncSettings* pSettings, AL_TEncChanParam* pChP
     MSG_ERROR("Invalid parameter: Profile");
   }
 
-  if(AL_IS_10BIT_PROFILE(pChParam->eProfile) && (AL_GET_BITDEPTH(pChParam->ePicFormat) > 8) && (AL_HWConfig_Enc_GetSupportedBitDepth() < 10))
+  if((AL_GET_BITDEPTH(pChParam->ePicFormat) > 8) && (AL_HWConfig_Enc_GetSupportedBitDepth() < 10))
   {
     ++err;
     MSG_ERROR("The hardware IP doesn't support 10-bit encoding");
   }
 
-  if(AL_IS_12BIT_PROFILE(pChParam->eProfile) && (AL_GET_BITDEPTH(pChParam->ePicFormat) > 10) && (AL_HWConfig_Enc_GetSupportedBitDepth() < 12))
+  if((AL_GET_BITDEPTH(pChParam->ePicFormat) > 10) && (AL_HWConfig_Enc_GetSupportedBitDepth() < 12))
   {
     ++err;
     MSG_ERROR("The hardware IP doesn't support 12-bit encoding");
@@ -677,15 +677,21 @@ int AL_Settings_CheckValidity(AL_TEncSettings* pSettings, AL_TEncChanParam* pChP
     MSG_ERROR("Invalid parameter: Log2MaxCuSize");
   }
 
-  if(pChParam->uNumCore != NUMCORE_AUTO)
+  uint16_t uNumTile = pChParam->uNumCore != NUMCORE_AUTO ? pChParam->uNumCore : 1;
+
+  if(uNumTile > 1)
   {
     AL_NumCoreDiagnostic diagnostic;
 
-    if(!AL_Constraint_NumCoreIsSane(AL_GET_CODEC(pChParam->eProfile), pChParam->uEncWidth, pChParam->uNumCore, pChParam->uLog2MaxCuSize, &diagnostic))
+    if(!AL_Constraint_NumTileIsSane(AL_GET_CODEC(pChParam->eProfile), pChParam->uEncWidth, uNumTile, pChParam->uLog2MaxCuSize, &diagnostic))
     {
       ++err;
-      MSGF_ERROR("Invalid parameter: NumCore. The width should at least be %d CTB per core. With the specified number of core, it is %d CTB per core. (Multi core alignment constraint might be the reason of this error if the CTB are equal)", diagnostic.requiredWidthInCtbPerCore, diagnostic.actualWidthInCtbPerCore);
+      MSGF_ERROR("Invalid Number of Tile. The width should at least be %d CTB per tile. With the specified number of tile, it is %d CTB per tile. (Multi core alignment constraint might be the reason of this error if the CTB are equal)", diagnostic.requiredWidthInCtbPerCore, diagnostic.actualWidthInCtbPerCore);
     }
+  }
+
+  if(pChParam->uNumCore != NUMCORE_AUTO)
+  {
 
     if(AL_IS_HEVC(pChParam->eProfile) && pSettings->tChParam[0].uCabacInitIdc > 1)
     {
@@ -984,7 +990,7 @@ bool checkChromaCoherency(AL_EChromaMode eChroma, AL_EProfile eProfile)
 {
   switch(eChroma)
   {
-  case AL_CHROMA_4_0_0: return AL_IS_MONO_PROFILE(eProfile);
+  case AL_CHROMA_4_0_0: return AL_IS_400_PROFILE(eProfile);
   case AL_CHROMA_4_2_0: return AL_IS_420_PROFILE(eProfile);
   case AL_CHROMA_4_2_2: return AL_IS_422_PROFILE(eProfile);
   case AL_CHROMA_4_4_4: return AL_IS_444_PROFILE(eProfile);
@@ -997,7 +1003,6 @@ bool checkChromaCoherency(AL_EChromaMode eChroma, AL_EProfile eProfile)
 /***************************************************************************/
 bool checkProfileCoherency(int iBitDepth, AL_EChromaMode eChroma, AL_EProfile eProfile)
 {
-
   if(!checkBitDepthCoherency(iBitDepth, eProfile))
     return false;
 
@@ -1111,7 +1116,7 @@ static AL_EProfile getMinimumProfile(AL_ECodec eCodec, int iBitDepth, AL_EChroma
 }
 
 /****************************************************************************/
-static void AL_sCheckRange16b(int16_t* pRange, int* pNumIncoherency, const int16_t iMinVal, const int16_t iMaxVal, char* pRangeName, FILE* pOut)
+static void AL_sCheckRange16b(int16_t* pRange, int* pNumIncoherency, const int16_t iMinVal, const int16_t iMaxVal, char const* pRangeName, FILE* pOut)
 {
   if((*pRange >= 0) && (iMinVal > *pRange || *pRange > iMaxVal))
   {
@@ -1291,6 +1296,10 @@ int AL_Settings_CheckCoherency(AL_TEncSettings* pSettings, AL_TEncChanParam* pCh
   else
   {
     pChParam->uCuQPDeltaDepth = 0;
+  }
+
+  if(!AL_IS_HEVC(pChParam->eProfile))
+  {
   }
 
   if(AL_IS_XAVC(pChParam->eProfile))

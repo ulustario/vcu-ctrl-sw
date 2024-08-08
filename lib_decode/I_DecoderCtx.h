@@ -48,7 +48,7 @@ typedef struct
   AL_ENut eob;
 }AL_NonVclNuts;
 
-typedef struct t_Dec_Ctx AL_TDecCtx;
+typedef struct AL_TDecCtx AL_TDecCtx;
 
 typedef struct
 {
@@ -81,7 +81,7 @@ typedef struct
 /*************************************************************************//*!
    \brief Decoder Context structure
 *****************************************************************************/
-struct t_Dec_Ctx
+struct AL_TDecCtx
 {
   AL_TFeeder* Feeder;
   AL_EDecInputMode eInputMode;
@@ -96,6 +96,7 @@ struct t_Dec_Ctx
   AL_HANDLE hChannel;
   AL_HANDLE hStartCodeChannel;
   AL_TAllocator* pAllocator;
+  AL_EVENT hDecOutSettingsConfiguredEvt;
   AL_EChanState eChanState;
 
   AL_TDecCallBacks tDecCB;
@@ -113,19 +114,19 @@ struct t_Dec_Ctx
 
   AL_TDecPicBufferAddrs BufAddrs;
   // decoder pool buffer
-  TBuffer PoolSclLst[MAX_STACK_SIZE];      // Scaling List pool buffer
-  TBuffer PoolCompData[MAX_STACK_SIZE];    // compressed MVDs + header + residuals pool buffer
-  TBuffer PoolCompMap[MAX_STACK_SIZE];     // Compression map : LCU size + LCU offset pool buffer
-  TBuffer PoolWP[MAX_STACK_SIZE];          // Weighted Pred Tables pool buffer
-  TBuffer PoolListRefAddr[MAX_STACK_SIZE]; // Reference addresses for the board pool buffer
-  TBuffer PoolVirtRefAddr[MAX_STACK_SIZE]; // Reference addresses for the reference pool buffer
+  TBuffer PoolSclLst[AL_DEC_SW_MAX_STACK_SIZE];      // Scaling List pool buffer
+  TBuffer PoolCompData[AL_DEC_SW_MAX_STACK_SIZE];    // compressed MVDs + header + residuals pool buffer
+  TBuffer PoolCompMap[AL_DEC_SW_MAX_STACK_SIZE];     // Compression map : LCU size + LCU offset pool buffer
+  TBuffer PoolWP[AL_DEC_SW_MAX_STACK_SIZE];          // Weighted Pred Tables pool buffer
+  TBuffer PoolListRefAddr[AL_DEC_SW_MAX_STACK_SIZE]; // Reference addresses for the board pool buffer
+  TBuffer PoolVirtRefAddr[AL_DEC_SW_MAX_STACK_SIZE]; // Reference addresses for the reference pool buffer
 
   TBufferListRef ListRef;            // Picture Reference List buffer
 
   // slice toggle management
-  TBuffer PoolSP[MAX_STACK_SIZE]; // Slice parameters
-  AL_TDecPicParam PoolPP[MAX_STACK_SIZE]; // Picture parameters
-  AL_TDecPicBuffers PoolPB[MAX_STACK_SIZE]; // Picture Buffers
+  TBuffer PoolSP[AL_DEC_SW_MAX_STACK_SIZE]; // Slice parameters
+  AL_TDecPicParam PoolPP[AL_DEC_SW_MAX_STACK_SIZE]; // Picture parameters
+  AL_TDecPicBuffers PoolPB[AL_DEC_SW_MAX_STACK_SIZE]; // Picture Buffers
   uint8_t uCurID; // ID of the last independent slice
 
   AL_TDecChanParam* pChanParam;
@@ -145,18 +146,18 @@ struct t_Dec_Ctx
   // stream context status
   bool bFirstIsValid;
   bool bIsFirstPicture;
-  int iStreamOffset[MAX_STACK_SIZE];
+  int iStreamOffset[AL_DEC_SW_MAX_STACK_SIZE];
   int iCurOffset;
   int iCurNalStreamOffset;
-  uint32_t uCurPocLsb;
+  int32_t iCurPocLsb;
   union
   {
     uint8_t uNoRaslOutputFlag;
     uint8_t uNoIncorrectPicOutputFlag;
   };
-  uint8_t uFrameIDRefList[MAX_STACK_SIZE][AL_MAX_NUM_REF];
-  uint8_t uMvIDRefList[MAX_STACK_SIZE][AL_MAX_NUM_REF];
-  uint8_t uNumRef[MAX_STACK_SIZE];
+  uint8_t uFrameIDRefList[AL_DEC_SW_MAX_STACK_SIZE][AL_MAX_NUM_REF];
+  uint8_t uMvIDRefList[AL_DEC_SW_MAX_STACK_SIZE][AL_MAX_NUM_REF];
+  uint8_t uNumRef[AL_DEC_SW_MAX_STACK_SIZE];
 
   // CurrentFrame context
   AL_TDecFrameCtx tCurrentFrameCtx;

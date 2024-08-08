@@ -272,7 +272,7 @@ void AL_LaunchFrameDecoding(AL_TDecCtx* pCtx)
 /*****************************************************************************/
 static void AL_InitRefBuffers(AL_TDecCtx* pCtx, AL_TDecPicBuffers* pBufs)
 {
-  int iOffset = pCtx->iNumFrmBlk1 % MAX_STACK_SIZE;
+  int iOffset = pCtx->iNumFrmBlk1 % AL_DEC_SW_MAX_STACK_SIZE;
   pCtx->uNumRef[iOffset] = 0;
 
   uint8_t uNode = 0;
@@ -326,7 +326,7 @@ void AL_CancelFrameBuffers(AL_TDecCtx* pCtx)
 {
   AL_PictMngr_CancelFrame(&pCtx->PictMngr);
 
-  int iOffset = pCtx->iNumFrmBlk1 % MAX_STACK_SIZE;
+  int iOffset = pCtx->iNumFrmBlk1 % AL_DEC_SW_MAX_STACK_SIZE;
   AL_PictMngr_UnlockRefID(&pCtx->PictMngr, pCtx->uNumRef[iOffset], pCtx->uFrameIDRefList[iOffset], pCtx->uMvIDRefList[iOffset]);
   UpdateContextAtEndOfFrame(pCtx);
   Rtos_ReleaseSemaphore(pCtx->Sem);

@@ -31,7 +31,7 @@ static bool isComma(char c)
   return c == ',' || c == '.';
 }
 
-Token Tokenizer::getToken()
+Token Tokenizer::getToken(void)
 {
   Token token {};
   char c = getNextChar();
@@ -85,7 +85,7 @@ Token Tokenizer::getToken()
   return token;
 }
 
-std::pair<int, int> Tokenizer::getPosition()
+std::pair<int, int> Tokenizer::getPosition(void)
 {
   return {
            line, curPos - columnStartPos
@@ -157,7 +157,7 @@ char Tokenizer::getChar(int pos)
   return toParse[pos];
 }
 
-char Tokenizer::getNextChar()
+char Tokenizer::getNextChar(void)
 {
   while(std::isblank(getChar(curPos)))
     ++curPos;

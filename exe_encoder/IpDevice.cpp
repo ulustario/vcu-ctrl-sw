@@ -10,7 +10,6 @@
 extern "C"
 {
 #include "lib_fpga/DmaAlloc.h"
-#include "lib_log/LoggerDefault.h"
 #include "lib_log/TimerSoftware.h"
 }
 using namespace std;
@@ -45,7 +44,7 @@ void CIpDevice::ConfigureMcu(CIpDeviceParam& param)
     throw std::runtime_error("Failed to create MCU scheduler");
 }
 
-CIpDevice::~CIpDevice()
+CIpDevice::~CIpDevice(void)
 {
   if(m_pScheduler)
     AL_IEncScheduler_Destroy(m_pScheduler);

@@ -16,6 +16,7 @@ extern "C" {
 #include "lib_common/BufferMeta.h"
 }
 #include <string>
+#include <memory>
 
 /*************************************************************************//*!
    \brief AL_TBufPoolCreateBufCB: Abstraction of buffer creation
@@ -63,7 +64,7 @@ typedef struct
 /*************************************************************************//*!
    \brief Buffer Access mode: Do we want to wait if no buffer is available or to fail fast.
 *****************************************************************************/
-typedef enum
+typedef enum AL_EBufMode
 {
   AL_BUF_MODE_BLOCK,
   AL_BUF_MODE_NONBLOCK,
@@ -158,6 +159,7 @@ struct BaseBufPool
   void RegisterAvailableBufCallback(AL_TBufPoolAvailableBufCB* pCB);
   bool AddMetaData(AL_TMetaData* pMeta);
   AL_TBuffer* GetBuffer(AL_EBufMode mode = AL_BUF_MODE_BLOCK);
+  std::shared_ptr<AL_TBuffer> GetSharedBuffer(AL_EBufMode mode = AL_BUF_MODE_BLOCK);
   void Decommit();
   void Commit();
 

@@ -4,7 +4,7 @@
 #include "lib_app/MD5.h"
 #include <string>
 
-// mix functions for processBlock()
+// mix functions for processBlock(void)
 inline uint32_t F(uint32_t X, uint32_t Y, uint32_t Z)
 {
   return Z ^ (X & (Y ^ Z)); // RFC1321: F = (X & Y) | ((~X) & Z);
@@ -33,7 +33,7 @@ inline uint32_t Rot(uint32_t X, uint32_t s)
 #define MD5(d, X, Y, Z, Fn, i, C, s) d = (Rot(d + Fn(X, Y, Z) + pBlock[i] + C, s) + X)
 
 /*************************************************************************************/
-CMD5::CMD5()
+CMD5::CMD5(void)
 {
   // RFC 1321
   m_pHash32[0] = 0x67452301;
@@ -77,7 +77,7 @@ void CMD5::Update(uint8_t* pBuffer, uint32_t uSize)
 }
 
 /*************************************************************************************/
-std::string CMD5::GetMD5()
+std::string CMD5::GetMD5(void)
 {
   std::string sMD5;
   static const char* sToHex = "0123456789abcdef";

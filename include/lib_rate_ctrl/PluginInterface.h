@@ -8,7 +8,7 @@
    MCU firmware.
 
    Your rate control should implement the RC_Plugin_Vtable API and the RC_Plugin_Init() function.
-   See app_mcu/README_PLUGIN for more information about the compilation process and the AL_Encoder.exe commandline to use your plugin.
+   See app_microblaze/README_PLUGIN for more information about the compilation process and the AL_Encoder.exe commandline to use your plugin.
 
    @{
    \file
@@ -184,7 +184,7 @@ typedef struct
    \param[in] msg ASCII message that will be sent to the driver to be printed
    \param[in] msgSize size in bytes of the message that will be sent
 *****************************************************************************/
-  void (* trace)(char* msg, size_t msgSize);
+  void (* trace)(char const* msg, size_t msgSize);
 
 /*************************************************************************//*!
    \brief When the plugin rate control attempts to get data from a dma buffer

@@ -7,7 +7,7 @@
 #include <thread>
 #include <stdint.h>
 
-inline uint64_t GetPerfTime()
+inline uint64_t GetPerfTime(void)
 {
   auto now = std::chrono::high_resolution_clock::now();
   auto elapsed = now.time_since_epoch();

@@ -22,6 +22,8 @@
 #define MAX_SPS_IDS 32
 #define MAX_PPS_IDS (AL_MAX_NUM_B_PICT + 3 + 1)
 
+typedef struct AL_THLSInfo AL_HLSInfo;
+
 typedef struct
 {
   bool bHasBeenSent;
@@ -45,9 +47,6 @@ typedef struct
   int iPrevPps;
   AL_TPpsCtx ppsCtx[MAX_PPS_IDS];
 }AL_THeadersCtx;
-
-typedef struct AL_TEncPicStatus AL_TEncPicStatus;
-typedef struct AL_THLSInfo AL_HLSInfo;
 
 /****************************************************************************/
 #define MAX_IDX_BIT_PER_PEL 28

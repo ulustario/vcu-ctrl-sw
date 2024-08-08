@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: MIT
 
 #include "lib_decode/lib_decode.h"
+#include "lib_common/PicFormat.h"
 #include "lib_decode/LibDecoderHost.h"
 
 /* Initialize with decHost so AL_Lib_Decoder_Init() call is optional for the
@@ -147,20 +148,20 @@ bool AL_Decoder_PreallocateBuffers(AL_HDecoder hDec)
 }
 
 /*****************************************************************************/
-uint32_t AL_Decoder_GetMinPitch(uint32_t uWidth, AL_TPicFormat const* pPicFormat)
+int32_t AL_Decoder_GetMinPitch(int32_t iWidth, AL_TPicFormat const* pPicFormat)
 {
   if(!pArch)
     return 0;
 
-  return pArch->vtable->DecoderGetMinPitch(uWidth, pPicFormat);
+  return pArch->vtable->DecoderGetMinPitch(iWidth, pPicFormat);
 }
 
 /*****************************************************************************/
-uint32_t AL_Decoder_GetMinStrideHeight(uint32_t uHeight)
+int32_t AL_Decoder_GetMinStrideHeight(int32_t iHeight, AL_TPicFormat const* pPicFormat)
 {
   if(!pArch)
     return 0;
 
-  return pArch->vtable->DecoderGetMinStrideHeight(uHeight);
+  return pArch->vtable->DecoderGetMinStrideHeight(iHeight, pPicFormat);
 }
 

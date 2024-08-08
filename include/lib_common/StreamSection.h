@@ -8,7 +8,7 @@
  **************************************************************************/
 #pragma once
 
-typedef enum
+typedef enum AL_ESectionFlags
 {
   AL_SECTION_NO_FLAG = 0, /*!< no flag */
   AL_SECTION_SEI_PREFIX_FLAG = 0x1, /*!< this section data is from a SEI prefix */
@@ -23,7 +23,7 @@ typedef enum
    \brief Stream section. Act as a kind of scatter gather list containing the
    stream parts inside a buffer.
 *****************************************************************************/
-typedef struct
+typedef struct AL_TStreamSection
 {
   uint32_t uOffset; /*!< Start offset of the section (in bytes from the beginning of the buffer) */
   uint32_t uLength; /*!< Length in bytes of the section */

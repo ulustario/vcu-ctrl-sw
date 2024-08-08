@@ -12,5 +12,3 @@ endif
 ifeq ($(LIB_FPGA_SRC),)
   LIB_FPGA_SRC+=lib_fpga/BoardNone.c
 endif
-
-$(BIN)/$(THIS_ENC)/DmaAllocLinux.c%o: CFLAGS+=-Wno-stringop-truncation

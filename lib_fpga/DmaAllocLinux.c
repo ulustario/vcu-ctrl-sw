@@ -102,12 +102,11 @@ static AL_PADDR LinuxDma_GetPhysicalAddr(AL_TAllocator* pAllocator, AL_HANDLE hB
 }
 
 /******************************************************************************/
-static bool LinuxDma_Destroy(AL_TAllocator* pAllocator)
+static void LinuxDma_Destroy(AL_TAllocator* pAllocator)
 {
   struct LinuxDmaCtx* pCtx = (struct LinuxDmaCtx*)pAllocator;
   AL_DevicePool_Close(pCtx->fd);
   free(pCtx);
-  return true;
 }
 
 /******************************************************************************/
@@ -118,13 +117,16 @@ static AL_TAllocator* create(const char* deviceFile, void const* vtable)
   if(!pCtx)
     return NULL;
 
-  pCtx->base.vtable = (AL_DmaAllocLinuxVtable const*)vtable;
+  pCtx->base.vtable = (AL_TDmaAllocLinuxVTable const*)vtable;
 
-  /* for debug */
-  if(strlen(deviceFile) > (MAX_DEVICE_FILE_NAME - 1))
+  int deviceFileSize = strlen(deviceFile);
+
+  if(deviceFileSize > (MAX_DEVICE_FILE_NAME - 1))
     goto fail_open;
 
-  strncpy(pCtx->deviceFile, deviceFile, MAX_DEVICE_FILE_NAME);
+  if(snprintf(pCtx->deviceFile, sizeof(pCtx->deviceFile), "%s", deviceFile) != deviceFileSize)
+    goto fail_open;
+
   pCtx->fd = AL_DevicePool_Open(deviceFile);
 
   if(pCtx->fd < 0)
@@ -300,7 +302,7 @@ static AL_HANDLE LinuxDma_ImportFromFd(AL_TLinuxDmaAllocator* pAllocator, int fd
   return NULL;
 }
 
-static const AL_DmaAllocLinuxVtable DmaAllocLinuxVtable =
+static AL_TDmaAllocLinuxVTable const DmaAllocLinuxVtable =
 {
   {
     &LinuxDma_Destroy,

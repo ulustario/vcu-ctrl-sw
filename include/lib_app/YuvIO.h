@@ -22,7 +22,7 @@ static const uint32_t DEFAULT_RND_DIM = 8;
 AL_TBuffer* AllocateDefaultYuvIOBuffer(AL_TDimension const& tDimension, TFourCC tFourCC, uint32_t uRndDim = DEFAULT_RND_DIM);
 
 /*****************************************************************************/
-void GotoFirstPicture(TYUVFileInfo const& FI, std::ifstream& File, unsigned int iFirstPict = 0);
+void GotoFirstPicture(AL_TYUVFileInfo const& FI, std::ifstream& File, unsigned int iFirstPict = 0);
 
 /*****************************************************************************/
 bool ReadOneFrameYuv(std::ifstream& File, AL_TBuffer* pBuf, bool bLoop, uint32_t uRndDim = DEFAULT_RND_DIM);
@@ -31,7 +31,7 @@ bool ReadOneFrameYuv(std::ifstream& File, AL_TBuffer* pBuf, bool bLoop, uint32_t
 bool WriteOneFrame(std::ofstream& File, AL_TBuffer const* pBuf);
 
 /*****************************************************************************/
-int GetPictureSize(TYUVFileInfo FI);
+int GetPictureSize(AL_TYUVFileInfo FI);
 
 /*****************************************************************************/
 int GetFileSize(std::ifstream& File);

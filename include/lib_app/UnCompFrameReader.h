@@ -7,11 +7,11 @@
 class UnCompFrameReader : public FrameReader
 {
 private:
-  TYUVFileInfo& m_tFileInfo;
+  AL_TYUVFileInfo& m_tFileInfo;
   uint32_t m_uRndDim;
 
 public:
-  UnCompFrameReader(std::ifstream& File, TYUVFileInfo& tFileInfo, bool bLoopFrames);
+  UnCompFrameReader(std::ifstream& File, AL_TYUVFileInfo& tFileInfo, bool bLoopFrames);
   virtual bool ReadFrame(AL_TBuffer* pFrameBuffer);
 
   void SeekA(uint32_t uFrameIdx); // seek to Absolution position from the beginning

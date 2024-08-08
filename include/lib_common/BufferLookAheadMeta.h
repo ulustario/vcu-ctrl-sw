@@ -14,7 +14,7 @@
 /*************************************************************************//*!
    \brief Scene change enum
 *****************************************************************************/
-typedef enum
+typedef enum AL_ESceneChangeType
 {
   AL_SC_NONE,    /*!< No scene change detected */
   AL_SC_CURRENT, /*!< Scene change in current frame (for LA1) */

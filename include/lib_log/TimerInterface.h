@@ -6,15 +6,15 @@
 #include "lib_rtos/types.h"
 
 typedef struct AL_ITimer AL_ITimer;
-typedef struct
+typedef struct AL_TTimerVTable
 {
   AL_64U (* pfnGetTime)(AL_ITimer* timer);
   void (* pfnDeinit)(AL_ITimer* timer);
-}AL_ITimerVtable;
+}AL_TTimerVTable;
 
 struct AL_ITimer
 {
-  AL_ITimerVtable const* vtable;
+  AL_TTimerVTable const* vtable;
 };
 
 static inline AL_64U AL_ITimer_GetTime(AL_ITimer* timer)

@@ -14,7 +14,7 @@
 /*************************************************************************//*!
    \brief Decoder DPB mode enum
 *****************************************************************************/
-typedef enum
+typedef enum AL_EDpbMode
 {
   AL_DPB_NORMAL, /*!< Follow DPB specification */
   AL_DPB_NO_REORDERING, /*!< Assume there is no reordering in the stream */

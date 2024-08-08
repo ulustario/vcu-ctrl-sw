@@ -296,7 +296,7 @@ TJsonToken CJsonReader::ReadNextToken(std::ifstream& ifs)
   return tParsedToken;
 }
 
-void CJsonReader::InitTokenization()
+void CJsonReader::InitTokenization(void)
 {
   cToken = ' ';
 }
@@ -307,7 +307,7 @@ CJsonWriter::CJsonWriter(const std::string& sFile, bool bStreamMode) :
   eState = bStreamMode ? JSON_STREAM_CLOSED : JSON_SINGLE_WRITE;
 }
 
-CJsonWriter::~CJsonWriter()
+CJsonWriter::~CJsonWriter(void)
 {
   if(eState != JSON_STREAM_OPENED)
     return;

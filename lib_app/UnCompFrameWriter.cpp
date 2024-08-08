@@ -93,8 +93,8 @@ void UnCompFrameWriter::WriteFrame(AL_TBuffer* pBuf, AL_TCropInfo* pCrop, AL_EPi
 
   if(m_tPicFormat.eChromaMode != AL_CHROMA_4_0_0)
   {
-    tCrop.uCropOffsetTop /= 2;
-    tCrop.uCropOffsetLeft /= 2;
+    tCrop.uCropOffsetTop /= m_tPicFormat.eChromaMode == AL_CHROMA_4_2_0 ? 2 : 1;
+    tCrop.uCropOffsetLeft /= m_tPicFormat.eChromaMode == AL_CHROMA_4_4_4 ? 1 : 2;
 
     if(m_tPicFormat.ePlaneMode == AL_PLANE_MODE_PLANAR)
     {
@@ -118,7 +118,7 @@ void UnCompFrameWriter::WriteFrame(AL_TBuffer* pBuf, AL_TCropInfo* pCrop, AL_EPi
 }
 
 /****************************************************************************/
-void UnCompFrameWriter::DimInTileCalculusRaster()
+void UnCompFrameWriter::DimInTileCalculusRaster(void)
 {
   FactorsCalculus();
 

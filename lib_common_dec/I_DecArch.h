@@ -11,15 +11,8 @@
 
 #pragma once
 
-/****************************************************************************/
-typedef AL_HANDLE AL_HDecoder;
-
-typedef struct AL_IDecArchVtable AL_IDecArchVtable;
-
-typedef struct AL_IDecArch
-{
-  const AL_IDecArchVtable* vtable;
-}AL_IDecArch;
+#include "lib_common/PicFormat.h"
+#include "lib_decode/lib_decode.h"
 
 typedef struct AL_IDecArchVtable
 {
@@ -36,9 +29,14 @@ typedef struct AL_IDecArchVtable
   AL_ERR (* DecoderGetLastError)(AL_HDecoder hDec);
   AL_ERR (* DecoderGetFrameError)(AL_HDecoder hDec, AL_TBuffer const* pBuf);
   bool (* DecoderPreallocateBuffers)(AL_HDecoder hDec);
-  uint32_t (* DecoderGetMinPitch)(uint32_t uWidth, AL_TPicFormat const* pPicFormat);
-  uint32_t (* DecoderGetMinStrideHeight)(uint32_t uHeight);
+  int32_t (* DecoderGetMinPitch)(int32_t iWidth, AL_TPicFormat const* pPicFormat);
+  int32_t (* DecoderGetMinStrideHeight)(int32_t iHeight, AL_TPicFormat const* pPicFormat);
   bool (* DecoderSetDecOutputSettings)(AL_HDecoder hDec, AL_TDecOutputSettings const* pDecOutputSettings);
 }AL_IDecArchVtable;
+
+typedef struct AL_IDecArch
+{
+  AL_IDecArchVtable const* vtable;
+}AL_IDecArch;
 
 /*@}*/

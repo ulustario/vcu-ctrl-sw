@@ -9,4 +9,4 @@
 int GetPcmVclNalSize(AL_TDimension tDim, AL_EChromaMode eMode, int iBitDepth);
 
 /****************************************************************************/
-int GetPCMSize(uint32_t uNumLCU, uint8_t uLog2MaxCuSize, AL_EChromaMode eChromaMode, uint8_t uBitDepth, bool bIntermediateBuffer);
+int32_t GetPCMSize(int32_t uNumLCU, uint8_t uLog2MaxCuSize, AL_EChromaMode eChromaMode, uint8_t uBitDepth, bool bIntermediateBuffer);

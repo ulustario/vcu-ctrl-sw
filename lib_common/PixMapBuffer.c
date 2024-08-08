@@ -3,6 +3,7 @@
 
 #include "PixMapBufferInternal.h"
 #include "lib_common/BufferAPIInternal.h"
+#include "lib_assert/al_assert.h"
 
 AL_TBuffer* AL_PixMapBuffer_Create(AL_TAllocator* pAllocator, PFN_RefCount_CallBack pCallBack, AL_TDimension tDim, TFourCC tFourCC)
 {
@@ -169,6 +170,27 @@ int AL_PixMapBuffer_GetPlaneChunkIdx(AL_TBuffer const* pBuf, AL_EPlaneId ePlaneI
     return AL_BUFFER_BAD_CHUNK;
 
   return pMeta->tPlanes[ePlaneId].iChunkIdx;
+}
+
+int AL_PixMapBuffer_GetDefinedPlanes(AL_TBuffer const* pBuf, AL_EPlaneId planes[AL_PLANE_MAX_ENUM])
+{
+  AL_TPixMapMetaData* pMeta = (AL_TPixMapMetaData*)AL_Buffer_GetMetaData(pBuf, AL_META_TYPE_PIXMAP);
+
+  if(pMeta == NULL)
+    return 0;
+
+  int iNbDefinedPlanes = 0;
+
+  for(int iPlane = AL_PLANE_Y; iPlane < AL_PLANE_MAX_ENUM; iPlane++)
+  {
+    if(pMeta->tPlanes[iPlane].iChunkIdx != AL_BUFFER_BAD_CHUNK)
+    {
+      planes[iNbDefinedPlanes] = (AL_EPlaneId)iPlane;
+      iNbDefinedPlanes++;
+    }
+  }
+
+  return iNbDefinedPlanes;
 }
 
 uint32_t AL_PixMapBuffer_GetPositionOffset(AL_TBuffer const* pBuf, AL_TPosition tPos, AL_EPlaneId ePlaneId)

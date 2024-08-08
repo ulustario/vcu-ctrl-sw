@@ -13,7 +13,7 @@
 /*************************************************************************//*!
    \brief Tag identifying the metadata structure
 *****************************************************************************/
-typedef enum
+typedef enum AL_EMetaType
 {
   AL_META_TYPE_PIXMAP, /*!< useful information related to the reconstructed picture */
   AL_META_TYPE_STREAM, /*!< useful section of the buffer containing the bitstream */
@@ -32,7 +32,7 @@ typedef enum
 
 AL_DEPRECATED_ENUM_VALUE(AL_EMetaType, AL_META_TYPE_SOURCE, AL_META_TYPE_PIXMAP, "Renamed. Use AL_META_TYPE_PIXMAP.");
 
-typedef struct al_t_MetaData AL_TMetaData;
+typedef struct AL_TMetaData AL_TMetaData;
 typedef bool (* AL_FCN_MetaDestroy) (AL_TMetaData* pMeta);
 typedef AL_TMetaData* (* AL_FCN_MetaClone) (AL_TMetaData* pMeta);
 
@@ -40,7 +40,7 @@ typedef AL_TMetaData* (* AL_FCN_MetaClone) (AL_TMetaData* pMeta);
    \brief Metadatas are used to add useful information to a buffer. The user
    can also define his own metadata type and bind it to the buffer.
 *****************************************************************************/
-struct al_t_MetaData
+struct AL_TMetaData
 {
   AL_EMetaType eType; /*!< tag of the metadata */
   AL_FCN_MetaDestroy MetaDestroy; /*!< custom deleter */

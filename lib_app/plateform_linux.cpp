@@ -3,6 +3,6 @@
 
 #include "lib_app/plateform.h"
 
-void InitializePlateform()
+void InitializePlateform(void)
 {
 }

@@ -5,14 +5,12 @@
 #include "lib_rtos/lib_rtos.h"
 #include "lib_assert/al_assert.h"
 
-/*****************************************************************************/
 static AL_HANDLE AL_sDefaultAllocator_Alloc(AL_TAllocator* pAllocator, size_t zSize)
 {
   (void)pAllocator;
   return (AL_HANDLE)Rtos_Malloc(zSize);
 }
 
-/*****************************************************************************/
 static bool AL_sDefaultAllocator_Free(AL_TAllocator* pAllocator, AL_HANDLE hBuf)
 {
   (void)pAllocator;
@@ -20,14 +18,12 @@ static bool AL_sDefaultAllocator_Free(AL_TAllocator* pAllocator, AL_HANDLE hBuf)
   return true;
 }
 
-/*****************************************************************************/
 static AL_VADDR AL_sDefaultAllocator_GetVirtualAddr(AL_TAllocator* pAllocator, AL_HANDLE hBuf)
 {
   (void)pAllocator;
   return (AL_VADDR)hBuf;
 }
 
-/*****************************************************************************/
 static AL_PADDR AL_sDefaultAllocator_GetPhysicalAddr(AL_TAllocator* pAllocator, AL_HANDLE hBuf)
 {
   (void)pAllocator;
@@ -36,14 +32,18 @@ static AL_PADDR AL_sDefaultAllocator_GetPhysicalAddr(AL_TAllocator* pAllocator, 
   return (AL_PADDR)32;
 }
 
-/*****************************************************************************/
-static const AL_AllocatorVtable s_DefaultAllocatorVtable =
+static void AL_sDefaultAllocator_Destroy(AL_TAllocator* pAllocator)
 {
-  NULL,
-  AL_sDefaultAllocator_Alloc,
-  AL_sDefaultAllocator_Free,
-  AL_sDefaultAllocator_GetVirtualAddr,
-  AL_sDefaultAllocator_GetPhysicalAddr,
+  (void)pAllocator;
+}
+
+static AL_TAllocatorVTable const s_DefaultAllocatorVtable =
+{
+  &AL_sDefaultAllocator_Destroy,
+  &AL_sDefaultAllocator_Alloc,
+  &AL_sDefaultAllocator_Free,
+  &AL_sDefaultAllocator_GetVirtualAddr,
+  &AL_sDefaultAllocator_GetPhysicalAddr,
   NULL,
   NULL,
   NULL,
@@ -110,13 +110,18 @@ static AL_PADDR AL_sWrapperAllocator_GetPhysicalAddr(AL_TAllocator* pAllocator, 
   return (AL_PADDR)0xdeaddead;
 }
 
-static const AL_AllocatorVtable s_WrapperAllocatorVtable =
+static void AL_sWrapperAllocator_Destroy(AL_TAllocator* pAllocator)
 {
-  NULL,
-  AL_sWrapperAllocator_Alloc,
-  AL_sWrapperAllocator_Free,
-  AL_sWrapperAllocator_GetVirtualAddr,
-  AL_sWrapperAllocator_GetPhysicalAddr,
+  (void)pAllocator;
+}
+
+static AL_TAllocatorVTable const s_WrapperAllocatorVtable =
+{
+  &AL_sWrapperAllocator_Destroy,
+  &AL_sWrapperAllocator_Alloc,
+  &AL_sWrapperAllocator_Free,
+  &AL_sWrapperAllocator_GetVirtualAddr,
+  &AL_sWrapperAllocator_GetPhysicalAddr,
   NULL,
   NULL,
   NULL,
@@ -132,13 +137,11 @@ static AL_TAllocator s_DefaultAllocator =
   &s_DefaultAllocatorVtable
 };
 
-/*****************************************************************************/
 AL_TAllocator* AL_GetWrapperAllocator(void)
 {
   return &s_WrapperAllocator;
 }
 
-/*****************************************************************************/
 AL_TAllocator* AL_GetDefaultAllocator(void)
 {
   return &s_DefaultAllocator;

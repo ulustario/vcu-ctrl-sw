@@ -70,17 +70,17 @@ static inline std::vector<Codec> isOnlyCodec(Codec codec)
   return filterCodecs({ codec });
 }
 
-static inline std::vector<Codec> aomCodecs()
+static inline std::vector<Codec> aomCodecs(void)
 {
   return filterCodecs({ Codec::Vp9, Codec::Av1 });
 }
 
-static inline std::vector<Codec> ituCodecs()
+static inline std::vector<Codec> ituCodecs(void)
 {
   return filterCodecs({ Codec::Hevc, Codec::Avc, Codec::Vvc });
 }
 
-static inline std::vector<Codec> aomituCodecs()
+static inline std::vector<Codec> aomituCodecs(void)
 {
   std::vector<Codec> aomituCodecs {};
 
@@ -93,7 +93,7 @@ static inline std::vector<Codec> aomituCodecs()
   return aomituCodecs;
 }
 
-static inline std::vector<Codec> allCodecs()
+static inline std::vector<Codec> allCodecs(void)
 {
   std::vector<Codec> allCodecs {
     aomituCodecs()
@@ -199,7 +199,7 @@ struct ArithInfoList
   std::vector<T> availableValuesList;
 };
 
-static inline std::vector<std::string> noNote()
+static inline std::vector<std::string> noNote(void)
 {
   return {};
 }
@@ -703,13 +703,8 @@ struct ConfigParser
   {
     NO_CODEC,
   };
-  bool showAdvancedFeature = true;
 
   void removeIdentifierIf(std::vector<IdentifierValidation> conditions);
-  void setAdvanced(Section section, char const* name)
-  {
-    identifiers[section][tolowerStr(name)].isAdvancedFeature = true;
-  }
 
   void addNote(Section section, char const* name, std::string note)
   {

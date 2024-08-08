@@ -5,7 +5,7 @@
 
 #include <fstream>
 
-int FrameReader::GetFileSize()
+int FrameReader::GetFileSize(void)
 {
   auto position = m_recFile.tellg();
   m_recFile.seekg(0, std::ios_base::end);

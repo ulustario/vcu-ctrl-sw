@@ -28,4 +28,4 @@ typedef struct
   int actualWidthInCtbPerCore; /* calculated without taking the alignment of the cores in consideration */
 }AL_NumCoreDiagnostic;
 
-bool AL_Constraint_NumCoreIsSane(AL_ECodec codec, int width, int numCore, int log2MaxCuSize, AL_NumCoreDiagnostic* diagnostic);
+bool AL_Constraint_NumTileIsSane(AL_ECodec codec, int width, int numTile, int log2MaxCuSize, AL_NumCoreDiagnostic* diagnostic);

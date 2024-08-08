@@ -148,8 +148,8 @@ void UpdateCircBuffer(AL_TRbspParser* pRP, TCircBuffer* pBufStream, int* pSliceH
   uint32_t uLengthNAL = GetSliceHdrSize(pRP, pBufStream);
 
   // remap stream offset
-  if(pRP->iTotalBitIndex % 8)
-    *pSliceHdrLength = 16 + (pRP->iTotalBitIndex % 8);
+  if(pRP->iCurrentBitIndex % 8)
+    *pSliceHdrLength = 16 + (pRP->iCurrentBitIndex % 8);
   else
     *pSliceHdrLength = 24;
   uLengthNAL -= (*pSliceHdrLength + 7) >> 3;

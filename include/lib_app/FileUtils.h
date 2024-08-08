@@ -19,7 +19,7 @@ std::string createFileNameWithID(const std::string& path, const std::string& mot
 bool checkFolder(std::string folderPath);
 
 /****************************************************************************/
-bool checkFileAvailability(std::string folderPath, std::regex regex);
+bool checkFileAvailability(std::string folderPath, std::regex const& regex);
 
 /****************************************************************************/
 #define FROM_HEX_ERROR -1

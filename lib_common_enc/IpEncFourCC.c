@@ -25,8 +25,11 @@ TFourCC AL_EncGetSrcFourCC(AL_TPicFormat const picFmt)
 AL_TPicFormat AL_EncGetSrcPicFormat(AL_EChromaMode eChromaMode, uint8_t uBitDepth, AL_ESrcMode eSrcMode)
 {
   AL_ESamplePackMode eSamplePackMode = AL_SAMPLE_PACK_MODE_BYTE;
-  AL_EComponentOrder eComponentOrder = AL_COMPONENT_ORDER_YUV;
+  bool bIsSourceRGB = false;
   AL_EAlphaMode eAlphaMode = AL_ALPHA_MODE_DISABLED;
+  AL_EChromaMode eRealChromaMode = eChromaMode;
+
+  AL_EComponentOrder eComponentOrder = bIsSourceRGB ? AL_COMPONENT_ORDER_BGR : AL_COMPONENT_ORDER_YUV;
   AL_EFbStorageMode eStorageMode = AL_GetSrcStorageMode(eSrcMode);
 
   bool bCompressed = false;
@@ -46,7 +49,7 @@ AL_TPicFormat AL_EncGetSrcPicFormat(AL_EChromaMode eChromaMode, uint8_t uBitDept
 
   AL_TPicFormat picFormat =
   {
-    eChromaMode,
+    eRealChromaMode,
     eAlphaMode,
     uBitDepth,
     eStorageMode,

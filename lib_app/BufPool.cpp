@@ -322,7 +322,7 @@ uint32_t AL_GetWaitMode(AL_EBufMode eMode)
   return Wait;
 }
 
-BaseBufPool::~BaseBufPool()
+BaseBufPool::~BaseBufPool(void)
 {
   AL_BufPool_Deinit(&m_pool);
 }
@@ -365,12 +365,22 @@ AL_TBuffer* BaseBufPool::GetBuffer(AL_EBufMode mode)
   return pBuf;
 }
 
-void BaseBufPool::Decommit()
+std::shared_ptr<AL_TBuffer> BaseBufPool::GetSharedBuffer(AL_EBufMode mode)
+{
+  AL_TBuffer* pBuf = GetBuffer(mode);
+
+  if(pBuf == nullptr)
+    return nullptr;
+
+  return std::shared_ptr<AL_TBuffer>(pBuf, &AL_Buffer_Unref);
+}
+
+void BaseBufPool::Decommit(void)
 {
   AL_BufPool_Decommit(&m_pool);
 }
 
-void BaseBufPool::Commit()
+void BaseBufPool::Commit(void)
 {
   AL_BufPool_Commit(&m_pool);
 }
@@ -398,12 +408,12 @@ AL_TBuffer* BufPool::CreateBuf(AL_TAllocator* pAllocator, PFN_RefCount_CallBack 
   return AL_Buffer_Create_And_AllocateNamed(pAllocator, zBufSize, pRefCntCallBack, sName.c_str());
 }
 
-size_t BufPool::GetBufSize()
+size_t BufPool::GetBufSize(void)
 {
   return zBufSize;
 }
 
-uint32_t BufPool::GetNumBuf()
+uint32_t BufPool::GetNumBuf(void)
 {
   return uNumBuf;
 }

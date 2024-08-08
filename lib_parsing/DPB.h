@@ -22,11 +22,9 @@
 #include "lib_common_dec/DecPicParam.h"
 #include "lib_common_dec/DecDpbMode.h"
 
-#define MAX_STACK_SIZE 16
-
 #define MAX_BUF_HELD_BY_NEXT_COMPONENT MAX_REF /*!< e.g. display / encoder / .. */
 #define PIC_ID_POOL_SIZE MAX_REF
-#define MAX_DPB_SIZE (MAX_REF + MAX_STACK_SIZE + REC_BUF + CONCEAL_BUF)
+#define MAX_DPB_SIZE (MAX_REF + AL_DEC_SW_MAX_STACK_SIZE + REC_BUF + CONCEAL_BUF)
 #define FRM_BUF_POOL_SIZE (MAX_DPB_SIZE + MAX_BUF_HELD_BY_NEXT_COMPONENT)
 
 #define uEndOfList 0xFF /*!< End Of List marker for Reference List */
@@ -62,7 +60,7 @@ typedef struct
    \ingroup BufPool
    \brief Fifo of frame buffer to be displayed
 *****************************************************************************/
-typedef struct t_DispFifo
+typedef struct
 {
   uint8_t pFrmIDs[FRM_BUF_POOL_SIZE];
   uint32_t pPicLatency[FRM_BUF_POOL_SIZE];
@@ -76,7 +74,7 @@ typedef struct t_DispFifo
 /*************************************************************************//*!
    \brief Single node used by Reference Buffer Pool.
 *****************************************************************************/
-typedef struct t_DpbNode
+typedef struct
 {
   uint8_t uNodeID;
   uint8_t uFrmID; /*!< Index of the Frame buffer associated with this node */
@@ -95,7 +93,7 @@ typedef struct t_DpbNode
   /* info on the reference picture */
   int32_t iFramePOC; /*!< POC of this reference node */
   AL_EPicStruct ePicStruct; /*!< Picture structure of this reference node */
-  uint32_t slice_pic_order_cnt_lsb;
+  int32_t slice_pic_order_cnt_lsb;
   AL_EMarkingRef eMarking_flag; /*!< status of this reference node */
 
   int32_t iFrame_num;
@@ -119,7 +117,7 @@ typedef struct t_DpbNode
    \ingroup RefPool
    \brief Reference Buffers Pool object
 *****************************************************************************/
-typedef struct t_DPB
+typedef struct
 {
   AL_TDpbNode Nodes[MAX_DPB_SIZE]; /*!< Array of nodes */
 
@@ -178,8 +176,9 @@ typedef struct t_DPB
    \param[in]     uNumRef            Number of reference to manage
    \param[in]     eMode              Mode choose by user for the dpb
    \param[in]     tCallbacks         Picture manager callbacks
+   \return true if the Initialization was correct, false otherwise
 *****************************************************************************/
-void AL_Dpb_Init(AL_TDpb* pDpb, uint8_t uNumRef, AL_EDpbMode eMode, AL_TDpbCallback tCallbacks);
+bool AL_Dpb_Init(AL_TDpb* pDpb, uint8_t uNumRef, AL_EDpbMode eMode, AL_TDpbCallback tCallbacks);
 
 /*************************************************************************//*!
    \brief Flush last DPB removal orders
@@ -322,7 +321,7 @@ uint8_t AL_Dpb_RemoveHead(AL_TDpb* pDpb);
    \param[in,out] pDpb            Pointer to a DPB context object
    \param[in]     iFramePOC       Picture order count of the added frame buffer
    \param[in]     ePicStruct      Picture structure of the added frame buffer
-   \param[in]     uPocLsb         Value used to identify long term reference picture
+   \param[in]     iPocLsb         Value used to identify long term reference picture
    \param[in]     uNode           Node index of the added reference
    \param[in]     uFrmID          Frame Buffer index of the added reference
    \param[in]     uMvID           Associated motion-vector buffer index of the added reference
@@ -332,7 +331,7 @@ uint8_t AL_Dpb_RemoveHead(AL_TDpb* pDpb);
    \param[in]     eNUT            Added Nal Unit Type
    \param[in]     uSubpicFlag     Added subpicture flag
 *****************************************************************************/
-void AL_Dpb_Insert(AL_TDpb* pDpb, int iFramePOC, AL_EPicStruct ePicStruct, uint32_t uPocLsb, uint8_t uNode, uint8_t uFrmID, uint8_t uMvID, uint8_t pic_output_flag, AL_EMarkingRef eMarkingFlag, uint8_t uNonExisting, AL_ENut eNUT, uint8_t uSubpicFlag);
+void AL_Dpb_Insert(AL_TDpb* pDpb, int32_t iFramePOC, AL_EPicStruct ePicStruct, int32_t iPocLsb, uint8_t uNode, uint8_t uFrmID, uint8_t uMvID, uint8_t pic_output_flag, AL_EMarkingRef eMarkingFlag, uint8_t uNonExisting, AL_ENut eNUT, uint8_t uSubpicFlag);
 
 /*************************************************************************//*!
    \brief Update DPB state after a frame decoding
@@ -403,7 +402,7 @@ void AL_Dpb_ModifLongTerm(AL_TDpb const* pDpb, AL_TAvcSliceHdr const* pSlice, ui
    \param[in] pListRef  Pointer on the reference picture list object
    \return the number of really existing reference pictures
 *****************************************************************************/
-int AL_Dpb_GetNumExistingRef(AL_TDpb const* pDpb, TBufferListRef const* pListRef);
+int32_t AL_Dpb_GetNumExistingRef(AL_TDpb const* pDpb, TBufferListRef const* pListRef);
 
 /*************************************************************************//*!
    \brief Retrieves the POCs of really existing reference pictures
@@ -445,7 +444,7 @@ void AL_Dpb_FillList(AL_TDpb const* pDpb, int32_t* pPocList, uint32_t* pLongTerm
    \param[in] poc_lsb poc_lsb value to search in the DPB
    \return The node index with the given poc_lsb
 *****************************************************************************/
-uint8_t AL_Dpb_SearchPocLsb(AL_TDpb const* pDpb, uint32_t poc_lsb);
+uint8_t AL_Dpb_SearchPocLsb(AL_TDpb const* pDpb, int32_t poc_lsb);
 
 /*************************************************************************//*!
    \brief Searches the picture with the given iPOC in the dpb with the corresponding marking flag
@@ -453,7 +452,7 @@ uint8_t AL_Dpb_SearchPocLsb(AL_TDpb const* pDpb, uint32_t poc_lsb);
    \param[in] iPOC Picture order count value to search in the DPB
    \return The node index with the given iPOC
 *****************************************************************************/
-uint8_t AL_Dpb_SearchPOC(AL_TDpb const* pDpb, int iPOC);
+uint8_t AL_Dpb_SearchPOC(AL_TDpb const* pDpb, int32_t iPOC);
 
 /*************************************************************************//*!
    \brief This function retrieves the Node ID associated with picture which follows the current picture in poc order

@@ -16,7 +16,7 @@
 /*************************************************************************//*!
    \brief Struct for dimension
 *****************************************************************************/
-typedef struct
+typedef struct AL_TDimension
 {
   int32_t iWidth;
   int32_t iHeight;
@@ -25,16 +25,27 @@ typedef struct
 /*************************************************************************//*!
    \brief Struct for position
 *****************************************************************************/
-typedef struct
+typedef struct AL_TPosition
 {
   int32_t iX;
   int32_t iY;
 }AL_TPosition;
 
 /*************************************************************************//*!
+   \brief Struct for direction
+*****************************************************************************/
+typedef struct AL_TDirection
+{
+  int32_t iTop;
+  int32_t iRight;
+  int32_t iBottom;
+  int32_t iLeft;
+}AL_TDirection;
+
+/*************************************************************************//*!
    \brief Struct for window
 *****************************************************************************/
-typedef struct
+typedef struct AL_TWindow
 {
   AL_TPosition tPos;
   AL_TDimension tDim;
@@ -43,7 +54,7 @@ typedef struct
 /*************************************************************************//*!
    \brief Struct for dimension
 *****************************************************************************/
-typedef struct
+typedef struct AL_TPhase
 {
   uint8_t Horizontal;
   uint8_t Vertical;
@@ -52,7 +63,7 @@ typedef struct
 /*************************************************************************//*!
    \brief Cropping Info on the YUV reconstructed
  *************************************************************************/
-typedef struct t_CropInfo
+typedef struct AL_TCropInfo
 {
   bool bCropping;         /*!< Cropping information present flag    */
   uint32_t uCropOffsetLeft;   /*!< Left   offset of the cropping window */
@@ -75,7 +86,7 @@ static inline void ResetCropInfo(AL_TCropInfo* pCropInfo)
    \brief Chroma mode. Describes how many chroma samples we have relatively
    to the luma samples.
 *****************************************************************************/
-typedef enum
+typedef enum AL_EChromaMode
 {
   AL_CHROMA_MONO = 0, /*!< Monochrome */
   AL_CHROMA_4_0_0 = AL_CHROMA_MONO, /*!< 4:0:0 = Monochrome */
@@ -89,7 +100,7 @@ typedef enum
    \brief Frame buffer storage mode. It describes the scan order of the
    samples inside the frame buffer.
 *****************************************************************************/
-typedef enum
+typedef enum AL_EFbStorageMode
 {
   AL_FB_RASTER,     /*!< Samples are stored in raster scan order */
   AL_FB_TILE_32x4,  /*!< Samples are stored going raster inside 4x4 blocks, themselves inside 32x4 tiles */
@@ -102,7 +113,7 @@ typedef enum
    can contain one or more components of the frame buffer. Components can be
    for instance Y/U/V, or R/G/B.
 *****************************************************************************/
-typedef enum
+typedef enum AL_EPlaneMode
 {
   AL_PLANE_MODE_PLANAR, /*!< Each component is stored its own separated plane */
   AL_PLANE_MODE_MONOPLANE = AL_PLANE_MODE_PLANAR,  /*!< There is only one component, and thus only one plane  */
@@ -121,7 +132,7 @@ AL_DEPRECATED_ENUM_VALUE(AL_EPlaneMode, AL_C_ORDER_PACKED, AL_PLANE_MODE_INTERLE
    of the planes. In case of a semiplanar or interleaved frame buffer, it
    will describe the order of component inside a plane.
 *****************************************************************************/
-typedef enum
+typedef enum AL_EComponentOrder
 {
   AL_COMPONENT_ORDER_YUV,
   AL_COMPONENT_ORDER_YVU,
@@ -145,7 +156,7 @@ typedef enum
    \brief Frame buffer sample pack mode. Describes on how many bits each sample
    is stored.
 *****************************************************************************/
-typedef enum
+typedef enum AL_ESamplePackMode
 {
   AL_SAMPLE_PACK_MODE_BYTE, /*!< 8 bits samples stored on 8 bits, 10/12 on 16 bits */
   AL_SAMPLE_PACK_MODE_PACKED, /*!< n bits samples stored exactly on n bits */
@@ -157,7 +168,7 @@ typedef enum
   \brief Frame buffer alpha mode. Describes if buffer contains alpha information,
   and if so, describes its position relatively to other samples.
 *************************************************************************/
-typedef enum
+typedef enum AL_EAlphaMode
 {
   AL_ALPHA_MODE_DISABLED, /*!< No alpha */
   AL_ALPHA_MODE_BEFORE, /*!< Alpha is stored before other components */
@@ -184,7 +195,7 @@ typedef struct AL_TPicFormat
 /*************************************************************************//*!
    \brief Output type
  *************************************************************************/
-typedef enum
+typedef enum AL_EOutputType
 {
   AL_OUTPUT_PRIMARY,
   AL_OUTPUT_MAIN,

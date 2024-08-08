@@ -13,7 +13,7 @@
 
 typedef struct AL_TInternalHandleMetaData AL_TInternalHandleMetaData;
 
-typedef struct
+typedef struct AL_THandleMetaData
 {
   AL_TMetaData tMeta;
   AL_TInternalHandleMetaData* pInternal;

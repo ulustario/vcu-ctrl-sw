@@ -8,7 +8,7 @@
 
 using namespace std;
 
-void WriteContainerHeader(ofstream& fp, AL_TEncSettings const& Settings, TYUVFileInfo const& FileInfo, int numFrames)
+void WriteContainerHeader(ofstream& fp, AL_TEncSettings const& Settings, AL_TYUVFileInfo const& FileInfo, int numFrames)
 {
   (void)fp;
   (void)Settings;

@@ -498,7 +498,7 @@ void AL_HEVC_GeneratePPS(AL_TPps* pIPPS, AL_TEncSettings const* pSettings, AL_TE
   pPPS->num_ref_idx_l1_default_active_minus1 = iMaxRef - 1;
   pPPS->init_qp_minus26 = 0;
   pPPS->constrained_intra_pred_flag = (pChParam->eEncTools & AL_OPT_CONST_INTRA_PRED) ? 1 : 0;
-  pPPS->transform_skip_enabled_flag = (pChParam->eEncTools & AL_OPT_TRANSFO_SKIP) ? 1 : 0;
+  pPPS->transform_skip_enabled_flag = false;
   pPPS->cu_qp_delta_enabled_flag = HasCuQpDeltaDepthEnabled(pSettings, pChParam);
   pPPS->diff_cu_qp_delta_depth = pChParam->uCuQPDeltaDepth;
 

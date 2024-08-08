@@ -22,6 +22,7 @@
 
 #include "lib_common/BufferAPI.h"
 #include "lib_common/Error.h"
+#include "lib_common/PicFormat.h"
 
 #include "lib_common_dec/DecCallbacks.h"
 #include "lib_common_dec/DecoderArch.h"
@@ -35,18 +36,29 @@
 *****************************************************************************/
 typedef struct AL_IDecScheduler AL_IDecScheduler;
 
+/*************************************************************************//*!
+   \brief De-initializes the scheduler
+*****************************************************************************/
 void AL_IDecScheduler_Destroy(AL_IDecScheduler* pThis);
+
+/*************************************************************************//*!
+   \brief Scheduler getter
+*****************************************************************************/
 void AL_IDecScheduler_Get(AL_IDecScheduler const* pThis, AL_EIDecSchedulerInfo eInfo, void* pParam);
+
+/*************************************************************************//*!
+   \brief Scheduler setter
+*****************************************************************************/
 void AL_IDecScheduler_Set(AL_IDecScheduler* pThis, AL_EIDecSchedulerInfo eInfo, void const* pParam);
 
-typedef enum
+typedef enum AL_EDecHandleState
 {
   AL_DEC_HANDLE_STATE_PROCESSING,
   AL_DEC_HANDLE_STATE_PROCESSED,
   AL_DEC_HANDLE_STATE_MAX_ENUM, /* sentinel */
 }AL_EDecHandleState;
 
-typedef struct
+typedef struct AL_TDecMetaHandle
 {
   AL_EDecHandleState eState;
   AL_TBuffer* pHandle;
@@ -55,7 +67,7 @@ typedef struct
 /*************************************************************************//*!
    \brief Flags characterizing stream buffers pushed for decoding
 *****************************************************************************/
-typedef enum
+typedef enum AL_EStreamBufFlags
 {
   AL_STREAM_BUF_FLAG_UNKNOWN = 0x0, /*!< Stream buffer content is unknown */
   AL_STREAM_BUF_FLAG_ENDOFSLICE = 0x2, /*!< The stream buffer ends a slice */
@@ -72,7 +84,7 @@ typedef AL_HANDLE AL_HDecoder;
 /*************************************************************************//*!
    \brief Decoder callbacks
 *****************************************************************************/
-typedef struct
+typedef struct AL_TDecCallBacks
 {
   AL_CB_EndParsing endParsingCB; /*!< Called when an input buffer is parsed */
   AL_CB_EndDecoding endDecodingCB; /*!< Called when a frame is decoded */
@@ -196,19 +208,22 @@ AL_ERR AL_Decoder_GetFrameError(AL_HDecoder hDec, AL_TBuffer const* pBuf);
 bool AL_Decoder_PreallocateBuffers(AL_HDecoder hDec);
 
 /*************************************************************************//*!
-   \brief Give the minimum stride supported by the decoder for its reconstructed buffers
-   \param[in] uWidth width of the reconstructed buffers in pixels
+   \brief Give the minimum pitch (aka stride) supported by the decoder for its decoded buffers
+   \param[in] iWidth width of the reconstructed buffers in pixels
    \param[in] pPicFormat picture format of the buffer
+   \return Minimum pitch required
 *****************************************************************************/
-uint32_t AL_Decoder_GetMinPitch(uint32_t uWidth, AL_TPicFormat const* pPicFormat);
+int32_t AL_Decoder_GetMinPitch(int32_t iWidth, AL_TPicFormat const* pPicFormat);
 
 /*************************************************************************//*!
-   \brief Give the minimum stride height supported by the decoder
+   \brief Give the minimum stride height supported by the decoder for its decoded buffers
    Restriction: The decoder still only supports a stride height set to AL_Decoder_GetMinStrideHeight.
    all other strideHeight will be ignored
-   \param[in] uHeight height of the picture in pixels
+   \param[in] iHeight height of the picture in pixels
+   \param[in] pPicFormat picture format of the buffer
+   \return Minimum stride height required
 *****************************************************************************/
-uint32_t AL_Decoder_GetMinStrideHeight(uint32_t uHeight);
+int32_t AL_Decoder_GetMinStrideHeight(int32_t iHeight, AL_TPicFormat const* pPicFormat);
 
 /*@}*/
 

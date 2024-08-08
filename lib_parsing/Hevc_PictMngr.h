@@ -68,7 +68,7 @@ bool AL_HEVC_PictMngr_HasPictInDPB(AL_TPictMngrCtx const* pCtx);
    \return If the function succeeds the return value is nonzero (true)
         If the function fails the return value is zero (false)
 *****************************************************************************/
-bool AL_HEVC_PictMngr_GetBuffers(AL_TPictMngrCtx const* pCtx, AL_TDecSliceParam const* pSP, TBuffer* pListVirtAddr, TBuffer* pListAddr, TBufferPOC* pPOC, TBufferMV* pMV, AL_TRecBuffers* pRecs);
+bool AL_HEVC_PictMngr_GetBuffers(AL_TPictMngrCtx* pCtx, AL_TDecSliceParam const* pSP, TBuffer* pListVirtAddr, TBuffer* pListAddr, TBufferPOC* pPOC, TBufferMV* pMV, AL_TRecBuffers* pRecs);
 
 /*************************************************************************//*!
    \brief Prepares the reference picture set for the current slice reference picture list construction
@@ -83,6 +83,6 @@ void AL_HEVC_PictMngr_InitRefPictSet(AL_TPictMngrCtx* pCtx, AL_THevcSliceHdr con
    \param[in]  pSlice   Pointer to the slice header of the current slice
    \param[out] pListRef Pointer to the current reference list
 *****************************************************************************/
-bool AL_HEVC_PictMngr_BuildPictureList(AL_TPictMngrCtx const* pCtx, AL_THevcSliceHdr const* pSlice, TBufferListRef* pListRef);
+bool AL_HEVC_PictMngr_BuildPictureList(AL_TPictMngrCtx* pCtx, AL_THevcSliceHdr const* pSlice, TBufferListRef* pListRef);
 
 /*@}*/

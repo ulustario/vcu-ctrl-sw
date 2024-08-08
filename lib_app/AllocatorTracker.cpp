@@ -18,7 +18,7 @@ constexpr int detailedMode = 1;
 
 struct AllocatorTracker
 {
-  const AL_AllocatorVtable* vtable;
+  AL_TAllocatorVTable const* vtable;
   AL_TAllocator* realAllocator;
   map<string, vector<size_t>> allocs;
   uint64_t size = 0;
@@ -30,10 +30,10 @@ static int bytes_to_megabytes(uint64_t bytes)
   return bytes / (1024 * 1024);
 }
 
-static bool destroy(AL_TAllocator* handle)
+static void destroy(AL_TAllocator* handle)
 {
   auto self = (AllocatorTracker*)handle;
-  bool success = AL_Allocator_Destroy(self->realAllocator);
+  AL_Allocator_Destroy(self->realAllocator);
   cout << "total dma used : " << self->size << " bytes, " << bytes_to_megabytes(self->size) << "MB" << endl;
 
   if(self->mode == detailedMode)
@@ -50,7 +50,7 @@ static bool destroy(AL_TAllocator* handle)
         for(auto const& size : sizes)
         {
           if(size != firstSize)
-            return false;
+            return;
         }
       }
 
@@ -81,7 +81,6 @@ static bool destroy(AL_TAllocator* handle)
   }
 
   delete self;
-  return success;
 }
 
 static AL_HANDLE allocNamed(AL_TAllocator* handle, size_t size, char const* name)
@@ -127,7 +126,7 @@ static void syncForDevice(AL_TAllocator* handle, AL_VADDR pVirtualAddr, size_t z
   return AL_Allocator_SyncForDevice(self->realAllocator, pVirtualAddr, zSize);
 }
 
-const AL_AllocatorVtable trackerVtable =
+AL_TAllocatorVTable constexpr trackerVtable =
 {
   destroy,
   alloc,

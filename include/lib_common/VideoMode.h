@@ -6,7 +6,7 @@
 /*************************************************************************//*!
    \brief Video Mode
 *****************************************************************************/
-typedef enum
+typedef enum AL_EVideoMode
 {
   AL_VM_PROGRESSIVE, /*!< Progressive */
   AL_VM_INTERLACED_TOP, /*!< interlaced top filed first */
@@ -25,7 +25,7 @@ static inline bool AL_IS_INTERLACED(AL_EVideoMode eVideoMode)
 /*************************************************************************//*!
    \brief Sequence Mode
 *****************************************************************************/
-typedef enum
+typedef enum AL_ESequenceMode
 {
   AL_SM_UNKNOWN, /*!< unknown */
   AL_SM_PROGRESSIVE, /*!< progressive */

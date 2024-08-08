@@ -86,7 +86,7 @@ bool checkFolder(std::string folderPath)
 }
 
 /****************************************************************************/
-bool checkFileAvailability(std::string folderPath, std::regex file_regex)
+bool checkFileAvailability(std::string folderPath, std::regex const& file_regex)
 {
   (void)file_regex;
 

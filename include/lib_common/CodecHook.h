@@ -3,7 +3,7 @@
 
 #pragma once
 
-typedef enum
+typedef enum AL_ECodecHook
 {
   AL_HOOK_ENC,
   AL_HOOK_ENC1,

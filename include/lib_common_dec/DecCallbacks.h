@@ -16,7 +16,7 @@
    - pUserParam: user context provided in the callback structure
    - iParsingID: the id in the AL_HandleMetaData associated with the buffer
 *****************************************************************************/
-typedef struct
+typedef struct AL_CB_EndParsing
 {
   void (* func)(AL_TBuffer* pParsedFrame, void* pUserParam, int iParsingID);
   void* userParam;
@@ -28,7 +28,7 @@ typedef struct
    - pDecodedFrame: the decoded frame.
    - pUserParam: user context provided in the callback structure
 *****************************************************************************/
-typedef struct
+typedef struct AL_CB_EndDecoding
 {
   void (* func)(AL_TBuffer* pDecodedFrame, void* pUserParam);
   void* userParam;
@@ -44,7 +44,7 @@ typedef struct
             that we reached the end of stream.
    - pUserParam: user context provided in the callback structure
 *****************************************************************************/
-typedef struct
+typedef struct AL_CB_Display
 {
   void (* func)(AL_TBuffer* pDisplayedFrame, AL_TInfoDecode* pInfo, void* pUserParam);
   void* userParam;
@@ -64,7 +64,7 @@ typedef struct
    - pCropInfo: Area that will have to be cropped from the decoded frames
    - pUserParam: user context provided in the callback structure
 *****************************************************************************/
-typedef struct
+typedef struct AL_CB_ResolutionFound
 {
   AL_ERR (* func)(int BufferNumber, AL_TStreamSettings const* pSettings, AL_TCropInfo const* pCropInfo, void* pUserParam);
   void* userParam;
@@ -83,7 +83,7 @@ typedef struct
                    decoder failed to allocate memory for sei payload.
    - pUserParam: user context provided in the callback structure
 *****************************************************************************/
-typedef struct
+typedef struct AL_CB_ParsedSei
 {
   void (* func)(bool bIsPrefix, int iPayloadType, uint8_t* pPayload, int iPayloadSize, void* pUserParam);
   void* userParam;
@@ -96,7 +96,7 @@ typedef struct
    - eError: error type
    - pUserParam: user context provided in the callback structure
 *****************************************************************************/
-typedef struct
+typedef struct AL_CB_Error
 {
   void (* func)(AL_ERR eError, void* pUserParam);
   void* userParam;

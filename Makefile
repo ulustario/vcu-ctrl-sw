@@ -3,13 +3,17 @@ THEIR_CFLAGS:=${CFLAGS}
 
 CFLAGS:=${OUR_CFLAGS} ${THEIR_CFLAGS}
 
-SCM_REV:=-D'SCM_REV="$(shell git rev-parse HEAD 2> /dev/null || echo 0)"'
+SCM_REV_SW:=-D'SCM_REV_SW="$(shell git rev-parse HEAD 2> /dev/null || echo 0)"'
 SCM_BRANCH=-D'SCM_BRANCH="$(shell git rev-parse --abbrev-ref HEAD 2> /dev/null || echo unknown)"'
 
 REQUIRED_MAKE_VERSION:=4.0
 ifneq ($(REQUIRED_MAKE_VERSION), $(firstword $(sort $(MAKE_VERSION) $(REQUIRED_MAKE_VERSION))))
   $(error Bad 'make' version $(MAKE_VERSION), required a version $(REQUIRED_MAKE_VERSION) or higher)
 endif
+
+define get-my-dir
+$(patsubst %/,%,$(dir $(lastword $(MAKEFILE_LIST))))
+endef
 
 include config.mk
 
@@ -41,7 +45,6 @@ all: true_all
 # Basic build rules and external variables
 include ctrlsw_version.mk
 include codec_defs.mk
-include base.mk
 -include compiler.mk
 
 # Libraries
@@ -85,13 +88,28 @@ ifneq ($(BUILD_LIB_COM_DEC),0)
   -include lib_common_dec/project.mk
 endif
 
+ifneq ($(ENABLE_CLIENT_FLAG),0)
+-include lib_ref_customer/project.mk
+BIN_REF = $(shell readlink -f $(BIN))
+ref_target = $(LIB_REFENC_A) $(LIB_REFENC_DLL) $(LIB_REFDEC_A) $(LIB_REFDEC_DLL) $(LIB_REFALLOC_A) $(LIB_REFALLOC_DLL) $(LIB_REFFBC_A) $(LIB_REFFBC_DLL) $(LIB_REFPOSTPROC_A) $(LIB_REFPOSTPROC_DLL) $(LIB_REFALLOC_SRC) $(LIB_REFFBC_SRC)
+lib_ref_goals:= $(shell echo $(MAKECMDGOALS) | sed -e "s/ /\n/g" | grep lib_ref | xargs)
+$(ref_target): .submake ;
+.submake:
+	$(MAKE) $(lib_ref_goals) -j$(shell nproc) -C lib_ref_customer \
+	ENABLE_64BIT=$(ENABLE_64BIT) \
+	CROSS_COMPILE=$(CROSS_COMPILE) \
+  CFLAGS_BASE="$(CFLAGS)" \
+  LDFLAGS="$(LDFLAGS)" \
+	BIN=$(BIN_REF)
+else
 -include ref.mk
+endif
 
 BUILD_LIB_CONV_YUV=0
-ifneq ($(ENABLE_ENCODER), 0)
+ifneq ($(ENABLE_ENCODER),0)
   BUILD_LIB_CONV_YUV=1
 endif
-ifneq ($(BUILD_LIB_CONV_YUV), 0)
+ifneq ($(BUILD_LIB_CONV_YUV),0)
   -include lib_conv_yuv/project.mk
 endif
 
@@ -125,10 +143,6 @@ endif
 
 
 
-ifneq ($(ENABLE_PERF),0)
-  # AL_PerfMonitor
-  -include exe_perf_monitor/project.mk
-endif
 
 ifneq ($(ENABLE_ENCODER),0)
 ifneq ($(ENABLE_SYNC_IP),0)
@@ -140,6 +154,8 @@ endif
 
 
 
+
+include base.mk
 
 INSTALL ?= install -c
 PREFIX ?= /usr

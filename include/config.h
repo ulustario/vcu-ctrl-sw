@@ -55,6 +55,9 @@
 #ifndef AL_DEC_NUM_CORES
 #define AL_DEC_NUM_CORES 2
 #endif
+#ifndef AL_DEC_SW_MAX_STACK_SIZE
+#define AL_DEC_SW_MAX_STACK_SIZE 16
+#endif
 #ifndef HW_IP_BURST_ALIGNMENT
 #define HW_IP_BURST_ALIGNMENT 32
 #endif
@@ -86,5 +89,5 @@
 
 #define AL_CONFIGURE_COMMANDLINE "./configure --config-blob customers/Xilinx/config.ini"
 #define AL_VERSION_MAJOR 0
-#define AL_VERSION_MINOR 43
+#define AL_VERSION_MINOR 44
 #define AL_VERSION_PATCH 0

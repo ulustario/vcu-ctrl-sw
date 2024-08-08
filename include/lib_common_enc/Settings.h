@@ -20,7 +20,7 @@
 /*************************************************************************//*!
    \brief Aspect Ratio identifier
 *****************************************************************************/
-typedef enum
+typedef enum AL_EAspectRatio
 {
   AL_ASPECT_RATIO_AUTO,
   AL_ASPECT_RATIO_1_1,
@@ -33,7 +33,7 @@ typedef enum
 /*************************************************************************//*!
    \brief QP Control Mode
 *****************************************************************************/
-typedef enum
+typedef enum AL_EQpCtrlMode
 {
   AL_QP_CTRL_NONE,
   AL_QP_CTRL_AUTO,
@@ -49,7 +49,7 @@ static inline bool AL_IS_AUTO_OR_ADAPTIVE_QP_CTRL(AL_EQpCtrlMode eMode)
 /*************************************************************************//*!
    \brief QP Table Mode
 *****************************************************************************/
-typedef enum
+typedef enum AL_EQpTableMode
 {
   AL_QP_TABLE_NONE,
   AL_QP_TABLE_RELATIVE,
@@ -65,7 +65,7 @@ static inline bool AL_IS_QP_TABLE_REQUIRED(AL_EQpTableMode eMode)
 /*************************************************************************//*!
    \brief Scaling List identifier
 *****************************************************************************/
-typedef enum
+typedef enum AL_EScalingList
 {
   AL_SCL_FLAT, /*!< All matrices coefficients set to 16 */
   AL_SCL_DEFAULT, /*!< Use default matrices coefficients as defined in the codec specification */
@@ -73,7 +73,7 @@ typedef enum
   AL_SCL_MAX_ENUM, /* sentinel */
 }AL_EScalingList;
 
-typedef struct t_ColorConfig
+typedef struct AL_TColorConfig
 {
   AL_EColourDescription eColourDescription; /*!< Indicates the chromaticity coordinates of the source primaries in terms of the CIE 1931 definition. */
   AL_ETransferCharacteristics eTransferCharacteristics; /*!< Specifies the reference opto-electronic transfer characteristic function */
@@ -83,7 +83,7 @@ typedef struct t_ColorConfig
 /*************************************************************************//*!
    \brief Encoder Parameters
 *****************************************************************************/
-typedef AL_INTROSPECT (category = "debug") struct t_EncSettings
+typedef AL_INTROSPECT (category = "debug") struct AL_TEncSettings
 {
   AL_TEncChanParam tChParam[MAX_NUM_LAYER]; /*!< Specifies the Channel parameters of the correspondong layer. Except for SHVC encoding (when supported) only layer 0 is used.*/
   bool bEnableAUD; /*!< Enable Access Unit Delimiter nal unit in the stream */

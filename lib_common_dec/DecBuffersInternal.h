@@ -12,6 +12,7 @@
 
 #include "lib_common/BufCommonInternal.h"
 #include "lib_common/BufferAPI.h"
+#include "lib_common/PicFormat.h"
 #include "lib_common_dec/DecBuffers.h"
 #include "lib_common_dec/DecOutputSettings.h"
 
@@ -130,6 +131,6 @@ int AL_GetAllocSize_Frame(AL_TDimension tDim, AL_EChromaMode eChromaMode, uint8_
 uint32_t AL_GetRefListOffsets(TRefListOffsets* pOffsets, AL_ECodec eCodec, AL_TPicFormat tPicFormat, uint8_t uAddrSizeInBytes);
 
 int32_t RndPitch(int32_t iWidth, AL_TPicFormat const* pPicFormat);
-int32_t RndHeight(int32_t iHeight);
+int32_t RndHeight(int32_t iHeight, AL_TPicFormat const* pPicFormat);
 
 /*@}*/

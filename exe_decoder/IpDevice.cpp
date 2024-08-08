@@ -61,7 +61,7 @@ void CIpDevice::ConfigureMcu(AL_TDriver* driver, bool useProxy)
     throw runtime_error("Failed to create MCU scheduler");
 }
 
-CIpDevice::~CIpDevice()
+CIpDevice::~CIpDevice(void)
 {
   if(m_pScheduler)
     AL_IDecScheduler_Destroy(m_pScheduler);
@@ -82,7 +82,7 @@ CIpDevice::~CIpDevice()
 #endif
 #include <cstring>
 
-static int CountIPDevices()
+static int CountIPDevices(void)
 {
   static const char* decDevice = "allegroDecodeIP";
 
@@ -170,7 +170,7 @@ bool CIpDevice::IsDeviceFailed(std::string const& device)
   return m_FailedDevices.count(device) > 0;
 }
 
-void CIpDevice::SelectNextDevice()
+void CIpDevice::SelectNextDevice(void)
 {
   m_nDevices++;
 
@@ -183,7 +183,7 @@ void CIpDevice::SelectNextDevice()
   m_SelectedDevices[m_nDevices] = this->m_tSelectedDevice;
 }
 
-bool CIpDevice::HandleDeviceFailure()
+bool CIpDevice::HandleDeviceFailure(void)
 {
   bool bCheckNextDevice = false;
 
@@ -228,7 +228,7 @@ CIpDevice::CIpDevice(CIpDeviceParam const& param, AL_EDeviceType eDeviceType, st
   throw runtime_error("No support for this scheduling type");
 }
 
-AL_EDeviceType CIpDevice::GetDeviceType()
+AL_EDeviceType CIpDevice::GetDeviceType(void)
 {
   return this->m_eDeviceType;
 }

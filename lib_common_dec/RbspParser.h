@@ -20,6 +20,7 @@
 typedef struct AL_TRbspParser
 {
   uint32_t iTrailingBitOneIndex;
+  uint32_t iCurrentBitIndex;
   uint32_t iTotalBitIndex;
   uint32_t iTrailingBitOneIndexConceal;
   uint8_t uNumScDetect;

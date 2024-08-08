@@ -6,7 +6,7 @@
 /*************************************************************************//*!
    \brief Select control software architecture
 *****************************************************************************/
-typedef enum
+typedef enum AL_ELibDecoderArch
 {
   AL_LIB_DECODER_ARCH_HOST,
 }AL_ELibDecoderArch;

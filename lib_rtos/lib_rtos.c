@@ -50,18 +50,12 @@ int Rtos_Memcmp(void const* pBuf1, void const* pBuf2, size_t zSize)
 }
 
 /****************************************************************************/
-int Rtos_Log(int iLogLevel, char const* const sMsg, ...)
+void Rtos_LogWithoutLevel(char const* const sMsg, ...)
 {
-  int iRes = 0;
-
-  if(iLogLevel <= AL_LOG_LEVEL)
-  {
-    va_list args;
-    va_start(args, sMsg);
-    iRes = vprintf(sMsg, args);
-    va_end(args);
-  }
-  return iRes;
+  va_list args;
+  va_start(args, sMsg);
+  vprintf(sMsg, args);
+  va_end(args);
 }
 
 #else
@@ -93,11 +87,9 @@ int Rtos_Memcmp(void const* pBuf1, void const* pBuf2, size_t zSize)
 }
 
 /****************************************************************************/
-int Rtos_Log(int iLogLevel, char const* const sMsg, ...)
+void Rtos_LogWithoutLevel(char const* const sMsg, ...)
 {
-  (void)iLogLevel;
   (void)sMsg;
-  return 0;
 }
 
 #endif
@@ -120,7 +112,7 @@ AL_64U Rtos_GetTime(void)
   QueryPerformanceCounter((LARGE_INTEGER*)&uCount);
   QueryPerformanceFrequency((LARGE_INTEGER*)&uFreq);
 
-  return (uCount * 1000) / uFreq;
+  return uCount / uFreq;
 }
 
 /****************************************************************************/
@@ -306,10 +298,10 @@ typedef struct
 /****************************************************************************/
 AL_64U Rtos_GetTime(void)
 {
-  struct timeval Tv;
-  gettimeofday(&Tv, NULL);
+  struct timespec ts;
+  clock_gettime(CLOCK_MONOTONIC_RAW, &ts);
 
-  return ((AL_64U)Tv.tv_sec) * 1000 + (Tv.tv_usec / 1000);
+  return ((AL_64U)ts.tv_sec) * 1000000 + (ts.tv_nsec / 1000);
 }
 
 /****************************************************************************/

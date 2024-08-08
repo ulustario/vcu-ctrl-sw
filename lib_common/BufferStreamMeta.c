@@ -15,7 +15,14 @@ static bool StreamMeta_Destroy(AL_TMetaData* pMeta)
 
 AL_TStreamMetaData* AL_StreamMetaData_Clone(AL_TStreamMetaData* pMeta)
 {
+  if(!pMeta)
+    return NULL;
+
   AL_TStreamMetaData* pNewMeta = AL_StreamMetaData_Create(pMeta->uMaxNumSection);
+
+  if(!pNewMeta)
+    return NULL;
+
   pNewMeta->uTemporalID = pMeta->uTemporalID;
   pNewMeta->uMaxNumSection = pMeta->uMaxNumSection;
   pNewMeta->uNumSection = pMeta->uNumSection;

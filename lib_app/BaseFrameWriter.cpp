@@ -20,7 +20,7 @@ const std::string BaseFrameWriter::ErrorMessageBuffer = "Null buffer provided.";
 const std::string BaseFrameWriter::ErrorMessagePitch = "U and V plane pitches must be identical.";
 
 /****************************************************************************/
-void BaseFrameWriter::FactorsCalculus()
+void BaseFrameWriter::FactorsCalculus(void)
 {
   if(m_tPicFormat.ePlaneMode == AL_PLANE_MODE_INTERLEAVED)
     m_iNbBytesPerPix = (m_tPicFormat.uBitDepth == 8 || (m_tPicFormat.uBitDepth == 10 && m_tPicFormat.eSamplePackMode == AL_SAMPLE_PACK_MODE_PACKED)) ? sizeof(uint32_t) : sizeof(uint64_t);
@@ -32,7 +32,7 @@ void BaseFrameWriter::FactorsCalculus()
 }
 
 /****************************************************************************/
-void BaseFrameWriter::DimInTileCalculus()
+void BaseFrameWriter::DimInTileCalculus(void)
 {
   static const uint32_t MIN_HEIGHT_ROUNDING = 8;
 
@@ -47,13 +47,17 @@ void BaseFrameWriter::DimInTileCalculus()
 
   m_uPitchCFile = m_uPitchYFile;
   m_uHeightInTileYFile = AL_RoundUpAndDivide(m_tPicDim.iHeight, std::max(uint32_t(iTileHeight), MIN_HEIGHT_ROUNDING), iTileHeight);
-
-  if(m_tPicFormat.ePlaneMode == AL_PLANE_MODE_SEMIPLANAR)
-    m_uHeightInTileCFile = AL_RoundUp(m_uHeightInTileYFile, m_iChromaVertScale) / m_iChromaVertScale;
-  else
+  switch(m_tPicFormat.ePlaneMode)
   {
+  case AL_PLANE_MODE_SEMIPLANAR:
+  case AL_PLANE_MODE_PLANAR:
+    m_uHeightInTileCFile = AL_RoundUp(m_uHeightInTileYFile, m_iChromaVertScale) / m_iChromaVertScale;
+    break;
+
+  default:
     m_iChromaVertScale = 0;
     m_uHeightInTileCFile = 0;
+    break;
   }
 }
 
@@ -89,7 +93,7 @@ BaseFrameWriter::BaseFrameWriter(std::shared_ptr<std::ostream> recFile, AL_EFbSt
 }
 
 /****************************************************************************/
-BaseFrameWriter::~BaseFrameWriter()
+BaseFrameWriter::~BaseFrameWriter(void)
 {
   m_recFile->flush();
 }

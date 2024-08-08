@@ -28,7 +28,7 @@ static const uint8_t AL_TabValMPS[3] =
 };
 // #include "stdio.h"
 /****************************************************************************/
-unsigned int AL_AVC_GenerateSkippedPictureCabac(AL_TBitStreamLite* pBS, int iCabacInitIdc, int iNumMBs)
+unsigned int AL_AVC_GenerateSkippedPictureCabac(AL_TBitStreamLite* pBS, int iCabacInitIdc, int32_t iNumMBs)
 {
   uint8_t uState = AL_TabState[iCabacInitIdc];
   uint8_t uValMPS = AL_TabValMPS[iCabacInitIdc];
@@ -55,7 +55,7 @@ unsigned int AL_AVC_GenerateSkippedPictureCabac(AL_TBitStreamLite* pBS, int iCab
 }
 
 /******************************************************************************/
-bool AL_AVC_GenerateSkippedPicture(AL_TSkippedPicture* pSkipPict, int iNumMBs, bool bCabac, int iCabacInitIdc)
+bool AL_AVC_GenerateSkippedPicture(AL_TSkippedPicture* pSkipPict, int32_t iNumMBs, bool bCabac, int iCabacInitIdc)
 {
   AL_TBitStreamLite BS;
   int iBinsCount;

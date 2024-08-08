@@ -75,7 +75,9 @@ void WriteFillerData(IRbspWriter* pWriter, AL_TBitStreamLite* pStream, uint8_t u
   int spaceRemainingInBytes = (pStream->iMaxBits / 8) - (AL_BitStreamLite_GetBitsCount(pStream) / 8);
 
   bytesToWrite = Min(spaceRemainingInBytes, bytesToWrite);
+  int byteWritten = bytesToWrite;
   bytesToWrite -= 1; // -1 for the final 0x80
+  uint8_t* pInitialStreamData = AL_BitStreamLite_GetCurData(pStream);
 
   if(bytesToWrite > 0)
   {
@@ -87,6 +89,7 @@ void WriteFillerData(IRbspWriter* pWriter, AL_TBitStreamLite* pStream, uint8_t u
   }
 
   writeByte(pStream, 0x80);
+  Rtos_FlushCacheMemory(pInitialStreamData, byteWritten);
 }
 
 /****************************************************************************/

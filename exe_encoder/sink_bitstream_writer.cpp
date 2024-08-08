@@ -12,7 +12,7 @@ extern "C"
 }
 using namespace std;
 
-void WriteContainerHeader(ofstream& fp, AL_TEncSettings const& Settings, TYUVFileInfo const& FileInfo, int numFrames);
+void WriteContainerHeader(ofstream& fp, AL_TEncSettings const& Settings, AL_TYUVFileInfo const& FileInfo, int numFrames);
 
 struct BitstreamWriter : IFrameSink
 {
@@ -22,7 +22,7 @@ struct BitstreamWriter : IFrameSink
     WriteContainerHeader(m_file, cfg.Settings, cfg.MainInput.FileInfo, -1);
   }
 
-  ~BitstreamWriter()
+  ~BitstreamWriter(void)
   {
     printBitrate();
 
@@ -39,7 +39,7 @@ struct BitstreamWriter : IFrameSink
     m_frameCount += WriteStream(m_file, pStream, &cfg.Settings, hdr_pos, m_iFrameSize);
   }
 
-  void printBitrate()
+  void printBitrate(void)
   {
     auto const outputSizeInBits = m_file.tellp() * 8;
     auto const frameRate = (float)cfg.Settings.tChParam[0].tRCParam.uFrameRate / cfg.Settings.tChParam[0].tRCParam.uClkRatio;

@@ -131,9 +131,10 @@ uint32_t AL_GetAllocSize_SliceSize(uint32_t uWidth, uint32_t uHeight, uint32_t u
    \param[in] iNumCores Number of cores used to encode the frame
    \param[in] iNumSlices Number of slices within the frame
    \param[in] bSliceSize True if frame is encode in slice size mode
+   \param[in] iNumTilesPerCore Number of tiles on the frame that will be encode on each core
    \return the size (in bytes) needed for the entry_points size buffer
 *****************************************************************************/
-uint32_t GetAllocSize_StreamPart(AL_EProfile eProfile, int iNumCores, int iNumSlices, bool bSliceSize);
+uint32_t GetAllocSize_StreamPart(AL_EProfile eProfile, int iNumCores, int iNumSlices, bool bSliceSize, int iNumTilesPerCore);
 
 /*************************************************************************//*!
    \brief Retrieves plane description of the reference buffer

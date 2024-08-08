@@ -19,16 +19,16 @@ extern "C"
 /*************************************************************************//*!
    \brief Chroma sampling format for video source file
 *****************************************************************************/
-typedef enum
+typedef enum AL_EFileFormat
 {
   FILE_MONOCHROME, /*!< YUV file is monochrome and contains only luma samples */
   FILE_YUV_4_2_0,  /*!< YUV file contains 4:2:0 chroma samples and is stored in planar IYUV (also called I420) format */
-}EFileFormat;
+}AL_EFileFormat;
 
 /*************************************************************************//*!
    \brief YUV File size and format information
 *****************************************************************************/
-typedef AL_INTROSPECT (category = "debug") struct t_YUVFileInfo
+typedef AL_INTROSPECT (category = "debug") struct AL_TYUVFileInfo
 {
   int PictWidth;  /*!< Frame width in pixels */
   int PictHeight; /*!< Frame height in pixels */
@@ -36,6 +36,6 @@ typedef AL_INTROSPECT (category = "debug") struct t_YUVFileInfo
   TFourCC FourCC; /*!< FOURCC identifying the file format */
 
   unsigned int FrameRate;  /*!< Frame by second */
-}TYUVFileInfo;
+}AL_TYUVFileInfo;
 
 /*@}*/

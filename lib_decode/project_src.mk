@@ -19,7 +19,7 @@ ifneq ($(ENABLE_DEC_ITU), 0)
 endif
 
 
-ifneq ($(ENABLE_MCU),0)
+ifneq ($(ENABLE_MICROBLAZE),0)
   LIB_DECODE_SRC+=lib_decode/DecSchedulerMcu.c
 else
 endif

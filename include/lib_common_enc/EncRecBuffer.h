@@ -15,7 +15,7 @@
 /*************************************************************************//*!
    \brief Reconstructed picture information
 *****************************************************************************/
-typedef struct
+typedef struct AL_TReconstructedInfo
 {
   uint32_t uID;
   AL_EPicStruct ePicStruct; /*!< Specifies the pic_struct: subset of table D-1 */
@@ -23,7 +23,7 @@ typedef struct
   AL_TDimension tPicDim; /*!< The dimension of the reconstructed frame buffer */
 }AL_TReconstructedInfo;
 
-typedef struct t_RecPic
+typedef struct AL_TRecPic
 {
   AL_TBuffer* pBuf;
   AL_TReconstructedInfo tInfo;

@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
+#include "lib_common/PicFormat.h"
 #include "lib_decode/I_DecSchedulerInfo.h"
 #include "lib_decode/lib_decode.h"
 #include "lib_decode/DefaultDecoder.h"
@@ -130,28 +131,14 @@ static bool AL_Decoder_PreallocateBuffers_Host(AL_HDecoder hDec)
   return AL_Default_Decoder_PreallocateBuffers(pDec);
 }
 
-static uint32_t AL_Decoder_GetMinPitch_Host(uint32_t uWidth, AL_TPicFormat const* pPicFormat)
+static int32_t AL_Decoder_GetMinPitch_Host(int32_t iWidth, AL_TPicFormat const* pPicFormat)
 {
-  return RndPitch(uWidth, pPicFormat);
+  return RndPitch(iWidth, pPicFormat);
 }
 
-static uint32_t AL_Decoder_GetMinStrideHeight_Host(uint32_t uHeight)
+static int32_t AL_Decoder_GetMinStrideHeight_Host(int32_t iHeight, AL_TPicFormat const* pPicFormat)
 {
-  return RndHeight(uHeight);
-}
-
-uint32_t AL_Decoder_RoundPitch(uint32_t uWidth, uint8_t uBitDepth, AL_EFbStorageMode eFrameBufferStorageMode)
-{
-  AL_TPicFormat tPicFormat;
-  Rtos_Memset(&tPicFormat, 0, sizeof(tPicFormat));
-  tPicFormat.uBitDepth = uBitDepth;
-  tPicFormat.eStorageMode = eFrameBufferStorageMode;
-  return AL_Decoder_GetMinPitch(uWidth, &tPicFormat);
-}
-
-uint32_t AL_Decoder_RoundHeight(uint32_t uHeight)
-{
-  return AL_Decoder_GetMinStrideHeight(uHeight);
+  return RndHeight(iHeight, pPicFormat);
 }
 
 /*****************************************************************************/

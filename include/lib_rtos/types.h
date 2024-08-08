@@ -11,6 +11,7 @@
 #include <stddef.h> // for NULL and size_t
 #include <stdint.h>
 #include <stdbool.h>
+#include <inttypes.h>
 
 #define AL_INTROSPECT(...)
 
@@ -44,6 +45,7 @@ typedef int64_t __AL_ALIGNED__ (8) AL_64S; // Ensure that 64bits has same alignm
 typedef uint8_t* AL_VADDR; /*!< Virtual address. byte pointer */
 
 typedef uint32_t AL_PADDR; /*!< Physical address, 32-bit address registers */
+#define AL_PRINT_PADDR "%08" PRIX32
 
 typedef AL_64U AL_PTR64;
 typedef void* AL_HANDLE;

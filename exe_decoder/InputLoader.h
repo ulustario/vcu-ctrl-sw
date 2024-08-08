@@ -51,6 +51,14 @@ struct CircBuffer
 };
 
 /****************************************************************************/
+struct CircBufferFrame
+{
+  int32_t offset;
+  int32_t numBytes;
+  bool endOfFrame;
+};
+
+/****************************************************************************/
 struct SplitInput : public InputLoader
 {
   SplitInput(int iSize, AL_ECodec eCodec, bool bSliceCut);
@@ -62,6 +70,16 @@ private:
   AL_ECodec m_eCodec;
   bool m_bSliceCut;
   bool m_bEOF {};
+
+  bool RefillCircularBuffer(std::istream& ifFileStream);
+  int32_t GetCircularBufferUnusedOffset();
+  int32_t GetCircularBufferUnusedSize();
+
+  bool InsertEndOfStreamAud();
+  std::vector<uint8_t> const& GetEndOfStreamAud();
+
+  void CopyFromCircularToHardwareBuffer(CircBufferFrame const& frame, AL_TBuffer* pBufStream);
+  void ReleaseCircularBuffer(int32_t iNumBytes);
 };
 
 struct SplitInputFromSizes : public InputLoader

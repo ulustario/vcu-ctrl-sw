@@ -28,7 +28,7 @@ $(BIN)/AL_Decoder.exe: $(EXE_DECODER_OBJ) $(LIB_REFDEC_A) $(LIB_REFALLOC_A) $(LI
 
 $(BIN)/$(THIS_EXE_DECODER)/%.o: CFLAGS+=-pthread
 
-$(BIN)/$(THIS_EXE_DECODER)/CodecUtils.cpp.o: CFLAGS+=$(SCM_REV)
+$(BIN)/$(THIS_EXE_DECODER)/CodecUtils.cpp.o: CFLAGS+=$(SCM_REV_SW)
 $(BIN)/$(THIS_EXE_DECODER)/CodecUtils.cpp.o: CFLAGS+=$(SCM_BRANCH)
 $(BIN)/$(THIS_EXE_DECODER)/CodecUtils.cpp.o: CFLAGS+=$(DELIVERY_BUILD_NUMBER)
 $(BIN)/$(THIS_EXE_DECODER)/CodecUtils.cpp.o: CFLAGS+=$(DELIVERY_SCM_REV)

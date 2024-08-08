@@ -7,7 +7,7 @@ LIB_ISCHEDULER_ENC_A=$(BIN)/liballegro_encscheduler.a
 LIB_ISCHEDULER_ENC_DLL=$(BIN)/liballegro_encscheduler.so
 
 
-ifneq ($(ENABLE_MCU),0)
+ifneq ($(ENABLE_MICROBLAZE),0)
   ISCHEDULER_SRC+=lib_encode/DriverDataConversions.c
   ISCHEDULER_SRC+=lib_encode/EncSchedulerMcu.c
 endif
@@ -18,12 +18,6 @@ LIB_ISCHEDULER_ENC_SRC:=\
   $(LIB_BUF_MNGT_SRC)\
   $(LIB_SCHEDULER_ENC_SRC)\
   $(LIB_BITSTREAM_SRC)\
-
-# needed but user can modify these carefully
-#$(LIB_LOG_SRC)\
-#$(LIB_RTOS_SRC)\
-#$(LIB_COMMON_SRC)\
-#$(LIB_COMMON_ENC_SRC)\
 
 LIB_ISCHEDULER_ENC_OBJ:=$(LIB_ISCHEDULER_ENC_SRC:%=$(BIN)/%.o)
 

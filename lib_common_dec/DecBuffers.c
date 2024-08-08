@@ -9,6 +9,7 @@
    \file
  *****************************************************************************/
 
+#include "lib_common/PicFormat.h"
 #include "lib_common_dec/DecBuffersInternal.h"
 #include "lib_common/Utils.h"
 #include "lib_common/BufferPixMapMeta.h"
@@ -24,11 +25,11 @@ int32_t RndPitch(int32_t iWidth, AL_TPicFormat const* pPicFormat)
 }
 
 /******************************************************************************/
-int32_t RndHeight(int32_t iHeight)
+int32_t RndHeight(int32_t iHeight, AL_TPicFormat const* pPicFormat)
 {
-  // Height alignment required by Xilinx to the LCU size
+  // Height alignment required by customers to the LCU size
   int const iLcuAlignment = 64;
-  return RoundUp(iHeight, iLcuAlignment);
+  return RoundUp(iHeight, iLcuAlignment) / AL_GetNumLinesInPitch(pPicFormat->eStorageMode);
 }
 
 /****************************************************************************/
@@ -93,7 +94,7 @@ int AL_DecGetAllocSize_Frame_PixPlane(AL_TPicFormat const* pPicFormat, AL_TDimen
   if(!AL_Plane_Exists(pPicFormat->ePlaneMode, false, ePlaneId))
     return 0;
 
-  int iSize = iPitch * RndHeight(tDim.iHeight) / AL_GetNumLinesInPitch(pPicFormat->eStorageMode);
+  int iSize = iPitch * RndHeight(tDim.iHeight, pPicFormat);
 
   if(ePlaneId == AL_PLANE_UV)
     iSize = GetChromaAllocSize(pPicFormat->eChromaMode, iSize);

@@ -3,6 +3,7 @@
 
 #include "Hevc_SliceHeaderParsing.h"
 #include "HevcParser.h"
+#include "lib_common/BufConst.h"
 #include "lib_common/HevcUtils.h"
 #include "lib_common/SliceConsts.h"
 #include "lib_common/Utils.h"
@@ -21,7 +22,7 @@ void AL_HEVC_SetDefaultSliceHeader(AL_THevcSliceHdr* pSlice)
   uint8_t nuh_temporal_id_plus1 = pSlice->nuh_temporal_id_plus1;
   uint8_t RapFlag = pSlice->RapPicFlag;
   uint8_t IdrFlag = pSlice->IdrPicFlag;
-  const AL_THevcPps* pPPS = pSlice->pPPS;
+  AL_THevcPps const* pPPS = pSlice->pPPS;
   AL_THevcSps* pSPS = pSlice->pSPS;
 
   Rtos_Memset(pSlice, 0, offsetof(AL_THevcSliceHdr, entry_point_offset_minus1));
@@ -63,9 +64,13 @@ static void AL_HEVC_sInitSlice(AL_THevcSliceHdr* pSlice, AL_THevcSliceHdr* pLast
 }
 
 /*************************************************************************/
-static void AL_HEVC_sReadWPCoeff(AL_TRbspParser* pRP, AL_THevcSliceHdr* pSlice, uint8_t uL0L1)
+static bool AL_HEVC_sReadWPCoeff(AL_TRbspParser* pRP, AL_THevcSliceHdr* pSlice, uint8_t uL0L1)
 {
   uint8_t uNumRefIdx = uL0L1 ? pSlice->num_ref_idx_l1_active_minus1 : pSlice->num_ref_idx_l0_active_minus1;
+
+  if(uNumRefIdx >= MAX_REF)
+    return false;
+
   AL_TWPCoeff* pWpCoeff = &pSlice->pred_weight_table.tWpCoeff[uL0L1];
 
   for(uint8_t i = 0; i <= uNumRefIdx; i++)
@@ -111,6 +116,8 @@ static void AL_HEVC_sReadWPCoeff(AL_TRbspParser* pRP, AL_THevcSliceHdr* pSlice, 
       pWpCoeff->chroma_offset[i][1] = Clip3(Clip3(se(pRP), -4 * iOffsetC, 4 * iOffsetC - 1) + iOffsetC - ((iChromaWeight * iOffsetC) >> pSlice->pred_weight_table.chroma_log2_weight_denom), -iOffsetC, iOffsetC - 1);
     }
   }
+
+  return true;
 }
 
 /*************************************************************************//*!
@@ -118,16 +125,21 @@ static void AL_HEVC_sReadWPCoeff(AL_TRbspParser* pRP, AL_THevcSliceHdr* pSlice, 
          elements from a Slice Header NAL
    \param[in]  pRP    Pointer to NAL buffer
    \param[out] pSlice Pointer to the slice header structure that will be filled
+   \return True if weighted prediction are correctly read
 *****************************************************************************/
-static void AL_HEVC_spread_weight_table(AL_TRbspParser* pRP, AL_THevcSliceHdr* pSlice)
+static bool AL_HEVC_spread_weight_table(AL_TRbspParser* pRP, AL_THevcSliceHdr* pSlice)
 {
   pSlice->pred_weight_table.luma_log2_weight_denom = Clip3(ue(pRP), 0, AL_MAX_WP_DENOM);
   pSlice->pred_weight_table.chroma_log2_weight_denom = Clip3(pSlice->pred_weight_table.luma_log2_weight_denom + (pSlice->pSPS->ChromaArrayType ? se(pRP) : 0), 0, AL_MAX_WP_DENOM);
 
-  AL_HEVC_sReadWPCoeff(pRP, pSlice, 0);
+  if(!AL_HEVC_sReadWPCoeff(pRP, pSlice, 0))
+    return false;
 
   if(pSlice->slice_type == AL_SLICE_B)
-    AL_HEVC_sReadWPCoeff(pRP, pSlice, 1);
+    if(!AL_HEVC_sReadWPCoeff(pRP, pSlice, 1))
+      return false;
+
+  return true;
 }
 
 /*************************************************************************//*!
@@ -467,7 +479,8 @@ bool AL_HEVC_ParseSliceHeader(AL_THevcSliceHdr* pSlice, AL_THevcSliceHdr* pIndSl
 
       if((pPps->weighted_pred_flag && pSlice->slice_type == AL_SLICE_P) ||
          (pPps->weighted_bipred_flag && pSlice->slice_type == AL_SLICE_B))
-        AL_HEVC_spread_weight_table(pRP, pSlice);
+        if(!AL_HEVC_spread_weight_table(pRP, pSlice))
+          return false;
 
       pSlice->five_minus_max_num_merge_cand = ue(pRP);
 

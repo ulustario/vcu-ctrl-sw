@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include <string>
+
 #include "lib_app/Sink.h"
 #include "lib_common/PicFormat.h"
 

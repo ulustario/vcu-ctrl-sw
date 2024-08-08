@@ -11,13 +11,13 @@ struct RepeaterSink : IFrameSink
   {
   }
 
-  ~RepeaterSink()
+  ~RepeaterSink(void)
   {
     for(auto frame : frames)
       AL_Buffer_Unref(frame);
   }
 
-  void startProcessForReal()
+  void startProcessForReal(void)
   {
     auto frame = frames.begin();
 

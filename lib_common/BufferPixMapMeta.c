@@ -14,9 +14,12 @@ static bool SrcMeta_Destroy(AL_TMetaData* pMeta)
 
 AL_TPixMapMetaData* AL_PixMapMetaData_Clone(AL_TPixMapMetaData* pMeta)
 {
+  if(!pMeta)
+    return NULL;
+
   AL_TPixMapMetaData* pClone = AL_PixMapMetaData_CreateEmpty(pMeta->tFourCC);
 
-  if(!pMeta)
+  if(!pClone)
     return NULL;
 
   pClone->tDim = pMeta->tDim;

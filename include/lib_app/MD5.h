@@ -48,18 +48,18 @@ struct Md5Calculator
     }
   }
 
-  bool IsFileOpen()
+  bool IsFileOpen(void)
   {
     return m_Md5File.is_open();
   }
 
-  void Md5Output()
+  void Md5Output(void)
   {
     auto const sMD5 = m_MD5.GetMD5();
     * m_pMd5Out << sMD5 << std::endl;
   }
 
-  CMD5& GetCMD5()
+  CMD5& GetCMD5(void)
   {
     return m_MD5;
   }

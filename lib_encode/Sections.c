@@ -124,7 +124,7 @@ static uint32_t generateSeiFlags(AL_TEncPicStatus const* pPicStatus, bool bForce
     if(bShouldUseSEIRecoveryPoint)
       uFlags |= AL_SEI_RP;
   }
-  else if(pPicStatus->iRecoveryCnt)
+  else if(pPicStatus->iRecoveryCnt != 0)
     uFlags |= AL_SEI_RP;
 
   return uFlags;
@@ -161,7 +161,7 @@ void GenerateSections(IRbspWriter* writer, AL_TNuts nuts, AL_TNalsData const* pN
       nalsFlags[nalsCount++] = AL_SECTION_CONFIG_FLAG;
     }
 
-    bool bRandomAccessPoint = pPicStatus->bIsIDR || pPicStatus->iRecoveryCnt;
+    bool bRandomAccessPoint = pPicStatus->bIsIDR || (pPicStatus->iRecoveryCnt != 0);
 
     bool bWriteVPS = bRandomAccessPoint && (iLayerID == 0) && writer->WriteVPS;
 

@@ -71,21 +71,6 @@ typedef struct AL_IDecSchedulerVtable
 }AL_IDecSchedulerVtable;
 
 /*************************************************************************//*!
-   \brief De-initializes the scheduler
-*****************************************************************************/
-void AL_IDecScheduler_Destroy(AL_IDecScheduler* pThis);
-
-/*************************************************************************//*!
-   \brief Scheduler getter
-*****************************************************************************/
-void AL_IDecScheduler_Get(AL_IDecScheduler const* pThis, AL_EIDecSchedulerInfo eInfo, void* pParam);
-
-/*************************************************************************//*!
-   \brief Scheduler setter
-*****************************************************************************/
-void AL_IDecScheduler_Set(AL_IDecScheduler* pThis, AL_EIDecSchedulerInfo eInfo, void const* pParam);
-
-/*************************************************************************//*!
    \brief Channel creation
    \param[out] hChannel Handle to the created channel in case of success
    \param[in] pThis Decoder scheduler interface

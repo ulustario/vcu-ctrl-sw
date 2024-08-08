@@ -119,7 +119,7 @@ AL_TBuffer* AllocateDefaultYuvIOBuffer(AL_TDimension const& tDimension, TFourCC 
 }
 
 /*****************************************************************************/
-int GetPictureSize(TYUVFileInfo FI)
+int GetPictureSize(AL_TYUVFileInfo FI)
 {
   uint32_t uFileRowSize = GetIOLumaRowSize(FI.FourCC, FI.PictWidth);
   int iPictSize = uFileRowSize * FI.PictHeight;
@@ -144,7 +144,7 @@ int GetPictureSize(TYUVFileInfo FI)
 }
 
 /*****************************************************************************/
-void GotoFirstPicture(TYUVFileInfo const& FI, ifstream& File, unsigned int iFirstPict)
+void GotoFirstPicture(AL_TYUVFileInfo const& FI, ifstream& File, unsigned int iFirstPict)
 {
   int64_t const iPictLen = GetPictureSize(FI);
   File.seekg(iPictLen * iFirstPict);

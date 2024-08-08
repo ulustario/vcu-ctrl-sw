@@ -60,7 +60,6 @@ struct Config
   unsigned int uInputBufferNum = 2;
   size_t zInputBufferSize = zDefaultInputBufferSize;
   AL_EIpCtrlMode ipCtrlMode = AL_IPCTRL_MODE_STANDARD;
-  string logsFile = "";
   string md5File = "";
   string apbFile = "";
   string sSplitSizesFile = "";

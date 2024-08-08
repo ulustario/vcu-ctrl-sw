@@ -3,4 +3,4 @@
 
 #pragma once
 
-void InitializePlateform();
+void InitializePlateform(void);

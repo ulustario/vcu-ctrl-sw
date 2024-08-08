@@ -28,7 +28,7 @@
 #define HEVC_PROFILE_IDC_RExt 4
 
 /****************************************************************************/
-typedef enum
+typedef enum AL_ECodec
 {
   /* assign hardware standard value */
   AL_CODEC_AVC = 0,
@@ -46,7 +46,7 @@ typedef enum
 /*************************************************************************//*!
    \brief Profiles identifier
 *****************************************************************************/
-typedef enum
+typedef enum AL_EProfile
 {
   AL_PROFILE_AVC = (AL_CODEC_AVC << 24),
   AL_PROFILE_AVC_CAVLC_444_INTRA = AL_PROFILE_AVC | AVC_PROFILE_IDC_CAVLC_444_INTRA, // not supported
@@ -301,6 +301,12 @@ static inline bool AL_IS_MONO_PROFILE(AL_EProfile eProfile)
           || (AL_GET_PROFILE_CODEC_AND_IDC(eProfile) == AL_PROFILE_AVC_CAVLC_444_INTRA);
   bRes |= (AL_GET_PROFILE_CODEC_AND_IDC(eProfile) == AL_PROFILE_HEVC_RExt);
   return bRes;
+}
+
+/****************************************************************************/
+static inline bool AL_IS_400_PROFILE(AL_EProfile eProfile)
+{
+  return AL_IS_MONO_PROFILE(eProfile);
 }
 
 /****************************************************************************/

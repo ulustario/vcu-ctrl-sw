@@ -26,16 +26,16 @@ void DisplayFrameStatus(int iFrameNum)
 #define AL_COMPIL_FLAGS ""
 #endif
 
-void DisplayBuildInfo()
+void DisplayBuildInfo(void)
 {
   BuildInfoDisplay displayBuildInfo {
-    SCM_REV, SCM_BRANCH, AL_CONFIGURE_COMMANDLINE, AL_COMPIL_FLAGS, DELIVERY_BUILD_NUMBER, DELIVERY_SCM_REV, DELIVERY_DATE
+    SCM_REV_SW, SCM_BRANCH, AL_CONFIGURE_COMMANDLINE, AL_COMPIL_FLAGS, DELIVERY_BUILD_NUMBER, DELIVERY_SCM_REV, DELIVERY_DATE
   };
   displayBuildInfo();
 }
 
 /*****************************************************************************/
-void DisplayVersionInfo()
+void DisplayVersionInfo(void)
 {
   DisplayVersionInfo(AL_DECODER_COMPANY,
                      AL_DECODER_PRODUCT_NAME,

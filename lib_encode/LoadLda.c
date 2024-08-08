@@ -6,6 +6,9 @@
 #include "lib_common_enc/Lambdas.h"
 #include <stdio.h>
 
+#define LAMBDA_FILE_LINES_COUNT 52
+#define LAMBDA_FILE_LINE_BUFFER_SIZE 256
+
 static const TLambdasTable CUSTOM_LDA_TABLE =
 {
   0x29, 0xD6, 0x54, 0xE5, 0x3E, 0x65, 0xC1, 0x47, 0x7B, 0x45, 0xCB, 0xE8, 0x28,
@@ -42,17 +45,19 @@ static int FromHex(char a, char b)
 bool LoadLambdaFromFile(char const* lambdaFileName, TBufferEP* pEP)
 {
   FILE* lambdaFile = fopen(lambdaFileName, "r");
-  AL_TLambdas* pLambdas = (AL_TLambdas*)(pEP->tMD.pVirtualAddr + EP1_BUF_LAMBDAS.Offset);
 
   if(!lambdaFile)
     return false;
 
-  char sLine[256];
+  AL_TLambdas* pLambdas = (AL_TLambdas*)(pEP->tMD.pVirtualAddr + EP1_BUF_LAMBDAS.Offset);
 
-  for(int i = 0; i <= 51; i++)
+  char sLine[LAMBDA_FILE_LINE_BUFFER_SIZE];
+  int const iLinesCount = LAMBDA_FILE_LINES_COUNT;
+
+  for(int i = 0; i < iLinesCount; i++)
   {
     /* failed to parse */
-    if(!fgets(sLine, 256, lambdaFile))
+    if(!fgets(sLine, LAMBDA_FILE_LINE_BUFFER_SIZE, lambdaFile))
     {
       fclose(lambdaFile);
       return false;

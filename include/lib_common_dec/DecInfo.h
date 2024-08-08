@@ -18,7 +18,7 @@
 /*************************************************************************//*!
    \brief Info on stream decoding
  ***************************************************************************/
-typedef struct t_InfoDecode
+typedef struct AL_TInfoDecode
 {
   AL_TDimension tDim; /*!< Dimensions of the current framebuffer */
   AL_EChromaMode eChromaMode; /*!< Chroma sub-sampling mode of the current frame*/

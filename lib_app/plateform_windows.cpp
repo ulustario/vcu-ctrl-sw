@@ -6,7 +6,7 @@
 #define NOMINMAX
 #include <windows.h>
 
-void InitializePlateform()
+void InitializePlateform(void)
 {
   SetErrorMode(SetErrorMode(0) | SEM_NOGPFAULTERRORBOX);
 }

@@ -20,10 +20,10 @@ typedef struct
   AL_PADDR pAddr;
 }AL_TAlignedHandle;
 
-static bool AL_AlignedAllocator_Destroy(AL_TAllocator* pAllocator)
+static void AL_AlignedAllocator_Destroy(AL_TAllocator* pAllocator)
 {
   AL_TAlignedAllocator* p = (AL_TAlignedAllocator*)pAllocator;
-  return AL_Allocator_Free(p->pMemoryAllocator, p->this);
+  AL_Allocator_Free(p->pMemoryAllocator, p->this);
 }
 
 static AL_HANDLE AL_AlignedAllocator_AllocNamed(AL_TAllocator* pAllocator, size_t zSize, char const* pBufName)
@@ -86,7 +86,7 @@ static AL_PADDR AL_AlignedAllocator_GetPhysicalAddr(AL_TAllocator* pAllocator, A
   return pAlignedHandle->pAddr;
 }
 
-static const AL_AllocatorVtable s_AlignedAllocatorVtable =
+static AL_TAllocatorVTable const s_AlignedAllocatorVtable =
 {
   AL_AlignedAllocator_Destroy,
   AL_AlignedAllocator_Alloc,

@@ -38,7 +38,7 @@
    the AL_TAllocator api. The AL_TBuffer takes ownership of the memory buffers
    and will free it at destruction.
 *****************************************************************************/
-typedef struct
+typedef struct AL_TBuffer
 {
   AL_TAllocator* pAllocator; /*!< Used to retrieve the memory hidden behind hBuf */
   int8_t iChunkCnt; /*!< Number of chunks allocated in the buffer */

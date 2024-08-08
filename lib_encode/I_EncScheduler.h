@@ -52,21 +52,6 @@ typedef struct AL_IEncSchedulerVtable
 }AL_IEncSchedulerVtable;
 
 /*************************************************************************//*!
-   \brief De-initializes the scheduler
-*****************************************************************************/
-void AL_IEncScheduler_Destroy(AL_IEncScheduler* pScheduler);
-
-/*************************************************************************//*!
-   \brief Scheduler getter
-*****************************************************************************/
-void AL_IEncScheduler_Get(AL_IEncScheduler const* pScheduler, AL_EIEncSchedulerInfo eInfo, void* pParam);
-
-/*************************************************************************//*!
-   \brief Scheduler setter
-*****************************************************************************/
-void AL_IEncScheduler_Set(AL_IEncScheduler* pScheduler, AL_EIEncSchedulerInfo eInfo, void const* pParam);
-
-/*************************************************************************//*!
    \brief Channel creation
    \param[out] opaque valid handle on success, AL_INVALID_CHANNEL otherwise
    \param[in] pMDChParam Pointer to the memory descriptor containing the channel

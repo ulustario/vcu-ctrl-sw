@@ -23,7 +23,7 @@ typedef struct AL_TAddress
 /*************************************************************************//*!
    \brief Memory descriptor
 *****************************************************************************/
-typedef struct t_MemDesc
+typedef struct TMemDesc
 {
   AL_VADDR pVirtualAddr;  /*!< Virtual Address of the allocated memory buffer  */
   AL_PADDR uPhysicalAddr; /*!< Physical Address of the allocated memory buffer */

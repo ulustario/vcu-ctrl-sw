@@ -24,7 +24,7 @@
    determining the initialisation table used in initialisation
    process for context variables
 *****************************************************************************/
-extern bool AL_AVC_GenerateSkippedPicture(AL_TSkippedPicture* pSkipPict, int iNumMBs, bool bCabac, int iCabacInitIdc);
+extern bool AL_AVC_GenerateSkippedPicture(AL_TSkippedPicture* pSkipPict, int32_t iNumMBs, bool bCabac, int iCabacInitIdc);
 
 /****************************************************************************/
 

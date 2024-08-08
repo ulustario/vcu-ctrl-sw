@@ -390,7 +390,7 @@ static void Set_Block_Feature(uint8_t* pQPs, int iNumLCUs, int iNumBytesPerLCU, 
 }
 
 /****************************************************************************/
-static void GetQPBufferParameters(int iLCUPicWidth, int iLCUPicHeight, AL_EProfile eProf, uint8_t uLog2MaxCuSize, int iQPTableDepth, int& iNumQPPerLCU, int& iNumBytesPerLCU, int& iNumLCUs, uint8_t* pQPs)
+static void GetQPBufferParameters(int16_t iLCUPicWidth, int16_t iLCUPicHeight, AL_EProfile eProf, uint8_t uLog2MaxCuSize, int iQPTableDepth, int& iNumQPPerLCU, int& iNumBytesPerLCU, int32_t& iNumLCUs, uint8_t* pQPs)
 {
   (void)eProf;
   (void)uLog2MaxCuSize;
@@ -409,7 +409,7 @@ static void GetQPBufferParameters(int iLCUPicWidth, int iLCUPicHeight, AL_EProfi
 }
 
 /****************************************************************************/
-AL_ERR GenerateROIBuffer(AL_TRoiMngrCtx* pRoiCtx, string const& sRoiFileName, int iLCUPicWidth, int iLCUPicHeight, AL_EProfile eProf, uint8_t uLog2MaxCuSize, int iQPTableDepth, int iFrameID, uint8_t* pQPs)
+AL_ERR GenerateROIBuffer(AL_TRoiMngrCtx* pRoiCtx, string const& sRoiFileName, int16_t iLCUPicWidth, int16_t iLCUPicHeight, AL_EProfile eProf, uint8_t uLog2MaxCuSize, int iQPTableDepth, int iFrameID, uint8_t* pQPs)
 {
   int iNumQPPerLCU, iNumBytesPerLCU, iNumLCUs;
   GetQPBufferParameters(iLCUPicWidth, iLCUPicHeight, eProf, uLog2MaxCuSize, iQPTableDepth, iNumQPPerLCU, iNumBytesPerLCU, iNumLCUs, pQPs);
@@ -417,7 +417,7 @@ AL_ERR GenerateROIBuffer(AL_TRoiMngrCtx* pRoiCtx, string const& sRoiFileName, in
 }
 
 /****************************************************************************/
-AL_ERR GenerateQPBuffer(AL_EGenerateQpMode eMode, int16_t iSliceQP, int16_t iMinQP, int16_t iMaxQP, int iLCUPicWidth, int iLCUPicHeight, AL_EProfile eProf, uint8_t uLog2MaxCuSize, int iQPTableDepth, const string& sQPTablesFolder, int iFrameID, uint8_t* pQPTable)
+AL_ERR GenerateQPBuffer(AL_EGenerateQpMode eMode, int16_t iSliceQP, int16_t iMinQP, int16_t iMaxQP, int16_t iLCUPicWidth, int16_t iLCUPicHeight, AL_EProfile eProf, uint8_t uLog2MaxCuSize, int iQPTableDepth, const string& sQPTablesFolder, int iFrameID, uint8_t* pQPTable)
 {
   (void)iSliceQP;
   (void)iMinQP;

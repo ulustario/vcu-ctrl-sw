@@ -84,7 +84,7 @@
 2015-11-13 (v1.0.22):
 ---------------------
   Added feature(s):
-    -- Add mcu firmware in app_mcu
+    -- Add mcu firmware in app_microblaze
     -- Mcu firmware support HEVC and AVC encoding
     -- SchedulerMcu implements the discussion with the mcu linux driver
   ToDos:
@@ -906,4 +906,21 @@
 	-- lib_log: changed timer initialization functions
 
   Fixes:
+    -- Minors bug and typos fixes and types
+
+2024-06-28 (v1.0.81)
+--------------------
+  Added Features:
+    -- Logger interface
+    -- Decoder:
+      - AL_Decoder_GetMinStrideHeight requires a picture format
+  API:
+    -- Version of the API is now 0.44.0
+    -- Tones of modification:
+      - Structures should start with 'AL_T'
+      - Enums should start with 'AL_E'
+    -- Several files renames
+
+  Fixes:
+    -- Performances when logs are disabled
     -- Minors bug and typos fixes and types

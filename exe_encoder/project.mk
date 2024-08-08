@@ -18,7 +18,9 @@ ifneq ($(ENABLE_ROI),0)
 endif
 
 
+ifneq ($(ENABLE_ENC_SW_MULTIPASS),0)
   EXE_ENCODER_SRCS+=$(THIS_EXE_ENCODER)/TwoPassMngr.cpp
+endif
 
 ifneq ($(ENABLE_HIGH_DYNAMIC_RANGE),0)
   EXE_ENCODER_SRCS+=$(THIS_EXE_ENCODER)/HDRParser.cpp
@@ -29,7 +31,7 @@ endif
 
 EXE_ENCODER_OBJ:=$(EXE_ENCODER_SRCS:%=$(BIN)/%.o)
 
-$(BIN)/$(THIS_EXE_ENCODER)/main.cpp.o: CFLAGS+=$(SCM_REV)
+$(BIN)/$(THIS_EXE_ENCODER)/main.cpp.o: CFLAGS+=$(SCM_REV_SW)
 $(BIN)/$(THIS_EXE_ENCODER)/main.cpp.o: CFLAGS+=$(SCM_BRANCH)
 $(BIN)/$(THIS_EXE_ENCODER)/main.cpp.o: CFLAGS+=$(DELIVERY_BUILD_NUMBER)
 $(BIN)/$(THIS_EXE_ENCODER)/main.cpp.o: CFLAGS+=$(DELIVERY_SCM_REV)
@@ -51,9 +53,6 @@ $(BIN)/AL_Encoder.sh: $(BIN)/AL_Encoder.exe
 AL_Encoder.sh: $(BIN)/AL_Encoder.sh
 TARGETS+=AL_Encoder.sh
 endif
-
-# for compilation time reduction (we don't need this to be optimized)
-$(BIN)/$(THIS_EXE_ENCODER)/CfgParser.cpp.o: CFLAGS+=-O0
 
 EXE_CFG_PARSER_SRCS:=\
   $(THIS_EXE_ENCODER)/ParserMain.cpp\

@@ -53,17 +53,17 @@ private:
   std::string SelectMcuDevice(std::set<std::string> const& tDevices);
 };
 
-inline void* CIpDevice::GetScheduler()
+inline void* CIpDevice::GetScheduler(void)
 {
   return m_pScheduler;
 }
 
-inline AL_TAllocator* CIpDevice::GetAllocator()
+inline AL_TAllocator* CIpDevice::GetAllocator(void)
 {
   return m_pAllocator;
 }
 
-inline AL_ITimer* CIpDevice::GetTimer()
+inline AL_ITimer* CIpDevice::GetTimer(void)
 {
   return m_pTimer;
 }

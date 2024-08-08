@@ -18,7 +18,7 @@ struct BitrateWriter : IFrameSink
     imageSizes.push_back(ImageSize { 0, false });
   }
 
-  ~BitrateWriter()
+  ~BitrateWriter(void)
   {
     m_file << "]" << std::endl;
   }
@@ -30,7 +30,7 @@ struct BitrateWriter : IFrameSink
     return numBits / durationInSeconds;
   }
 
-  float calculateWindowBitrate()
+  float calculateWindowBitrate(void)
   {
     int totalBits = 0;
 

@@ -5,7 +5,7 @@
 
 #include "lib_common/CodecHook.h"
 
-typedef struct
+typedef struct AL_TDecTraceHook
 {
   void* pUserParam;
   void (* RecordStart)(void*, AL_ECodecHook, int, int, int, int, bool);
@@ -13,4 +13,4 @@ typedef struct
   void (* SetActiveWorker)(void*, AL_ECodecHook, int, int);
   void (* BeginTraces)(void*);
   void (* EndTraces)(void*);
-}AL_DecTraceHook;
+}AL_TDecTraceHook;

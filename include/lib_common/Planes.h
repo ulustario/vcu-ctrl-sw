@@ -18,28 +18,20 @@
 *****************************************************************************/
 // Add new plane at the bottom of the appropriate list
 
-#define AL_PLANE_PIXEL_LIST \
-  AL_PLANE_Y, \
-  AL_PLANE_U, \
-  AL_PLANE_V, \
-  AL_PLANE_UV, \
-  AL_PLANE_YUV \
-
-#define AL_PLANE_MAP_LIST \
-  AL_PLANE_MAP_Y, \
-  AL_PLANE_MAP_U, \
-  AL_PLANE_MAP_V, \
-  AL_PLANE_MAP_UV \
-
-typedef enum
+typedef enum AL_EPlaneId
 {
-  AL_PLANE_PIXEL_LIST,
-  AL_PLANE_MAP_LIST,
+  AL_PLANE_Y,
+  AL_PLANE_U,
+  AL_PLANE_V,
+  AL_PLANE_UV,
+  AL_PLANE_YUV,
+  AL_PLANE_MAP_Y,
+  AL_PLANE_MAP_U,
+  AL_PLANE_MAP_V,
+  AL_PLANE_MAP_UV,
+
   AL_PLANE_MAX_ENUM, /* sentinel */
 }AL_EPlaneId;
-
-#undef AL_PLANE_PIXEL_LIST
-#undef AL_PLANE_MAP_LIST
 
 #define AL_MAX_BUFFER_PLANES 6
 

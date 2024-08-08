@@ -20,7 +20,7 @@ public:
     Md5Calculator(path)
   {}
 
-  ~YuvMd5Calculator()
+  ~YuvMd5Calculator(void)
   {
     if(IsFileOpen())
     {

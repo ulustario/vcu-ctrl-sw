@@ -9,9 +9,10 @@ endif
 
 INCLUDES+=-I.
 INCLUDES+=-Iinclude
-INCLUDES+=-Iinclude/traces
 INCLUDES+=-I./extra/include
 
+CFLAGS+=-Wwrite-strings
+CFLAGS+=-Wredundant-decls
 CFLAGS+=-pedantic
 CFLAGS+=-pedantic-errors
 CFLAGS+=-Werror=pedantic

@@ -5,6 +5,8 @@
 
 #include "lib_app/utils.h"
 
+#include <string>
+
 extern "C"
 {
 #include "lib_fpga/DmaAlloc.h"
@@ -30,9 +32,9 @@ struct CIpDeviceParam
   bool bSelectDeviceWithLowestAvailableResources;
 };
 
-class I_IpDevice
+struct I_IpDevice
 {
-public:
+  virtual ~I_IpDevice() = default;
   virtual void* GetScheduler() = 0;
   virtual AL_TAllocator* GetAllocator() = 0;
   virtual AL_ITimer* GetTimer() = 0;

@@ -49,25 +49,23 @@ $(BIN)/%.a:
 	$(Q)$(AR) cr $@ $^
 	@echo "AR $@"
 
-$(BIN)/%.exe:
-	@mkdir -p $(dir $@)
-	$(Q)$(CXX) -o $@ $(call filter_out_dyn_lib, $^) $(LINK_COMPAT) $(LDFLAGS) $(call add_dyn_lib_link, $^)
-	@echo "CXX $@"
-
 $(BIN)/%.so:
 	$(Q)$(CXX) $(CFLAGS) -shared -Wl,-soname,$(notdir $@).$(MAJOR) -o "$@.$(VERSION)" $(call filter_out_dyn_lib, $^) $(LDFLAGS) $(call add_dyn_lib_link, $^)
 	@echo "LD $@"
 	@ln -fs "$(@:$(BIN)/%=%).$(VERSION)" $@.$(MAJOR)
 	@ln -fs "$(@:$(BIN)/%=%).$(VERSION)" $@
 
+$(BIN)/%.exe:
+	@mkdir -p $(dir $@)
+	$(Q)$(CXX) -o $@ $(call filter_out_dyn_lib, $^) $(LINK_COMPAT) $(LDFLAGS) $(call add_dyn_lib_link, $^)
+	@echo "CXX $@"
+
 clean:
+ifneq ($(ENABLE_CLIENT_FLAG),0)
+	$(MAKE) clean -C lib_ref_customer
+endif
 	$(Q)rm -rf $(BIN) $(GENERATED_FILES)
 	@echo "CLEAN $(BIN) $(GENERATED_FILES)"
-
-
-define get-my-dir
-$(patsubst %/,%,$(dir $(lastword $(MAKEFILE_LIST))))
-endef
 
 # Dependency generation
 

@@ -21,7 +21,7 @@
    \brief Decoder Input Mode
    \ingroup Decoder_Settings
 *****************************************************************************/
-typedef enum
+typedef enum AL_EDecInputMode
 {
   AL_DEC_UNSPLIT_INPUT, /*!< The input is fed to the decoder without delimitations and the decoder find the decoding unit in the data by himself.*/
   AL_DEC_SPLIT_INPUT, /*!< The input is fed to the decoder with buffers containing one decoding unit each. */
@@ -31,7 +31,7 @@ typedef enum
    \brief Decoder Settings
    \ingroup Decoder_Settings
 *****************************************************************************/
-typedef struct
+typedef struct AL_TDecSettings
 {
   int iStackSize;       /*!< Size of the command stack handled by the decoder */
   int iStreamBufSize;   /*!< Size of the internal circular stream buffer (0 = default) */

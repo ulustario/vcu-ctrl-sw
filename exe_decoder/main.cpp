@@ -23,6 +23,7 @@
 
 extern "C" {
 #include "lib_common/BufCommon.h"
+#include "lib_common/BufferAPI.h"
 #include "lib_common/BufferHandleMeta.h"
 #include "lib_common/BufferSeiMeta.h"
 #include "lib_common/DisplayInfoMeta.h"
@@ -166,7 +167,6 @@ private:
   unsigned int FirstFrame = 0;
   TFourCC tInputFourCC = FOURCC(NULL);
 
-  int iNumFrameConceal = 0;
   bool bHasOutput = false;
   bool bEnableYuvOutput = false;
   std::shared_ptr<HDRWriter> pHDRWriter;
@@ -479,6 +479,13 @@ static void ShowStreamInfo(int BufferNumber, int BufferSize, AL_TStreamSettings 
 /******************************************************************************/
 static int sConfigureDecBufPool(PixMapBufPool& SrcBufPool, AL_TPicFormat const& tPicFormat, AL_TDimension const& tDim, int iPitchY, bool bConfigurePlanarAndSemiplanar, bool bSetMultiChunk)
 {
+  /* When using multichunk option, we over-allocate each plane. It ensures it makes a difference for
+     memory layout, compared to single-chunk mode. That way, we are sure SW/HW code access properly
+     to the different planes using the dedicated addresses, instead of recomputing an offset based on
+     resolution/chroma-mode...
+  */
+  const int MULTICHUNK_ADDITIONAL_PLANE_SIZE = 2048;
+
   auto const tFourCC = AL_GetFourCC(tPicFormat);
   SrcBufPool.SetFormat(tDim, tFourCC);
 
@@ -506,7 +513,7 @@ static int sConfigureDecBufPool(PixMapBufPool& SrcBufPool, AL_TPicFormat const& 
 
     if(bSetMultiChunk)
     {
-      SrcBufPool.AddChunk(iOffset, vPlaneDesc);
+      SrcBufPool.AddChunk(iOffset + MULTICHUNK_ADDITIONAL_PLANE_SIZE, vPlaneDesc);
       vPlaneDesc.clear();
       iOffset = 0;
     }
@@ -599,7 +606,7 @@ DecoderContext::DecoderContext(Config& config, AL_TAllocator* pAlloc)
 }
 
 /******************************************************************************/
-DecoderContext::~DecoderContext()
+DecoderContext::~DecoderContext(void)
 {
   Rtos_DeleteEvent(hExitMain);
 }
@@ -773,20 +780,18 @@ AL_ERR DecoderContext::SetupBaseDecoderPool(int iBufferNumber, AL_TStreamSetting
   // ----------------------------------
   for(int i = 0; i < iNumBuf; ++i)
   {
-    auto pDecPict = tBaseBufPool.GetBuffer(AL_BUF_MODE_NONBLOCK);
+    auto pDecPict = tBaseBufPool.GetSharedBuffer(AL_BUF_MODE_NONBLOCK);
 
     if(!pDecPict)
       throw runtime_error("pDecPict is null");
 
-    AL_Buffer_MemSet(pDecPict, 0x00);
+    AL_Buffer_Cleanup(pDecPict.get());
 
-    AttachMetaDataToBaseDecoderRecBuffer(pStreamSettings, pDecPict);
-    bool const bAdded = AL_Decoder_PutDisplayPicture(GetBaseDecoderHandle(), pDecPict);
+    AttachMetaDataToBaseDecoderRecBuffer(pStreamSettings, pDecPict.get());
+    bool const bAdded = AL_Decoder_PutDisplayPicture(GetBaseDecoderHandle(), pDecPict.get());
 
     if(!bAdded)
       throw runtime_error("bAdded must be true");
-
-    AL_Buffer_Unref(pDecPict);
   }
 
   return AL_SUCCESS;
@@ -1208,7 +1213,7 @@ private:
 AsyncFileInput::AsyncFileInput() {}
 
 /******************************************************************************/
-AsyncFileInput::~AsyncFileInput()
+AsyncFileInput::~AsyncFileInput(void)
 {
   m_bExit = true;
 
@@ -1253,7 +1258,7 @@ void AsyncFileInput::ConfigureStreamInput(string const& sPath, string const& sPa
 }
 
 /******************************************************************************/
-void AsyncFileInput::Start()
+void AsyncFileInput::Start(void)
 {
   if(!m_bStreamInputSet)
     throw runtime_error("Stream input must be set (call AsyncFileInput::ConfigureStreamInput)");
@@ -1262,7 +1267,7 @@ void AsyncFileInput::Start()
 }
 
 /******************************************************************************/
-void AsyncFileInput::Run()
+void AsyncFileInput::Run(void)
 {
   Rtos_SetCurrentThreadName("FileInput");
 
@@ -1271,9 +1276,7 @@ void AsyncFileInput::Run()
     shared_ptr<AL_TBuffer> pInputBuf;
     try
     {
-      pInputBuf = shared_ptr<AL_TBuffer>(
-        m_pBufPool->GetBuffer(),
-        &AL_Buffer_Unref);
+      pInputBuf = m_pBufPool->GetSharedBuffer();
     }
     catch(bufpool_decommited_error &)
     {
@@ -1444,6 +1447,7 @@ void SafeRunChannelMain(WorkerConfig& w)
       pAllocator = pIpDevice->GetAllocator();
       bFindNextDevice = false;
     }
+
     tDecCtx.CreateBaseDecoder(device);
   }
 

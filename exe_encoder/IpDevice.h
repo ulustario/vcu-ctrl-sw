@@ -5,6 +5,8 @@
 
 #include "exe_encoder/CfgParser.h"
 
+#include <string>
+
 extern "C"
 {
 #include "lib_encode/lib_encoder.h"
@@ -30,7 +32,7 @@ static int constexpr NUM_SRC_SYNC_CHANNEL = 4;
 class CIpDevice
 {
 public:
-  CIpDevice() {};
+  CIpDevice() = default;
   ~CIpDevice();
 
   void Configure(CIpDeviceParam& param);
@@ -49,17 +51,17 @@ private:
   void ConfigureMcu(CIpDeviceParam& param);
 };
 
-inline AL_IEncScheduler* CIpDevice::GetScheduler()
+inline AL_IEncScheduler* CIpDevice::GetScheduler(void)
 {
   return m_pScheduler;
 }
 
-inline AL_TAllocator* CIpDevice::GetAllocator()
+inline AL_TAllocator* CIpDevice::GetAllocator(void)
 {
   return m_pAllocator;
 }
 
-inline AL_ITimer* CIpDevice::GetTimer()
+inline AL_ITimer* CIpDevice::GetTimer(void)
 {
   return m_pTimer;
 }

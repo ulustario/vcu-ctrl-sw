@@ -12,16 +12,16 @@
 
 typedef struct AL_TLinuxDmaAllocator AL_TLinuxDmaAllocator;
 /*! \cond ********************************************************************/
-typedef struct
+typedef struct AL_TDmaAllocLinuxVTable
 {
-  AL_AllocatorVtable base;
+  AL_TAllocatorVTable base;
   int (* pfnGetFd)(AL_TLinuxDmaAllocator* pAllocator, AL_HANDLE hBuf);
   AL_HANDLE (* pfnImportFromFd)(AL_TLinuxDmaAllocator* pAllocator, int fd);
-}AL_DmaAllocLinuxVtable;
+}AL_TDmaAllocLinuxVTable;
 
 struct AL_TLinuxDmaAllocator
 {
-  const AL_DmaAllocLinuxVtable* vtable;
+  AL_TDmaAllocLinuxVTable const* vtable;
 };
 /*! \endcond *****************************************************************/
 

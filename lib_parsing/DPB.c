@@ -497,8 +497,13 @@ static void AL_Dpb_sFillWaitingPicture(AL_TDpb* pDpb)
 /***************************************************************************/
 
 /*****************************************************************************/
-void AL_Dpb_Init(AL_TDpb* pDpb, uint8_t uNumRef, AL_EDpbMode eMode, AL_TDpbCallback tCallbacks)
+bool AL_Dpb_Init(AL_TDpb* pDpb, uint8_t uNumRef, AL_EDpbMode eMode, AL_TDpbCallback tCallbacks)
 {
+  pDpb->Mutex = Rtos_CreateMutex();
+
+  if(NULL == pDpb->Mutex)
+    return false;
+
   for(int i = 0; i < PIC_ID_POOL_SIZE; i++)
   {
     pDpb->FreePicIDs[i] = i;
@@ -538,11 +543,10 @@ void AL_Dpb_Init(AL_TDpb* pDpb, uint8_t uNumRef, AL_EDpbMode eMode, AL_TDpbCallb
   pDpb->iDeletedMvLstTail = 0;
   pDpb->iNumDeletedPic = 0;
 
-  pDpb->Mutex = Rtos_CreateMutex();
-
   DispFifo_Init(&pDpb->DispFifo);
 
   pDpb->tCallbacks = tCallbacks;
+  return true;
 }
 
 /*************************************************************************/
@@ -806,7 +810,7 @@ void AL_Dpb_FillList(AL_TDpb const* pDpb, int32_t* pPocList, uint32_t* pLongTerm
 }
 
 /*************************************************************************/
-uint8_t AL_Dpb_SearchPocLsb(AL_TDpb const* pDpb, uint32_t poc_lsb)
+uint8_t AL_Dpb_SearchPocLsb(AL_TDpb const* pDpb, int32_t poc_lsb)
 {
   Rtos_GetMutex(pDpb->Mutex);
 
@@ -824,7 +828,7 @@ uint8_t AL_Dpb_SearchPocLsb(AL_TDpb const* pDpb, uint32_t poc_lsb)
 }
 
 /*****************************************************************************/
-uint8_t AL_Dpb_SearchPOC(AL_TDpb const* pDpb, int iPOC)
+uint8_t AL_Dpb_SearchPOC(AL_TDpb const* pDpb, int32_t iPOC)
 {
   Rtos_GetMutex(pDpb->Mutex);
 
@@ -1128,7 +1132,7 @@ uint8_t AL_Dpb_RemoveHead(AL_TDpb* pDpb)
 }
 
 /*****************************************************************************/
-void AL_Dpb_Insert(AL_TDpb* pDpb, int iFramePOC, AL_EPicStruct ePicStruct, uint32_t uPocLsb, uint8_t uNode, uint8_t uFrmID, uint8_t uMvID, uint8_t pic_output_flag, AL_EMarkingRef eMarkingFlag, uint8_t uNonExisting, AL_ENut eNUT, uint8_t uSubpicFlag)
+void AL_Dpb_Insert(AL_TDpb* pDpb, int32_t iFramePOC, AL_EPicStruct ePicStruct, int32_t iPocLsb, uint8_t uNode, uint8_t uFrmID, uint8_t uMvID, uint8_t pic_output_flag, AL_EMarkingRef eMarkingFlag, uint8_t uNonExisting, AL_ENut eNUT, uint8_t uSubpicFlag)
 {
   uint8_t uPicID = uEndOfList;
 
@@ -1159,7 +1163,7 @@ void AL_Dpb_Insert(AL_TDpb* pDpb, int iFramePOC, AL_EPicStruct ePicStruct, uint3
   // Assign frame buffer information
   pNode->iFramePOC = iFramePOC;
   pNode->ePicStruct = ePicStruct;
-  pNode->slice_pic_order_cnt_lsb = uPocLsb;
+  pNode->slice_pic_order_cnt_lsb = iPocLsb;
   pNode->uFrmID = uFrmID;
   pNode->uMvID = uMvID;
   pNode->uPicID = uPicID;
@@ -1233,7 +1237,7 @@ void AL_Dpb_Insert(AL_TDpb* pDpb, int iFramePOC, AL_EPicStruct ePicStruct, uint3
       // compute poc lsb ordered list
       AL_TDpbNode* pNodeCurPocLsb = &pDpb->Nodes[uCurPocLsb];
 
-      if(pNodeCurPocLsb->slice_pic_order_cnt_lsb > uPocLsb)
+      if(pNodeCurPocLsb->slice_pic_order_cnt_lsb > iPocLsb)
       {
         uint8_t uPrev = pNodeCurPocLsb->uPrevPocLsb;
         pNode->uPrevPocLsb = uPrev;
@@ -1673,9 +1677,9 @@ void AL_Dpb_ModifLongTerm(AL_TDpb const* pDpb, AL_TAvcSliceHdr const* pSlice, ui
 }
 
 /*****************************************************************************/
-int AL_Dpb_GetNumExistingRef(AL_TDpb const* pDpb, TBufferListRef const* pListRef)
+int32_t AL_Dpb_GetNumExistingRef(AL_TDpb const* pDpb, TBufferListRef const* pListRef)
 {
-  int iNumExisting = 0;
+  int32_t iNumExisting = 0;
 
   for(int l = 0; l < 2; ++l) // L0/L1
   {

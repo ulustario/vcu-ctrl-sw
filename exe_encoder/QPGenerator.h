@@ -69,7 +69,7 @@ static inline bool AL_HasQpTable(AL_EGenerateQpMode eMode)
    \note iMinQp <= iMaxQP
    \return 0 on success, 1 if file is not found, 2 if there is an error in the file
 *****************************************************************************/
-AL_ERR GenerateQPBuffer(AL_EGenerateQpMode eMode, int16_t iSliceQP, int16_t iMinQP, int16_t iMaxQP, int iLCUPicWidth, int iLCUPicHeight, AL_EProfile eProf, uint8_t uLogMaxCuSize, int iQPTableDepth, const std::string& sQPTablesFolder, int iFrameID, uint8_t* pQPTable);
+AL_ERR GenerateQPBuffer(AL_EGenerateQpMode eMode, int16_t iSliceQP, int16_t iMinQP, int16_t iMaxQP, int16_t iLCUPicWidth, int16_t iLCUPicHeight, AL_EProfile eProf, uint8_t uLogMaxCuSize, int iQPTableDepth, const std::string& sQPTablesFolder, int iFrameID, uint8_t* pQPTable);
 
 /*************************************************************************//*!
    \brief Fill QP part of the buffer pointed to by pQP with a QP for each
@@ -86,4 +86,4 @@ AL_ERR GenerateQPBuffer(AL_EGenerateQpMode eMode, int16_t iSliceQP, int16_t iMin
    \param[out] pQPs       Pointer to the buffer that receives the computed QPs
    \return true on success, false on error
 *****************************************************************************/
-AL_ERR GenerateROIBuffer(AL_TRoiMngrCtx* pRoiCtx, std::string const& sRoiFileName, int iLCUPicWidth, int iLCUPicHeight, AL_EProfile eProf, uint8_t uLogMaxCuSize, int iQPTableDepth, int iFrameID, uint8_t* pQPs);
+AL_ERR GenerateROIBuffer(AL_TRoiMngrCtx* pRoiCtx, std::string const& sRoiFileName, int16_t iLCUPicWidth, int16_t iLCUPicHeight, AL_EProfile eProf, uint8_t uLogMaxCuSize, int iQPTableDepth, int iFrameID, uint8_t* pQPs);

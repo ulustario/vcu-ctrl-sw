@@ -758,9 +758,7 @@ void I0AL_To_IYUV(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 /****************************************************************************/
 void I0AL_To_Y800(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 {
-  AL_TDimension tDim = AL_PixMapBuffer_GetDimension(pSrc);
-  AL_PixMapBuffer_SetDimension(pDst, tDim);
-  ConvertPixMapPlane<uint16_t, uint8_t>(pSrc, pDst, AL_PLANE_Y, tDim.iWidth, tDim.iHeight, RND_10B_TO_8B);
+  Y010_To_Y800(pSrc, pDst);
 }
 
 /****************************************************************************/
@@ -2180,6 +2178,19 @@ void T60C_To_I0CL(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 }
 
 /****************************************************************************/
+void T60C_To_P012(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
+{
+  // Luma
+  T60C_To_Y012(pSrc, pDst);
+
+  // Chroma
+  AL_TDimension tDim = AL_PixMapBuffer_GetDimension(pSrc);
+  tDim.iWidth = ((tDim.iWidth + 1) >> 1) << 1;
+  tDim.iHeight = (tDim.iHeight + 1) >> 1;
+  T64_Untile_Plane<uint16_t, uint16_t>(pSrc, pDst, 12, 12, AL_PLANE_UV, tDim);
+}
+
+/****************************************************************************/
 void T60C_To_I0AL(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 {
   T6XX_To_4XX<uint16_t>(pSrc, pDst, 12, 10, 2, 2);
@@ -2794,6 +2805,14 @@ void Y012_To_T6mC(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 void I0CL_To_T6mC(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 {
   Y012_To_T6mC(pSrc, pDst);
+}
+
+/****************************************************************************/
+void Y010_To_Y800(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
+{
+  AL_TDimension tDim = AL_PixMapBuffer_GetDimension(pSrc);
+  AL_PixMapBuffer_SetDimension(pDst, tDim);
+  ConvertPixMapPlane<uint16_t, uint8_t>(pSrc, pDst, AL_PLANE_Y, tDim.iWidth, tDim.iHeight, RND_10B_TO_8B);
 }
 
 /****************************************************************************/
@@ -4120,6 +4139,31 @@ void AYUV_To_I444(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
   }
 }
 
+void AVUY_To_I444(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
+{
+  // The AYUV format defined by microsoft is actually VUYA
+  AL_TDimension dim = AL_PixMapBuffer_GetDimension(pSrc);
+  uint32_t* pSrcWord = (uint32_t*)AL_PixMapBuffer_GetPlaneAddress(pSrc, AL_PLANE_YUV);
+  int iSrcPitch = AL_PixMapBuffer_GetPlanePitch(pSrc, AL_PLANE_YUV) / sizeof(uint32_t);
+  uint8_t* pDstY = AL_PixMapBuffer_GetPlaneAddress(pDst, AL_PLANE_Y);
+  int iDstYPitch = AL_PixMapBuffer_GetPlanePitch(pDst, AL_PLANE_Y);
+  uint8_t* pDstU = AL_PixMapBuffer_GetPlaneAddress(pDst, AL_PLANE_U);
+  int iDstUPitch = AL_PixMapBuffer_GetPlanePitch(pDst, AL_PLANE_U);
+  uint8_t* pDstV = AL_PixMapBuffer_GetPlaneAddress(pDst, AL_PLANE_V);
+  int iDstVPitch = AL_PixMapBuffer_GetPlanePitch(pDst, AL_PLANE_V);
+
+  for(int H = 0; H < dim.iHeight; H++)
+  {
+    for(int W = 0; W < dim.iWidth; W++)
+    {
+      uint32_t currentWord = pSrcWord[H * iSrcPitch + W];
+      pDstV[H * iDstYPitch + W] = (currentWord >> 16) & 0xFF;
+      pDstU[H * iDstUPitch + W] = (currentWord >> 8) & 0xFF;
+      pDstY[H * iDstVPitch + W] = currentWord & 0xFF;
+    }
+  }
+}
+
 void AYUV_To_NV24(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 {
   // The AYUV format defined by microsoft is actually VUYA
@@ -4223,6 +4267,11 @@ void RGB3_To_I444(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 void ARGB_To_I444(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
 {
   AYUV_To_I444(pSrc, pDst);
+}
+
+void ABGR_To_I444(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
+{
+  AVUY_To_I444(pSrc, pDst);
 }
 
 void AB30_To_I4AL(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
@@ -4766,6 +4815,9 @@ static const sFourCCToConvFunc ConversionT60CFuncArray[] =
   {
     FOURCC(Y800), T60C_To_Y800
   },
+  {
+    FOURCC(P012), T60C_To_P012
+  },
 };
 
 static const sFourCCToConvFunc ConversionT628FuncArray[] =
@@ -4875,6 +4927,9 @@ static const sFourCCToConvFunc ConversionT64CFuncArray[] =
 
 static const sFourCCToConvFunc ConversionY010FuncArray[] =
 {
+  {
+    FOURCC(Y800), Y010_To_Y800
+  },
   {
     FOURCC(T608), Y010_To_T608
   },
@@ -5161,6 +5216,13 @@ static const sFourCCToConvFunc ConversionARGBFuncArray[] =
 {
   {
     FOURCC(I444), ARGB_To_I444
+  },
+};
+
+static const sFourCCToConvFunc ConversionABGRFuncArray[] =
+{
+  {
+    FOURCC(I444), ABGR_To_I444
   },
 };
 

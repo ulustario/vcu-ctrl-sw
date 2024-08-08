@@ -3,7 +3,7 @@
 
 #include "lib_app/UnCompFrameReader.h"
 
-UnCompFrameReader::UnCompFrameReader(std::ifstream& iRecFile, TYUVFileInfo& tFileInfo, bool bLoopFrames) :
+UnCompFrameReader::UnCompFrameReader(std::ifstream& iRecFile, AL_TYUVFileInfo& tFileInfo, bool bLoopFrames) :
   FrameReader(iRecFile, bLoopFrames), m_tFileInfo(tFileInfo), m_uRndDim(DEFAULT_RND_DIM)
 {
 }

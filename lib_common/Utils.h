@@ -39,7 +39,7 @@ static inline int Clip3(int iVal, int iMin, int iMax)
 }
 
 /***************************************************************************/
-static inline int64_t Clip3ll(int64_t iVal, int64_t iMin, int64_t iMax)
+static inline AL_64S Clip3ll(AL_64S iVal, AL_64S iMin, AL_64S iMax)
 {
   return ((iVal) < (iMin)) ? (iMin) : ((iVal) > (iMax)) ? (iMax) : (iVal);
 }

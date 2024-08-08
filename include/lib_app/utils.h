@@ -30,7 +30,7 @@ public:
   {
   }
 
-  ~ScopeExitClass()
+  ~ScopeExitClass(void)
   {
     m_fn();
   }
@@ -68,7 +68,7 @@ enum AL_ESchedulerType
   AL_SCHEDULER_TYPE_MCU,
 };
 
-typedef enum
+typedef enum AL_EDeviceType
 {
   AL_DEVICE_TYPE_AUTO,
   AL_DEVICE_TYPE_BOARD,

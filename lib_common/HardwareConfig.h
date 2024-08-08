@@ -3,7 +3,6 @@
 
 #pragma once
 
-#include "include/config.h"
 #include "lib_common/PicFormat.h"
 
 AL_EChromaMode AL_HWConfig_Enc_GetSupportedChromaMode(void);

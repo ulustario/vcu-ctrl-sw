@@ -11,7 +11,7 @@
 /*************************************************************************//*!
    \brief Decoder synchronization mode
 *****************************************************************************/
-typedef enum
+typedef enum AL_EDecUnit
 {
   AL_AU_UNIT = 0, /*!< decode at the Access Unit level (frame) */
   AL_VCL_NAL_UNIT = 1, /*!< decode at the NAL Unit level (slice) */

@@ -65,7 +65,7 @@ int32_t ComputeRndPitch(int32_t iWidth, AL_TPicFormat const* pPicFormat, int iBu
 
       /* This checks mainly Y416 format*/
       if(pPicFormat->eSamplePackMode == AL_SAMPLE_PACK_MODE_BYTE && (pPicFormat->uBitDepth == 12 || pPicFormat->uBitDepth == 10))
-        iPixSize = sizeof(uint64_t);
+        iPixSize = sizeof(AL_64U);
       iVal = iRndWidth * iPixSize / iHorizontalScale;
       break;
     }

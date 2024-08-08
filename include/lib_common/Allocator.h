@@ -25,9 +25,9 @@
 typedef struct AL_TAllocator AL_TAllocator;
 
 /*! \cond ********************************************************************/
-typedef struct
+typedef struct AL_TAllocatorVTable
 {
-  bool (* pfnDestroy)(AL_TAllocator* pAllocator);
+  void (* pfnDestroy)(AL_TAllocator* pAllocator);
   AL_HANDLE (* pfnAlloc)(AL_TAllocator* pAllocator, size_t zSize);
   bool (* pfnFree)(AL_TAllocator* pAllocator, AL_HANDLE hBuf);
   AL_VADDR (* pfnGetVirtualAddr)(AL_TAllocator* pAllocator, AL_HANDLE hBuf);
@@ -35,24 +35,21 @@ typedef struct
   AL_HANDLE (* pfnAllocNamed)(AL_TAllocator* pAllocator, size_t zSize, char const* name);
   void (* pfnSyncForCpu)(AL_TAllocator* pAllocator, AL_VADDR pVirtualAddr, size_t zSize);
   void (* pfnSyncForDevice)(AL_TAllocator* pAllocator, AL_VADDR pVirtualAddr, size_t zSize);
-}AL_AllocatorVtable;
+}AL_TAllocatorVTable;
 
 struct AL_TAllocator
 {
-  AL_AllocatorVtable const* vtable;
+  AL_TAllocatorVTable const* vtable;
 };
 /*! \endcond *****************************************************************/
 
 /**************************************************************************//*!
    \brief Destroy the Allocator interface object itself
    \param[in] pAllocator the Allocator interface object to be destroyed
-   \return true on success false otherwise
 ******************************************************************************/
-static inline bool AL_Allocator_Destroy(AL_TAllocator* pAllocator)
+static inline void AL_Allocator_Destroy(AL_TAllocator* pAllocator)
 {
-  if(pAllocator->vtable->pfnDestroy)
-    return pAllocator->vtable->pfnDestroy(pAllocator);
-  return true;
+  pAllocator->vtable->pfnDestroy(pAllocator);
 }
 
 /**************************************************************************//*!

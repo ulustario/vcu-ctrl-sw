@@ -42,7 +42,7 @@ typedef struct AL_TAvcSliceHdr
   int frame_num;
   int redundant_pic_cnt;
   int idr_pic_id;
-  uint32_t pic_order_cnt_lsb;
+  int32_t pic_order_cnt_lsb;
   int delta_pic_order_cnt_bottom;
   int delta_pic_order_cnt[2];
   uint8_t bottom_field_flag;
@@ -119,7 +119,7 @@ typedef struct AL_THevcSliceHdr
   uint8_t pic_output_flag;
   uint8_t colour_plane_id;
 
-  uint32_t slice_pic_order_cnt_lsb;
+  int32_t slice_pic_order_cnt_lsb;
   uint8_t short_term_ref_pic_set_sps_flag;
   uint8_t short_term_ref_pic_set_idx;
   uint8_t num_long_term_sps;

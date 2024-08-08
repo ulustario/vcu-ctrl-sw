@@ -39,7 +39,7 @@ public:
   {
   }
 
-  ~YuvMd5Calculator()
+  ~YuvMd5Calculator(void)
   {
     if(IsFileOpen())
     {

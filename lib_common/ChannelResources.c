@@ -5,7 +5,7 @@
 #include "Utils.h"
 #include "lib_rtos/lib_rtos.h"
 
-static int divideRoundUp(uint64_t dividende, uint64_t divisor)
+static int divideRoundUp(AL_64U dividende, AL_64U divisor)
 {
   return (dividende + divisor - 1) / divisor;
 }
@@ -22,7 +22,7 @@ int GetCoreResources(int coreFrequency, int margin)
 
 static int ChoseCoresCount(int width, int height, int frameRate, int clockRatio, int resourcesByCore, int maxWidth, int cycles32x32)
 {
-  uint64_t channelResources = AL_GetResources(width, height, frameRate, clockRatio, cycles32x32);
+  AL_64U channelResources = AL_GetResources(width, height, frameRate, clockRatio, cycles32x32);
   return Max(GetMinCoresCount(width, maxWidth), divideRoundUp(channelResources, resourcesByCore));
 }
 
@@ -57,15 +57,15 @@ static int getLcuCount(int width, int height)
   return divideRoundUp(width, lcuPicWidth) * divideRoundUp(height, lcuPicHeight);
 }
 
-uint64_t AL_GetResources(int width, int height, int frameRate, int clockRatio, int cycles32x32)
+AL_64U AL_GetResources(int width, int height, int frameRate, int clockRatio, int cycles32x32)
 {
   if(clockRatio == 0)
     return 0;
 
-  uint64_t lcuCount = getLcuCount(width, height);
-  uint64_t dividende = lcuCount * (uint64_t)frameRate;
-  uint64_t divisor = (uint64_t)clockRatio;
-  return divideRoundUp(dividende, divisor) * (uint64_t)cycles32x32;
+  AL_64U lcuCount = getLcuCount(width, height);
+  AL_64U dividende = lcuCount * (AL_64U)frameRate;
+  AL_64U divisor = (AL_64U)clockRatio;
+  return divideRoundUp(dividende, divisor) * (AL_64U)cycles32x32;
 }
 
 static int ToCtb(int val, int ctbSize)
@@ -73,7 +73,7 @@ static int ToCtb(int val, int ctbSize)
   return divideRoundUp(val, ctbSize);
 }
 
-bool AL_Constraint_NumCoreIsSane(AL_ECodec codec, int width, int numCore, int log2MaxCuSize, AL_NumCoreDiagnostic* diagnostic)
+bool AL_Constraint_NumTileIsSane(AL_ECodec codec, int width, int numTile, int log2MaxCuSize, AL_NumCoreDiagnostic* diagnostic)
 {
   (void)codec;
   /*
@@ -86,11 +86,11 @@ bool AL_Constraint_NumCoreIsSane(AL_ECodec codec, int width, int numCore, int lo
    * For JPEG, each core works on a different frame.
    */
 
-  int corePerFrame = numCore;
+  int tilePerFrame = numTile;
 
   int ctbSize = 1 << log2MaxCuSize;
-  int const MIN_CTB_PER_CORE = 9 - log2MaxCuSize;
-  int widthPerCoreInCtb = ToCtb(width / corePerFrame, ctbSize);
+  int const MIN_CTB_PER_TILE = 9 - log2MaxCuSize;
+  int widthPerTileInCtb = ToCtb(width / tilePerFrame, ctbSize);
 
   int offset = 0;
   int roundedOffset = 0; // A core needs to starts at a 64 bytes aligned offset
@@ -98,19 +98,19 @@ bool AL_Constraint_NumCoreIsSane(AL_ECodec codec, int width, int numCore, int lo
   if(diagnostic)
     Rtos_Memset(diagnostic, 0, sizeof(*diagnostic));
 
-  for(int core = 0; core < corePerFrame; ++core)
+  for(int tile = 0; tile < tilePerFrame; ++tile)
   {
     offset = roundedOffset;
-    int curCoreMinWidthInCtb = MIN_CTB_PER_CORE * ctbSize;
-    offset += curCoreMinWidthInCtb;
+    int curTileMinWidthInCtb = MIN_CTB_PER_TILE * ctbSize;
+    offset += curTileMinWidthInCtb;
     roundedOffset = RoundUp(offset, 64);
   }
 
   if(diagnostic)
   {
-    diagnostic->requiredWidthInCtbPerCore = MIN_CTB_PER_CORE;
-    diagnostic->actualWidthInCtbPerCore = widthPerCoreInCtb;
+    diagnostic->requiredWidthInCtbPerCore = MIN_CTB_PER_TILE;
+    diagnostic->actualWidthInCtbPerCore = widthPerTileInCtb;
   }
 
-  return widthPerCoreInCtb >= MIN_CTB_PER_CORE && offset <= RoundUp(width, ctbSize);
+  return widthPerTileInCtb >= MIN_CTB_PER_TILE && offset <= RoundUp(width, ctbSize);
 }

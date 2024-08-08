@@ -139,13 +139,6 @@ unique_ptr<INalParser> getParser(AL_ECodec eCodec)
 }
 
 /****************************************************************************/
-struct FrameInfo
-{
-  int32_t numBytes;
-  bool endOfFrame;
-};
-
-/****************************************************************************/
 struct SCInfo
 {
   uint32_t sizeSC;
@@ -266,9 +259,9 @@ static bool sFindNextStartCode(CircBuffer& BufStream, NalInfo& nal, uint32_t& uC
 }
 
 /******************************************************************************/
-static FrameInfo SearchStartCodes(CircBuffer Stream, AL_ECodec eCodec, bool bSliceCut)
+static CircBufferFrame SearchStartCodes(CircBuffer Stream, AL_ECodec eCodec, bool bSliceCut)
 {
-  FrameInfo frame {};
+  CircBufferFrame frame {};
   NalInfo nalCurrent {};
 
   auto parser = getParser(eCodec);
@@ -369,7 +362,7 @@ SplitInput::SplitInput(int iSize, AL_ECodec eCodec, bool bSliceCut) : m_eCodec(e
 }
 
 /******************************************************************************/
-void AddSeiMetaData(AL_TBuffer* pBufStream)
+static void AddSeiMetaData(AL_TBuffer* pBufStream)
 {
   if(AL_Buffer_GetMetaData(pBufStream, AL_META_TYPE_SEI))
     return;
@@ -383,93 +376,112 @@ void AddSeiMetaData(AL_TBuffer* pBufStream)
 }
 
 /******************************************************************************/
-uint32_t SplitInput::ReadStream(istream& ifFileStream, AL_TBuffer* pBufStream, uint8_t& uBufFlags)
+int32_t SplitInput::GetCircularBufferUnusedOffset(void)
 {
-  uBufFlags = AL_STREAM_BUF_FLAG_UNKNOWN;
+  return (m_CircBuf.iOffset + m_CircBuf.iAvailSize) % m_CircBuf.tBuf.iSize;
+}
 
-  int iNalAudSize = 0;
-  uint8_t const* pAUD = NULL;
-  uint8_t const AVC_AUD[] = { 0, 0, 1, 0x09, 0x80 };
+/******************************************************************************/
+int32_t SplitInput::GetCircularBufferUnusedSize(void)
+{
+  return m_CircBuf.tBuf.iSize - m_CircBuf.iAvailSize;
+}
+
+/******************************************************************************/
+bool SplitInput::RefillCircularBuffer(std::istream& ifFileStream)
+{
+  auto const unusedOffset = GetCircularBufferUnusedOffset();
+  auto const unusedSize = GetCircularBufferUnusedSize();
+  auto refilledSize = 0;
+
+  if(unusedOffset + unusedSize > m_CircBuf.tBuf.iSize)
+  {
+    ifFileStream.read((char*)(m_CircBuf.tBuf.pBuf + unusedOffset), m_CircBuf.tBuf.iSize - unusedOffset);
+    refilledSize += ifFileStream.gcount();
+    ifFileStream.read((char*)(m_CircBuf.tBuf.pBuf), unusedSize - refilledSize);
+    refilledSize += ifFileStream.gcount();
+  }
+  else
+  {
+    ifFileStream.read((char*)(m_CircBuf.tBuf.pBuf + unusedOffset), unusedSize);
+    refilledSize += ifFileStream.gcount();
+  }
+
+  m_CircBuf.iAvailSize += refilledSize;
+
+  auto const endOfFileReached = refilledSize < unusedSize;
+  return endOfFileReached;
+}
+
+/******************************************************************************/
+std::vector<uint8_t> const & SplitInput::GetEndOfStreamAud(void)
+{
+  static std::vector<uint8_t> const AVC_AUD {
+    0, 0, 1, 0x09, 0x80
+  };
 
   if(m_eCodec == AL_CODEC_AVC)
-  {
-    iNalAudSize = sizeof(AVC_AUD);
-    pAUD = AVC_AUD;
-  }
-  uint8_t const HEVC_AUD[] = { 0, 0, 1, 0x46, 0x00, 0x80 };
+    return AVC_AUD;
+
+  static std::vector<uint8_t> const HEVC_AUD {
+    0, 0, 1, 0x46, 0x00, 0x80
+  };
 
   if(m_eCodec == AL_CODEC_HEVC)
+    return HEVC_AUD;
+
+  static std::vector<uint8_t> const NO_AUD {};
+  return NO_AUD;
+}
+
+/******************************************************************************/
+bool SplitInput::InsertEndOfStreamAud(void)
+{
+  auto eosAud = GetEndOfStreamAud();
+
+  if(eosAud.empty())
+    return true;
+
+  auto const unusedOffset = GetCircularBufferUnusedOffset();
+  auto const unusedSize = GetCircularBufferUnusedOffset();
+  int32_t const eosSize = eosAud.size();
+
+  if(eosSize > unusedSize)
+    return false;
+
+  if(unusedOffset + eosSize > m_CircBuf.tBuf.iSize)
   {
-    iNalAudSize = sizeof(HEVC_AUD);
-    pAUD = HEVC_AUD;
+    auto const firstChunkSize = m_CircBuf.tBuf.iSize - unusedOffset;
+    Rtos_Memcpy(m_CircBuf.tBuf.pBuf + unusedOffset, eosAud.data(), firstChunkSize);
+    Rtos_Memcpy(m_CircBuf.tBuf.pBuf, eosAud.data() + firstChunkSize, eosSize - firstChunkSize);
   }
+  else
+    Rtos_Memcpy(m_CircBuf.tBuf.pBuf + unusedOffset, eosAud.data(), eosSize);
 
-  FrameInfo frame {};
+  m_CircBuf.iAvailSize += eosSize;
+  return true;
+}
 
-  while(true)
-  {
-    if(m_bEOF && m_CircBuf.iAvailSize == (int)iNalAudSize)
-      return 0;
+/******************************************************************************/
+void SplitInput::ReleaseCircularBuffer(int32_t iNumBytes)
+{
+  m_CircBuf.iOffset = (m_CircBuf.iOffset + iNumBytes) % m_CircBuf.tBuf.iSize;
+  m_CircBuf.iAvailSize -= iNumBytes;
+}
 
-    if(!m_bEOF)
-    {
-      auto start = (m_CircBuf.iOffset + m_CircBuf.iAvailSize) % m_CircBuf.tBuf.iSize;
-      auto readable = m_CircBuf.tBuf.iSize - m_CircBuf.iAvailSize;
-      auto size = 0;
-
-      if(start + readable > m_CircBuf.tBuf.iSize)
-      {
-        ifFileStream.read((char*)(m_CircBuf.tBuf.pBuf + start), m_CircBuf.tBuf.iSize - start);
-        size += ifFileStream.gcount();
-        ifFileStream.read((char*)(m_CircBuf.tBuf.pBuf), readable - size);
-        size += ifFileStream.gcount();
-      }
-      else
-      {
-        ifFileStream.read((char*)(m_CircBuf.tBuf.pBuf + start), readable);
-        size += ifFileStream.gcount();
-      }
-
-      m_CircBuf.iAvailSize += size;
-
-      if(size < readable && iNalAudSize <= readable - size)
-      {
-        m_bEOF = true;
-
-        if(iNalAudSize)
-        {
-          if(pAUD == nullptr)
-            throw runtime_error("pAUD cannot be NULL!");
-
-          start = (m_CircBuf.iOffset + m_CircBuf.iAvailSize) % m_CircBuf.tBuf.iSize;
-
-          if(start + iNalAudSize > m_CircBuf.tBuf.iSize)
-          {
-            Rtos_Memcpy(m_CircBuf.tBuf.pBuf + start, pAUD, m_CircBuf.tBuf.iSize - start);
-            Rtos_Memcpy(m_CircBuf.tBuf.pBuf, pAUD + m_CircBuf.tBuf.iSize - start, iNalAudSize - m_CircBuf.tBuf.iSize + start);
-          }
-          else
-            Rtos_Memcpy(m_CircBuf.tBuf.pBuf + start, pAUD, iNalAudSize);
-
-          m_CircBuf.iAvailSize += iNalAudSize;
-        }
-      }
-    }
-    frame = SearchStartCodes(m_CircBuf, m_eCodec, m_bSliceCut);
-
-    if(frame.numBytes < m_CircBuf.iAvailSize)
-      break;
-
-    if(m_bEOF)
-    {
-      frame.numBytes = m_CircBuf.iAvailSize;
-      break;
-    }
-  }
-
+/******************************************************************************/
+void SplitInput::CopyFromCircularToHardwareBuffer(CircBufferFrame const& frame, AL_TBuffer* pBufStream)
+{
   if(frame.numBytes > (int)AL_Buffer_GetSize(pBufStream))
     throw runtime_error("frame.numBytes must be lower or equal than bufStream size!");
 
+  if((frame.offset + frame.numBytes) > m_CircBuf.iAvailSize)
+    throw runtime_error("invalid frame parsed in split input!");
+
+  /* Skip data before circular-frame */
+  ReleaseCircularBuffer(frame.offset);
+
+  /* Copy data to HW buffer */
   uint8_t* pBuf = AL_Buffer_GetData(pBufStream);
 
   if((m_CircBuf.iOffset + frame.numBytes) > (int)m_CircBuf.tBuf.iSize)
@@ -480,8 +492,43 @@ uint32_t SplitInput::ReadStream(istream& ifFileStream, AL_TBuffer* pBufStream, u
   }
   else
     Rtos_Memcpy(pBuf, m_CircBuf.tBuf.pBuf + m_CircBuf.iOffset, frame.numBytes);
-  m_CircBuf.iAvailSize -= frame.numBytes;
-  m_CircBuf.iOffset = (m_CircBuf.iOffset + frame.numBytes) % m_CircBuf.tBuf.iSize;
+
+  ReleaseCircularBuffer(frame.numBytes);
+}
+
+/******************************************************************************/
+uint32_t SplitInput::ReadStream(istream& ifFileStream, AL_TBuffer* pBufStream, uint8_t& uBufFlags)
+{
+  uBufFlags = AL_STREAM_BUF_FLAG_UNKNOWN;
+
+  CircBufferFrame frame {};
+
+  while(true)
+  {
+    if(m_bEOF && m_CircBuf.iAvailSize == (int)GetEndOfStreamAud().size())
+      return 0;
+
+    if(!m_bEOF)
+    {
+      bool bEndOfFileReached = RefillCircularBuffer(ifFileStream);
+
+      if(bEndOfFileReached && InsertEndOfStreamAud())
+        m_bEOF = true;
+    }
+    frame = SearchStartCodes(m_CircBuf, m_eCodec, m_bSliceCut);
+
+    if((frame.offset + frame.numBytes) < m_CircBuf.iAvailSize)
+      break;
+
+    if(m_bEOF)
+    {
+      frame.numBytes = m_CircBuf.iAvailSize - frame.offset;
+      break;
+    }
+  }
+
+  CopyFromCircularToHardwareBuffer(frame, pBufStream);
+
   AddSeiMetaData(pBufStream);
 
   uBufFlags = AL_STREAM_BUF_FLAG_ENDOFSLICE;

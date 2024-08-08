@@ -45,12 +45,23 @@ int Rtos_Memcmp(void const* pBuf1, void const* pBuf2, size_t zSize);
 #define AL_LOG_VERBOSE 7
 #define AL_LOG_DEBUG 20
 
-int Rtos_Log(int iLogLevel, char const* const _Format, ...);
+void Rtos_LogWithoutLevel(char const* const sMsg, ...);
+
+#define Rtos_Log(level, ...) \
+  do \
+  { \
+    if(level <= AL_LOG_LEVEL) \
+    { \
+      Rtos_LogWithoutLevel(__VA_ARGS__); \
+    } \
+  } while(0)
 
 /****************************************************************************/
 /*  Clock */
 /****************************************************************************/
+/* Return the time in microseconds (us) */
 AL_64U Rtos_GetTime(void);
+
 void Rtos_Sleep(uint32_t uMillisecond);
 
 /****************************************************************************/

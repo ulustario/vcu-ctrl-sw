@@ -18,7 +18,7 @@
 #define AL_DEF_WARNING(N) (0x00 + (N))
 #define AL_DEF_ERROR(N) (0x80 + (N))
 
-typedef enum
+typedef enum AL_ERR
 {
   /*! The operation succeeded without encountering any error */
   AL_SUCCESS = 0,

@@ -10,7 +10,7 @@
 /*************************************************************************//*!
    \brief Stream's settings
  *************************************************************************/
-typedef struct
+typedef struct AL_TStreamSettings
 {
   AL_TDimension tDim; /*!< Stream's dimension (width / height) */
   AL_EChromaMode eChroma; /*!< Stream's chroma mode (400/420/422/444) */

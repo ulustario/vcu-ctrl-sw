@@ -22,7 +22,7 @@ public:
     Md5Calculator(path)
   {}
 
-  ~StreamMd5Calculator()
+  ~StreamMd5Calculator(void)
   {
     if(IsFileOpen())
     {

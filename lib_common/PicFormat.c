@@ -83,8 +83,8 @@ AL_TPicFormat GetDefaultPicFormat(void)
     AL_PLANE_MODE_MAX_ENUM,
     AL_COMPONENT_ORDER_YUV,
     AL_SAMPLE_PACK_MODE_BYTE,
-    0,
-    0
+    false,
+    false,
   };
   return picFormat;
 }

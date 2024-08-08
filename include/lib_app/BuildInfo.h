@@ -15,8 +15,8 @@
 #define DELIVERY_DATE "unknown"
 #endif
 
-#ifndef SCM_REV
-#define SCM_REV ""
+#ifndef SCM_REV_SW
+#define SCM_REV_SW ""
 #endif
 
 #ifndef SCM_BRANCH
@@ -29,7 +29,7 @@ struct BuildInfoDisplay
   {
   }
 
-  void operator () ()
+  void operator () (void)
   {
     displayTimeOfBuild();
 
@@ -38,7 +38,12 @@ struct BuildInfoDisplay
     displayBuildOptions();
   }
 
-  void displayTimeOfBuild()
+  void setLibrefRevision(const char* librefsha1)
+  {
+    librefRevision = librefsha1;
+  }
+
+  void displayTimeOfBuild(void)
   {
     LogInfo("Compiled on %s at %s", __DATE__, __TIME__);
 
@@ -50,6 +55,9 @@ struct BuildInfoDisplay
 
     LogInfo(".\n");
 
+    if(strcmp(librefRevision, "0") && strcmp(librefRevision, ""))
+      LogInfo("\nUsing reference library version %s", librefRevision);
+
     if(strcmp(deliveryDate, "unknown") && strcmp(deliveryDate, ""))
       LogInfo("\nDelivery created the %s", deliveryDate);
 
@@ -60,7 +68,7 @@ struct BuildInfoDisplay
       LogInfo(". GIT revision %s.\n", deliveryScmRevision);
   }
 
-  void displayBuildOptions()
+  void displayBuildOptions(void)
   {
     if(strcmp(configureCmdline, ""))
       LogInfo("\nUsing configuration:\n%s\n", configureCmdline);
@@ -81,6 +89,7 @@ struct BuildInfoDisplay
   int deliveryBuildNumber;
   char const* deliveryScmRevision;
   char const* deliveryDate;
+  char const* librefRevision;
 
   std::function<void(void)> displayFeatures {};
 };

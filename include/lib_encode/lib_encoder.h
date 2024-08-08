@@ -31,8 +31,19 @@
 *****************************************************************************/
 typedef struct AL_IEncScheduler AL_IEncScheduler;
 
+/*************************************************************************//*!
+   \brief De-initializes the scheduler
+*****************************************************************************/
 void AL_IEncScheduler_Destroy(AL_IEncScheduler* pScheduler);
+
+/*************************************************************************//*!
+   \brief Scheduler getter
+*****************************************************************************/
 void AL_IEncScheduler_Get(AL_IEncScheduler const* pThis, AL_EIEncSchedulerInfo eInfo, void* pParam);
+
+/*************************************************************************//*!
+   \brief Scheduler setter
+*****************************************************************************/
 void AL_IEncScheduler_Set(AL_IEncScheduler* pThis, AL_EIEncSchedulerInfo eInfo, void const* pParam);
 
 /*************************************************************************//*!
@@ -51,7 +62,7 @@ typedef AL_HANDLE AL_HEncoder;
    \param[out] pSrc The source buffer associated to the stream if any
    \param[in] iLayerID layer identifier
 *****************************************************************************/
-typedef struct
+typedef struct AL_CB_EndEncoding
 {
   void (* func)(void* pUserParam, AL_TBuffer* pStream, AL_TBuffer const* pSrc, int iLayerID);
   void* userParam;
@@ -60,7 +71,7 @@ typedef struct
 /*************************************************************************//*!
    \brief Select control software architecture
 *****************************************************************************/
-typedef enum
+typedef enum AL_ELibEncoderArch
 {
   AL_LIB_ENCODER_ARCH_HOST,
 }AL_ELibEncoderArch;
@@ -68,7 +79,7 @@ typedef enum
 /*************************************************************************//*!
    \brief Information on created encoder
 *****************************************************************************/
-typedef struct
+typedef struct AL_TEncoderInfo
 {
   uint8_t uNumCore; /*!< number of cores used for encoding */
 }AL_TEncoderInfo;

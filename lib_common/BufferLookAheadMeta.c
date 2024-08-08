@@ -29,7 +29,7 @@ static AL_TMetaData* clone(AL_TMetaData* pMeta)
   return (AL_TMetaData*)AL_LookAheadMetaData_Clone((AL_TLookAheadMetaData*)pMeta);
 }
 
-AL_TLookAheadMetaData* AL_LookAheadMetaData_Create()
+AL_TLookAheadMetaData* AL_LookAheadMetaData_Create(void)
 {
   AL_TLookAheadMetaData* pMeta = (AL_TLookAheadMetaData*)Rtos_Malloc(sizeof(*pMeta));
 

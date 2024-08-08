@@ -22,6 +22,7 @@
 /****************************************************************************/
 uint32_t AL_GetAllocSizeEP1(AL_ECodec eCodec)
 {
+  (void)eCodec;
   uint32_t uEP1Size = 0;
   uEP1Size += EP1_BUF_LAMBDAS.Size;
 
@@ -314,14 +315,14 @@ uint32_t AL_GetAllocSize_SliceSize(uint32_t uWidth, uint32_t uHeight, uint32_t u
 }
 
 /*****************************************************************************/
-uint32_t GetAllocSize_StreamPart(AL_EProfile eProfile, int iNumCores, int iNumSlices, bool bSliceSize)
+uint32_t GetAllocSize_StreamPart(AL_EProfile eProfile, int iNumCores, int iNumSlices, bool bSliceSize, int iNumTilesPerCore)
 {
   (void)eProfile;
 
   int iMaxPart = bSliceSize ? AL_MAX_ENC_SLICE : iNumSlices;
   int iNumNal = 16;
 
-  uint32_t uStreamPartSize = ((iMaxPart * iNumCores) + iNumNal) * sizeof(AL_TStreamPart);
+  uint32_t uStreamPartSize = ((iMaxPart * iNumCores * iNumTilesPerCore) + iNumNal) * sizeof(AL_TStreamPart);
   uStreamPartSize = RoundUp(uStreamPartSize, 128);
 
   return uStreamPartSize;

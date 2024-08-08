@@ -16,12 +16,12 @@
 /*****************************************************************************/
 void AL_HEVC_PictMngr_UpdateRecInfo(AL_TPictMngrCtx* pCtx, AL_TCropInfo const* pCropInfo, AL_EPicStruct ePicStruct)
 {
-  AL_PictMngr_UpdateDisplayBufferCrop(pCtx, pCtx->uRecID, pCropInfo);
-  AL_PictMngr_UpdateDisplayBufferPicStruct(pCtx, pCtx->uRecID, ePicStruct);
+  AL_PictMngr_UpdateDisplayBufferCrop(pCtx, pCtx->uFrameID, pCropInfo);
+  AL_PictMngr_UpdateDisplayBufferPicStruct(pCtx, pCtx->uFrameID, ePicStruct);
 }
 
 /*****************************************************************************/
-bool AL_HEVC_PictMngr_GetBuffers(AL_TPictMngrCtx const* pCtx, AL_TDecSliceParam const* pSP, TBuffer* pListVirtAddr, TBuffer* pListAddr, TBufferPOC* pPOC, TBufferMV* pMV, AL_TRecBuffers* pRecs)
+bool AL_HEVC_PictMngr_GetBuffers(AL_TPictMngrCtx* pCtx, AL_TDecSliceParam const* pSP, TBuffer* pListVirtAddr, TBuffer* pListAddr, TBufferPOC* pPOC, TBufferMV* pMV, AL_TRecBuffers* pRecs)
 {
   return AL_PictMngr_GetBuffers(pCtx, pSP, pListVirtAddr, pListAddr, pPOC, pMV, pRecs);
 }
@@ -151,7 +151,7 @@ void AL_HEVC_PictMngr_EndFrame(AL_TPictMngrCtx* pCtx, uint32_t uPocLsb, AL_ENut 
     }
   }
 
-  AL_PictMngr_Insert(pCtx, pCtx->iCurFramePOC, AL_PS_FRM, uPocLsb, pCtx->uRecID, pCtx->uMvID, pic_output_flag, SHORT_TERM_REF, 0, eNUT, 0);
+  AL_PictMngr_Insert(pCtx, pCtx->iCurFramePOC, AL_PS_FRM, uPocLsb, pCtx->uFrameID, pCtx->uMvID, pic_output_flag, SHORT_TERM_REF, 0, eNUT, 0);
   AL_Dpb_HEVC_Cleanup(pDpb, pSlice->pSPS->SpsMaxLatency, pSlice->pSPS->sps_max_num_reorder_pics[pSlice->pSPS->sps_max_sub_layers_minus1]);
 }
 
@@ -313,7 +313,7 @@ void AL_HEVC_PictMngr_InitRefPictSet(AL_TPictMngrCtx* pCtx, AL_THevcSliceHdr con
    \param[in]  pSlice   Pointer to the slice header of the current slice
    \param[out] pListRef Pointer to the current reference list
 *****************************************************************************/
-bool AL_HEVC_PictMngr_BuildPictureList(AL_TPictMngrCtx const* pCtx, AL_THevcSliceHdr const* pSlice, TBufferListRef* pListRef)
+bool AL_HEVC_PictMngr_BuildPictureList(AL_TPictMngrCtx* pCtx, AL_THevcSliceHdr const* pSlice, TBufferListRef* pListRef)
 {
   uint8_t uRef;
   uint8_t pNumRef[2] =
