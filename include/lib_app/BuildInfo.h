@@ -55,9 +55,6 @@ struct BuildInfoDisplay
 
     LogInfo(".\n");
 
-    if(strcmp(librefRevision, "0") && strcmp(librefRevision, ""))
-      LogInfo("\nUsing reference library version %s", librefRevision);
-
     if(strcmp(deliveryDate, "unknown") && strcmp(deliveryDate, ""))
       LogInfo("\nDelivery created the %s", deliveryDate);
 
