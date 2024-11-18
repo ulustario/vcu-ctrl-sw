@@ -7,7 +7,7 @@
 #include "lib_common/SliceHeader.h"
 #include "lib_common_dec/RbspParser.h"
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief This function parses an Hevc SliceHeader
    \param[out] pSlice    Pointer to the slice header structure that will be filled
    \param[in]  pIndSlice Pointer to the slice header structure holding the last independent slice header

@@ -1,9 +1,9 @@
 // SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
-/**************************************************************************//*!
+/******************************************************************************
    \addtogroup lib_base
-   @{
+   !@{
    \file
  *****************************************************************************/
 
@@ -16,7 +16,7 @@
 #include "lib_common/BufferAPI.h"
 #include "lib_common_enc/RateCtrlStats.h"
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Segmentation structure
 *****************************************************************************/
 #define MAX_SEGMENTS 8
@@ -31,7 +31,7 @@ typedef struct
   int16_t feature_data[MAX_SEGMENTS];  // only store data for Q
 }AL_TSegmentation;
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Encoding tool enum
 *****************************************************************************/
 typedef enum
@@ -101,7 +101,7 @@ typedef struct
   AL_TDynResParams dynResParams;
 }AL_TEncRequestInfo;
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Stream partition structure
 *****************************************************************************/
 typedef struct
@@ -110,7 +110,7 @@ typedef struct
   uint32_t uSize;
 }AL_TStreamPart;
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Picture status structure
 *****************************************************************************/
 typedef struct
@@ -164,14 +164,14 @@ typedef struct
   int32_t iPictureSize;
   int8_t iPercentIntra[5];
 
-  AL_RateCtrl_Statistics tRateCtrlStats;
+  AL_TRateCtrl_Statistics tRateCtrlStats;
 
   uint16_t uGdrPos;
   AL_EGdrMode eGdrMode;
 
 }AL_TEncPicStatus;
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Picture buffers structure
 *****************************************************************************/
 typedef struct
@@ -194,4 +194,4 @@ typedef struct
   AL_PTR64 pEP2_v;
 }AL_TEncPicBufAddrs;
 
-/*@}*/
+/*!@}*/

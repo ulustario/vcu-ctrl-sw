@@ -6,7 +6,6 @@
 #include "lib_common/StreamBuffer.h"
 #include "lib_common/Nuts.h"
 #include "lib_common/Utils.h"
-#include "lib_assert/al_assert.h"
 
 AL_TNalHeader GetNalHeaderAvc(uint8_t uNUT, uint8_t uNalRefIdc, uint8_t uLayerId, uint8_t uTempId)
 {
@@ -75,7 +74,7 @@ static void padSeiPrefix(AL_TBuffer* pStream, AL_TEncChanParam const* pChannel)
 {
   int const iChunk = 512;
   int const iSeiMandatorySize = (pChannel->uEncHeight <= 720) ? iChunk * 10 : iChunk * 18;
-  AL_Assert(iSeiMandatorySize <= AL_ENC_MAX_SEI_SIZE);
+  Rtos_Assert(iSeiMandatorySize <= AL_ENC_MAX_SEI_SIZE);
 
   AL_TStreamMetaData* pMetaData = (AL_TStreamMetaData*)AL_Buffer_GetMetaData(pStream, AL_META_TYPE_STREAM);
   int iSeiSize = getSectionSize(pMetaData, AL_SECTION_SEI_PREFIX_FLAG);
@@ -117,7 +116,7 @@ static void padCodedSliceData(int iCodedSliceSize, AL_TBuffer* pStream, AL_TEncC
   {
     int iLastDataSection = AL_StreamMetaData_GetLastSectionOfFlag(pStreamMetaData, AL_SECTION_END_FRAME_FLAG) - 1;
     int iOffset = pStreamMetaData->pSections[iLastDataSection].uOffset + pStreamMetaData->pSections[iLastDataSection].uLength + 1;
-    AL_Assert((size_t)iOffset + iPadding < AL_Buffer_GetSize(pStream));
+    Rtos_Assert((size_t)iOffset + iPadding < AL_Buffer_GetSize(pStream));
     Rtos_Memset(AL_Buffer_GetData(pStream) + iOffset, 0x00, iPadding);
     pStreamMetaData->pSections[iLastDataSection].uLength += iPadding;
   }

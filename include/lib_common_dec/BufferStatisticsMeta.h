@@ -1,9 +1,9 @@
 // SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
-/**************************************************************************//*!
+/******************************************************************************
    \addtogroup Buffers
-   @{
+   !@{
    \file
  *****************************************************************************/
 
@@ -13,4 +13,4 @@
 #include "lib_common/BufferAPI.h"
 #include "lib_common/SliceConsts.h"
 
-/*@}*/
+/*!@}*/

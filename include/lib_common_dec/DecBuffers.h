@@ -8,7 +8,7 @@
 #include "lib_common/FourCC.h"
 #include "lib_common/BufferMeta.h"
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Give the size of a reconstructed picture buffer
    Restriction: The strideHeight is supposed to be the minimum stride height
    \param[in] tDim dimensions of the picture
@@ -18,7 +18,7 @@
 *****************************************************************************/
 int AL_DecGetAllocSize_Frame(AL_TDimension tDim, int iPitch, AL_TPicFormat tPicFormat);
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Give the size of one pixel component of a reconstructed picture buffer
    \param[in] pPicFormat picture format of the frame
    \param[in] tDim dimensions of the picture
@@ -28,7 +28,7 @@ int AL_DecGetAllocSize_Frame(AL_TDimension tDim, int iPitch, AL_TPicFormat tPicF
 *****************************************************************************/
 int AL_DecGetAllocSize_Frame_PixPlane(AL_TPicFormat const* pPicFormat, AL_TDimension tDim, int iPitch, AL_EPlaneId ePlaneId);
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Create the AL_TMetaData associated to the reconstruct buffers
    \param[in] tDim Frame dimension (width, height) in pixel
    \param[in] tFourCC FourCC of the frame buffer
@@ -36,8 +36,6 @@ int AL_DecGetAllocSize_Frame_PixPlane(AL_TPicFormat const* pPicFormat, AL_TDimen
    \return the AL_TMetaData
 *****************************************************************************/
 AL_TMetaData* AL_CreateRecBufMetaData(AL_TDimension tDim, int iPitch, TFourCC tFourCC);
-
-/*@}*/
 
 AL_DEPRECATED("Use AL_DecGetAllocSize_Frame_PixPlane.")
 int AL_DecGetAllocSize_Frame_Y(AL_EFbStorageMode eFbStorage, AL_TDimension tDim, int iPitch);

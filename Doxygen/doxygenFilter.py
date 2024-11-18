@@ -4,7 +4,7 @@ from __future__ import annotations
 import re
 import sys
 
-if (len(sys.argv) < 2):
+if len(sys.argv) < 2:
     print("No input file")
 else:
     f = open(sys.argv[1])

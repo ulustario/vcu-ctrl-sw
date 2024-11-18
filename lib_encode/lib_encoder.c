@@ -166,6 +166,8 @@ bool AL_Encoder_SetMaxPictureSizePerFrameType(AL_HEncoder hEnc, uint32_t uMaxPic
 }
 
 /*****************************************************************************/
+
+/*****************************************************************************/
 bool AL_Encoder_RestartGop(AL_HEncoder hEnc)
 {
   if(!pArch)

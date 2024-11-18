@@ -5,7 +5,7 @@
 #include "lib_decode/I_DecSchedulerInfo.h"
 #include "lib_decode/lib_decode.h"
 #include "lib_decode/DefaultDecoder.h"
-#include "lib_common_dec/DecBuffersInternal.h"
+#include "lib_common_dec/DecOutputSettingsInternal.h"
 #include "lib_rtos/types.h"
 #include "lib_common_dec/I_DecArch.h"
 
@@ -40,14 +40,15 @@ static AL_ERR AL_Decoder_Create_Host(AL_HDecoder* hDec, void* pSch, AL_TAllocato
 
   if(!CheckVersion(&tVersion))
     return AL_ERROR;
-
-  if(pSettings->eCodec == AL_CODEC_AVC)
+  switch(pSettings->eCodec)
+  {
+  case AL_CODEC_AVC:
     return CreateAvcDecoder((AL_TDecoder**)hDec, pScheduler, pAllocator, pSettings, pCB);
-
-  if(pSettings->eCodec == AL_CODEC_HEVC)
+  case AL_CODEC_HEVC:
     return CreateHevcDecoder((AL_TDecoder**)hDec, pScheduler, pAllocator, pSettings, pCB);
-
-  return AL_ERROR;
+  default:
+    return AL_ERROR;
+  }
 }
 
 /*****************************************************************************/
@@ -64,9 +65,9 @@ static void AL_Decoder_Destroy_Host(AL_HDecoder hDec)
 }
 
 /*****************************************************************************/
-static void AL_Decoder_SetParam_Host(AL_HDecoder hDec, const char* sPrefix, int iFrmID, int iNumFrm, bool bForceCleanBuffers, bool bShouldPrintFrameDelimiter)
+static void AL_Decoder_SetParam_Host(AL_HDecoder hDec, const char* sPrefix, int iFrmID, int iNumFrm, bool bShouldPrintFrameDelimiter)
 {
-  AL_Default_Decoder_SetParam((AL_TDecoder*)hDec, sPrefix, iFrmID, iNumFrm, bForceCleanBuffers, bShouldPrintFrameDelimiter);
+  AL_Default_Decoder_SetParam((AL_TDecoder*)hDec, sPrefix, iFrmID, iNumFrm, bShouldPrintFrameDelimiter);
 }
 
 /*****************************************************************************/

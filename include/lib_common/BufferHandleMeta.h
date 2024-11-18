@@ -1,9 +1,9 @@
 // SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
-/**************************************************************************//*!
+/******************************************************************************
    \addtogroup Buffers
-   @{
+   !@{
    \file
  *****************************************************************************/
 
@@ -19,7 +19,7 @@ typedef struct AL_THandleMetaData
   AL_TInternalHandleMetaData* pInternal;
 }AL_THandleMetaData;
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Create a Handle metadata.
 *****************************************************************************/
 AL_THandleMetaData* AL_HandleMetaData_Create(int iMaxHandles, int iHandleSizeInBytes);
@@ -29,4 +29,4 @@ void AL_HandleMetaData_ResetHandles(AL_THandleMetaData* pMeta);
 AL_HANDLE AL_HandleMetaData_GetHandle(AL_THandleMetaData const* pMeta, int iNumHandle);
 int AL_HandleMetaData_GetNumHandles(AL_THandleMetaData const* pMeta);
 
-/*@}*/
+/*!@}*/

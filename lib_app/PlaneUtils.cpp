@@ -3,9 +3,9 @@
 
 #include "lib_app/PlaneUtils.h"
 
-vector<AL_TPlaneDescription> getPlaneDescription(TFourCC tFourCC, int iPitch, int iPitchMap, size_t sizes[], int& iTotalOffset)
+std::vector<AL_TPlaneDescription> getPlaneDescription(TFourCC tFourCC, int iPitch, int iPitchMap, size_t sizes[], int& iTotalOffset)
 {
-  vector<AL_TPlaneDescription> outputPlaneDescription;
+  std::vector<AL_TPlaneDescription> outputPlaneDescription;
   AL_EPlaneId usedPlanes[AL_MAX_BUFFER_PLANES];
   AL_TPicFormat tPicFormat;
   AL_GetPicFormat(tFourCC, &tPicFormat);

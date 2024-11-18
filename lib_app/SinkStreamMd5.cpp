@@ -18,7 +18,7 @@ using namespace std;
 class StreamMd5Calculator : public IFrameSink, Md5Calculator
 {
 public:
-  StreamMd5Calculator(std::string& path) :
+  StreamMd5Calculator(std::string const& path) :
     Md5Calculator(path)
   {}
 
@@ -44,7 +44,7 @@ public:
   }
 };
 
-IFrameSink* createStreamMd5Calculator(std::string path)
+IFrameSink* createStreamMd5Calculator(std::string const& path)
 {
   return new StreamMd5Calculator(path);
 }

@@ -224,7 +224,7 @@ AL_TDecoderFeeder* AL_DecoderFeeder_Create(AL_TBuffer* stream, AL_HANDLE hDec, A
 
   if(!AL_Buffer_AddMetaData(pDecFeeder->startCodeStreamView, (AL_TMetaData*)pMeta))
   {
-    Rtos_Free(pMeta);
+    AL_MetaData_Destroy((AL_TMetaData*)pMeta);
     goto fail_;
   }
 

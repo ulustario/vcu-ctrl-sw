@@ -7,7 +7,7 @@
 #include "lib_common/BufferAPI.h"
 #include "lib_common/Error.h"
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Parsing callback definition.
    It is called every time an input buffer as been parsed by the hardware.
    Callback parameters are:
@@ -22,7 +22,7 @@ typedef struct AL_CB_EndParsing
   void* userParam;
 }AL_CB_EndParsing;
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Decoded callback definition.
    It is called every time a frame is decoded. Callback parameters are:
    - pDecodedFrame: the decoded frame.
@@ -34,7 +34,7 @@ typedef struct AL_CB_EndDecoding
   void* userParam;
 }AL_CB_EndDecoding;
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Display callback definition.
    It is called every time a frame can be displayed. Callback parameters are:
    - pDisplayedFrame: the frame to display
@@ -50,7 +50,7 @@ typedef struct AL_CB_Display
   void* userParam;
 }AL_CB_Display;
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Resolution change callback definition.
    It is called for each frame resolution change (including the first frame
    resolution detection) and provides all information required to allocate
@@ -70,7 +70,7 @@ typedef struct AL_CB_ResolutionFound
   void* userParam;
 }AL_CB_ResolutionFound;
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Parsed SEI callback definition.
    It is called when a SEI is parsed. See Annex D.3 of ITU-T for the
    sei_payload syntax. Callback parameters are:
@@ -89,7 +89,7 @@ typedef struct AL_CB_ParsedSei
   void* userParam;
 }AL_CB_ParsedSei;
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Decoding error callback definition.
    It is called when an error occurs during decoding. User might decide to
    continue decoding or destroy the decoder depending on error.

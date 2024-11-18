@@ -1,11 +1,9 @@
 // SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
-/****************************************************************************
-   -----------------------------------------------------------------------------
- **************************************************************************//*!
+/******************************************************************************
    \addtogroup lib_base
-   @{
+   !@{
    \file
  *****************************************************************************/
 
@@ -17,7 +15,6 @@
 #include "lib_common_enc/EncSize.h"
 #include "lib_common_enc/EncPicInfo.h"
 #include "lib_common_enc/QPTableInternal.h"
-#include "lib_assert/al_assert.h"
 
 /****************************************************************************/
 uint32_t AL_GetAllocSizeEP1(AL_ECodec eCodec)
@@ -66,7 +63,7 @@ static uint32_t GetChromaAllocSize(AL_EChromaMode eChromaMode, uint32_t uAllocSi
   case AL_CHROMA_4_2_0: return uAllocSizeY / 2;
   case AL_CHROMA_4_2_2: return uAllocSizeY;
   case AL_CHROMA_4_4_4: return uAllocSizeY * 2;
-  default: AL_Assert(0);
+  default: Rtos_Assert(false);
   }
 
   return 0;
@@ -226,12 +223,12 @@ static uint32_t GetRasterFrameSize(AL_TDimension tDim, uint8_t uBitDepth, AL_ECh
     break;
   }
   default:
-    AL_Assert(0);
+    Rtos_Assert(false);
   }
 
   if(uBitDepth > 8)
   {
-    AL_Assert((uBitDepth <= 12) && "Support bitpdeth > 12");
+    Rtos_Assert((uBitDepth <= 12) && "Support bitdepth > 12");
     uSize *= uBitDepth;
     uSizeDiv *= 8;
   }
@@ -290,7 +287,7 @@ uint32_t AL_GetAllocSize_MV(AL_TDimension tDim, uint8_t uLog2MaxCuSize, AL_ECode
     break;
   case 6: uNumBlk = GetSquareBlkNumber(tDim, 64) << 4;
     break;
-  default: AL_Assert(0);
+  default: Rtos_Assert(false);
   }
 
   return MVBUFF_MV_OFFSET + ((uNumBlk * 4 * sizeof(uint32_t)) * iMul);
@@ -360,7 +357,7 @@ void AL_FillPlaneDesc_EncReference(AL_TPlaneDescription* pPlaneDesc, AL_TDimensi
     return;
   }
 
-  AL_Assert(0);
+  Rtos_Assert(false);
 }
 
 /*!@}*/

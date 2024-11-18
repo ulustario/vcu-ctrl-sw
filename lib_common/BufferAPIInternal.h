@@ -5,7 +5,7 @@
 
 #include "lib_common/BufferAPI.h"
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Gets the buffer memory physical address. If the buffer contains
    multiple chunks, returns the physical address of the first chunk.
    \param[in] pBuf Pointer to an AL_TBuffer
@@ -14,7 +14,7 @@
 *****************************************************************************/
 AL_PADDR AL_Buffer_GetPhysicalAddress(const AL_TBuffer* pBuf);
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Gets the physical address of a memory chunk of an AL_TBuffer
    \param[in] pBuf Pointer to an AL_TBuffer
    \param[in] iChunkIdx Index of the chunk

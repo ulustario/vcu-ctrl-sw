@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: MIT
 
 #pragma once
+#include <cassert>
 #include "lib_app/timing.h"
 #include "lib_app/Sink.h"
 #include "QPGenerator.h"
@@ -12,6 +13,7 @@
 #include "TwoPassMngr.h"
 
 #include "lib_app/convert.h"
+#include "lib_app/SinkRateCtrlMeta.h"
 
 #include <string>
 #include <memory>
@@ -22,7 +24,7 @@
 #include <algorithm>
 
 #include "RCPlugin.h"
-
+#include "lib_common_enc/RateCtrlMeta.h"
 #define NUM_PASS_OUTPUT 1
 
 #define MAX_NUM_REC_OUTPUT (MAX_NUM_LAYER > NUM_PASS_OUTPUT ? MAX_NUM_LAYER : NUM_PASS_OUTPUT)
@@ -108,7 +110,7 @@ private:
     // set QpBuf memory to 0 for traces
     std::vector<AL_TBuffer*> qpBufs;
 
-    while(auto curQp = qpLayerInfo.bufPool->GetBuffer(AL_BUF_MODE_NONBLOCK))
+    while(auto curQp = qpLayerInfo.bufPool->GetBuffer(AL_EBufMode::AL_BUF_MODE_NONBLOCK))
     {
       qpBufs.push_back(curQp);
       AL_Buffer_MemSet(curQp, 0);
@@ -226,8 +228,8 @@ struct safe_ifstream
 
 struct EncoderSink : IFrameSink
 {
-  EncoderSink(ConfigFile const& cfg, AL_IEncScheduler* pScheduler
-              , AL_TAllocator* pAllocator) :
+
+  explicit EncoderSink(ConfigFile const& cfg, AL_IEncScheduler* pScheduler, AL_TAllocator* pAllocator) :
     CmdFile(cfg.sCmdFileName, false),
     EncCmd(CmdFile.fp, cfg.RunInfo.iScnChgLookAhead, cfg.Settings.tChParam[0].tGopParam.uFreqLT), m_cfg(cfg),
     twoPassMngr(cfg.sTwoPassFileName, cfg.Settings.TwoPass, cfg.Settings.bEnableFirstPassSceneChangeDetection, cfg.Settings.tChParam[0].tGopParam.uGopLength,
@@ -239,9 +241,7 @@ struct EncoderSink : IFrameSink
 
     qpBuffers.Configure(&cfg.Settings, cfg.RunInfo.eGenerateQpMode);
 
-    AL_ERR errorCode;
-
-    errorCode = AL_Encoder_Create(&hEnc, pScheduler, pAllocator, &cfg.Settings, onEncoding);
+    AL_ERR errorCode = AL_Encoder_Create(&hEnc, pScheduler, this->pAllocator, &cfg.Settings, onEncoding);
 
     if(AL_IS_ERROR_CODE(errorCode))
       throw codec_error(AL_Codec_ErrorToString(errorCode), errorCode);
@@ -342,7 +342,7 @@ struct EncoderSink : IFrameSink
     std::shared_ptr<AL_TBuffer> QpBufShared(QpBuf, [&](AL_TBuffer* pBuf) { qpBuffers.releaseBuffer(pBuf); });
 
     if(pSettings->hRcPluginDmaContext != NULL)
-      RCPlugin_SetNextFrameQP(pSettings, pAllocator);
+      RCPlugin_SetNextFrameQP(pSettings, this->pAllocator);
 
     if(!AL_Encoder_Process(hEnc, Src, QpBuf))
       CheckErrorAndThrow();
@@ -409,6 +409,12 @@ private:
     pThis->processOutput(pStream);
   }
 
+  void ComputeQualityMeasure(AL_TRateCtrlMetaData* pMeta)
+  {
+    if(!pMeta->bFilled)
+      return;
+  }
+
   void AddSei(AL_TBuffer* pStream, bool isPrefix, int payloadType, uint8_t* payload, int payloadSize, int tempId)
   {
     int seiSection = AL_Encoder_AddSei(hEnc, pStream, isPrefix, payloadType, payload, payloadSize, tempId);
@@ -456,11 +462,11 @@ private:
         LogInfo("Picture Type %s (%i) %s\n", PictTypeToString(pMeta->eType).c_str(), m_pictureType, pMeta->bSkipped ? "is skipped" : "");
       }
 
-      auto const pMeta = (AL_TRateCtrlMetaData*)AL_Buffer_GetMetaData(pStream, AL_META_TYPE_RATECTRL);
+      AL_TRateCtrlMetaData* pMeta = (AL_TRateCtrlMetaData*)AL_Buffer_GetMetaData(pStream, AL_META_TYPE_RATECTRL);
 
       if(pMeta && pMeta->bFilled)
-        LogInfo("NumBytes: %i, MinQP: %i, MaxQP: %i, NumSkip: %i, NumIntra: %i\n", pMeta->tRateCtrlStats.uNumBytes, pMeta->tRateCtrlStats.uMinQP, pMeta->tRateCtrlStats.uMaxQP, pMeta->tRateCtrlStats.uNumSkip, pMeta->tRateCtrlStats.uNumIntra);
-
+      {
+      }
       BitstreamOutput[iStreamId]->ProcessFrame(pStream);
     }
 

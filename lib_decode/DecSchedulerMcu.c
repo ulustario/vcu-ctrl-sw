@@ -15,7 +15,6 @@
 #include "allegro_ioctl_mcu_dec.h"
 #include "lib_common/List.h"
 #include "lib_common/Error.h"
-#include "lib_assert/al_assert.h"
 #include "lib_common_dec/SchedulerInfo.h"
 
 #define DCACHE_OFFSET 0x80000000
@@ -31,7 +30,7 @@ static void AL_WakeUp(AL_WaitQueue* pQueue)
   pthread_mutex_lock(&pQueue->Lock);
   int const ret = pthread_cond_broadcast(&pQueue->Cond);
   (void)ret;
-  AL_Assert(ret == 0);
+  Rtos_Assert(ret == 0);
   pthread_mutex_unlock(&pQueue->Lock);
 }
 
@@ -144,7 +143,7 @@ void setPictParam(struct al5_params* msg, AL_TDecPicParam* pPictParam)
   Rtos_Memcpy(msg->opaque, pPictParam, msg->size);
 }
 
-void setPictBufferAddrs(struct al5_params* msg, AL_TDecPicBufferAddrs* pBufferAddrs)
+void setPictBufferAddrs(struct al5_params* msg, AL_TDecBufferAddrs* pBufferAddrs)
 {
   static_assert(sizeof(*pBufferAddrs) <= sizeof(msg->opaque), "Driver pict_buffer_addrs struct is too small");
   msg->size = sizeof(*pBufferAddrs);
@@ -152,7 +151,7 @@ void setPictBufferAddrs(struct al5_params* msg, AL_TDecPicBufferAddrs* pBufferAd
 }
 
 /* Fill msg with pChParam */
-static void setChannelMsg(struct al5_params* msg, TMemDesc const* pMDChParams)
+static void setChannelMsg(struct al5_params* msg, AL_TMemDesc const* pMDChParams)
 {
   uint32_t uVirtAddr;
   static_assert(sizeof(uVirtAddr) <= sizeof(msg->opaque), "Driver channel_param struct is too small");
@@ -171,7 +170,7 @@ static void processStatusMsg(Channel const* channel, struct al5_params const* ms
     uint32_t uFrameID;
     uint32_t uParsingID;
     int iOffset = sizeof(DEC_1);
-    AL_Assert(msg->size >= iOffset + sizeof(uFrameID) + sizeof(uParsingID));
+    Rtos_Assert(msg->size >= iOffset + sizeof(uFrameID) + sizeof(uParsingID));
     Rtos_Memcpy(&uFrameID, (uint8_t*)msg->opaque + iOffset, sizeof(uFrameID));
     Rtos_Memcpy(&uParsingID, (uint8_t*)msg->opaque + iOffset + sizeof(uFrameID), sizeof(uParsingID));
 
@@ -186,14 +185,14 @@ static void processStatusMsg(Channel const* channel, struct al5_params const* ms
   {
     AL_TDecPicStatus status;
     int iOffset = sizeof(DEC_2);
-    AL_Assert(msg->size >= iOffset + sizeof(status));
+    Rtos_Assert(msg->size >= iOffset + sizeof(status));
     Rtos_Memcpy(&status, (uint8_t*)msg->opaque + iOffset, sizeof(status));
 
     if(channel->endDecodingCB.func)
       channel->endDecodingCB.func(channel->endDecodingCB.userParam, &status);
     return;
   }
-  AL_Assert(0);
+  Rtos_Assert(false);
 }
 
 static void* NotificationThread(void* p)
@@ -434,7 +433,7 @@ static AL_ERR API_DestroyChannel(AL_IDecScheduler* pScheduler, AL_HANDLE hChanne
   return errorCode;
 }
 
-static AL_ERR API_CreateChannel(AL_HANDLE* hChannel, AL_IDecScheduler* pScheduler, TMemDesc* pMDChParams, AL_TDecScheduler_CB_EndParsing endParsingCallback, AL_TDecScheduler_CB_EndDecoding endDecodingCallback)
+static AL_ERR API_CreateChannel(AL_HANDLE* hChannel, AL_IDecScheduler* pScheduler, AL_TMemDesc* pMDChParams, AL_TDecScheduler_CB_EndParsing endParsingCallback, AL_TDecScheduler_CB_EndDecoding endDecodingCallback)
 {
   AL_TDecSchedulerMicroblaze* scheduler = (AL_TDecSchedulerMicroblaze*)pScheduler;
   AL_ERR errorCode = AL_ERROR;
@@ -477,7 +476,7 @@ static AL_ERR API_CreateChannel(AL_HANDLE* hChannel, AL_IDecScheduler* pSchedule
     goto fail_open;
   }
 
-  AL_Assert(msg.status.error_code == AL_SUCCESS);
+  Rtos_Assert(msg.status.error_code == AL_SUCCESS);
 
   /* Retrieve channel id if it was given to us using the param as an output (debug) */
   if(msg.param.size == 4)
@@ -572,7 +571,7 @@ static void API_SearchSC(AL_IDecScheduler* pScheduler, AL_HANDLE hStartCodeChann
   return;
 }
 
-static void prepareDecodeMessage(struct al5_decode_msg* msg, AL_TDecPicParam* pPictParam, AL_TDecPicBufferAddrs* pPictAddrs, TMemDesc* hSliceParam)
+static void prepareDecodeMessage(struct al5_decode_msg* msg, AL_TDecPicParam* pPictParam, AL_TDecBufferAddrs* pPictAddrs, AL_TMemDesc* hSliceParam)
 {
   setPictParam(&msg->params, pPictParam);
   setPictBufferAddrs(&msg->addresses, pPictAddrs);
@@ -581,7 +580,7 @@ static void prepareDecodeMessage(struct al5_decode_msg* msg, AL_TDecPicParam* pP
 }
 
 // TODO return error
-static void API_DecodeOneFrame(AL_IDecScheduler* pScheduler, AL_HANDLE hChannel, AL_TDecPicParam* pPictParam, AL_TDecPicBufferAddrs* pPictAddrs, TMemDesc* hSliceParam)
+static void API_DecodeOneFrame(AL_IDecScheduler* pScheduler, AL_HANDLE hChannel, AL_TDecPicParam* pPictParam, AL_TDecBufferAddrs* pPictAddrs, AL_TMemDesc* hSliceParam)
 {
   AL_TDecSchedulerMicroblaze* scheduler = (AL_TDecSchedulerMicroblaze*)pScheduler;
   Channel* chan = (Channel*)hChannel;
@@ -594,7 +593,7 @@ static void API_DecodeOneFrame(AL_IDecScheduler* pScheduler, AL_HANDLE hChannel,
     Rtos_Log(AL_LOG_ERROR, "Failed to decode one frame (error code: %d)\n", error);
 }
 
-static void API_DecodeOneSlice(AL_IDecScheduler* pScheduler, AL_HANDLE hChannel, AL_TDecPicParam* pPictParam, AL_TDecPicBufferAddrs* pPictAddrs, TMemDesc* hSliceParam)
+static void API_DecodeOneSlice(AL_IDecScheduler* pScheduler, AL_HANDLE hChannel, AL_TDecPicParam* pPictParam, AL_TDecBufferAddrs* pPictAddrs, AL_TMemDesc* hSliceParam)
 {
   AL_TDecSchedulerMicroblaze* scheduler = (AL_TDecSchedulerMicroblaze*)pScheduler;
   Channel* chan = (Channel*)hChannel;
@@ -757,4 +756,4 @@ AL_IDecScheduler* AL_DecSchedulerMcu_Create(AL_TDriver* driver, char const* devi
 }
 
 #endif
-/*@}*/
+/*!@}*/

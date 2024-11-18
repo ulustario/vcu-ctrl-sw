@@ -4,7 +4,6 @@
 #pragma once
 
 #include <string>
-
 #include "lib_app/Sink.h"
 
-IFrameSink* createStreamCrcDump(std::string path);
+IFrameSink* createStreamCrcDump(std::string const& path);

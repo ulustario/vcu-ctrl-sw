@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include <string>
+
 #include "lib_app/Sink.h"
 
 IFrameSink* createCSCrcCalculator(const std::string path);

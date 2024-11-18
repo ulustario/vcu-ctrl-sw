@@ -1,11 +1,9 @@
 // SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
-/****************************************************************************
-   -----------------------------------------------------------------------------
- **************************************************************************//*!
+/******************************************************************************
    \addtogroup lib_decode_hls
-   @{
+   !@{
    \file
  *****************************************************************************/
 
@@ -30,7 +28,7 @@
 #define uEndOfList 0xFF /*!< End Of List marker for Reference List */
 #define UndefID 0xFF/*!< Unused Buffer ID*/
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Picture status enum
 *****************************************************************************/
 typedef enum
@@ -40,7 +38,7 @@ typedef enum
   AL_READY_FOR_OUTPUT,
 }AL_EPicStatus;
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Picture Manager Callback prototype
    \ingroup BufPool
 *****************************************************************************/
@@ -56,7 +54,7 @@ typedef struct
   void* pUserParam; /*!< pointer to be passed each time one to the following callback is called */
 }AL_TDpbCallback;
 
-/*************************************************************************//*!
+/*****************************************************************************
    \ingroup BufPool
    \brief Fifo of frame buffer to be displayed
 *****************************************************************************/
@@ -71,7 +69,7 @@ typedef struct
   uint8_t uNumFrm;
 }AL_TDispFifo;
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Single node used by Reference Buffer Pool.
 *****************************************************************************/
 typedef struct
@@ -113,7 +111,7 @@ typedef struct
   uint8_t uSubpicFlag; /*!< Frame with subpicture */
 }AL_TDpbNode;
 
-/*************************************************************************//*!
+/*****************************************************************************
    \ingroup RefPool
    \brief Reference Buffers Pool object
 *****************************************************************************/
@@ -170,7 +168,7 @@ typedef struct
   AL_TDpbCallback tCallbacks; /*!< Callbacks to picture manager */
 }AL_TDpb;
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Initializes the specified DPB context object
    \param[in,out] pDpb               Pointer to a DPB context object
    \param[in]     uNumRef            Number of reference to manage
@@ -180,47 +178,47 @@ typedef struct
 *****************************************************************************/
 bool AL_Dpb_Init(AL_TDpb* pDpb, uint8_t uNumRef, AL_EDpbMode eMode, AL_TDpbCallback tCallbacks);
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Flush last DPB removal orders
    \param[in,out] pDpb Pointer to a DPB context object
 *****************************************************************************/
 void AL_Dpb_Terminate(AL_TDpb* pDpb);
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Uninitialize the specified DPB context object
    \param[in,out] pDpb Pointer to a DPB context object
 *****************************************************************************/
 void AL_Dpb_Deinit(AL_TDpb* pDpb);
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief This function retrieves the number of reference present in the DPB
    \param[in] pDpb Pointer to a DPB context object
    \return returns the number of picture present in the DPB
 *****************************************************************************/
 uint8_t AL_Dpb_GetRefCount(AL_TDpb const* pDpb);
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief This function retrieves the number of picture present in the DPB
    \param[in] pDpb Pointer to a DPB context object
    \return returns the number of picture present in the DPB
 *****************************************************************************/
 uint8_t AL_Dpb_GetPicCount(AL_TDpb const* pDpb);
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief This function retrieves the next Node of a specific Node
    \param[in] pDpb Pointer to a DPB context object
    \return return the Node ID of the picture with the smallest poc value
 *****************************************************************************/
 uint8_t AL_Dpb_GetHeadPOC(AL_TDpb const* pDpb);
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief This function retrieves the number of picture needed for output
    \param[in] pDpb Pointer to a DPB context object
    \return returns the number of picture needed for output
 *****************************************************************************/
 uint8_t AL_Dpb_GetNumOutputPict(AL_TDpb const* pDpb);
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief This function return the Pic ID of the last inserted frame
    \param[in] pDpb    Pointer to a DPB context object
    \return returns the Pic ID of the last inserted frame
@@ -228,27 +226,27 @@ uint8_t AL_Dpb_GetNumOutputPict(AL_TDpb const* pDpb);
 *****************************************************************************/
 uint8_t AL_Dpb_GetLastPicID(AL_TDpb const* pDpb);
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief This function gets the number of managed references
    \param[in,out] pDpb    Pointer to a DPB context object
    \return returns the number of references managed by the DPB
 *****************************************************************************/
 uint8_t AL_Dpb_GetNumRef(AL_TDpb const* pDpb);
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief This function must be called after each DPB flushing
    \param[in] pDpb Pointer to a DPB context object
 *****************************************************************************/
 void AL_Dpb_BeginNewSeq(AL_TDpb* pDpb);
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief This function must be called after each DPB flushing
    \param[in,out] pDpb    Pointer to a DPB context object
    \param[in]     uMaxRef Number of reference to be managed
 *****************************************************************************/
 void AL_Dpb_SetNumRef(AL_TDpb* pDpb, uint8_t uMaxRef);
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Checks if the last picture has a MMCO 5 opcode
    \param[in,out] pDpb Pointer to a DPB context object
    \return true if the last picture has a MMCO 5 opcode
@@ -256,26 +254,26 @@ void AL_Dpb_SetNumRef(AL_TDpb* pDpb, uint8_t uMaxRef);
 *****************************************************************************/
 bool AL_Dpb_LastHasMMCO5(AL_TDpb const* pDpb);
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Takes into account the presence of the MMCO 5 opcode
    \param[in,out] pDpb Pointer to a DPB context object
 *****************************************************************************/
 void AL_Dpb_SetMMCO5(AL_TDpb* pDpb);
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Takes into account the non-presence of the MMCO 5 opcode
    \param[in,out] pDpb Pointer to a DPB context object
 *****************************************************************************/
 void AL_Dpb_ResetMMCO5(AL_TDpb* pDpb);
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Returns the frame buffer index of the next picture to be displayed
    \param[in,out] pDpb    Pointer to a DPB context object
    \return The Frame buffer index of the removed node
 *****************************************************************************/
 uint8_t AL_Dpb_GetDisplayBuffer(AL_TDpb const* pDpb);
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief This function releases a picture index previously
        obtained through DPB_GetDisplayBuffer
    \param[in,out] pDpb  Pointer to a DPB context object
@@ -283,19 +281,19 @@ uint8_t AL_Dpb_GetDisplayBuffer(AL_TDpb const* pDpb);
 *****************************************************************************/
 uint8_t AL_Dpb_ReleaseDisplayBuffer(AL_TDpb* pDpb);
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Remove from output all pictures present within the DPB
    \param[in,out] pDpb Pointer to a DPB context object
 *****************************************************************************/
 void AL_Dpb_ClearOutput(AL_TDpb* pDpb);
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Flush remaining pictures from the DPB
    \param[in,out] pDpb        Pointer to a DPB context object
 *****************************************************************************/
 void AL_Dpb_Flush(AL_TDpb* pDpb);
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Remove from the DPB all unused pictures(non-reference and not needed for output
    \param[in,out] pDpb        Pointer to a DPB context object
    \param[in]     uMaxLatency Maximum DPB latency for a picture
@@ -303,20 +301,20 @@ void AL_Dpb_Flush(AL_TDpb* pDpb);
 *****************************************************************************/
 void AL_Dpb_HEVC_Cleanup(AL_TDpb* pDpb, uint32_t uMaxLatency, uint8_t uMaxOutput);
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Remove all non-existing pictures and oldest non-used reference from the DPB
    \param[in] pDpb Pointer to a DPB context object
 *****************************************************************************/
 void AL_Dpb_AVC_Cleanup(AL_TDpb* pDpb);
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Remove the First Node (Decoding order) from the pool
    \param[in,out] pDpb   Pointer to a DPB context object
    \return return the frame buffer identifier of the deleted picture
 *****************************************************************************/
 uint8_t AL_Dpb_RemoveHead(AL_TDpb* pDpb);
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Insert a new frame buffer in a reference buffer pool
    \param[in,out] pDpb            Pointer to a DPB context object
    \param[in]     iFramePOC       Picture order count of the added frame buffer
@@ -333,21 +331,21 @@ uint8_t AL_Dpb_RemoveHead(AL_TDpb* pDpb);
 *****************************************************************************/
 void AL_Dpb_Insert(AL_TDpb* pDpb, int32_t iFramePOC, AL_EPicStruct ePicStruct, int32_t iPocLsb, uint8_t uNode, uint8_t uFrmID, uint8_t uMvID, uint8_t pic_output_flag, AL_EMarkingRef eMarkingFlag, uint8_t uNonExisting, AL_ENut eNUT, uint8_t uSubpicFlag);
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Update DPB state after a frame decoding
    \param[in] pDpb   Pointer to a DPB context object
    \param[in] iFrmID FrmID of the decoded frame
 *****************************************************************************/
 void AL_Dpb_EndDecoding(AL_TDpb* pDpb, int iFrmID);
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Calculate the pic_num of each reference picture
    \param[in] pDpb   Pointer to a DPB context object
    \param[in] pSlice Current slice header
 *****************************************************************************/
 void AL_Dpb_PictNumberProcess(AL_TDpb* pDpb, AL_TAvcSliceHdr const* pSlice);
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Updates the reference status of the pictures present in the DPB
    \param[in] pDpb          Pointer to a DPB context object
    \param[in] pSlice        Current slice header
@@ -355,7 +353,7 @@ void AL_Dpb_PictNumberProcess(AL_TDpb* pDpb, AL_TAvcSliceHdr const* pSlice);
 *****************************************************************************/
 void AL_Dpb_MarkingProcess(AL_TDpb* pDpb, AL_TAvcSliceHdr const* pSlice, int iCurFramePOC);
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Initializes the reference list for a P slice
    \param[in]  pDpb           Pointer to a DPB context object
    \param[in]  eCurrPicStruct Picture structure of the current frame
@@ -363,7 +361,7 @@ void AL_Dpb_MarkingProcess(AL_TDpb* pDpb, AL_TAvcSliceHdr const* pSlice, int iCu
 *****************************************************************************/
 void AL_Dpb_InitPSlice_RefList(AL_TDpb const* pDpb, AL_EPicStruct eCurrPicStruct, TBufferRef* pRefList);
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Initializes the reference list for a B slice
    \param[in]  pDpb           Pointer to a DPB context object
    \param[in]  iCurFramePOC   POC of the current picture
@@ -372,7 +370,7 @@ void AL_Dpb_InitPSlice_RefList(AL_TDpb const* pDpb, AL_EPicStruct eCurrPicStruct
 *****************************************************************************/
 void AL_Dpb_InitBSlice_RefList(AL_TDpb const* pDpb, int iCurFramePOC, AL_EPicStruct eCurrPicStruct, TBufferListRef* pRefList);
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Modifies the reference picture list on short term reference pictures
    \param[in]     pDpb        Pointer to a DPB context object
    \param[in]     pSlice      Current slice header
@@ -385,7 +383,7 @@ void AL_Dpb_InitBSlice_RefList(AL_TDpb const* pDpb, int iCurFramePOC, AL_EPicStr
 *****************************************************************************/
 void AL_Dpb_ModifShortTerm(AL_TDpb const* pDpb, AL_TAvcSliceHdr const* pSlice, int iPicNumIdc, uint8_t uOffset, int iL0L1, uint8_t* pRefIdx, int* pPicNumPred, TBufferListRef* pListRef);
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Modifies the reference picture list on long term reference pictures
    \param[in]     pDpb        Pointer to a DPB context object
    \param[in]     pSlice      Current slice header
@@ -396,7 +394,7 @@ void AL_Dpb_ModifShortTerm(AL_TDpb const* pDpb, AL_TAvcSliceHdr const* pSlice, i
 *****************************************************************************/
 void AL_Dpb_ModifLongTerm(AL_TDpb const* pDpb, AL_TAvcSliceHdr const* pSlice, uint8_t uOffset, int iL0L1, uint8_t* pRefIdx, TBufferListRef* pListRef);
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Retrieves the number of really existing reference pictures
    \param[in] pDpb      Pointer to a DPB context object
    \param[in] pListRef  Pointer on the reference picture list object
@@ -404,7 +402,7 @@ void AL_Dpb_ModifLongTerm(AL_TDpb const* pDpb, AL_TAvcSliceHdr const* pSlice, ui
 *****************************************************************************/
 int32_t AL_Dpb_GetNumExistingRef(AL_TDpb const* pDpb, TBufferListRef const* pListRef);
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Retrieves the POCs of really existing reference pictures
    \param[in] pDpb      Pointer to a DPB context object
    \param[in] pListRef  Pointer on the reference picture list object
@@ -412,14 +410,14 @@ int32_t AL_Dpb_GetNumExistingRef(AL_TDpb const* pDpb, TBufferListRef const* pLis
 *****************************************************************************/
 void AL_Dpb_FillExistingRef(AL_TDpb const* pDpb, TBufferRef const* pRef, uint32_t* pPOCs);
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Gets the first free node in the list (arrival order)
    \param[in,out] pDpb Pointer to a DPB context object
    \return the first free node index
 *****************************************************************************/
 uint8_t AL_Dpb_GetNextFreeNode(AL_TDpb const* pDpb);
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Converts a PicID index to a NodeID index
    \param[in] pDpb   Pointer to a DPB context object
    \param[in] uPicID Index to be converted
@@ -427,7 +425,7 @@ uint8_t AL_Dpb_GetNextFreeNode(AL_TDpb const* pDpb);
 *****************************************************************************/
 uint8_t AL_Dpb_ConvertPicIDToNodeID(AL_TDpb const* pDpb, uint8_t uPicID);
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Fills the poc list buffer with their respective reference marking status
    \param[in]  pDpb          Pointer to a DPB context object
    \param[in]  uL0L1         Reference direction
@@ -438,7 +436,7 @@ uint8_t AL_Dpb_ConvertPicIDToNodeID(AL_TDpb const* pDpb, uint8_t uPicID);
 *****************************************************************************/
 void AL_Dpb_FillList(AL_TDpb const* pDpb, int32_t* pPocList, uint32_t* pLongTermList, uint32_t* pSubpicList);
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Searches the picture with the given poc_lsb in the dpb with the corresponding marking flag
    \param[in] pDpb    Pointer to a DPB context object
    \param[in] poc_lsb poc_lsb value to search in the DPB
@@ -446,7 +444,7 @@ void AL_Dpb_FillList(AL_TDpb const* pDpb, int32_t* pPocList, uint32_t* pLongTerm
 *****************************************************************************/
 uint8_t AL_Dpb_SearchPocLsb(AL_TDpb const* pDpb, int32_t poc_lsb);
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Searches the picture with the given iPOC in the dpb with the corresponding marking flag
    \param[in] pDpb Pointer to a DPB context object
    \param[in] iPOC Picture order count value to search in the DPB
@@ -454,7 +452,7 @@ uint8_t AL_Dpb_SearchPocLsb(AL_TDpb const* pDpb, int32_t poc_lsb);
 *****************************************************************************/
 uint8_t AL_Dpb_SearchPOC(AL_TDpb const* pDpb, int32_t iPOC);
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief This function retrieves the Node ID associated with picture which follows the current picture in poc order
    \param[in] pDpb  Pointer to a DPB context object
    \param[in] uNode Current picture identifier in the DPB Node
@@ -462,7 +460,7 @@ uint8_t AL_Dpb_SearchPOC(AL_TDpb const* pDpb, int32_t iPOC);
 *****************************************************************************/
 uint8_t AL_Dpb_GetNextPOC(AL_TDpb const* pDpb, uint8_t uNode);
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief This function retrieves the pic_output_flag of a specific picture
    \param[in] pDpb Pointer to a DPB context object
    \param[in] uNode Picture identifier in the DPB Node
@@ -470,14 +468,14 @@ uint8_t AL_Dpb_GetNextPOC(AL_TDpb const* pDpb, uint8_t uNode);
 *****************************************************************************/
 uint8_t AL_Dpb_GetOutputFlag(AL_TDpb const* pDpb, uint8_t uNode);
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief This function removes a picture from the picture list needed for output
    \param[in,out] pDpb    Pointer to a DPB context object
    \param[in]     uNode   Picture identifier in the DPB Node
 *****************************************************************************/
 void AL_Dpb_ResetOutputFlag(AL_TDpb* pDpb, uint8_t uNode); // UNUSED
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief This function retrieves the reference status of a specific picture
    \param[in] pDpb Pointer to a DPB context object
    \param[in] uNode Picture identifier in the DPB Node
@@ -485,7 +483,7 @@ void AL_Dpb_ResetOutputFlag(AL_TDpb* pDpb, uint8_t uNode); // UNUSED
 *****************************************************************************/
 uint8_t AL_Dpb_GetMarkingFlag(AL_TDpb const* pDpb, uint8_t uNode);
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief This function set the reference status of a specific picture
    \param[in,out] pDpb         Pointer to a DPB context object
    \param[in]     uNode        Picture identifier in the DPB Node
@@ -493,7 +491,7 @@ uint8_t AL_Dpb_GetMarkingFlag(AL_TDpb const* pDpb, uint8_t uNode);
 *****************************************************************************/
 void AL_Dpb_SetMarkingFlag(AL_TDpb* pDpb, uint8_t uNode, AL_EMarkingRef eMarkingFlag);
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief This function gets the latency of a specific picture in the DPB Nodes
    \param[in] pDpb    Pointer to a DPB context object
    \param[in] uNodeID Picture identifier in the DPB Node
@@ -501,7 +499,7 @@ void AL_Dpb_SetMarkingFlag(AL_TDpb* pDpb, uint8_t uNode, AL_EMarkingRef eMarking
 *****************************************************************************/
 uint32_t AL_Dpb_GetPicLatency_FromNode(AL_TDpb const* pDpb, uint8_t uNodeID);
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief This function gets the Pic ID of a specific picture in the DPB Nodes
    \param[in] pDpb  Pointer to a DPB context object
    \param[in] uNode Picture identifier in the DPB Node
@@ -509,7 +507,7 @@ uint32_t AL_Dpb_GetPicLatency_FromNode(AL_TDpb const* pDpb, uint8_t uNodeID);
 *****************************************************************************/
 uint8_t AL_Dpb_GetPicID_FromNode(AL_TDpb const* pDpb, uint8_t uNode);
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief This function gets the frame ID of a specific picture in the DPB Nodes
    \param[in] pDpb  Pointer to a DPB context object
    \param[in] uNode Picture identifier in the DPB Node
@@ -517,7 +515,7 @@ uint8_t AL_Dpb_GetPicID_FromNode(AL_TDpb const* pDpb, uint8_t uNode);
 *****************************************************************************/
 uint8_t AL_Dpb_GetMvID_FromNode(AL_TDpb const* pDpb, uint8_t uNode);
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief This function gets the frame ID of a specific picture in the DPB Nodes
    \param[in] pDpb Pointer to a DPB context object
    \param[in] uNode Picture identifier in the DPB Node
@@ -525,7 +523,7 @@ uint8_t AL_Dpb_GetMvID_FromNode(AL_TDpb const* pDpb, uint8_t uNode);
 *****************************************************************************/
 uint8_t AL_Dpb_GetFrmID_FromNode(AL_TDpb const* pDpb, uint8_t uNode);
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Increment the latency of a specific pcture when it follows the current picture in output order
    \param[in,out] pDpb         Pointer to a DPB context object
    \param[in]     uNode        Picture identifier in the DPB Node
@@ -533,14 +531,14 @@ uint8_t AL_Dpb_GetFrmID_FromNode(AL_TDpb const* pDpb, uint8_t uNode);
 *****************************************************************************/
 void AL_Dpb_IncrementPicLatency(AL_TDpb* pDpb, uint8_t uNode, int iCurFramePOC);
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Decrement the latency of a specific pcture
    \param[in,out] pDpb  Pointer to a DPB context object
    \param[in]     uNode Picture identifier in the DPB Node
 *****************************************************************************/
 void AL_Dpb_DecrementPicLatency(AL_TDpb* pDpb, uint8_t uNode);
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Checks if the Node identified by uNode has been reset
    \param[in] pDpb  Pointer to a DPB context object
    \param[in] uNode Node identifier
@@ -549,7 +547,7 @@ void AL_Dpb_DecrementPicLatency(AL_TDpb* pDpb, uint8_t uNode);
 *****************************************************************************/
 bool AL_Dpb_NodeIsReset(AL_TDpb const* pDpb, uint8_t uNode);
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Adds the specified picture in the display list
    \param[in,out] pDpb  Pointer to a DPB context object
    \param[in]     uNode Index of the node to remove
@@ -557,7 +555,7 @@ bool AL_Dpb_NodeIsReset(AL_TDpb const* pDpb, uint8_t uNode);
 *****************************************************************************/
 void AL_Dpb_Display(AL_TDpb* pDpb, uint8_t uNode);
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Remove the specified node from the reference buffer pool
    \param[in,out] pDpb   Pointer to a DPB context object
    \param[in]     uNode  Index of the node to remove
@@ -565,4 +563,4 @@ void AL_Dpb_Display(AL_TDpb* pDpb, uint8_t uNode);
 *****************************************************************************/
 uint8_t AL_Dpb_Remove(AL_TDpb* pDpb, uint8_t uNode);
 
-/*@}*/
+/*!@}*/

@@ -31,8 +31,6 @@
 #include "lib_parsing/Hevc_PictMngr.h"
 #include "lib_parsing/Hevc_SliceHeaderParsing.h"
 
-#include "lib_assert/al_assert.h"
-
 /*************************************************************************/
 /*
 static uint8_t getMaxRextBitDepth(AL_THevcProfilevel pf)
@@ -314,14 +312,19 @@ static AL_ERR isSPSCompatibleWithInitialStreamSettings(AL_TDecCtx const* pCtx, A
 static bool allocateBuffers(AL_TDecCtx* pCtx, AL_THevcSps const* pSPS)
 {
   AL_TStreamSettings const* pStreamSettings = &pCtx->tCurrentStreamSettings;
-  int iSPSMaxSlices = AL_HEVC_GetMaxNumberOfSlices(pStreamSettings->iLevel);
-  int iSizeWP = iSPSMaxSlices * WP_SLICE_SIZE;
-  int iSizeSP = iSPSMaxSlices * sizeof(AL_TDecSliceParam);
-  int iSizeCompData = AL_GetAllocSize_HevcCompData(pStreamSettings->tDim, pStreamSettings->eChroma);
-  int iSizeCompMap = AL_GetAllocSize_DecCompMap(pStreamSettings->tDim);
+  int iMaxLCU = RoundUp(pStreamSettings->tDim.iWidth, 64) * RoundUp(pStreamSettings->tDim.iHeight, 64) / 256; // (64 * 64 / 16);
+  int iSPSMaxSlices = Min(AL_HEVC_GetMaxNumberOfSlices(pStreamSettings->iLevel), iMaxLCU);
+
+  AL_TDecoderPoolSizes tSizes;
+  Rtos_Memset(&tSizes, 0, sizeof(AL_TDecoderPoolSizes));
+
+  tSizes.iWPSize = iSPSMaxSlices * WP_SLICE_SIZE;
+  tSizes.iSPSize = iSPSMaxSlices * sizeof(AL_TDecSliceParam);
+  tSizes.iCompDataSize = AL_GetAllocSize_HevcCompData(pStreamSettings->tDim, pStreamSettings->eChroma);
+  tSizes.iCompMapSize = AL_GetAllocSize_DecCompMap(pStreamSettings->tDim);
   AL_ERR error = AL_ERR_NO_MEMORY;
 
-  if(!AL_Default_Decoder_AllocPool(pCtx, 0, 0, iSizeWP, iSizeSP, iSizeCompData, iSizeCompMap, 0))
+  if(!AL_Default_Decoder_AllocPool(pCtx, &tSizes))
     goto fail_alloc;
 
   int const iDpbMaxBuf = AL_HEVC_GetMaxDpbBuffers(pStreamSettings);
@@ -646,7 +649,7 @@ static void finishPreviousFrame(AL_TDecCtx* pCtx)
   AL_THevcSliceHdr* pSlice = &pCtx->HevcSliceHdr[pCtx->uCurID];
   AL_TDecPicParam* pPP = &pCtx->PoolPP[pCtx->uToggle];
   AL_TDecSliceParam* pSP = &(((AL_TDecSliceParam*)pCtx->PoolSP[pCtx->uToggle].tMD.pVirtualAddr)[pCtx->tCurrentFrameCtx.uNumSlice - 1]);
-  AL_TDecPicBuffers* pBufs = &pCtx->PoolPB[pCtx->uToggle];
+  AL_TDecBuffers* pBufs = &pCtx->PoolPB[pCtx->uToggle];
 
   AL_TerminatePreviousCommand(pCtx, pPP, pSP, pBufs, true, false);
 
@@ -682,7 +685,7 @@ static bool isValidSyncPoint(AL_TDecCtx* pCtx, AL_ENut eNUT, AL_ESliceType ePicT
 }
 
 /*****************************************************************************/
-static bool hevcInitFrameBuffers(AL_TDecCtx* pCtx, bool bStartsNewCVS, const AL_THevcSps* pSPS, AL_TDecPicParam* pPP, AL_TDecPicBuffers* pBufs)
+static bool hevcInitFrameBuffers(AL_TDecCtx* pCtx, bool bStartsNewCVS, const AL_THevcSps* pSPS, AL_TDecPicParam* pPP, AL_TDecBuffers* pBufs)
 {
   (void)bStartsNewCVS;
   AL_TDimension const tDim = { pSPS->pic_width_in_luma_samples, pSPS->pic_height_in_luma_samples };
@@ -743,7 +746,7 @@ static bool decodeSliceData(AL_TAup* pIAUP, AL_TDecCtx* pCtx, AL_ENut eNUT, bool
   AL_THevcAup* pAUP = &pIAUP->hevcAup;
   AL_TStreamSettings const* pStreamSettings = &pCtx->tCurrentStreamSettings;
 
-  TCircBuffer* pBufStream = &pCtx->Stream;
+  AL_TCircBuffer* pBufStream = &pCtx->Stream;
   // Slice header deanti-emulation
   AL_TRbspParser rp;
   InitRbspParser(pBufStream, pCtx->BufNoAE.tMD.pVirtualAddr, pCtx->BufNoAE.tMD.uSize, true, &rp);
@@ -865,7 +868,7 @@ static bool decodeSliceData(AL_TAup* pIAUP, AL_TDecCtx* pCtx, AL_ENut eNUT, bool
 
   AL_TDecSliceParam* pSP = &(((AL_TDecSliceParam*)pCtx->PoolSP[pCtx->uToggle].tMD.pVirtualAddr)[pFrmCtx->uNumSlice]);
 
-  AL_TDecPicBuffers* pBufs = &pCtx->PoolPB[pCtx->uToggle];
+  AL_TDecBuffers* pBufs = &pCtx->PoolPB[pCtx->uToggle];
   pBufs->tStream.tMD = pCtx->Stream.tMD;
 
   if(isValid)

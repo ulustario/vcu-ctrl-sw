@@ -1,6 +1,8 @@
 // SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
+#pragma once
+
 #include <iostream>
 #include <stdexcept>
 #include <fstream>
@@ -10,9 +12,6 @@ extern "C"
 #include "lib_common/PicFormat.h"
 #include "lib_common/BufferAPI.h"
 }
-
-#ifndef FRAME_READER
-#define FRAME_READER
 
 class FrameReader
 {
@@ -40,5 +39,3 @@ public:
 
   virtual ~FrameReader() = default;
 };
-
-#endif

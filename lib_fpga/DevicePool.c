@@ -7,7 +7,6 @@
 #include <stdio.h>
 #include <fcntl.h>
 #include "lib_rtos/lib_rtos.h"
-#include "lib_assert/al_assert.h"
 
 #include "DevicePool.h"
 
@@ -144,7 +143,7 @@ static int DevicePool_Close(struct DevicePool* pDP, int fd)
     goto exit;
   }
 
-  AL_Assert(pEntry->iRefCount > 0);
+  Rtos_Assert(pEntry->iRefCount > 0);
 
   pEntry->iRefCount -= 1;
 

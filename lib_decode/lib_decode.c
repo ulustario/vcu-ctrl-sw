@@ -50,12 +50,12 @@ void AL_Decoder_Destroy(AL_HDecoder hDec)
 }
 
 /*****************************************************************************/
-void AL_Decoder_SetParam(AL_HDecoder hDec, const char* sPrefix, int iFrmID, int iNumFrm, bool bForceCleanBuffers, bool bShouldPrintFrameDelimiter)
+void AL_Decoder_SetParam(AL_HDecoder hDec, const char* sPrefix, int iFrmID, int iNumFrm, bool bShouldPrintFrameDelimiter)
 {
   if(!pArch)
     return;
 
-  pArch->vtable->DecoderSetParam(hDec, sPrefix, iFrmID, iNumFrm, bForceCleanBuffers,
+  pArch->vtable->DecoderSetParam(hDec, sPrefix, iFrmID, iNumFrm,
                                  bShouldPrintFrameDelimiter);
 }
 

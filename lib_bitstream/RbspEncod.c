@@ -2,14 +2,12 @@
 // SPDX-License-Identifier: MIT
 
 /****************************************************************************
-   -----------------------------------------------------------------------------
-**************************************************************************//*!
    \addtogroup lib_bitstream
-   @{
+   !@{
 ****************************************************************************/
 
 #include "RbspEncod.h"
-#include "lib_assert/al_assert.h"
+#include "lib_rtos/lib_rtos.h"
 
 #include "lib_common/SyntaxConversion.h"
 
@@ -32,7 +30,7 @@ int AL_RbspEncoding_BeginSEI(AL_TBitStreamLite* pBS, uint8_t uPayloadType)
 {
   AL_BitStreamLite_PutBits(pBS, 8, uPayloadType);
   int bookmarkSEI = AL_BitStreamLite_GetBitsCount(pBS);
-  AL_Assert(bookmarkSEI % 8 == 0);
+  Rtos_Assert(bookmarkSEI % 8 == 0);
 
   AL_BitStreamLite_PutBits(pBS, 8, 0xFF);
 
@@ -61,9 +59,9 @@ void AL_RbspEncoding_BeginSEI2(AL_TBitStreamLite* pBS, int iPayloadType, int iPa
 void AL_RbspEncoding_EndSEI(AL_TBitStreamLite* pBS, int bookmarkSEI)
 {
   uint8_t* pSize = AL_BitStreamLite_GetData(pBS) + (bookmarkSEI / 8);
-  AL_Assert(*pSize == 0xFF);
+  Rtos_Assert(*pSize == 0xFF);
   int bits = AL_BitStreamLite_GetBitsCount(pBS) - bookmarkSEI;
-  AL_Assert(bits % 8 == 0);
+  Rtos_Assert(bits % 8 == 0);
   *pSize = (bits / 8) - 1;
 }
 
@@ -295,4 +293,4 @@ void AL_RbspEncoding_WriteST2094_40(AL_TBitStreamLite* pBS, AL_TDynamicMeta_ST20
   AL_RbspEncoding_EndSEI(pBS, bookmark);
 }
 
-/*@}*/
+/*!@}*/

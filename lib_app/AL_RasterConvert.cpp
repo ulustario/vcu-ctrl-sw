@@ -1,14 +1,13 @@
 // SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
-#include "lib_conv_yuv/AL_RasterConvert.h"
-
 #include <cassert>
 #include <iostream>
 #include <sstream>
 #include <string>
 
 #include "lib_app/convert.h"
+#include "lib_app/AL_RasterConvert.h"
 
 extern "C"
 {
@@ -44,6 +43,7 @@ static void convertToY010(AL_TBuffer const* pSrcIn, TFourCC inFourCC, AL_TBuffer
 {
   switch(inFourCC)
   {
+  case FOURCC(Y010):
   case FOURCC(I0AL):
   case FOURCC(I2AL):
   case FOURCC(I4AL):
@@ -67,6 +67,7 @@ static void convertToY012(AL_TBuffer const* pSrcIn, TFourCC inFourCC, AL_TBuffer
 {
   switch(inFourCC)
   {
+  case FOURCC(Y012):
   case FOURCC(I0CL):
   case FOURCC(I2CL):
   case FOURCC(I4CL):
@@ -80,7 +81,10 @@ static void convertToY800(AL_TBuffer const* pSrcIn, TFourCC inFourCC, AL_TBuffer
 {
   switch(inFourCC)
   {
-  case FOURCC(I0AL): return I0AL_To_Y800(pSrcIn, pSrcOut);
+  case FOURCC(Y010):
+  case FOURCC(I0AL):
+    return I0AL_To_Y800(pSrcIn, pSrcOut);
+  case FOURCC(Y800):
   case FOURCC(I420):
   case FOURCC(I422):
   case FOURCC(I444):
@@ -461,9 +465,8 @@ static void convertToT6mC(AL_TBuffer const* pSrcIn, TFourCC inFourCC, AL_TBuffer
 }
 
 /*****************************************************************************/
-void CYuvSrcConv::ConvertSrcBuf(uint8_t uBitDepth, AL_TBuffer const* pSrcIn, AL_TBuffer* pSrcOut)
+void CYuvSrcConv::ConvertSrcBuf(AL_TBuffer const* pSrcIn, AL_TBuffer* pSrcOut)
 {
-  (void)uBitDepth;
   TFourCC tFourCCIn = AL_PixMapBuffer_GetFourCC(pSrcIn);
   TFourCC tSrcOutFourCC = AL_PixMapBuffer_GetFourCC(pSrcOut);
   switch(tSrcOutFourCC)

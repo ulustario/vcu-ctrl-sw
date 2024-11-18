@@ -6,7 +6,7 @@
 #include "lib_rtos/types.h"
 #include "lib_common/Nuts.h"
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief This function checks if the current Nal Unit Type corresponds to an IDR
    picture respect to the AVC specification
    \param[in] eNUT Nal Unit Type
@@ -15,7 +15,7 @@
  ***************************************************************************/
 bool AL_AVC_IsIDR(AL_ENut eNUT);
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief This function checks if the current Nal Unit Type corresponds to a Vcl NAL
    respect to the AVC specification
    \param[in] eNUT Nal Unit Type
@@ -24,7 +24,7 @@ bool AL_AVC_IsIDR(AL_ENut eNUT);
  ***************************************************************************/
 bool AL_AVC_IsVcl(AL_ENut eNUT);
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Size of the NAL Header
    respect to the AVC specification
  ***************************************************************************/

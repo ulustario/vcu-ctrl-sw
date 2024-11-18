@@ -1,24 +1,22 @@
 // SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
-/****************************************************************************
-   -----------------------------------------------------------------------------
- **************************************************************************//*!
+/******************************************************************************
    \addtogroup lib_base
-   @{
+   !@{
    \file
  *****************************************************************************/
 #pragma once
 
-#include "ScalingList.h"
-#include "lib_common/BufCommonInternal.h"
+#include "lib_rtos/types.h"
+#include "lib_common/BufConst.h"
 
 #define MAX_NUM_CPB 32
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Mimics structure described in spec sec. 7.3.2.1.2
 *****************************************************************************/
-typedef struct t_Profilevel
+typedef struct AL_THevcProfilevel
 {
   uint8_t general_profile_space;
   uint8_t general_tier_flag;
@@ -47,36 +45,36 @@ typedef struct t_Profilevel
 
   uint8_t general_level_idc;
 
-  uint8_t sub_layer_profile_present_flag[8];
-  uint8_t sub_layer_level_present_flag[8];
-  uint8_t sub_layer_profile_space[8];
-  uint8_t sub_layer_tier_flag[8];
-  uint8_t sub_layer_profile_idc[8];
-  uint8_t sub_layer_profile_compatibility_flag[8][32];
+  uint8_t sub_layer_profile_present_flag[MAX_SUB_LAYER + 1];
+  uint8_t sub_layer_level_present_flag[MAX_SUB_LAYER + 1];
+  uint8_t sub_layer_profile_space[MAX_SUB_LAYER + 1];
+  uint8_t sub_layer_tier_flag[MAX_SUB_LAYER + 1];
+  uint8_t sub_layer_profile_idc[MAX_SUB_LAYER + 1];
+  uint8_t sub_layer_profile_compatibility_flag[MAX_SUB_LAYER + 1][32];
 
-  uint8_t sub_layer_progressive_source_flag[8];
-  uint8_t sub_layer_interlaced_source_flag[8];
-  uint8_t sub_layer_non_packed_constraint_flag[8];
-  uint8_t sub_layer_frame_only_constraint_flag[8];
-  uint8_t sub_layer_max_12bit_constraint_flag[8];
-  uint8_t sub_layer_max_10bit_constraint_flag[8];
-  uint8_t sub_layer_max_8bit_constraint_flag[8];
-  uint8_t sub_layer_max_422chroma_constraint_flag[8];
-  uint8_t sub_layer_max_420chroma_constraint_flag[8];
-  uint8_t sub_layer_max_monochrome_constraint_flag[8];
-  uint8_t sub_layer_intra_constraint_flag[8];
-  uint8_t sub_layer_one_picture_only_constraint_flag[8];
-  uint8_t sub_layer_lower_bit_rate_constraint_flag[8];
-  uint8_t sub_layer_max_14bit_constraint_flag[8];
-  uint8_t sub_layer_inbld_flag[8];
+  uint8_t sub_layer_progressive_source_flag[MAX_SUB_LAYER + 1];
+  uint8_t sub_layer_interlaced_source_flag[MAX_SUB_LAYER + 1];
+  uint8_t sub_layer_non_packed_constraint_flag[MAX_SUB_LAYER + 1];
+  uint8_t sub_layer_frame_only_constraint_flag[MAX_SUB_LAYER + 1];
+  uint8_t sub_layer_max_12bit_constraint_flag[MAX_SUB_LAYER + 1];
+  uint8_t sub_layer_max_10bit_constraint_flag[MAX_SUB_LAYER + 1];
+  uint8_t sub_layer_max_8bit_constraint_flag[MAX_SUB_LAYER + 1];
+  uint8_t sub_layer_max_422chroma_constraint_flag[MAX_SUB_LAYER + 1];
+  uint8_t sub_layer_max_420chroma_constraint_flag[MAX_SUB_LAYER + 1];
+  uint8_t sub_layer_max_monochrome_constraint_flag[MAX_SUB_LAYER + 1];
+  uint8_t sub_layer_intra_constraint_flag[MAX_SUB_LAYER + 1];
+  uint8_t sub_layer_one_picture_only_constraint_flag[MAX_SUB_LAYER + 1];
+  uint8_t sub_layer_lower_bit_rate_constraint_flag[MAX_SUB_LAYER + 1];
+  uint8_t sub_layer_max_14bit_constraint_flag[MAX_SUB_LAYER + 1];
+  uint8_t sub_layer_inbld_flag[MAX_SUB_LAYER + 1];
 
-  uint8_t sub_layer_level_idc[8];
+  uint8_t sub_layer_level_idc[MAX_SUB_LAYER + 1];
 }AL_THevcProfilevel;
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Mimics structure to represent scaling list syntax elements
 *****************************************************************************/
-typedef struct t_SCLParam
+typedef struct AL_TSCLParam
 {
   uint8_t scaling_list_pred_mode_flag[4][6];
   uint8_t scaling_list_pred_matrix_id_delta[4][6];
@@ -85,10 +83,10 @@ typedef struct t_SCLParam
   uint8_t UseDefaultScalingMatrixFlag[20];
 }AL_TSCLParam;
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Mimics structure to represent ref pic set syntax elements
 *****************************************************************************/
-typedef struct t_RefPicSet
+typedef struct AL_TRefPicSet
 {
   uint8_t inter_ref_pic_set_prediction_flag;
   uint8_t delta_idx_minus1;
@@ -104,10 +102,10 @@ typedef struct t_RefPicSet
   uint8_t used_by_curr_pic_s1_flag[MAX_REF];
 }AL_TRefPicSet;
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Mimics structure to represent reordering syntax elements
 *****************************************************************************/
-typedef struct t_RefPicModif
+typedef struct AL_TRefPicModif
 {
   uint8_t ref_pic_list_modification_flag_l0;
   uint8_t list_entry_l0[MAX_REF];
@@ -115,10 +113,10 @@ typedef struct t_RefPicModif
   uint8_t list_entry_l1[MAX_REF];
 }AL_TRefPicModif;
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Mimics structure to represent weighted pred syntax elements
 *****************************************************************************/
-typedef struct t_WPCoeff
+typedef struct AL_TWPCoeff
 {
   uint8_t luma_weight_flag[MAX_REF];
   int8_t luma_delta_weight[MAX_REF];
@@ -129,7 +127,7 @@ typedef struct t_WPCoeff
   int16_t chroma_offset[MAX_REF][2];
 }AL_TWPCoeff;
 
-typedef struct t_WPTable
+typedef struct AL_TWPTable
 {
   uint8_t luma_log2_weight_denom;
   int8_t chroma_log2_weight_denom;
@@ -138,10 +136,10 @@ typedef struct t_WPTable
   uint8_t NumWeights[2];
 }AL_TWPTable;
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Mimics structure described in spec sec. E.1.2
 *****************************************************************************/
-typedef struct t_SubHrdParam
+typedef struct AL_TSubHrdParam
 {
   uint32_t bit_rate_value_minus1[MAX_NUM_CPB];
   uint32_t cpb_size_value_minus1[MAX_NUM_CPB];
@@ -150,10 +148,10 @@ typedef struct t_SubHrdParam
   uint8_t cbr_flag[MAX_NUM_CPB];
 }AL_TSubHrdParam;
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Mimics structure described in spec sec. E.1.2
 *****************************************************************************/
-typedef struct t_HrdParam
+typedef struct AL_THrdParam
 {
   uint8_t nal_hrd_parameters_present_flag;
   uint8_t vcl_hrd_parameters_present_flag;
@@ -181,10 +179,10 @@ typedef struct t_HrdParam
   AL_TSubHrdParam vcl_sub_hrd_param;
 }AL_THrdParam;
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Mimics structure described in spec sec. E.1.1
 *****************************************************************************/
-typedef struct t_VuiParam
+typedef struct AL_TVuiParam
 {
   uint8_t aspect_ratio_info_present_flag;
   uint8_t aspect_ratio_idc;
@@ -244,4 +242,4 @@ typedef struct t_VuiParam
   uint8_t log2_max_mv_length_vertical;
 }AL_TVuiParam;
 
-/*@}*/
+/*!@}*/

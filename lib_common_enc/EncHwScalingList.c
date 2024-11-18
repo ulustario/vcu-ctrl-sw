@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MIT
 
 #include "EncHwScalingList.h"
-#include "lib_assert/al_assert.h"
+#include "lib_rtos/lib_rtos.h"
 
 /****************************************************************************/
 static const int* pSCL_HEVC_8x8_ORDER = AL_SLOW_HEVC_ENC_SCL_ORDER_8x8;
@@ -52,7 +52,7 @@ void AL_AVC_WriteEncHwScalingList(AL_TSCLParam const* pSclLst, AL_THwScalingList
   uint32_t const* pSrcFwd;
   uint32_t* pBuf32 = (uint32_t*)pBuf;
 
-  AL_Assert((1 & (size_t)pBuf) == 0);
+  Rtos_Assert((1 & (size_t)pBuf) == 0);
 
   // Inverse scaling matrix
 

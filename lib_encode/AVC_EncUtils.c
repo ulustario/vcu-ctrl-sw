@@ -3,7 +3,6 @@
 
 #include "EncUtils.h"
 #include "IP_EncoderCtx.h"
-#include "lib_assert/al_assert.h"
 #include "lib_common/SyntaxConversion.h"
 #include "lib_common/Utils.h"
 #include "lib_common_enc/EncHwScalingList.h"
@@ -47,7 +46,7 @@ void AL_AVC_SelectScalingList(AL_TSps* pISPS, AL_TEncSettings const* pSettings)
   AL_TAvcSps* pSPS = (AL_TAvcSps*)pISPS;
   AL_EScalingList eScalingList = pSettings->eScalingList;
 
-  AL_Assert(eScalingList != AL_SCL_MAX_ENUM);
+  Rtos_Assert(eScalingList != AL_SCL_MAX_ENUM);
 
   static const int iMaxScalingList = 12;
 
@@ -119,12 +118,12 @@ static void AL_AVC_UpdateHrdParameters(AL_TAvcSps* pSPS, AL_TSubHrdParam* pSubHr
   pSPS->vui_param.hrd_param.cpb_cnt_minus1[0] = 0;
   AL_Decomposition(&(pSubHrdParam->bit_rate_value_minus1[0]), &pSPS->vui_param.hrd_param.bit_rate_scale);
 
-  AL_Assert(pSubHrdParam->bit_rate_value_minus1[0] <= (UINT32_MAX - 1));
+  Rtos_Assert(pSubHrdParam->bit_rate_value_minus1[0] <= (UINT32_MAX - 1));
 
   pSubHrdParam->cpb_size_value_minus1[0] = iCpbSize >> 4;
   AL_Decomposition(&(pSubHrdParam->cpb_size_value_minus1[0]), &pSPS->vui_param.hrd_param.cpb_size_scale);
 
-  AL_Assert(pSubHrdParam->cpb_size_value_minus1[0] <= (UINT32_MAX - 1));
+  Rtos_Assert(pSubHrdParam->cpb_size_value_minus1[0] <= (UINT32_MAX - 1));
 
   pSubHrdParam->cbr_flag[0] = (pSettings->tChParam[0].tRCParam.eRCMode == AL_RC_CBR) ? 1 : 0;
 

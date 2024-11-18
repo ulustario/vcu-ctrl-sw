@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: MIT
 
 #include "StaticFifo.h"
-#include "lib_assert/al_assert.h"
 
 bool StaticFifo_Init(StaticFifo* self, void* elements[], int total_elements)
 {

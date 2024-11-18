@@ -1,9 +1,9 @@
 // SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
-/**************************************************************************//*!
+/******************************************************************************
    \addtogroup Buffers
-   @{
+   !@{
    \file
  **************************************************************************/
 #pragma once
@@ -19,7 +19,7 @@ typedef enum AL_ESectionFlags
   AL_SECTION_APP_FILLER_FLAG = 0x20, /*!< section data contains uninitialized filler data that should be filled by the application layer */
 }AL_ESectionFlags;
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Stream section. Act as a kind of scatter gather list containing the
    stream parts inside a buffer.
 *****************************************************************************/
@@ -30,4 +30,4 @@ typedef struct AL_TStreamSection
   AL_ESectionFlags eFlags; /*!< Flags associated with the section; see macro AL_SECTION_xxxxx_FLAG */
 }AL_TStreamSection;
 
-/*@}*/
+/*!@}*/

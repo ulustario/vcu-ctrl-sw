@@ -5,7 +5,7 @@
 #include "lib_common/Error.h"
 #include "lib_common_enc/QPTable.h"
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Retrieves the size of a Encoder parameters buffer 2 (QP Ctrl)
    \param[in] tDim Frame size in pixels
    \param[in] eCodec Codec
@@ -15,7 +15,7 @@
 *****************************************************************************/
 uint32_t AL_QPTable_GetFlexibleSize(AL_TDimension tDim, AL_ECodec eCodec, uint8_t uLog2MaxCuSize, uint8_t uQpLCUGranularity);
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Checks that QP table is correctly filled
    \param[in] pQPTable Pointer to QP table
    \param[in] tDim Frame size in pixels

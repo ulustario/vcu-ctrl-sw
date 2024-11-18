@@ -6,7 +6,7 @@
 #include "lib_app/Sink.h"
 #include "lib_common/PicFormat.h"
 #include "lib_common/DisplayInfoMeta.h"
-#include <assert.h>
+#include <cassert>
 
 struct SinkFilter final : IFrameSink
 {

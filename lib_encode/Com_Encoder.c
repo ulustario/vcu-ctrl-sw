@@ -26,8 +26,6 @@
 
 #define DEBUG_PATH "."
 
-#include "lib_assert/al_assert.h"
-
 /***************************************************************************/
 static bool shouldUseDynamicLambda(AL_TEncChanParam const* pChParam)
 {
@@ -54,7 +52,7 @@ void AL_Common_Encoder_WaitReadiness(AL_TEncCtx* pCtx)
 }
 
 /***************************************************************************/
-static void RemoveSourceSent(AL_TEncCtx* pCtx, AL_TBuffer const* const pSrc)
+static void RemoveSourceSent(AL_TEncCtx* pCtx, AL_TBuffer const* pSrc)
 {
   Rtos_GetMutex(pCtx->Mutex);
 
@@ -69,7 +67,7 @@ static void RemoveSourceSent(AL_TEncCtx* pCtx, AL_TBuffer const* const pSrc)
     }
   }
 
-  AL_Assert(0);
+  Rtos_Assert(false);
   Rtos_ReleaseMutex(pCtx->Mutex);
 }
 
@@ -87,7 +85,7 @@ static void releaseSource(AL_TEncCtx* pCtx, AL_TBuffer* pSrc, AL_TFrameInfo* pFI
 static bool AL_Common_Encoder_InitBuffers(AL_TAllocator* pAllocator, TBufferEP* pBufEP1, TBufferEP* pBufEP4, AL_ECodec eCodec)
 {
   (void)pBufEP4;
-  bool bRet = MemDesc_AllocNamed(&pBufEP1->tMD, pAllocator, AL_GetAllocSizeEP1(eCodec), "ep1");
+  bool bRet = AL_MemDesc_AllocNamed(&pBufEP1->tMD, pAllocator, AL_GetAllocSizeEP1(eCodec), "ep1");
 
   pBufEP1->uFlags = 0;
   return bRet;
@@ -120,7 +118,7 @@ static bool init(AL_TEncCtx* pCtx, AL_TEncChanParam* pChParam, AL_TAllocator* pA
   Rtos_Memset(&pCtx->SourceSent, 0, sizeof(pCtx->SourceSent));
 
   pCtx->Mutex = Rtos_CreateMutex();
-  AL_Assert(pCtx->Mutex);
+  Rtos_Assert(pCtx->Mutex);
   return true;
 }
 
@@ -163,8 +161,8 @@ bool AL_Common_Encoder_PutStreamBuffer(AL_TEncCtx* pCtx, AL_TBuffer* pStream, in
     return false;
 
   AL_TStreamMetaData* pMetaData = (AL_TStreamMetaData*)AL_Buffer_GetMetaData(pStream, AL_META_TYPE_STREAM);
-  AL_Assert(pMetaData);
-  AL_Assert(pCtx);
+  Rtos_Assert(pMetaData);
+  Rtos_Assert(pCtx);
 
   AL_StreamMetaData_ClearAllSections(pMetaData);
   Rtos_GetMutex(pCtx->Mutex);
@@ -192,7 +190,7 @@ bool AL_Common_Encoder_PutStreamBuffer(AL_TEncCtx* pCtx, AL_TBuffer* pStream, in
 /***************************************************************************/
 bool AL_Common_Encoder_GetRecPicture(AL_TEncCtx* pCtx, AL_TRecPic* pRecPic, int iLayerID)
 {
-  AL_Assert(pCtx);
+  Rtos_Assert(pCtx);
 
   if(iLayerID >= MAX_NUM_LAYER)
     return false;
@@ -203,7 +201,7 @@ bool AL_Common_Encoder_GetRecPicture(AL_TEncCtx* pCtx, AL_TRecPic* pRecPic, int 
 /***************************************************************************/
 bool AL_Common_Encoder_ReleaseRecPicture(AL_TEncCtx* pCtx, AL_TRecPic* pRecPic, int iLayerID)
 {
-  AL_Assert(pCtx);
+  Rtos_Assert(pCtx);
 
   if(iLayerID >= MAX_NUM_LAYER)
     return false;
@@ -258,7 +256,7 @@ static AL_TFrameInfo* GetNextFrameInfo(AL_TFrameInfoPool* pFrameInfoPool)
 
   if(!bNextPoolIDAvailable)
   {
-    AL_Assert(bNextPoolIDAvailable);
+    Rtos_Assert(bNextPoolIDAvailable);
     return NULL;
   }
   return &pFrameInfoPool->FrameInfos[pFrameInfoPool->tIDPool.iCurID];
@@ -272,7 +270,7 @@ static void IncrCurrentRefCount(AL_THDRPool* pHDRPool)
 
 static void DecrRefCount(AL_THDRPool* pHDRPool, int iID)
 {
-  AL_Assert(iID != INVALID_POOL_ID);
+  Rtos_Assert(iID != INVALID_POOL_ID);
   pHDRPool->uRefCount[iID]--;
 
   if(pHDRPool->uRefCount[iID] == 0)
@@ -296,7 +294,7 @@ static AL_THDRSEIs* GetNextHDRSEIs(AL_THDRPool* pHDRPool)
 
   if(!bNextPoolIDAvailable)
   {
-    AL_Assert(bNextPoolIDAvailable);
+    Rtos_Assert(bNextPoolIDAvailable);
     return NULL;
   }
   pHDRPool->uRefCount[pHDRPool->tIDPool.iCurID] = 1;
@@ -325,7 +323,7 @@ static void AddSourceSent(AL_TEncCtx* pCtx, AL_TBuffer* pSrc, AL_TFrameInfo* pFI
     }
   }
 
-  AL_Assert(0);
+  Rtos_Assert(false);
   Rtos_ReleaseMutex(pCtx->Mutex);
 }
 
@@ -541,7 +539,7 @@ bool AL_Common_Encoder_Process(AL_TEncCtx* pCtx, AL_TBuffer* pFrame, AL_TBuffer*
 
   if(!bSuccess)
   {
-    AL_Assert(bSuccess);
+    Rtos_Assert(bSuccess);
     return false;
   }
 
@@ -734,22 +732,22 @@ static AL_TEncChanParam* initChannelParam(AL_TEncCtx* pCtx, AL_TEncSettings cons
 /****************************************************************************/
 void AL_Common_Encoder_SetME(int iHrzRange_P, int iVrtRange_P, int iHrzRange_B, int iVrtRange_B, AL_TEncChanParam* pChParam)
 {
-  if(pChParam->pMeRange[AL_SLICE_P][0] < 0)
-    pChParam->pMeRange[AL_SLICE_P][0] = iHrzRange_P;
+  if(pChParam->pMeRange[AL_SLICE_P][AL_MV_DIRECTION_HORIZONTAL] < 0)
+    pChParam->pMeRange[AL_SLICE_P][AL_MV_DIRECTION_HORIZONTAL] = iHrzRange_P;
 
-  if(pChParam->pMeRange[AL_SLICE_P][1] < 0)
-    pChParam->pMeRange[AL_SLICE_P][1] = iVrtRange_P;
+  if(pChParam->pMeRange[AL_SLICE_P][AL_MV_DIRECTION_VERTICAL] < 0)
+    pChParam->pMeRange[AL_SLICE_P][AL_MV_DIRECTION_VERTICAL] = iVrtRange_P;
 
-  if(pChParam->pMeRange[AL_SLICE_B][0] < 0)
-    pChParam->pMeRange[AL_SLICE_B][0] = iHrzRange_B;
+  if(pChParam->pMeRange[AL_SLICE_B][AL_MV_DIRECTION_HORIZONTAL] < 0)
+    pChParam->pMeRange[AL_SLICE_B][AL_MV_DIRECTION_HORIZONTAL] = iHrzRange_B;
 
-  if(pChParam->pMeRange[AL_SLICE_B][1] < 0)
-    pChParam->pMeRange[AL_SLICE_B][1] = iVrtRange_B;
+  if(pChParam->pMeRange[AL_SLICE_B][AL_MV_DIRECTION_VERTICAL] < 0)
+    pChParam->pMeRange[AL_SLICE_B][AL_MV_DIRECTION_VERTICAL] = iVrtRange_B;
 }
 
 static void DeinitBuffers(AL_TLayerCtx* pCtx)
 {
-  MemDesc_Free(&pCtx->tBufEP1.tMD);
+  AL_MemDesc_Free(&pCtx->tBufEP1.tMD);
 }
 
 /****************************************************************************/
@@ -902,7 +900,7 @@ AL_TEncCtx* AL_Common_Encoder_Create(AL_TAllocator* pAlloc)
 
   Rtos_Memset(pCtx, 0, sizeof(*pCtx));
 
-  if(!MemDesc_Alloc(&pCtx->tMDSettings, pAlloc, sizeof(*pCtx->pSettings)))
+  if(!AL_MemDesc_Alloc(&pCtx->tMDSettings, pAlloc, sizeof(*pCtx->pSettings)))
     goto fail;
 
   FillSettingsPointers(pCtx);
@@ -948,7 +946,7 @@ void AL_Common_Encoder_Destroy(AL_TEncCtx* pCtx)
     return;
 
   destroyChannels(pCtx);
-  MemDesc_Free(&pCtx->tMDSettings);
+  AL_MemDesc_Free(&pCtx->tMDSettings);
   Rtos_Free(pCtx);
 }
 
@@ -1466,8 +1464,8 @@ static void EndEncoding(void* pUserParam, AL_TEncPicStatus* pPicStatus, AL_64U s
   bool bFlushing = false;
 
   /* we require the stream to come back in the same order we sent them */
-  AL_Assert(streamId >= 0 && streamId < AL_MAX_STREAM_BUFFER);
-  AL_Assert(pCtx->tLayerCtx[iLayerID].iCurStreamRecv == streamId);
+  Rtos_Assert(streamId >= 0 && streamId < AL_MAX_STREAM_BUFFER);
+  Rtos_Assert(pCtx->tLayerCtx[iLayerID].iCurStreamRecv == streamId);
 
   if(!bFlushing)
     pCtx->tLayerCtx[iLayerID].iCurStreamRecv = (pCtx->tLayerCtx[iLayerID].iCurStreamRecv + 1) % AL_MAX_STREAM_BUFFER;
@@ -1484,7 +1482,7 @@ static void EndEncoding(void* pUserParam, AL_TEncPicStatus* pPicStatus, AL_64U s
   AL_TFrameInfo* pFI = &pCtx->tFrameInfoPool.FrameInfos[iPoolID];
 
   AL_TStreamMetaData* pStreamMeta = (AL_TStreamMetaData*)AL_Buffer_GetMetaData(pStream, AL_META_TYPE_STREAM);
-  AL_Assert(pStreamMeta);
+  Rtos_Assert(pStreamMeta);
   pStreamMeta->uTemporalID = pPicStatus->uTempId;
 
   if(!AL_IS_ERROR_CODE(pPicStatus->eErrorCode) || (pPicStatus->eErrorCode == AL_ERR_WATCHDOG_TIMEOUT))
@@ -1563,7 +1561,7 @@ static void EndEncoding(void* pUserParam, AL_TEncPicStatus* pPicStatus, AL_64U s
 /****************************************************************************/
 AL_ERR AL_Common_Encoder_CreateChannel(AL_TEncCtx* pCtx, AL_IEncScheduler* pScheduler, AL_TAllocator* pAlloc, AL_TEncSettings const* pSettings)
 {
-  AL_Assert(pSettings->NumLayer > 0);
+  Rtos_Assert(pSettings->NumLayer > 0);
 
   AL_ERR errorCode = AL_ERROR;
 

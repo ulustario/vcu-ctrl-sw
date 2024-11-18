@@ -8,7 +8,7 @@
 #include "lib_common/BufferAPI.h"
 #include "EncEPBuffer.h"
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Slice Buffers: Set of buffers needed to encode a slice
 *****************************************************************************/
 typedef struct t_Span
@@ -41,5 +41,5 @@ typedef struct t_SliceBuffersEnc
 
   TBufferEP Hwrc[AL_ENC_NUM_CORES]; /*!< Pointer to the HwRcCtx buffers for each core */
 
-  TCircBuffer Stream;
+  AL_TCircBuffer Stream;
 }TSliceBuffersEnc;

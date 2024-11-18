@@ -8,7 +8,7 @@
 
 #include "Patchworker.h"
 
-typedef struct al_t_UnsplitBufferFeeder
+typedef struct AL_TUnsplitBufferFeeder
 {
   AL_TFeederVtable const* vtable;
   AL_TFifo fifo;
@@ -53,7 +53,7 @@ static bool pushBuffer(AL_TFeeder* hFeeder, AL_TBuffer* pBuf, size_t uSize, bool
 
   if(!AL_Buffer_AddMetaData(pBuf, pMetaCirc))
   {
-    Rtos_Free(pMetaCirc);
+    AL_MetaData_Destroy(pMetaCirc);
     return false;
   }
 
@@ -120,7 +120,7 @@ AL_TFeeder* AL_UnsplitBufferFeeder_Create(AL_HANDLE hDec, int iMaxBufNum, AL_TAl
   if(!this)
     return NULL;
 
-  AL_Assert(eosBuffer);
+  Rtos_Assert(eosBuffer);
 
   this->vtable = &UnsplitBufferFeederVtable;
   this->eosBuffer = eosBuffer;

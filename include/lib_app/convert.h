@@ -260,6 +260,7 @@ void XV20_To_I2AL(AL_TBuffer const* pSrc, AL_TBuffer* pDst);
 void XV20_To_P210(AL_TBuffer const* pSrc, AL_TBuffer* pDst);
 
 void AYUV_To_I444(AL_TBuffer const* pSrc, AL_TBuffer* pDst);
+void AVUY_To_I444(AL_TBuffer const* pSrc, AL_TBuffer* pDst);
 void AYUV_To_NV24(AL_TBuffer const* pSrc, AL_TBuffer* pDst);
 void Y410_To_I4AL(AL_TBuffer const* pSrc, AL_TBuffer* pDst);
 void Y4AL_To_I4AL(AL_TBuffer const* pSrc, AL_TBuffer* pDst);
@@ -267,8 +268,9 @@ void Y4AM_To_I4AL(AL_TBuffer const* pSrc, AL_TBuffer* pDst);
 void Y4CL_To_I4CL(AL_TBuffer const* pSrc, AL_TBuffer* pDst);
 void Y4CM_To_I4CL(AL_TBuffer const* pSrc, AL_TBuffer* pDst);
 void UYVY_To_I422(AL_TBuffer const* pSrc, AL_TBuffer* pDst);
+void ABGR_To_I444(AL_TBuffer const* pSrc, AL_TBuffer* pDst);
 
-/**************************************************************************//*!
+/******************************************************************************
    \brief Copy pixels from a source to a destination buffer having both
    the same FourCC. Format must not be 10bit-packed, tiled, or
    compressed.
@@ -278,7 +280,7 @@ void UYVY_To_I422(AL_TBuffer const* pSrc, AL_TBuffer* pDst);
 ******************************************************************************/
 bool CopyPixMapBuffer(AL_TBuffer const* pSrc, AL_TBuffer* pDst);
 
-/**************************************************************************//*!
+/******************************************************************************
    \brief Convert data from a buffer to another.
    \param[in] pSrc Source buffer to convert
    \param[in] pDst Destination buffer with data converted from pSrc
@@ -286,6 +288,6 @@ bool CopyPixMapBuffer(AL_TBuffer const* pSrc, AL_TBuffer* pDst);
 ******************************************************************************/
 int ConvertPixMapBuffer(AL_TBuffer const* pSrc, AL_TBuffer* pDst);
 
-typedef std::function<void (AL_TBuffer const*, AL_TBuffer*)> tConvFourCCFunc;
+using tConvFourCCFunc = std::function<void(AL_TBuffer const*, AL_TBuffer*)>;
 
 tConvFourCCFunc GetConvFourCCFunc(TFourCC tInFourCC, TFourCC tOutFourCC);

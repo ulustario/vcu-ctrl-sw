@@ -87,9 +87,10 @@ bool AL_Constraint_NumTileIsSane(AL_ECodec codec, int width, int numTile, int lo
    */
 
   int tilePerFrame = numTile;
+  static int const LOG2_MIN_ENC_WIDTH = 9;
 
   int ctbSize = 1 << log2MaxCuSize;
-  int const MIN_CTB_PER_TILE = 9 - log2MaxCuSize;
+  int min_ctb_per_tile = LOG2_MIN_ENC_WIDTH - log2MaxCuSize;
   int widthPerTileInCtb = ToCtb(width / tilePerFrame, ctbSize);
 
   int offset = 0;
@@ -101,16 +102,16 @@ bool AL_Constraint_NumTileIsSane(AL_ECodec codec, int width, int numTile, int lo
   for(int tile = 0; tile < tilePerFrame; ++tile)
   {
     offset = roundedOffset;
-    int curTileMinWidthInCtb = MIN_CTB_PER_TILE * ctbSize;
+    int curTileMinWidthInCtb = min_ctb_per_tile * ctbSize;
     offset += curTileMinWidthInCtb;
     roundedOffset = RoundUp(offset, 64);
   }
 
   if(diagnostic)
   {
-    diagnostic->requiredWidthInCtbPerCore = MIN_CTB_PER_TILE;
+    diagnostic->requiredWidthInCtbPerCore = min_ctb_per_tile;
     diagnostic->actualWidthInCtbPerCore = widthPerTileInCtb;
   }
 
-  return widthPerTileInCtb >= MIN_CTB_PER_TILE && offset <= RoundUp(width, ctbSize);
+  return widthPerTileInCtb >= min_ctb_per_tile && offset <= RoundUp(width, ctbSize);
 }

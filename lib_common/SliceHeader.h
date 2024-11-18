@@ -1,11 +1,9 @@
 // SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
-/****************************************************************************
-   -----------------------------------------------------------------------------
- **************************************************************************//*!
+/******************************************************************************
    \addtogroup lib_base
-   @{
+   !@{
    \file
  *****************************************************************************/
 
@@ -29,7 +27,7 @@
 
 #define AL_MAX_REFERENCE_PICTURE_REORDER 17
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Mimics structure described in spec sec. 7.3.3
 *****************************************************************************/
 typedef struct AL_TAvcSliceHdr
@@ -66,7 +64,7 @@ typedef struct AL_TAvcSliceHdr
   AL_TWPTable pred_weight_table;
 
   // reference picture marking syntax elements
-  uint8_t memory_management_control_operation[32];
+  uint8_t memory_management_control_operation[35];
   int difference_of_pic_nums_minus1[32];
   int long_term_pic_num[32];
   int long_term_frame_idx[32];
@@ -100,7 +98,7 @@ typedef struct AL_TAvcHdrSvcExt // nal_unit_header_svc_extensiont
   uint8_t output_flag;
 }AL_TAvcHdrSvcExt;
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Mimics structure described in spec sec. 7.3.3
 *****************************************************************************/
 typedef struct AL_THevcSliceHdr
@@ -193,4 +191,4 @@ typedef struct AL_THevcSliceHdr
 
 /******************************************************************************/
 
-/*@}*/
+/*!@}*/

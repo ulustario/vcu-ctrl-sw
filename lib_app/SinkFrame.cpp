@@ -18,7 +18,7 @@ public:
       throw std::runtime_error("Invalid output file");
   }
 
-  SinkUnCompFrame(const std::string& sRecFileName, AL_EFbStorageMode eStorageMode) :
+  SinkUnCompFrame(std::string const& sRecFileName, AL_EFbStorageMode eStorageMode) :
     SinkUnCompFrame(std::shared_ptr<std::ostream>(new std::ofstream(sRecFileName.c_str(), std::ios::binary)), eStorageMode)
   {}
 
@@ -45,7 +45,7 @@ IFrameSink* createUnCompFrameSink(const std::shared_ptr<std::ostream>& recFile, 
   return new SinkUnCompFrame(recFile, eStorageMode);
 }
 
-IFrameSink* createUnCompFrameSink(const std::string& sRecFile, AL_EFbStorageMode eStorageMode)
+IFrameSink* createUnCompFrameSink(std::string const& sRecFile, AL_EFbStorageMode eStorageMode)
 {
   return new SinkUnCompFrame(sRecFile, eStorageMode);
 }

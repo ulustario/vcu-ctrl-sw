@@ -10,7 +10,6 @@
 #include "lib_common/Nuts.h"
 #include "lib_common/ScalingList.h"
 #include "lib_common_enc/PictureInfo.h"
-#include "lib_assert/al_assert.h"
 
 /******************************************************************************/
 static void writeSublayer(AL_TBitStreamLite* pBS, AL_THrdParam const* pHrd, AL_TSubHrdParam const* pSubHrd, int CpbCnt)
@@ -249,7 +248,7 @@ static void writeStRefPicSet(AL_TBitStreamLite* pBS, AL_TRefPicSet const* pRefPi
   if(iSetIdx)
     AL_BitStreamLite_PutBit(pBS, pRefPicSet->inter_ref_pic_set_prediction_flag);
 
-  AL_Assert(pRefPicSet->inter_ref_pic_set_prediction_flag == 0);
+  Rtos_Assert(pRefPicSet->inter_ref_pic_set_prediction_flag == 0);
 
   AL_BitStreamLite_PutUE(pBS, pRefPicSet->num_negative_pics);
   AL_BitStreamLite_PutUE(pBS, pRefPicSet->num_positive_pics);
@@ -286,7 +285,7 @@ static void writeVui(AL_TBitStreamLite* pBS, AL_THevcSps const* pSps, AL_TVuiPar
   }
 
   AL_BitStreamLite_PutBit(pBS, pVui->overscan_info_present_flag);
-  AL_Assert(pVui->overscan_info_present_flag == 0);
+  Rtos_Assert(pVui->overscan_info_present_flag == 0);
 
   AL_BitStreamLite_PutBit(pBS, pVui->video_signal_type_present_flag);
 
@@ -605,7 +604,7 @@ static void writePpsData(AL_TBitStreamLite* pBS, AL_THevcPps const* pPps)
 
   AL_BitStreamLite_PutBit(pBS, pPps->pps_scaling_list_data_present_flag);
 
-  AL_Assert(pPps->pps_scaling_list_data_present_flag == 0);
+  Rtos_Assert(pPps->pps_scaling_list_data_present_flag == 0);
 
   AL_BitStreamLite_PutBit(pBS, pPps->lists_modification_present_flag);
   AL_BitStreamLite_PutUE(pBS, pPps->log2_parallel_merge_level_minus2);

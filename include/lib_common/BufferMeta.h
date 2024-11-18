@@ -1,16 +1,16 @@
 // SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
-/**************************************************************************//*!
+/******************************************************************************
    \addtogroup Buffers
-   @{
+   !@{
    \file
  *****************************************************************************/
 #pragma once
 
 #include "lib_rtos/types.h"
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Tag identifying the metadata structure
 *****************************************************************************/
 typedef enum AL_EMetaType
@@ -36,7 +36,7 @@ typedef struct AL_TMetaData AL_TMetaData;
 typedef bool (* AL_FCN_MetaDestroy) (AL_TMetaData* pMeta);
 typedef AL_TMetaData* (* AL_FCN_MetaClone) (AL_TMetaData* pMeta);
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Metadatas are used to add useful information to a buffer. The user
    can also define his own metadata type and bind it to the buffer.
 *****************************************************************************/
@@ -57,4 +57,4 @@ static inline bool AL_MetaData_Destroy(AL_TMetaData* pMeta)
   return pMeta->MetaDestroy(pMeta);
 }
 
-/*@}*/
+/*!@}*/

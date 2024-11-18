@@ -6,7 +6,7 @@
 #include "lib_common_dec/DecHwScalingList.h"
 
 /*****************************************************************************/
-void AL_HEVC_InitHWFrameBuffers(AL_TScl const* pSclLst, AL_TDecPicBuffers* pBufs)
+void AL_HEVC_InitHWFrameBuffers(AL_TScl const* pSclLst, AL_TDecBuffers* pBufs)
 {
   AL_HEVC_WriteDecHwScalingList(pSclLst, pBufs->tScl.tMD.pVirtualAddr);
 }
@@ -53,7 +53,7 @@ static void AL_HEVC_WriteWeightedPredCoeff(uint16_t uSliceIndex, AL_THevcSliceHd
 }
 
 /*****************************************************************************/
-void AL_HEVC_InitHWSliceBuffers(uint16_t uSliceIndex, AL_THevcSliceHdr const* pSlice, AL_TDecPicBuffers* pBufs)
+void AL_HEVC_InitHWSliceBuffers(uint16_t uSliceIndex, AL_THevcSliceHdr const* pSlice, AL_TDecBuffers* pBufs)
 {
   AL_HEVC_WriteWeightedPredCoeff(uSliceIndex, pSlice, &pBufs->tWP);
 }

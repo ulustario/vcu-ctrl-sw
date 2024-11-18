@@ -1,16 +1,16 @@
 // SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
-/**************************************************************************//*!
+/******************************************************************************
    \addtogroup Buffers
-   @{
+   !@{
    \file
  *****************************************************************************/
 
 #pragma once
 
 #include "lib_rtos/types.h"
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Colour Description identifier (See ISO/IEC 23091-4 or ITU-T H.273)
 *****************************************************************************/
 typedef enum AL_EColourDescription
@@ -31,7 +31,7 @@ typedef enum AL_EColourDescription
   AL_COLOUR_DESC_MAX_ENUM,
 }AL_EColourDescription;
 
-/************************************//*!
+/****************************************
    \brief Transfer Function identifier
 ****************************************/
 typedef enum AL_ETransferCharacteristics
@@ -56,7 +56,7 @@ typedef enum AL_ETransferCharacteristics
   AL_TRANSFER_CHARAC_MAX_ENUM,
 }AL_ETransferCharacteristics;
 
-/*******************************************************************************//*!
+/***********************************************************************************
    \brief Matrix coefficient identifier used for luma/chroma computation from RGB
 ***********************************************************************************/
 typedef enum AL_EColourMatrixCoefficients
@@ -78,7 +78,7 @@ typedef enum AL_EColourMatrixCoefficients
   AL_COLOUR_MAT_COEFF_MAX_ENUM,
 }AL_EColourMatrixCoefficients;
 
-/*******************************************************************************//*!
+/***********************************************************************************
    \brief Normalized x and y chromaticity coordinates
 ***********************************************************************************/
 typedef struct AL_TChromaCoordinates
@@ -87,7 +87,7 @@ typedef struct AL_TChromaCoordinates
   uint16_t y;
 }AL_TChromaCoordinates;
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Mimics structure for mastering display colour volume
 *****************************************************************************/
 typedef struct AL_TMasteringDisplayColourVolume
@@ -106,7 +106,7 @@ typedef struct AL_TMasteringDisplayColourVolume
   uint32_t min_display_mastering_luminance;
 }AL_TMasteringDisplayColourVolume;
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Mimics structure for content light level information
 *****************************************************************************/
 typedef struct AL_TContentLightLevel
@@ -115,7 +115,7 @@ typedef struct AL_TContentLightLevel
   uint16_t max_pic_average_light_level;
 }AL_TContentLightLevel;
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Mimics structure for alternative transfer characteristic information
 *****************************************************************************/
 typedef struct AL_TAlternativeTransferCharacteristics
@@ -123,7 +123,7 @@ typedef struct AL_TAlternativeTransferCharacteristics
   AL_ETransferCharacteristics preferred_transfer_characteristics;
 }AL_TAlternativeTransferCharacteristics;
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Mimics structure for dynamic metadata for color volume transform specified
    in SMPTE ST 2094-10 and carried under the ETSI TS 103 572 V1.1.1 specification
 *****************************************************************************/
@@ -165,7 +165,7 @@ typedef struct AL_TDynamicMeta_ST2094_10
   AL_TManualAdjustment_ST2094_10 manual_adjustments[AL_MAX_MANUAL_ADJUSTMENT_ST2094_10];
 }AL_TDynamicMeta_ST2094_10;
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Mimics structure for dynamic metadata for color volume transform specified
    in SMPTE ST 2094-40 and carried under CTA-861 interface
 *****************************************************************************/
@@ -242,7 +242,7 @@ typedef struct AL_TDynamicMeta_ST2094_40
   AL_TProcessingWindowTransform_ST2094_40 processing_window_transforms[AL_MAX_WINDOW_ST2094_40];
 }AL_TDynamicMeta_ST2094_40;
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Mimics structure containing HDR Related SEIs
 *****************************************************************************/
 typedef struct AL_THDRSEIs
@@ -263,17 +263,17 @@ typedef struct AL_THDRSEIs
   AL_TDynamicMeta_ST2094_40 tST2094_40;
 }AL_THDRSEIs;
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Initialize HDR SEIs structure
    \param[in] pHDRSEIs Pointer to the HDR SEIs
 *****************************************************************************/
 void AL_HDRSEIs_Reset(AL_THDRSEIs* pHDRSEIs);
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Copy HDR SEIs
    \param[in] pHDRSEIsSrc Pointer to the source HDR SEIs
    \param[out] pHDRSEIsDst Pointer to the destination HDR SEIs
 *****************************************************************************/
 void AL_HDRSEIs_Copy(AL_THDRSEIs* pHDRSEIsSrc, AL_THDRSEIs* pHDRSEIsDst);
 
-/*@}*/
+/*!@}*/

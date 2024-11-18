@@ -60,7 +60,6 @@ extern "C" {
 #include "SinkYuvCrc.h"
 #include "SinkYuvMd5.h"
 #include "HDRWriter.h"
-#include "lib_conv_yuv/lib_conv_yuv.h"
 
 using namespace std;
 
@@ -780,7 +779,7 @@ AL_ERR DecoderContext::SetupBaseDecoderPool(int iBufferNumber, AL_TStreamSetting
   // ----------------------------------
   for(int i = 0; i < iNumBuf; ++i)
   {
-    auto pDecPict = tBaseBufPool.GetSharedBuffer(AL_BUF_MODE_NONBLOCK);
+    auto pDecPict = tBaseBufPool.GetSharedBuffer(AL_EBufMode::AL_BUF_MODE_NONBLOCK);
 
     if(!pDecPict)
       throw runtime_error("pDecPict is null");
@@ -860,16 +859,6 @@ void DisplayManager::ProcessFrame(AL_TBuffer& tRecBuf, AL_TInfoDecode info, int 
   tCrop = info.tCrop;
   AL_TPosition tPos = { 0, 0 };
 
-  if(info.tPos.iX || info.tPos.iY)
-  {
-    tPos = info.tPos;
-    tCrop.bCropping = true;
-    tCrop.uCropOffsetLeft += info.tPos.iX;
-    tCrop.uCropOffsetRight -= info.tPos.iX;
-    tCrop.uCropOffsetTop += info.tPos.iY;
-    tCrop.uCropOffsetBottom -= info.tPos.iY;
-  }
-
   TFourCC tFourCCRecBuf = AL_PixMapBuffer_GetFourCC(&tRecBuf);
   AL_TPicFormat tRecPicFormat;
   AL_GetPicFormat(tFourCCRecBuf, &tRecPicFormat);
@@ -906,6 +895,11 @@ void DisplayManager::ProcessFrame(AL_TBuffer& tRecBuf, AL_TInfoDecode info, int 
   bool bCompress = AL_IsCompressed(tFourCCRecBuf);
   bool bConvert = !bCompress && tFourCCOut != tFourCCRecBuf;
 
+  AL_TDisplayInfoMetaData* pMeta = reinterpret_cast<AL_TDisplayInfoMetaData*>(AL_Buffer_GetMetaData(&tRecBuf, AL_META_TYPE_DISPLAY_INFO));
+
+  if(pMeta)
+    pMeta->tCrop = tCrop;
+
   if(bConvert)
   {
     if(tInputFourCC != tFourCCOut && bNewInputFourCCFound)
@@ -927,11 +921,6 @@ void DisplayManager::ProcessFrame(AL_TBuffer& tRecBuf, AL_TInfoDecode info, int 
   }
   else
   {
-    AL_TDisplayInfoMetaData* pMeta = reinterpret_cast<AL_TDisplayInfoMetaData*>(AL_Buffer_GetMetaData(&tRecBuf, AL_META_TYPE_DISPLAY_INFO));
-
-    if(pMeta)
-      pMeta->tCrop = tCrop;
-
     multisinkOut->ProcessFrame(&tRecBuf);
   }
 
@@ -1409,7 +1398,7 @@ void SafeRunChannelMain(WorkerConfig& w)
 
   std::shared_ptr<CIpDevice> pIpDevice = nullptr;
 
-  if(config.iSchedulerType == AL_SCHEDULER_TYPE_MCU)
+  if(config.eSchedulerType == AL_ESchedulerType::AL_SCHEDULER_TYPE_MCU)
   {
     pIpDevice = std::dynamic_pointer_cast<CIpDevice>(w.devices->at(DEVICE_BASE_DECODER));
 
@@ -1456,7 +1445,7 @@ void SafeRunChannelMain(WorkerConfig& w)
   if(config.UseBaseDecoder())
   {
     auto hDec = tDecCtx.GetBaseDecoderHandle();
-    AL_Decoder_SetParam(hDec, w.useBoards->at(DEVICE_BASE_DECODER) ? "Fpga" : "Ref", config.iTraceIdx, config.iTraceNumber, config.bForceCleanBuffers, config.ipCtrlMode == AL_IPCTRL_MODE_TRACE);
+    AL_Decoder_SetParam(hDec, w.useBoards->at(DEVICE_BASE_DECODER) ? "Fpga" : "Ref", config.iTraceIdx, config.iTraceNumber, config.ipCtrlMode == AL_EIpCtrlMode::AL_IPCTRL_MODE_TRACE);
   }
 
   // Parametrization of the lcevc decoder for traces
@@ -1535,7 +1524,7 @@ void SafeRunChannelMain(WorkerConfig& w)
   if(AL_IS_ERROR_CODE(eErr) || (AL_IS_WARNING_CODE(eErr) && config.eExitCondition == DEC_WARNING))
   {
 
-    if((config.iSchedulerType == AL_SCHEDULER_TYPE_MCU) && config.bSelectDeviceWithLowestAvailableResources)
+    if((config.eSchedulerType == AL_ESchedulerType::AL_SCHEDULER_TYPE_MCU) && config.bSelectDeviceWithLowestAvailableResources)
     {
       bFindNextDevice = pIpDevice->HandleDeviceFailure();
 
@@ -1550,6 +1539,9 @@ void SafeRunChannelMain(WorkerConfig& w)
 // Part of the ugly goto, need to be removed
   if(!bShouldUseGoto)
   {
+
+  if(AL_IS_WARNING_CODE(eErr))
+    cerr << endl << "Warning: " << AL_Codec_ErrorToString(eErr) << endl;
 
   if(!tDecCtx.GetNumDecodedFrames())
     throw runtime_error("No frame decoded");
@@ -1569,8 +1561,8 @@ static std::shared_ptr<CIpDevice> CreateAndConfigureBaseDecoderIpDevice(Config c
 {
   CIpDeviceParam param;
 
-  param.iSchedulerType = pConfig->iSchedulerType;
-  param.iDeviceType = pConfig->iDeviceType;
+  param.eSchedulerType = pConfig->eSchedulerType;
+  param.eDeviceType = pConfig->eDeviceType;
   param.bTrackDma = pConfig->trackDma;
   param.uNumCore = pConfig->tDecSettings.uNumCore;
   param.iHangers = pConfig->hangers;
@@ -1579,7 +1571,7 @@ static std::shared_ptr<CIpDevice> CreateAndConfigureBaseDecoderIpDevice(Config c
   static std::set<std::string> decDevicePath = pConfig->sDecDevicePath;
   param.bSelectDeviceWithLowestAvailableResources = pConfig->bSelectDeviceWithLowestAvailableResources;
 
-  std::shared_ptr<CIpDevice> pIpDevice = std::shared_ptr<CIpDevice>(new CIpDevice(param, pConfig->iDeviceType, { decDevicePath }));
+  std::shared_ptr<CIpDevice> pIpDevice = std::shared_ptr<CIpDevice>(new CIpDevice(param, pConfig->eDeviceType, { decDevicePath }));
 
   if(!pIpDevice)
     throw runtime_error("Can't create BaseDecoderIpDevice");
@@ -1717,7 +1709,7 @@ void SafeMain(int argc, char** argv)
   if(config.UseBaseDecoder())
   {
     devices.insert({ DEVICE_BASE_DECODER, CreateAndConfigureBaseDecoderIpDevice(&config) });
-    useBoards.insert({ DEVICE_BASE_DECODER, (config.iDeviceType == AL_DEVICE_TYPE_BOARD) });
+    useBoards.insert({ DEVICE_BASE_DECODER, (config.eDeviceType == AL_EDeviceType::AL_DEVICE_TYPE_BOARD) });
   }
 
   // Run all the channels

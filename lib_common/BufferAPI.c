@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: MIT
 
 #include "lib_common/BufferAPIInternal.h"
-#include "lib_assert/al_assert.h"
 #include "lib_common/BufCommon.h"
 
 #define AL_BUFFER_META_ALLOC_COUNT 4
@@ -10,7 +9,7 @@
 #define AL_BUFFER_USER_META_MAX_COUNT 20
 #define AL_BUFFER_META_MAX_COUNT (AL_META_TYPE_MAX + AL_BUFFER_USER_META_MAX_COUNT)
 
-typedef struct al_t_BufferImpl
+typedef struct AL_TBufferImpl
 {
   AL_TBuffer buf;
   AL_MUTEX pLock;
@@ -205,7 +204,7 @@ void AL_Buffer_Destroy(AL_TBuffer* hBuf)
   AL_TBufferImpl* pBuf = (AL_TBufferImpl*)hBuf;
   Rtos_GetMutex(pBuf->pLock);
 
-  AL_Assert(pBuf->iRefCount == 0);
+  Rtos_Assert(pBuf->iRefCount == 0);
 
   if(pBuf->pMeta)
   {
@@ -260,7 +259,7 @@ void AL_Buffer_Unref(AL_TBuffer* hBuf)
   AL_TBufferImpl* pBuf = (AL_TBufferImpl*)hBuf;
 
   int32_t iRefCount = Rtos_AtomicDecrement(&pBuf->iRefCount);
-  AL_Assert(iRefCount >= 0);
+  Rtos_Assert(iRefCount >= 0);
 
   if(iRefCount > 0)
     return;
@@ -340,7 +339,7 @@ bool AL_Buffer_AddMetaData(AL_TBuffer* hBuf, AL_TMetaData* pMeta)
     pBuf->iAllocatedMetaCount += AL_BUFFER_META_ALLOC_COUNT;
     pBuf->pMeta = pNewBuffer;
 
-    AL_Assert(pBuf->iAllocatedMetaCount < AL_BUFFER_META_MAX_COUNT);
+    Rtos_Assert(pBuf->iAllocatedMetaCount < AL_BUFFER_META_MAX_COUNT);
   }
 
   pBuf->pMeta[pBuf->iMetaCount] = pMeta;

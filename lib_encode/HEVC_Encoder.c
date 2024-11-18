@@ -85,7 +85,7 @@ static void generateNals(AL_TEncCtx* pCtx, int iLayerID, bool bWriteVps)
 {
   AL_TEncChanParam* pChParam = &pCtx->pSettings->tChParam[iLayerID];
 
-  uint32_t uCpbBitSize = (uint32_t)((uint64_t)pChParam->tRCParam.uCPBSize * (uint64_t)pChParam->tRCParam.uMaxBitRate / 90000LL);
+  uint32_t uCpbBitSize = (uint32_t)((AL_64U)pChParam->tRCParam.uCPBSize * (AL_64U)pChParam->tRCParam.uMaxBitRate / 90000uLL);
   AL_HEVC_GenerateSPS(&pCtx->tLayerCtx[iLayerID].sps, pCtx->pSettings, pChParam, pCtx->iMaxNumRef, uCpbBitSize, iLayerID);
   AL_HEVC_GeneratePPS(&pCtx->tLayerCtx[iLayerID].pps, pCtx->pSettings, pChParam, pCtx->iMaxNumRef, iLayerID);
 

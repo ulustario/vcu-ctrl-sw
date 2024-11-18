@@ -1,11 +1,11 @@
 // SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
-/**************************************************************************//*!
+/******************************************************************************
    \defgroup Encoder_Settings Settings
    \ingroup Encoder
 
-   @{
+   !@{
    \file
 ******************************************************************************/
 #pragma once
@@ -17,7 +17,7 @@
 #include "EncChanParam.h"
 #include "lib_common/HDR.h"
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Aspect Ratio identifier
 *****************************************************************************/
 typedef enum AL_EAspectRatio
@@ -30,7 +30,7 @@ typedef enum AL_EAspectRatio
   AL_ASPECT_RATIO_MAX_ENUM, /* sentinel */
 }AL_EAspectRatio;
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief QP Control Mode
 *****************************************************************************/
 typedef enum AL_EQpCtrlMode
@@ -46,7 +46,7 @@ static inline bool AL_IS_AUTO_OR_ADAPTIVE_QP_CTRL(AL_EQpCtrlMode eMode)
   return (eMode == AL_QP_CTRL_AUTO) || (eMode == AL_QP_CTRL_ADAPTIVE_AUTO);
 }
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief QP Table Mode
 *****************************************************************************/
 typedef enum AL_EQpTableMode
@@ -62,7 +62,7 @@ static inline bool AL_IS_QP_TABLE_REQUIRED(AL_EQpTableMode eMode)
   return (eMode == AL_QP_TABLE_RELATIVE) || (eMode == AL_QP_TABLE_ABSOLUTE);
 }
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Scaling List identifier
 *****************************************************************************/
 typedef enum AL_EScalingList
@@ -80,7 +80,7 @@ typedef struct AL_TColorConfig
   AL_EColourMatrixCoefficients eColourMatrixCoeffs; /*!< Specifies the matrix coefficients used in deriving luma and chroma signals from RGB */
 }AL_TColorConfig;
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Encoder Parameters
 *****************************************************************************/
 typedef AL_INTROSPECT (category = "debug") struct AL_TEncSettings
@@ -117,7 +117,7 @@ typedef AL_INTROSPECT (category = "debug") struct AL_TEncSettings
   bool bDiagnostic; /*!< Additional checks meant for debugging. Not to be used on default usecase. */
 }AL_TEncSettings;
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Retrieves the default settings
    \param[out] pSettings Pointer to TEncSettings structure that receives
    default Settings.
@@ -128,7 +128,7 @@ void AL_Settings_SetDefaultParam(AL_TEncSettings* pSettings);
 
 void AL_Settings_SetDefaultRCParam(AL_TRCParam* pRCParam);
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Checks that all encoding parameters are valids
    \param[in] pSettings Pointer to TEncSettings to be checked
    \param[in] pChParam Pointer to the channel parameters to be checked
@@ -141,7 +141,7 @@ void AL_Settings_SetDefaultRCParam(AL_TRCParam* pRCParam);
 *****************************************************************************/
 int AL_Settings_CheckValidity(AL_TEncSettings* pSettings, AL_TEncChanParam* pChParam, FILE* pOut);
 
-/**************************************************************************//*!
+/******************************************************************************
    \brief Checks that encoding parameters are coherent between them.
    When incoherent parameter are found, the function automatically correct them.
    \param[in] pSettings Pointer to TEncSettings to be checked
@@ -157,4 +157,4 @@ int AL_Settings_CheckValidity(AL_TEncSettings* pSettings, AL_TEncChanParam* pChP
  *****************************************************************************/
 int AL_Settings_CheckCoherency(AL_TEncSettings* pSettings, AL_TEncChanParam* pChParam, TFourCC tFourCC, FILE* pOut);
 
-/*@}*/
+/*!@}*/

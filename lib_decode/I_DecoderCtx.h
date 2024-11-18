@@ -1,11 +1,9 @@
 // SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
-/****************************************************************************
-   -----------------------------------------------------------------------------
- **************************************************************************//*!
+/******************************************************************************
    \addtogroup lib_decode_hls
-   @{
+   !@{
    \file
  *****************************************************************************/
 
@@ -23,6 +21,7 @@
 #include "lib_decode/I_DecScheduler.h"
 #include "lib_decode/DecoderFrameCtx.h"
 #include "lib_decode/lib_decode.h"
+#include "lib_decode/SearchDecUnit.h"
 
 typedef enum
 {
@@ -78,7 +77,7 @@ typedef struct
   TBuffer ScdBufOut;
 }AL_TDecScdBuffers;
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Decoder Context structure
 *****************************************************************************/
 struct AL_TDecCtx
@@ -87,8 +86,8 @@ struct AL_TDecCtx
   AL_EDecInputMode eInputMode;
 
   TBuffer BufNoAE;            // Deanti-Emulated buffer used for high level syntax parsing
-  TCircBuffer Stream;             // Input stream buffer
-  TCircBuffer NalStream;
+  AL_TCircBuffer Stream;             // Input stream buffer
+  AL_TCircBuffer NalStream;
   AL_TBuffer* pInputBuffer;     // keep a reference to input buffer and its meta data
 
   // decoder IP handle
@@ -108,11 +107,11 @@ struct AL_TDecCtx
 
   // Start code members
   TBuffer BufSCD;             // Holds the Start Code Detector Table results
-  TBuffer SCTable;            //
-  uint16_t uNumSC;             //
   AL_TScStatus ScdStatus;
+  TBuffer SCTable;
+  AL_TDecUnitSearchCtx SearchCtx;
 
-  AL_TDecPicBufferAddrs BufAddrs;
+  AL_TDecBufferAddrs BufAddrs;
   // decoder pool buffer
   TBuffer PoolSclLst[AL_DEC_SW_MAX_STACK_SIZE];      // Scaling List pool buffer
   TBuffer PoolCompData[AL_DEC_SW_MAX_STACK_SIZE];    // compressed MVDs + header + residuals pool buffer
@@ -126,7 +125,7 @@ struct AL_TDecCtx
   // slice toggle management
   TBuffer PoolSP[AL_DEC_SW_MAX_STACK_SIZE]; // Slice parameters
   AL_TDecPicParam PoolPP[AL_DEC_SW_MAX_STACK_SIZE]; // Picture parameters
-  AL_TDecPicBuffers PoolPB[AL_DEC_SW_MAX_STACK_SIZE]; // Picture Buffers
+  AL_TDecBuffers PoolPB[AL_DEC_SW_MAX_STACK_SIZE]; // Picture Buffers
   uint8_t uCurID; // ID of the last independent slice
 
   AL_TDecChanParam* pChanParam;
@@ -196,10 +195,10 @@ struct AL_TDecCtx
 
   AL_TPosition tOutputPosition;
 
-  TMemDesc tMDChanParam;
+  AL_TMemDesc tMDChanParam;
   AL_NalParser parser;
 };
 
 /****************************************************************************/
 
-/*@}*/
+/*!@}*/

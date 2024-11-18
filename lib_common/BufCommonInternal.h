@@ -7,31 +7,30 @@
 #include "lib_common/BufCommon.h"
 #include "lib_common/BufConst.h"
 #include "lib_common/MemDesc.h"
-#include "lib_assert/al_assert.h"
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Generic Buffer
 *****************************************************************************/
 typedef struct TBuffer
 {
-  TMemDesc tMD; /*!< Memory descriptor associated to the buffer */
+  AL_TMemDesc tMD; /*!< Memory descriptor associated to the buffer */
 }TBuffer;
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Buffer with Motion Vectors content
 *****************************************************************************/
 typedef TBuffer TBufferMV;
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Circular Buffer
 *****************************************************************************/
-typedef struct t_CircBuffer
+typedef struct AL_TCircBuffer
 {
-  TMemDesc tMD; /*!< Memory descriptor associated to the buffer */
+  AL_TMemDesc tMD; /*!< Memory descriptor associated to the buffer */
 
   int32_t iOffset; /*!< Initial Offset in Circular Buffer */
   int32_t iAvailSize; /*!< Avail Space in Circular Buffer */
-}TCircBuffer;
+}AL_TCircBuffer;
 
 static inline void CircBuffer_ConsumeUpToOffset(AL_TBuffer* stream, int32_t iNewOffset)
 {
@@ -43,10 +42,10 @@ static inline void CircBuffer_ConsumeUpToOffset(AL_TBuffer* stream, int32_t iNew
     pCircMeta->iAvailSize -= iNewOffset - pCircMeta->iOffset;
   pCircMeta->iOffset = iNewOffset;
 
-  AL_Assert(pCircMeta->iAvailSize >= 0);
+  Rtos_Assert(pCircMeta->iAvailSize >= 0);
 }
 
-static inline void CircBuffer_Init(TCircBuffer* pBuf)
+static inline void CircBuffer_Init(AL_TCircBuffer* pBuf)
 {
   pBuf->iOffset = 0;
   pBuf->iAvailSize = 0;

@@ -1,11 +1,9 @@
 // SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
-/****************************************************************************
-   -----------------------------------------------------------------------------
- **************************************************************************//*!
+/******************************************************************************
    \addtogroup lib_base
-   @{
+   !@{
    \file
  *****************************************************************************/
 #pragma once
@@ -25,10 +23,10 @@
 #define AL_AVC_MAX_PPS 256
 #define AL_AVC_MAX_REF_IDX 15
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Mimics structure described in spec sec. 7.3.2.2.
 *****************************************************************************/
-typedef struct t_Avc_Pps
+typedef struct AL_TAvcPps
 {
   uint8_t pic_parameter_set_id;
   uint8_t seq_parameter_set_id;
@@ -36,14 +34,6 @@ typedef struct t_Avc_Pps
   uint8_t bottom_field_pic_order_in_frame_present_flag;
 
   int num_slice_groups_minus1;
-  uint8_t slice_group_map_type;
-  uint16_t run_length_minus1[8]; // num_slice_groups_minus1 range 0 to 7 inclusive
-  uint16_t top_left[8]; // num_slice_groups_minus1 range 0 to 7 inclusive
-  uint16_t bottom_right[8]; // num_slice_groups_minus1 range 0 to 7 inclusive
-  uint8_t slice_group_change_direction_flag;
-  uint16_t slice_group_change_rate_minus1;
-  uint16_t pic_size_in_map_units_minus1;
-  int slice_group_id[8160]; // the max of pic_size_in_map_units in Full-HD is 8160(120*68)
 
   uint8_t num_ref_idx_l0_active_minus1;
   uint8_t num_ref_idx_l1_active_minus1;
@@ -79,10 +69,10 @@ typedef struct t_Avc_Pps
 #define AL_HEVC_MAX_PPS 64
 #define AL_HEVC_MAX_REF_IDX 14
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Mimics structure described in spec sec. 7.3.2.3.
 *****************************************************************************/
-typedef struct t_Hevc_Pps
+typedef struct AL_THevcPps
 {
   uint8_t pps_pic_parameter_set_id;
   uint8_t pps_seq_parameter_set_id;
@@ -167,7 +157,7 @@ typedef struct t_Hevc_Pps
 }AL_THevcPps;
 
 /****************************************************************************/
-typedef union
+typedef union AL_TPps
 {
   AL_TAvcPps AvcPPS;
   AL_THevcPps HevcPPS;
@@ -175,4 +165,4 @@ typedef union
 
 /****************************************************************************/
 
-/*@}*/
+/*!@}*/

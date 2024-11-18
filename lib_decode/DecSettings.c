@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: MIT
 
 #include "lib_rtos/lib_rtos.h"
-#include "lib_assert/al_assert.h"
 #include "lib_decode/DecSettingsInternal.h"
 #include "lib_common_dec/StreamSettingsInternal.h"
 #include "lib_common_dec/DecHardwareConfig.h"
@@ -17,7 +16,7 @@
 /***************************************************************************/
 void AL_DecSettings_SetDefaults(AL_TDecSettings* pSettings)
 {
-  AL_Assert(pSettings);
+  Rtos_Assert(pSettings);
   Rtos_Memset(pSettings, 0, sizeof(*pSettings));
 
   pSettings->iStackSize = 2;
@@ -46,7 +45,7 @@ void AL_DecSettings_SetDefaults(AL_TDecSettings* pSettings)
 /***************************************************************************/
 int AL_DecSettings_CheckValidity(AL_TDecSettings const* pSettings, FILE* pOut)
 {
-  AL_Assert(pSettings);
+  Rtos_Assert(pSettings);
 
   int err = 0;
 
@@ -116,7 +115,7 @@ int AL_DecSettings_CheckValidity(AL_TDecSettings const* pSettings, FILE* pOut)
 /***************************************************************************/
 int AL_DecSettings_CheckCoherency(AL_TDecSettings* pSettings, FILE* pOut)
 {
-  AL_Assert(pSettings);
+  Rtos_Assert(pSettings);
 
   int numIncoherency = 0;
 
@@ -170,7 +169,7 @@ int GetAlignedStreamBufferSize(int iStreamBufferSize)
 
 int AL_DecOutputSettings_CheckValidity(AL_TDecOutputSettings const* pDecOutSettings, AL_ECodec eCodec, FILE* pOut)
 {
-  AL_Assert(pDecOutSettings);
+  Rtos_Assert(pDecOutSettings);
   (void)eCodec;
   (void)pOut;
   int err = 0;

@@ -71,7 +71,7 @@ static void AL_AVC_spread_weight_table(AL_TRbspParser* pRP, AL_TAvcSliceHdr* pSl
     AL_AVC_sReadWPCoeff(pRP, pSlice, 1);
 }
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief the ref_pic_list_modification function parses the reordering syntax elements from a Slice Header NAL
    \param[in]  pRP             Pointer to NAL buffer
    \param[out] pSlice          Pointer to the slice header structure that will be filled

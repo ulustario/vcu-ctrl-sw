@@ -1,9 +1,9 @@
 // SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
-/**************************************************************************//*!
+/******************************************************************************
    \addtogroup Buffers
-   @{
+   !@{
    \file
  *****************************************************************************/
 
@@ -12,7 +12,7 @@
 #include "lib_common/SliceConsts.h"
 #include "lib_common/PixMapBuffer.h"
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Reconstructed picture information
 *****************************************************************************/
 typedef struct AL_TReconstructedInfo
@@ -29,4 +29,4 @@ typedef struct AL_TRecPic
   AL_TReconstructedInfo tInfo;
 }AL_TRecPic;
 
-/*@}*/
+/*!@}*/

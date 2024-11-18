@@ -4,6 +4,7 @@
 #pragma once
 
 #include "exe_encoder/CfgParser.h"
+#include "lib_app/utils.h"
 
 #include <string>
 
@@ -20,8 +21,8 @@ typedef struct AL_TIpCtrl AL_TIpCtrl;
 /*****************************************************************************/
 struct CIpDeviceParam
 {
-  int iDeviceType;
-  int iSchedulerType;
+  AL_EDeviceType eDeviceType;
+  AL_ESchedulerType eSchedulerType;
   ConfigFile* pCfgFile;
   bool bTrackDma = false;
 };

@@ -1,11 +1,9 @@
 // SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
-/****************************************************************************
-   -----------------------------------------------------------------------------
- **************************************************************************//*!
+/******************************************************************************
    \addtogroup lib_bitstream
-   @{
+   !@{
  *****************************************************************************/
 
 #include "HEVC_SkippedPict.h"
@@ -13,9 +11,6 @@
 #include "Cabac.h"
 
 #include "lib_common/Utils.h"
-#include "lib_assert/al_assert.h"
-
-/****************************************************************************/
 
 /****************************************************************************/
 static unsigned int AL_sHEVC_WriteSkippedCU(AL_TBitStreamLite* pBS, AL_TCabacCtx* pCtx, uint8_t* pState, uint8_t* pValMPS, int iAvailA, int iAvailB, int iSplit)
@@ -255,7 +250,7 @@ bool AL_HEVC_GenerateSkippedPicture(AL_TSkippedPicture* pSkipPict, int iWidth, i
       iBinsCount = AL_sHEVC_GenerateSkippedTileCabac(&BS, bLastTile, iTileWidth, iTileHeight, uLog2MaxCuSize, uMinCuSize, uTileNumLCU);
 
       int iBitsCount = AL_BitStreamLite_GetBitsCount(&BS) + BytesToBits(AddAntiEmulSizeInBytes(&BS));
-      AL_Assert(((iBitsCount - iPrevBitsCount) % 8) == 0);
+      Rtos_Assert(((iBitsCount - iPrevBitsCount) % 8) == 0);
       pSkipPict->uTileSizes[iTile++] = BitsToBytes(iBitsCount - iPrevBitsCount);
       iPrevBitsCount = iBitsCount;
 
@@ -281,4 +276,4 @@ bool AL_HEVC_GenerateSkippedPicture(AL_TSkippedPicture* pSkipPict, int iWidth, i
 }
 
 /******************************************************************************/
-/*@}*/
+/*!@}*/

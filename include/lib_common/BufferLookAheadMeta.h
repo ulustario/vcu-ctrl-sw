@@ -1,9 +1,9 @@
 // SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
-/**************************************************************************//*!
+/******************************************************************************
    \addtogroup Buffers
-   @{
+   !@{
    \file
  *****************************************************************************/
 
@@ -11,7 +11,7 @@
 
 #include "lib_common/BufferMeta.h"
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Scene change enum
 *****************************************************************************/
 typedef enum AL_ESceneChangeType
@@ -22,7 +22,7 @@ typedef enum AL_ESceneChangeType
   AL_SC_MAX_ENUM,
 }AL_ESceneChangeType;
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Structure used in LookAhead and Twopass, to transmits frame
     information between the two pass
 *****************************************************************************/
@@ -37,7 +37,7 @@ typedef struct AL_TLookAheadMetaData
   int32_t iTargetLevel;     /*!< current frame target CPB level */
 }AL_TLookAheadMetaData;
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Create a look ahead metadata.
    The parameters are initialized to an invalid value (-1) by default.
 *****************************************************************************/
@@ -46,4 +46,4 @@ AL_TLookAheadMetaData* AL_LookAheadMetaData_Clone(AL_TLookAheadMetaData* pMeta);
 void AL_LookAheadMetaData_Copy(AL_TLookAheadMetaData* pMetaSrc, AL_TLookAheadMetaData* pMetaDest);
 void AL_LookAheadMetaData_Reset(AL_TLookAheadMetaData* pMeta);
 
-/*@}*/
+/*!@}*/

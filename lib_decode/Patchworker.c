@@ -3,7 +3,6 @@
 
 #include "Patchworker.h"
 #include "lib_common/Utils.h"
-#include "lib_assert/al_assert.h"
 
 static int32_t GetBufferOffset(AL_TCircMetaData* pMeta)
 {
@@ -136,7 +135,7 @@ bool AL_Patchworker_Init(AL_TPatchworker* this, AL_TBuffer* stream, AL_TFifo* pI
 
   if(!AL_Buffer_AddMetaData(this->outputCirc, pMeta))
   {
-    Rtos_Free(pMeta);
+    AL_MetaData_Destroy(pMeta);
     goto cleanup;
   }
   return true;
@@ -165,7 +164,7 @@ void AL_Patchworker_Deinit(AL_TPatchworker* this)
 
 size_t AL_Patchworker_Transfer(AL_TPatchworker* this)
 {
-  AL_Assert(this->inputFifo);
+  Rtos_Assert(this->inputFifo);
 
   if(!this->workBuf)
     this->workBuf = AL_Fifo_Dequeue(this->inputFifo, AL_NO_WAIT);

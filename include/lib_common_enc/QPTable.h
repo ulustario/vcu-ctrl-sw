@@ -1,9 +1,9 @@
 // SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
-/**************************************************************************//*!
+/******************************************************************************
    \addtogroup qp_table Quantization Parameter Table
-   @{
+   !@{
    \file
 ******************************************************************************/
 #pragma once
@@ -24,4 +24,4 @@
 #define MASK_FORCE_MV0 (1 << (MASK_QP_NUMBITS + 1))
 #define MASK_FORCE (MASK_FORCE_INTRA | MASK_FORCE_MV0)
 
-/*@}*/
+/*!@}*/

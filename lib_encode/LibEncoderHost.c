@@ -201,6 +201,8 @@ static bool AL_Encoder_SetMaxPictureSizePerFrameType_Host(AL_HEncoder hEnc, uint
 }
 
 /****************************************************************************/
+
+/****************************************************************************/
 static bool AL_Encoder_RestartGop_Host(AL_HEncoder hEnc)
 {
   AL_TEncoder* pEnc = (AL_TEncoder*)hEnc;

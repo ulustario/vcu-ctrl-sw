@@ -36,13 +36,13 @@ static const AL_TBufInfo EP3_BUF_RC_LVL =
   8, 32, 5120
 };
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief  Retrieves the size of a QP parameters buffer 1 (Lda + SclMtx)
    \return maximum size (in bytes) needed to store
 *****************************************************************************/
 uint32_t AL_GetAllocSizeEP1(AL_ECodec eCodec);
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Retrieves the size of a Encoder parameters buffer 2 (QP Ctrl)
    \param[in] tDim Frame size in pixels
    \param[in] eCodec Codec
@@ -52,13 +52,13 @@ uint32_t AL_GetAllocSizeEP1(AL_ECodec eCodec);
 *****************************************************************************/
 uint32_t AL_GetAllocSizeFlexibleEP2(AL_TDimension tDim, AL_ECodec eCodec, uint8_t uLog2MaxCuSize, uint8_t uQpLCUGranularity);
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief  Retrieves the size of a Encoder parameters buffer 3 (HW RateCtrl) for one core
    \return maximum size (in bytes) needed to store
 *****************************************************************************/
 uint32_t AL_GetAllocSizeEP3PerCore(void);
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief  Retrieves the size of a Encoder parameters buffer 3 (HW RateCtrl)
    \return maximum size (in bytes) needed to store
 *****************************************************************************/
@@ -72,7 +72,7 @@ static const size_t MVBUFF_LONG_TERM_OFFSET = 128; // Long term flag List
 static const size_t MVBUFF_USED_POC = 132; // Used POCs
 static const size_t MVBUFF_MV_OFFSET = 256; // Motion Vectors
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Retrieves the size of a Reference YUV frame buffer
    \param[in] tDim Frame dimensions
    \param[in] uBitDepth YUV bit-depth
@@ -84,7 +84,7 @@ static const size_t MVBUFF_MV_OFFSET = 256; // Motion Vectors
 *****************************************************************************/
 uint32_t AL_GetAllocSize_EncReference(AL_TDimension tDim, uint8_t uBitDepth, uint8_t uLCUSize, AL_EChromaMode eChromaMode, AL_EChEncOption eOptions, uint16_t uMVVRange);
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Retrieves the size of a compressed buffer(LCU header + MVDs + Residuals)
    \param[in] tDim Frame dimensions
    \param[in] uLog2MaxCuSize Max size of a coding unit (log2)
@@ -95,7 +95,7 @@ uint32_t AL_GetAllocSize_EncReference(AL_TDimension tDim, uint8_t uBitDepth, uin
 *****************************************************************************/
 uint32_t AL_GetAllocSize_CompData(AL_TDimension tDim, uint8_t uLog2MaxCuSize, uint8_t uBitDepth, AL_EChromaMode eChromaMode, bool bUseEnt);
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Retrieves the offset of the current LCU Hdr_MVDs words
    \param[in] tDim Frame dimensions
    \param[in] uLog2MaxCuSize Max size of a coding unit (log2)
@@ -105,7 +105,7 @@ uint32_t AL_GetAllocSize_CompData(AL_TDimension tDim, uint8_t uLog2MaxCuSize, ui
 *****************************************************************************/
 uint32_t AL_GetAllocSize_EncCompMap(AL_TDimension tDim, uint8_t uLog2MaxCuSize, uint8_t uNumCore, bool bUseEnt);
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Retrieves the size of a colocated frame buffer
    \param[in] tDim Frame dimensions
    \param[in] uLog2MaxCuSize Max size of a coding unit (log2)
@@ -114,7 +114,7 @@ uint32_t AL_GetAllocSize_EncCompMap(AL_TDimension tDim, uint8_t uLog2MaxCuSize, 
 *****************************************************************************/
 uint32_t AL_GetAllocSize_MV(AL_TDimension tDim, uint8_t uLog2MaxCuSize, AL_ECodec Codec);
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Retrieves the size of an entry_points size buffer
    \param[in] iLCUPicHeight Frame Height in pixel
    \param[in] iNumSlices Number of slices within the frame
@@ -125,7 +125,7 @@ uint32_t AL_GetAllocSize_WPP(int iLCUPicHeight, int iNumSlices, uint8_t uNumCore
 
 uint32_t AL_GetAllocSize_SliceSize(uint32_t uWidth, uint32_t uHeight, uint32_t uNumSlices, uint32_t uLog2MaxCuSize);
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Retrieves the size of a stream part size buffer
    \param[in] eProfile Encoding profile
    \param[in] iNumCores Number of cores used to encode the frame
@@ -136,7 +136,7 @@ uint32_t AL_GetAllocSize_SliceSize(uint32_t uWidth, uint32_t uHeight, uint32_t u
 *****************************************************************************/
 uint32_t GetAllocSize_StreamPart(AL_EProfile eProfile, int iNumCores, int iNumSlices, bool bSliceSize, int iNumTilesPerCore);
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Retrieves plane description of the reference buffer
    \param[in] pPlaneDesc Plane description to fill
    \param[in] tDim Frame dimensions

@@ -1,11 +1,9 @@
 // SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
-/****************************************************************************
-   -----------------------------------------------------------------------------
- **************************************************************************//*!
+/******************************************************************************
    \addtogroup lib_decode_hls
-   @{
+   !@{
    \file
  *****************************************************************************/
 #pragma once
@@ -20,7 +18,7 @@
 #include "include/lib_common_dec/DecOutputSettings.h"
 #include "DPB.h"
 
-/*************************************************************************//*!
+/*****************************************************************************
    \ingroup BufPool
    \brief Frame Buffer Pool object
 *****************************************************************************/
@@ -52,13 +50,13 @@ typedef struct
   int iFifoTail;
 
   AL_MUTEX Mutex;
-  AL_EVENT Event;
+  AL_SEMAPHORE Semaphore;
   int iBufNumber;
   bool isDecommited;
 
 }AL_TFrmBufPool;
 
-/*************************************************************************//*!
+/*****************************************************************************
    \ingroup BufPool
    \brief MotionVector Buffer Pool object
 *****************************************************************************/
@@ -77,7 +75,7 @@ typedef struct
   AL_SEMAPHORE Semaphore;
 }AL_TMvBufPool;
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Reference Picture List Context
 *****************************************************************************/
 /* reference picture list construction variables */
@@ -97,7 +95,7 @@ typedef struct
   uint8_t RefPicSetLtFoll[MAX_DPB_SIZE];
 }AL_THevcRefPicCtx;
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Picture Manager Context
 *****************************************************************************/
 typedef struct
@@ -153,7 +151,7 @@ typedef struct
   AL_TPosition tOutputPosition; /*!< Specifies the position offset of the active area in the frame buffers */
 }AL_TPictMngrParam;
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Pre initialize the PictureManager. This must be called before
           another thread may call AL_PictMngr_Init(void)
    \param[in] pCtx        Pointer to a Picture manager context object
@@ -161,7 +159,7 @@ typedef struct
 *****************************************************************************/
 bool AL_PictMngr_PreInit(AL_TPictMngrCtx* pCtx);
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Initialize the PictureManager.
    \param[in] pCtx        Pointer to a Picture manager context object
    \param[in] pParam      Picture manager parameters
@@ -169,7 +167,7 @@ bool AL_PictMngr_PreInit(AL_TPictMngrCtx* pCtx);
 *****************************************************************************/
 bool AL_PictMngr_BasicInit(AL_TPictMngrCtx* pCtx, AL_TPictMngrParam const* pParam);
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Initialize the PictureManager.
    \param[in] pCtx        Pointer to a Picture manager context object
    \param[in] pAllocator  Pointer to the memory allocator
@@ -178,26 +176,26 @@ bool AL_PictMngr_BasicInit(AL_TPictMngrCtx* pCtx, AL_TPictMngrParam const* pPara
 *****************************************************************************/
 bool AL_PictMngr_CompleteInit(AL_TPictMngrCtx* pCtx, AL_TAllocator* pAllocator, bool bEnableSecondOutput);
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Check if the PictureManager initialization is complete.
    \param[in] pCtx        Pointer to a Picture manager context object
    \return If the PictureManager is fully initialized then return true. Return false otherwise
 *****************************************************************************/
 bool AL_PictMngr_IsInitComplete(AL_TPictMngrCtx const* pCtx);
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Flush all pictures so all buffers are fully released
    \param[in] pCtx Pointer to a Picture manager context object
 *****************************************************************************/
 void AL_PictMngr_Terminate(AL_TPictMngrCtx* pCtx);
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Uninitialize the PictureManager.
    \param[in] pCtx Pointer to a Picture manager context object
 *****************************************************************************/
 void AL_PictMngr_Deinit(AL_TPictMngrCtx* pCtx);
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Lock reference motion vector buffers
    \param[in] pCtx Pointer to a Picture manager context object
    \param[in] uNumRef Number of reference pictures
@@ -206,7 +204,7 @@ void AL_PictMngr_Deinit(AL_TPictMngrCtx* pCtx);
 *****************************************************************************/
 void AL_PictMngr_LockRefID(AL_TPictMngrCtx* pCtx, uint8_t uNumRef, uint8_t* pRefFrameID, uint8_t* pRefMvID);
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Unlock reference motion vector buffers
    \param[in] pCtx Pointer to a Picture manager context object
    \param[in] uNumRef Number of reference pictures
@@ -215,28 +213,28 @@ void AL_PictMngr_LockRefID(AL_TPictMngrCtx* pCtx, uint8_t uNumRef, uint8_t* pRef
 *****************************************************************************/
 void AL_PictMngr_UnlockRefID(AL_TPictMngrCtx* pCtx, uint8_t uNumRef, uint8_t* pRefFrameID, uint8_t* pRefMvID);
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Retrieves the current decoded frame identifier
    \param[in] pCtx Pointer to a Picture manager context object
    \return return the current decoded frame identifier
 *****************************************************************************/
 uint8_t AL_PictMngr_GetCurrentFrmID(AL_TPictMngrCtx const* pCtx);
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Retrieves the current decoded frame's motion-vectors buffer identifier
    \param[in] pCtx Pointer to a Picture manager context object
    \return return the current decoded frame's motion-vectors buffer identifier
 *****************************************************************************/
 uint8_t AL_PictMngr_GetCurrentMvID(AL_TPictMngrCtx const* pCtx);
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Retrieves the POC of the current decoded frame
    \param[in] pCtx Pointer to a Picture manager context object
    \return return the POC value of the current decoded frame
 *****************************************************************************/
 int32_t AL_PictMngr_GetCurrentPOC(AL_TPictMngrCtx const* pCtx);
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief This function prepares the Picture Manager context to new frame
        encoding; it shall be called before of each frame encoding.
    \param[in] pCtx          Pointer to a Picture manager context object
@@ -247,27 +245,27 @@ int32_t AL_PictMngr_GetCurrentPOC(AL_TPictMngrCtx const* pCtx);
 *****************************************************************************/
 bool AL_PictMngr_BeginFrame(AL_TPictMngrCtx* pCtx, bool bStartsNewCVS, AL_TDimension tDim, AL_EChromaMode eDecodedChromaMode);
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief This function prepares the Picture Manager context to new frame
        encoding; it shall be called before of each frame encoding.
    \param[in] pCtx    Pointer to a Picture manager context object
 *****************************************************************************/
 void AL_PictMngr_CancelFrame(AL_TPictMngrCtx* pCtx);
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief This function updates the Picture Manager context each time a picture have been decoded.
    \param[in] pCtx            Pointer to a Picture manager context object
 *****************************************************************************/
 void AL_PictMngr_Flush(AL_TPictMngrCtx* pCtx);
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief This function updates the number of reference managed by the picture manager
    \param[in] pCtx    Pointer to a Picture manager context object
    \param[in] uMaxRef Maximal number of references managed by the picture manager
 *****************************************************************************/
 void AL_PictMngr_UpdateDPBInfo(AL_TPictMngrCtx* pCtx, uint8_t uMaxRef);
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief This function return the Pic ID of the last inserted frame
    \param[in] pCtx Pointer to a Picture manager context object
    \return returns the Pic ID of the last inserted frame
@@ -275,7 +273,7 @@ void AL_PictMngr_UpdateDPBInfo(AL_TPictMngrCtx* pCtx, uint8_t uMaxRef);
 *****************************************************************************/
 uint8_t AL_PictMngr_GetLastPicID(AL_TPictMngrCtx const* pCtx);
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief This function insert a decoded frame into the DPB
    \param[in,out] pCtx        Pointer to a Picture manager context object
    \param[in] iFramePOC       Picture order count of the decoded picture
@@ -291,14 +289,14 @@ uint8_t AL_PictMngr_GetLastPicID(AL_TPictMngrCtx const* pCtx);
 *****************************************************************************/
 void AL_PictMngr_Insert(AL_TPictMngrCtx* pCtx, int iFramePOC, AL_EPicStruct ePicStruct, uint32_t uPocLsb, int iFrameID, uint8_t uMvID, uint8_t pic_output_flag, AL_EMarkingRef eMarkingFlag, uint8_t uNonExisting, AL_ENut eNUT, uint8_t uSubpicFlag);
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief This function updates the Picture Manager context each time a picture have been decoded.
    \param[in] pCtx   Pointer to a Picture manager context object
    \param[in] iFrameID Buffer identifier of the decoded frame buffer
 *****************************************************************************/
 void AL_PictMngr_EndDecoding(AL_TPictMngrCtx* pCtx, int iFrameID);
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief This function returns the next picture buffer to be displayed
    \param[in]  pCtx           Pointer to a Picture manager context object
    \param[out] pInfo          Pointer to retrieve information about the decoded frame
@@ -309,7 +307,7 @@ void AL_PictMngr_EndDecoding(AL_TPictMngrCtx* pCtx, int iFrameID);
 AL_TBuffer* AL_PictMngr_GetDisplayBuffer(AL_TPictMngrCtx* pCtx, AL_TInfoDecode* pInfo, bool* pStartsNewCVS);
 AL_TBuffer* AL_PictMngr_ForceDisplayBuffer(AL_TPictMngrCtx* pCtx, AL_TInfoDecode* pInfo, bool* pStartsNewCVS, int iFrameID);
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief This function add a display frame buffer in the picture manager
    \param[in] pCtx   Pointer to a Picture manager context object
    \param[in] pBuf   Pointer to the display picture buffer to be added
@@ -317,7 +315,7 @@ AL_TBuffer* AL_PictMngr_ForceDisplayBuffer(AL_TPictMngrCtx* pCtx, AL_TInfoDecode
 *****************************************************************************/
 bool AL_PictMngr_PutDisplayBuffer(AL_TPictMngrCtx* pCtx, AL_TBuffer* pBuf);
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief This function returns the display picture buffer associated to iFrameID
    \param[in]  pCtx      Pointer to a Picture manager context object
    \param[in]  iFrameID  Frame ID
@@ -325,7 +323,7 @@ bool AL_PictMngr_PutDisplayBuffer(AL_TPictMngrCtx* pCtx, AL_TBuffer* pBuf);
 *****************************************************************************/
 AL_TBuffer* AL_PictMngr_GetDisplayBufferFromID(AL_TPictMngrCtx* pCtx, int iFrameID);
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief This function returns the reconstructed picture buffer associated to iFrameID
    \param[in]  pCtx      Pointer to a Picture manager context object
    \param[in]  iFrameID  Frame ID
@@ -333,7 +331,7 @@ AL_TBuffer* AL_PictMngr_GetDisplayBufferFromID(AL_TPictMngrCtx* pCtx, int iFrame
 *****************************************************************************/
 AL_TBuffer* AL_PictMngr_GetRecBufferFromID(AL_TPictMngrCtx* pCtx, int iFrameID);
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief This function returns the encoding error status associated to a display or rec buffer
    \param[in]  pCtx      Pointer to a Picture manager context object
    \param[in]  pDisplayBuf  Display/Rec buffer pointer
@@ -355,4 +353,4 @@ void AL_PictMngr_UnlockID(AL_TPictMngrCtx* pCtx, int iFrameID, int iMotionVector
 /*****************************************************************************/
 bool AL_PictMngr_GetBuffers(AL_TPictMngrCtx* pCtx, AL_TDecSliceParam const* pSP, TBuffer* pListVirtAddr, TBuffer* pListAddr, TBufferPOC* pPOC, TBufferMV* pMV, AL_TRecBuffers* pRecs);
 
-/*@}*/
+/*!@}*/

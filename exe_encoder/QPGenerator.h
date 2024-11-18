@@ -50,7 +50,7 @@ static inline bool AL_HasQpTable(AL_EGenerateQpMode eMode)
   return eMode & AL_GENERATE_QP_TABLE_MASK_EXT;
 }
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Fill QP part of the buffer pointed to by pQP with a QP for each
         Macroblock of the slice.
    \param[in]  eMode      Specifies the way QP values are computed. see AL_EGenerateQpMode
@@ -71,7 +71,7 @@ static inline bool AL_HasQpTable(AL_EGenerateQpMode eMode)
 *****************************************************************************/
 AL_ERR GenerateQPBuffer(AL_EGenerateQpMode eMode, int16_t iSliceQP, int16_t iMinQP, int16_t iMaxQP, int16_t iLCUPicWidth, int16_t iLCUPicHeight, AL_EProfile eProf, uint8_t uLogMaxCuSize, int iQPTableDepth, const std::string& sQPTablesFolder, int iFrameID, uint8_t* pQPTable);
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Fill QP part of the buffer pointed to by pQP with a QP for each
         Macroblock of the slice with roi information
    \param[in]  pRoiCtx    Pointer to the roi object holding roi information

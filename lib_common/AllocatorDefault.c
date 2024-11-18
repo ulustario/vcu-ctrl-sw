@@ -3,7 +3,6 @@
 
 #include "lib_common/Allocator.h"
 #include "lib_rtos/lib_rtos.h"
-#include "lib_assert/al_assert.h"
 
 static AL_HANDLE AL_sDefaultAllocator_Alloc(AL_TAllocator* pAllocator, size_t zSize)
 {
@@ -106,7 +105,7 @@ static AL_PADDR AL_sWrapperAllocator_GetPhysicalAddr(AL_TAllocator* pAllocator, 
 {
   /* The wrapped data doesn't have a physical address */
   (void)pAllocator, (void)hBuf;
-  AL_Assert(0);
+  Rtos_Assert(false);
   return (AL_PADDR)0xdeaddead;
 }
 

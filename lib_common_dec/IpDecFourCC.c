@@ -2,14 +2,14 @@
 // SPDX-License-Identifier: MIT
 
 #include "lib_common_dec/IpDecFourCC.h"
-#include "lib_assert/al_assert.h"
+#include "lib_rtos/lib_rtos.h"
 
 TFourCC AL_GetDecFourCC(AL_TPicFormat const picFmt)
 {
   if(AL_FB_RASTER == picFmt.eStorageMode)
   {
-    AL_Assert(picFmt.eChromaMode == AL_CHROMA_MONO || picFmt.eChromaMode == AL_CHROMA_4_4_4 || picFmt.ePlaneMode == AL_PLANE_MODE_SEMIPLANAR);
-    AL_Assert(picFmt.uBitDepth == 8 || (AL_SAMPLE_PACK_MODE_PACKED_XV == picFmt.eSamplePackMode));
+    Rtos_Assert(picFmt.eChromaMode == AL_CHROMA_MONO || picFmt.eChromaMode == AL_CHROMA_4_4_4 || picFmt.ePlaneMode == AL_PLANE_MODE_SEMIPLANAR);
+    Rtos_Assert(picFmt.uBitDepth == 8 || (AL_SAMPLE_PACK_MODE_PACKED_XV == picFmt.eSamplePackMode));
   }
 
   return AL_GetFourCC(picFmt);

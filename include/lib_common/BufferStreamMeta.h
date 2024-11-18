@@ -1,9 +1,9 @@
 // SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
-/**************************************************************************//*!
+/******************************************************************************
    \addtogroup Buffers
-   @{
+   !@{
    \file
  *****************************************************************************/
 #pragma once
@@ -14,7 +14,7 @@
 #define AL_MAX_SECTION (2 * (AL_MAX_ENC_SLICE + 2))
 #define AL_INVALID_STREAMSECTION_ID -1
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Useful section of the buffer containing the bitstream
 *****************************************************************************/
 typedef struct AL_TStreamMetaData
@@ -26,7 +26,7 @@ typedef struct AL_TStreamMetaData
   uint16_t uMaxNumSection; /*!< maximum number of sections available */
 }AL_TStreamMetaData;
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Create a stream metadata.
    \param[in] uMaxNumSection maximum number of sections the user is expecting
    inside the stream. The library can produce in the worst case AL_MAX_SECTION.
@@ -35,7 +35,7 @@ typedef struct AL_TStreamMetaData
 AL_TStreamMetaData* AL_StreamMetaData_Create(uint16_t uMaxNumSection);
 AL_TStreamMetaData* AL_StreamMetaData_Clone(AL_TStreamMetaData* pMeta);
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Add a section to the stream. Sections represent the stream
    parts where relevant data can be found. They act as a kind of scatter gather
    list.
@@ -48,7 +48,7 @@ AL_TStreamMetaData* AL_StreamMetaData_Clone(AL_TStreamMetaData* pMeta);
 *****************************************************************************/
 int AL_StreamMetaData_AddSection(AL_TStreamMetaData* pMetaData, uint32_t uOffset, uint32_t uLength, AL_ESectionFlags eFlags);
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Change the information of a previously added section
    \param[in] pMetaData Pointer to the stream metadata
    \param[in] uSectionID id representing the section you want to change
@@ -57,7 +57,7 @@ int AL_StreamMetaData_AddSection(AL_TStreamMetaData* pMetaData, uint32_t uOffset
 *****************************************************************************/
 void AL_StreamMetaData_ChangeSection(AL_TStreamMetaData* pMetaData, uint16_t uSectionID, uint32_t uOffset, uint32_t uLength);
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Change the flags related to a section (see SECTION_xxxxx_FLAG)
    \param[in] pMetaData Pointer to the stream metadata
    \param[in] uSectionID id representing the section you want to change
@@ -65,13 +65,13 @@ void AL_StreamMetaData_ChangeSection(AL_TStreamMetaData* pMetaData, uint16_t uSe
 *****************************************************************************/
 void AL_StreamMetaData_SetSectionFlags(AL_TStreamMetaData* pMetaData, uint16_t uSectionID, AL_ESectionFlags eFlags);
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Remove all the sections of a particular stream metadata
    \param[in] pMetaData Pointer to the stream metadata
 *****************************************************************************/
 void AL_StreamMetaData_ClearAllSections(AL_TStreamMetaData* pMetaData);
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Add a SEI section to the stream
    \param[in] pMetaData Pointer to the stream metadata
    \param[in] isPrefix prefix or a suffix SEI
@@ -81,7 +81,7 @@ void AL_StreamMetaData_ClearAllSections(AL_TStreamMetaData* pMetaData);
 *****************************************************************************/
 int AL_StreamMetaData_AddSeiSection(AL_TStreamMetaData* pMetaData, bool isPrefix, uint32_t uOffset, uint32_t uLength);
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Get an unused part in the stream buffer
    The user needs to check if the offset is still inside his stream buffer
    \param[in] pMetaData Pointer to the stream metadata
@@ -89,7 +89,7 @@ int AL_StreamMetaData_AddSeiSection(AL_TStreamMetaData* pMetaData, bool isPrefix
 *****************************************************************************/
 uint32_t AL_StreamMetaData_GetUnusedStreamPart(AL_TStreamMetaData* pMetaData);
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Get an the last section in the stream buffer of containing the provided flag
    \param[in] pMetaData Pointer to the stream metadata
    \param[in] uFlag Section's flag
@@ -97,4 +97,4 @@ uint32_t AL_StreamMetaData_GetUnusedStreamPart(AL_TStreamMetaData* pMetaData);
 *****************************************************************************/
 int AL_StreamMetaData_GetLastSectionOfFlag(AL_TStreamMetaData* pMetaData, uint32_t uFlag);
 
-/*@}*/
+/*!@}*/

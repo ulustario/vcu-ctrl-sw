@@ -8,7 +8,7 @@
 #include "lib_rtos/lib_rtos.h"
 
 /*****************************************************************************/
-void AL_AVC_InitHWFrameBuffers(AL_TScl const* pSclLst, AL_EChromaMode eCMode, AL_TDecPicBuffers* pBufs)
+void AL_AVC_InitHWFrameBuffers(AL_TScl const* pSclLst, AL_EChromaMode eCMode, AL_TDecBuffers* pBufs)
 {
   AL_AVC_WriteDecHwScalingList(pSclLst, eCMode, pBufs->tScl.tMD.pVirtualAddr);
 }
@@ -57,7 +57,7 @@ static void AL_AVC_WriteWeightedPredCoeff(uint16_t uSliceIndex, AL_TAvcSliceHdr 
 }
 
 /*****************************************************************************/
-void AL_AVC_InitHWSliceBuffers(uint16_t uSliceIndex, AL_TAvcSliceHdr const* pSlice, AL_TDecPicBuffers* pBufs)
+void AL_AVC_InitHWSliceBuffers(uint16_t uSliceIndex, AL_TAvcSliceHdr const* pSlice, AL_TDecBuffers* pBufs)
 {
   AL_AVC_WriteWeightedPredCoeff(uSliceIndex, pSlice, &pBufs->tWP);
 }

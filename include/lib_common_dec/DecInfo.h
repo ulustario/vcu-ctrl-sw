@@ -1,10 +1,10 @@
 // SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
-/**************************************************************************//*!
+/******************************************************************************
    \defgroup Decoder_Settings Settings
    \ingroup Decoder
-   @{
+   !@{
    \file
  *****************************************************************************/
 #pragma once
@@ -15,7 +15,7 @@
 #include "lib_common/PicFormat.h"
 #include "lib_common/Error.h"
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Info on stream decoding
  ***************************************************************************/
 typedef struct AL_TInfoDecode
@@ -32,14 +32,14 @@ typedef struct AL_TInfoDecode
   AL_TPosition tPos; /*!< Position of the top left decoded pixel */
 }AL_TInfoDecode;
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Specifies if the framebuffer bound to the crop info requires cropping
    \param[in] pInfo Pointer to the crop info
    \return Returns true if the framebuffer requires cropping. False otherwise.
  ***************************************************************************/
 bool AL_NeedsCropping(AL_TCropInfo const* pInfo);
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Returns the minimum number of output buffers required to decode
    the AVC stream in the specified dpb mode
    \param[in] pStreamSettings Settings describing the stream to decode
@@ -51,7 +51,7 @@ bool AL_NeedsCropping(AL_TCropInfo const* pInfo);
  ***************************************************************************/
 int AL_AVC_GetMinOutputBuffersNeeded(AL_TStreamSettings const* pStreamSettings, int iStack);
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Returns the minimum number of output buffers required to decode
    the HEVC stream in the specified dpb mode
    \param[in] pStreamSettings Settings describing the stream to decode
@@ -62,4 +62,4 @@ int AL_AVC_GetMinOutputBuffersNeeded(AL_TStreamSettings const* pStreamSettings, 
  ***************************************************************************/
 int AL_HEVC_GetMinOutputBuffersNeeded(AL_TStreamSettings const* pStreamSettings, int iStack);
 
-/*@}*/
+/*!@}*/

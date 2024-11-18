@@ -6,7 +6,6 @@
 #include "lib_common_enc/EncBuffers.h"
 #include "lib_common_enc/IpEncFourCC.h"
 #include "lib_common/Utils.h"
-#include "lib_assert/al_assert.h"
 
 void AL_SrcBuffersChecker_Init(AL_TSrcBufferChecker* pCtx, AL_TEncChanParam const* pChParam)
 {
@@ -83,7 +82,7 @@ static bool CheckPlanes(AL_TSrcBufferChecker* pCtx, AL_TBuffer* pBuf)
 
   if(!bSuccess)
   {
-    AL_Assert(bSuccess);
+    Rtos_Assert(bSuccess);
     return false;
   }
 
@@ -106,7 +105,7 @@ static bool CheckPlanes(AL_TSrcBufferChecker* pCtx, AL_TBuffer* pBuf)
     AL_EPlaneId ePlaneId = usedPlanes[iPlane];
 
     int iChunkIdx = AL_PixMapBuffer_GetPlaneChunkIdx(pBuf, ePlaneId);
-    AL_Assert(iChunkIdx != AL_BUFFER_BAD_CHUNK);
+    Rtos_Assert(iChunkIdx != AL_BUFFER_BAD_CHUNK);
 
     if(AL_Plane_IsPixelPlane(ePlaneId) && ePlaneId != AL_PLANE_Y && ePlaneId != AL_PLANE_YUV)
     {

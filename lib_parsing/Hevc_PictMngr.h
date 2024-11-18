@@ -1,11 +1,9 @@
 // SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
-/****************************************************************************
-   -----------------------------------------------------------------------------
- **************************************************************************//*!
+/******************************************************************************
    \addtogroup lib_decode_hls
-   @{
+   !@{
    \file
  *****************************************************************************/
 
@@ -14,7 +12,7 @@
 #include "I_PictMngr.h"
 #include "lib_common_dec/DecPicParam.h"
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief This function updates the reconstructed resolution information
    \param[in] pCtx Pointer to a Picture manager context object
    \param[in] pCropInfo Pointer to Cropping information
@@ -22,7 +20,7 @@
 *****************************************************************************/
 void AL_HEVC_PictMngr_UpdateRecInfo(AL_TPictMngrCtx* pCtx, AL_TCropInfo const* pCropInfo, AL_EPicStruct ePicStruct);
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Remove from the DPB all unused pictures(non-reference and not needed for output
    \param[in] pCtx           Pointer to a Picture manager context object
    \param[in] pSPS           Pointer to the Sequence Parameter Set structure holding info on picture dpb latency
@@ -31,7 +29,7 @@ void AL_HEVC_PictMngr_UpdateRecInfo(AL_TPictMngrCtx* pCtx, AL_TCropInfo const* p
 *****************************************************************************/
 void AL_HEVC_PictMngr_ClearDPB(AL_TPictMngrCtx* pCtx, AL_THevcSps const* pSPS, bool bClearRef, bool bNoOutputPrior);
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief This function updates the Picture Manager context each time a picture have been decoded.
    \param[in] pCtx            Pointer to a Picture manager context object
    \param[in] uPocLsb         Value used to identify long term reference picture
@@ -41,19 +39,19 @@ void AL_HEVC_PictMngr_ClearDPB(AL_TPictMngrCtx* pCtx, AL_THevcSps const* pSPS, b
 *****************************************************************************/
 void AL_HEVC_PictMngr_EndFrame(AL_TPictMngrCtx* pCtx, uint32_t uPocLsb, AL_ENut eNUT, AL_THevcSliceHdr const* pSlice, uint8_t pic_output_flag);
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief This function remove from the DPB the oldest picture if it is full.
    \param[in] pCtx            Pointer to a Picture manager context object
 *****************************************************************************/
 void AL_HEVC_PictMngr_RemoveHeadFrame(AL_TPictMngrCtx* pCtx);
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief This function return true if the DPB has reference..
    \param[in] pCtx   Pointer to a Picture manager context object
 *****************************************************************************/
 bool AL_HEVC_PictMngr_HasPictInDPB(AL_TPictMngrCtx const* pCtx);
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Retrieves all buffers (input and output) required to decode the current slice
    \param[in]  pCtx          Pointer to a Picture manager context object
    \param[in]  pPP           Pointer to the current picture parameters
@@ -70,14 +68,14 @@ bool AL_HEVC_PictMngr_HasPictInDPB(AL_TPictMngrCtx const* pCtx);
 *****************************************************************************/
 bool AL_HEVC_PictMngr_GetBuffers(AL_TPictMngrCtx* pCtx, AL_TDecSliceParam const* pSP, TBuffer* pListVirtAddr, TBuffer* pListAddr, TBufferPOC* pPOC, TBufferMV* pMV, AL_TRecBuffers* pRecs);
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Prepares the reference picture set for the current slice reference picture list construction
    \param[in]  pCtx       Pointer to a Picture manager context object
    \param[in]  pSlice     Pointer to the slice header of the current slice
 *****************************************************************************/
 void AL_HEVC_PictMngr_InitRefPictSet(AL_TPictMngrCtx* pCtx, AL_THevcSliceHdr const* pSlice);
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Builds the reference picture list of the current slice
    \param[in]  pCtx     Pointer to a Picture manager context object
    \param[in]  pSlice   Pointer to the slice header of the current slice
@@ -85,4 +83,4 @@ void AL_HEVC_PictMngr_InitRefPictSet(AL_TPictMngrCtx* pCtx, AL_THevcSliceHdr con
 *****************************************************************************/
 bool AL_HEVC_PictMngr_BuildPictureList(AL_TPictMngrCtx* pCtx, AL_THevcSliceHdr const* pSlice, TBufferListRef* pListRef);
 
-/*@}*/
+/*!@}*/

@@ -13,4 +13,5 @@ typedef struct AL_TDecTraceHook
   void (* SetActiveWorker)(void*, AL_ECodecHook, int, int);
   void (* BeginTraces)(void*);
   void (* EndTraces)(void*);
+  void (* SetFrameId)(void*, AL_ECodecHook, int, int, int);
 }AL_TDecTraceHook;

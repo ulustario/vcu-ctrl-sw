@@ -17,7 +17,6 @@
 #include "DriverDataConversions.h"
 #include "lib_fpga/DmaAllocLinux.h"
 #include "lib_common/Utils.h"
-#include "lib_assert/al_assert.h"
 
 #include <stdio.h>
 #include <string.h> // strerrno, strlen, strcpy
@@ -50,7 +49,7 @@ static void setCallbacks(AL_TEncChannelMicroblaze* pChannel, AL_TEncScheduler_CB
   pChannel->CBs.userParam = pCBs->userParam;
 }
 
-static AL_ERR API_CreateChannel(AL_HANDLE* hChannel, AL_IEncScheduler* pIScheduler, TMemDesc* pMDChParam, TMemDesc* pEP1, AL_HANDLE hRcPluginDmaContext, AL_TEncScheduler_CB_EndEncoding* pCBs)
+static AL_ERR API_CreateChannel(AL_HANDLE* hChannel, AL_IEncScheduler* pIScheduler, AL_TMemDesc* pMDChParam, AL_TMemDesc* pEP1, AL_HANDLE hRcPluginDmaContext, AL_TEncScheduler_CB_EndEncoding* pCBs)
 {
   (void)hRcPluginDmaContext;
   AL_ERR errorCode = AL_ERROR;
@@ -100,7 +99,7 @@ static AL_ERR API_CreateChannel(AL_HANDLE* hChannel, AL_IEncScheduler* pISchedul
     goto fail;
   }
 
-  AL_Assert(!AL_IS_ERROR_CODE(msg.status.error_code));
+  Rtos_Assert(!AL_IS_ERROR_CODE(msg.status.error_code));
 
   setCallbacks(pChannel, pCBs);
   pChannel->thread = Rtos_CreateThread(&WaitForStatus, pChannel);
@@ -223,7 +222,7 @@ static bool API_ReleaseRecPicture(AL_IEncScheduler* pIScheduler, AL_HANDLE hChan
 
 static void processStatusMsg(AL_TEncChannelMicroblaze* pChannel, struct al5_params* msg)
 {
-  AL_Assert(msg->size >= sizeof(AL_PTR64));
+  Rtos_Assert(msg->size >= sizeof(AL_PTR64));
   AL_PTR64 streamBufferPtr;
   Rtos_Memcpy(&streamBufferPtr, msg->opaque, sizeof(AL_PTR64));
   AL_TEncPicStatus* pStatus = NULL;
@@ -231,7 +230,7 @@ static void processStatusMsg(AL_TEncChannelMicroblaze* pChannel, struct al5_para
 
   if(msg->size > sizeof(AL_PTR64))
   {
-    AL_Assert(msg->size == sizeof(AL_PTR64) + sizeof(AL_TEncPicStatus));
+    Rtos_Assert(msg->size == sizeof(AL_PTR64) + sizeof(AL_TEncPicStatus));
     Rtos_Memcpy(&status, (char*)msg->opaque + sizeof(AL_PTR64), UnsignedMin(sizeof(status), sizeof(msg->opaque) - sizeof(AL_PTR64)));
     pStatus = &status;
   }
@@ -307,7 +306,7 @@ static void createPutStreamMsg(struct al5_buffer* msg, AL_TBuffer* streamBuffer,
 
 static void API_PutStreamBuffer(AL_IEncScheduler* pIScheduler, AL_HANDLE hChannel, AL_TBuffer* streamBuffer, AL_64U streamUserPtr, uint32_t uOffset)
 {
-  AL_Assert(streamBuffer);
+  Rtos_Assert(streamBuffer);
   AL_TEncSchedulerMicroblaze* pScheduler = (AL_TEncSchedulerMicroblaze*)pIScheduler;
   AL_TEncChannelMicroblaze* pChannel = (AL_TEncChannelMicroblaze*)hChannel;
   struct al5_buffer driverBuffer;

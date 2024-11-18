@@ -5,7 +5,6 @@
 #include "Utils.h"
 #include "LevelLimit.h"
 #include "BufConst.h"
-#include "lib_assert/al_assert.h"
 
 /****************************************************************************/
 bool AL_AVC_CheckLevel(int level)
@@ -168,8 +167,8 @@ static int getMaxDpbMBs(int iLevel)
 /******************************************************************************/
 uint32_t AL_AVC_GetMaxDPBSize(int iLevel, int iWidth, int iHeight, int iSpsMaxRef, bool bIntraProfile, bool bDecodeIntraOnly)
 {
-  AL_Assert(iWidth);
-  AL_Assert(iHeight);
+  Rtos_Assert(iWidth);
+  Rtos_Assert(iHeight);
 
   if(bIntraProfile || bDecodeIntraOnly)
     return 2;
@@ -177,6 +176,24 @@ uint32_t AL_AVC_GetMaxDPBSize(int iLevel, int iWidth, int iHeight, int iSpsMaxRe
   int iMaxDpbMbs = getMaxDpbMBs(iLevel);
   int const iNumMbs = ((iWidth / 16) * (iHeight / 16));
   return UnsignedMax(Clip3(iMaxDpbMbs / iNumMbs, 2, MAX_REF), iSpsMaxRef);
+}
+
+/******************************************************************************/
+uint16_t AL_AVC_GetMaxMotionVectorHeight(int iLevel)
+{
+  if(iLevel < 11)
+    return 64;
+
+  if(iLevel < 21)
+    return 128;
+
+  if(iLevel < 31)
+    return 256;
+
+  if(iLevel < 60)
+    return 512;
+
+  return 8192;
 }
 
 /*************************************************************************/

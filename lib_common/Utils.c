@@ -1,19 +1,16 @@
 // SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
-/****************************************************************************
-   -----------------------------------------------------------------------------
- **************************************************************************//*!
+/******************************************************************************
    \addtogroup lib_common
-   @{
+   !@{
    \file
  *****************************************************************************/
 
 #include "Utils.h"
-#include "lib_assert/al_assert.h"
 
 /***************************************************************************/
-static const uint8_t tab_ceil_log2[] =
+static int const tab_ceil_log2[] =
 {
 /*  0.. 7 */
   0, 0, 1, 2, 2, 3, 3, 3,
@@ -26,13 +23,14 @@ static const uint8_t tab_ceil_log2[] =
 };
 
 /***************************************************************************/
-int ceil_log2(uint16_t n)
+int ceil_log2(int n)
 {
-  int v = 0;
-  AL_Assert(n > 0);
+  Rtos_Assert(n >= 0);
 
   if(n < 32)
     return tab_ceil_log2[n];
+
+  int v = 0;
 
   n--;
 
@@ -47,7 +45,7 @@ int ceil_log2(uint16_t n)
 }
 
 /***************************************************************************/
-int floor_log2(uint16_t n)
+int floor_log2(int n)
 {
   int s = -1;
 
@@ -116,8 +114,5 @@ int16_t MinInArray(const int16_t tab[], int arraySize)
 /****************************************************************************/
 bool IsWindowEmpty(AL_TWindow tWindow)
 {
-  if((tWindow.tDim.iHeight == 0) || (tWindow.tDim.iWidth == 0))
-    return true;
-  else
-    return false;
+  return (tWindow.tDim.iHeight == 0) || (tWindow.tDim.iWidth == 0);
 }

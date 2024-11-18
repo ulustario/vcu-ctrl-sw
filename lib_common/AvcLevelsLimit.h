@@ -9,6 +9,7 @@ uint32_t AL_AVC_GetSpecificationMaxNumberOfSlices(void);
 uint32_t AL_AVC_GetMaxNumberOfSlices(AL_EProfile profile, int level, int numUnitInTicks, int timeScale, int numMbsInPic);
 uint32_t AL_AVC_GetMaxCPBSize(int level);
 uint32_t AL_AVC_GetMaxDPBSize(int iLevel, int iWidth, int iHeight, int iSpsMaxRef, bool bIntraProfile, bool bDecodeIntraOnly);
+uint16_t AL_AVC_GetMaxMotionVectorHeight(int iLevel);
 
 uint8_t AL_AVC_GetLevelFromFrameSize(int numMbPerFrame);
 uint8_t AL_AVC_GetLevelFromMBRate(int mbRate);

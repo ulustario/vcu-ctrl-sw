@@ -7,8 +7,6 @@
 #include "lib_common/BufCommon.h"
 #include "lib_common/BufferPixMapMeta.h"
 
-#include "lib_assert/al_assert.h"
-
 /*****************************************************************************/
 int AL_GetNumLinesInPitch(AL_EFbStorageMode eFrameBufferStorageMode)
 {
@@ -19,7 +17,7 @@ int AL_GetNumLinesInPitch(AL_EFbStorageMode eFrameBufferStorageMode)
   case AL_FB_TILE_64x4: return 4;
   default:
   {
-    AL_Assert(false);
+    Rtos_Assert(false);
     return 0;
   }
   }
@@ -36,7 +34,7 @@ static inline int GetWidthRound(AL_EFbStorageMode eStorageMode, uint8_t uBitDept
   case AL_FB_TILE_32x4: return 32;
   default:
   {
-    AL_Assert(false);
+    Rtos_Assert(false);
     return 0;
   }
   }
@@ -89,11 +87,11 @@ int32_t ComputeRndPitch(int32_t iWidth, AL_TPicFormat const* pPicFormat, int iBu
     break;
   }
   default:
-    AL_Assert(false);
+    Rtos_Assert(false);
   }
 
-  AL_Assert(iBurstAlignment > 0);
-  AL_Assert((iBurstAlignment % HW_IP_BURST_ALIGNMENT) == 0);
+  Rtos_Assert(iBurstAlignment > 0);
+  Rtos_Assert((iBurstAlignment % HW_IP_BURST_ALIGNMENT) == 0);
   return RoundUp(iVal, iBurstAlignment);
 }
 

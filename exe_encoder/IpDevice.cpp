@@ -31,14 +31,14 @@ extern "C"
 
 void CIpDevice::ConfigureMcu(CIpDeviceParam& param)
 {
-  m_pAllocator = createDmaAllocator(param.pCfgFile->RunInfo.encDevicePath.c_str());
+  m_pAllocator = createDmaAllocator(param.pCfgFile->RunInfo.encDevicePaths.at(0).c_str());
 
   if(!m_pAllocator)
     throw runtime_error("Can't open DMA allocator");
 
   /* We lost the Linux Dma Allocator type before in an upcast,
    * but it is needed for the scheduler mcu as we need the GetFd api in it. */
-  m_pScheduler = AL_SchedulerMcu_Create(AL_GetHardwareDriver(), (AL_TLinuxDmaAllocator*)m_pAllocator, param.pCfgFile->RunInfo.encDevicePath.c_str());
+  m_pScheduler = AL_SchedulerMcu_Create(AL_GetHardwareDriver(), (AL_TLinuxDmaAllocator*)m_pAllocator, param.pCfgFile->RunInfo.encDevicePaths.at(0).c_str());
 
   if(!m_pScheduler)
     throw std::runtime_error("Failed to create MCU scheduler");
@@ -59,7 +59,7 @@ CIpDevice::~CIpDevice(void)
 void CIpDevice::Configure(CIpDeviceParam& param)
 {
 
-  if(param.iSchedulerType == AL_SCHEDULER_TYPE_MCU)
+  if(param.eSchedulerType == AL_ESchedulerType::AL_SCHEDULER_TYPE_MCU)
   {
     ConfigureMcu(param);
     return;

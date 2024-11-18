@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <string>
 #include "lib_app/Sink.h"
 
-IFrameSink* createStreamMd5Calculator(std::string path);
+IFrameSink* createStreamMd5Calculator(std::string const& path);

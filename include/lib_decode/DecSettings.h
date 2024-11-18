@@ -1,9 +1,9 @@
 // SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
-/**************************************************************************//*!
+/******************************************************************************
    \addtogroup Decoder_API
-   @{
+   !@{
    \file
  *****************************************************************************/
 
@@ -17,7 +17,7 @@
 #include "lib_common_dec/StreamSettings.h"
 #include "lib_common_dec/DecOutputSettings.h"
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Decoder Input Mode
    \ingroup Decoder_Settings
 *****************************************************************************/
@@ -27,7 +27,7 @@ typedef enum AL_EDecInputMode
   AL_DEC_SPLIT_INPUT, /*!< The input is fed to the decoder with buffers containing one decoding unit each. */
 }AL_EDecInputMode;
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Decoder Settings
    \ingroup Decoder_Settings
 *****************************************************************************/
@@ -57,14 +57,14 @@ typedef struct AL_TDecSettings
   AL_EDecInputMode eInputMode; /* Send stream data by decoding unit or feed the library enough data and let it find the units. */
 }AL_TDecSettings;
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Retrieves the default settings
    \param[out] pSettings Pointer to TDecSettings structure that receives
    default Settings.
 *****************************************************************************/
 void AL_DecSettings_SetDefaults(AL_TDecSettings* pSettings);
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Checks that all decoding parameters are valid
    \param[in] pSettings Pointer to TDecSettings to be checked
    \param[in] pOut Optional standard stream on which verbose messages are
@@ -76,7 +76,7 @@ void AL_DecSettings_SetDefaults(AL_TDecSettings* pSettings);
 *****************************************************************************/
 int AL_DecSettings_CheckValidity(AL_TDecSettings const* pSettings, FILE* pOut);
 
-/**************************************************************************//*!
+/******************************************************************************
    \brief Checks that decoding parameters are coherent between them.
    When incoherent parameter are found, the function automatically correct them.
    \param[in] pSettings Pointer to TDecSettings to be checked
@@ -89,9 +89,9 @@ int AL_DecSettings_CheckValidity(AL_TDecSettings const* pSettings, FILE* pOut);
    with IP decoder.
  *****************************************************************************/
 int AL_DecSettings_CheckCoherency(AL_TDecSettings* pSettings, FILE* pOut);
-/*@}*/
+/*!@}*/
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Checks that decoder output settings are valid
    \param[in] pDecOutSettings Pointer to TDecOutputSettings to be checked
    \param[in] eCodec Codec

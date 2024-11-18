@@ -3,7 +3,6 @@
 
 #include "EncUtils.h"
 #include "IP_EncoderCtx.h"
-#include "lib_assert/al_assert.h"
 #include "lib_common/SyntaxConversion.h"
 #include "lib_common/Utils.h"
 #include "lib_common_enc/EncHwScalingList.h"
@@ -191,19 +190,19 @@ static void AL_HEVC_UpdateHrdParameters(AL_THevcSps* pSPS, AL_TSubHrdParam* pSub
   pSubHrdParam->bit_rate_du_value_minus1[0] = (pSettings->tChParam[0].tRCParam.uMaxBitRate / pSettings->NumView) >> 6;
   AL_Decomposition(&(pSubHrdParam->bit_rate_du_value_minus1[0]), &pSPS->vui_param.hrd_param.bit_rate_scale);
 
-  AL_Assert(pSubHrdParam->bit_rate_du_value_minus1[0] <= (UINT32_MAX - 1));
+  Rtos_Assert(pSubHrdParam->bit_rate_du_value_minus1[0] <= (UINT32_MAX - 1));
 
   pSubHrdParam->bit_rate_value_minus1[0] = (pSettings->tChParam[0].tRCParam.uMaxBitRate / pSettings->NumView) >> 6;
   AL_Decomposition(&(pSubHrdParam->bit_rate_value_minus1[0]), &pSPS->vui_param.hrd_param.bit_rate_scale);
-  AL_Assert(pSubHrdParam->bit_rate_value_minus1[0] <= (UINT32_MAX - 1));
+  Rtos_Assert(pSubHrdParam->bit_rate_value_minus1[0] <= (UINT32_MAX - 1));
 
   pSubHrdParam->cpb_size_du_value_minus1[0] = iCpbSize >> 4;
   AL_Decomposition(&(pSubHrdParam->cpb_size_du_value_minus1[0]), &pSPS->vui_param.hrd_param.cpb_size_scale);
-  AL_Assert(pSubHrdParam->cpb_size_du_value_minus1[0] <= (UINT32_MAX - 1));
+  Rtos_Assert(pSubHrdParam->cpb_size_du_value_minus1[0] <= (UINT32_MAX - 1));
 
   pSubHrdParam->cpb_size_value_minus1[0] = iCpbSize >> 4;
   AL_Decomposition(&(pSubHrdParam->cpb_size_value_minus1[0]), &pSPS->vui_param.hrd_param.cpb_size_scale);
-  AL_Assert(pSubHrdParam->cpb_size_value_minus1[0] <= (UINT32_MAX - 1));
+  Rtos_Assert(pSubHrdParam->cpb_size_value_minus1[0] <= (UINT32_MAX - 1));
 
   pSubHrdParam->cbr_flag[0] = (pSettings->tChParam[0].tRCParam.eRCMode == AL_RC_CBR) ? 1 : 0;
 
@@ -407,14 +406,14 @@ void AL_HEVC_GenerateSPS(AL_TSps* pISPS, AL_TEncSettings const* pSettings, AL_TE
   {
     bool const bEnsureSpecification = ((pSPS->bit_depth_chroma_minus8 == pSPS->bit_depth_luma_minus8) || (pSPS->chroma_format_idc == 3));
     (void)bEnsureSpecification;
-    AL_Assert(bEnsureSpecification);
+    Rtos_Assert(bEnsureSpecification);
   }
 
   if(pSPS->vui_param.matrix_coefficients == 8)
   {
     bool bEnsureSpecification = (pSPS->bit_depth_chroma_minus8 == pSPS->bit_depth_luma_minus8);
     bEnsureSpecification |= ((pSPS->bit_depth_chroma_minus8 == (pSPS->bit_depth_luma_minus8 + 1)) && (pSPS->chroma_format_idc == 3));
-    AL_Assert(bEnsureSpecification);
+    Rtos_Assert(bEnsureSpecification);
   }
 
   // Timing information
@@ -492,7 +491,7 @@ void AL_HEVC_GeneratePPS(AL_TPps* pIPPS, AL_TEncSettings const* pSettings, AL_TE
   pPPS->dependent_slice_segments_enabled_flag = pSettings->bDependentSlice ? 1 : 0;
   pPPS->output_flag_present_flag = 0;
   pPPS->num_extra_slice_header_bits = 0;
-  pPPS->sign_data_hiding_flag = 0; // not supported yet
+  pPPS->sign_data_hiding_flag = 0;
   pPPS->cabac_init_present_flag = AL_GET_PPS_CABAC_INIT_PRES_FLAG(pChParam->uPpsParam);
   pPPS->num_ref_idx_l0_default_active_minus1 = iMaxRef - 1;
   pPPS->num_ref_idx_l1_default_active_minus1 = iMaxRef - 1;

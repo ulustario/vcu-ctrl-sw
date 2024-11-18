@@ -76,41 +76,7 @@ AL_PARSE_RESULT AL_AVC_ParsePPS(AL_TAup* pIAup, AL_TRbspParser* pRP, uint16_t* p
   pPPS->bottom_field_pic_order_in_frame_present_flag = u(pRP, 1);
   pPPS->num_slice_groups_minus1 = Clip3(ue(pRP), 0, 7);
 
-  if(pPPS->num_slice_groups_minus1 > 0)
-  {
-    pPPS->slice_group_map_type = ue(pRP);
-
-    if(pPPS->slice_group_map_type == 0)
-    {
-      for(int iGroup = 0; iGroup <= pPPS->num_slice_groups_minus1; iGroup++)
-        pPPS->run_length_minus1[iGroup] = ue(pRP);
-    }
-    else if(pPPS->slice_group_map_type == 2)
-    {
-      for(int iGroup = 0; iGroup <= pPPS->num_slice_groups_minus1; iGroup++)
-      {
-        pPPS->top_left[iGroup] = ue(pRP);
-        pPPS->bottom_right[iGroup] = ue(pRP);
-      }
-    }
-    else if(pPPS->slice_group_map_type == 3 ||
-            pPPS->slice_group_map_type == 4 ||
-            pPPS->slice_group_map_type == 5)
-    {
-      pPPS->slice_group_change_direction_flag = u(pRP, 1);
-      pPPS->slice_group_change_rate_minus1 = ue(pRP);
-    }
-    else if(pPPS->slice_group_map_type == 6)
-    {
-      pPPS->pic_size_in_map_units_minus1 = Clip3(ue(pRP), 0, 8159);
-
-      for(int i = 0; i <= pPPS->pic_size_in_map_units_minus1; i++)
-      {
-        int slicegroupsize = pPPS->pic_size_in_map_units_minus1 + 1;
-        pPPS->slice_group_id[i] = u(pRP, slicegroupsize);
-      }
-    }
-  }
+  COMPLY(pPPS->num_slice_groups_minus1 == 0); // should always be 0 in supported profiles (see comment right below)
 
   pPPS->num_ref_idx_l0_active_minus1 = Clip3(ue(pRP), 0, AL_AVC_MAX_REF_IDX);
   pPPS->num_ref_idx_l1_active_minus1 = Clip3(ue(pRP), 0, AL_AVC_MAX_REF_IDX);
@@ -541,19 +507,19 @@ void AL_AVC_GetCropInfo(AL_TAvcSps const* pSPS, AL_TCropInfo* pCropInfo)
     switch(pSPS->chroma_format_idc)
     {
     case 0:  // monochrome
-      AL_Assert((pSPS->separate_colour_plane_flag == 0) && " pSPS->separate_colour_plane_flag != 0 is not allowed in Monochrome");
+      Rtos_Assert((pSPS->separate_colour_plane_flag == 0) && " pSPS->separate_colour_plane_flag != 0 is not allowed in Monochrome");
       iCropUnitX = 1;
       iCropUnitY = 1;
       break;
 
     case 1:  // 4:2:0
-      AL_Assert((pSPS->separate_colour_plane_flag == 0) && " pSPS->separate_colour_plane_flag != 0 is not allowed in 4:2:0");
+      Rtos_Assert((pSPS->separate_colour_plane_flag == 0) && " pSPS->separate_colour_plane_flag != 0 is not allowed in 4:2:0");
       iCropUnitX = 2;
       iCropUnitY = 2;
       break;
 
     case 2:  // 4:2:2
-      AL_Assert((pSPS->separate_colour_plane_flag == 0) && " pSPS->separate_colour_plane_flag != 0 is not allowed in 4:2:2");
+      Rtos_Assert((pSPS->separate_colour_plane_flag == 0) && " pSPS->separate_colour_plane_flag != 0 is not allowed in 4:2:2");
       iCropUnitX = 2;
       iCropUnitY = 1;
       break;
@@ -564,7 +530,7 @@ void AL_AVC_GetCropInfo(AL_TAvcSps const* pSPS, AL_TCropInfo* pCropInfo)
       break;
 
     default:
-      AL_Assert(0 && "invalid pSPS->chroma_format_idc");
+      Rtos_Assert(false && "invalid pSPS->chroma_format_idc");
     }
 
     iCropUnitY *= (2 - pSPS->frame_mbs_only_flag);

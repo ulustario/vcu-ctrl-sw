@@ -10,7 +10,7 @@
 
 #define AL_CIRCULAR_BUFFER_SIZE_MARGIN 1
 
-typedef struct al_t_Patchworker
+typedef struct AL_TPatchworker
 {
   bool endOfOutput;
   AL_MUTEX lock;

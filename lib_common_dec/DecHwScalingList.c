@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MIT
 
 #include "DecHwScalingList.h"
-#include "lib_assert/al_assert.h"
+#include "lib_rtos/lib_rtos.h"
 
 /******************************************************************************/
 static void AL_sWriteWord(const uint8_t* pSrc, int iSize, uint32_t* pBuf, const int* pScan)
@@ -51,7 +51,7 @@ void AL_AVC_WriteDecHwScalingList(AL_TScl const* pSclLst, AL_EChromaMode eCMode,
 {
   uint32_t* pBuf32 = (uint32_t*)pBuf;
 
-  AL_Assert((1 & (size_t)pBuf) == 0);
+  Rtos_Assert((1 & (size_t)pBuf) == 0);
 
   for(int m = 0; m < 2; m++) // Mode : 0 = Intra; 1 = Inter
   {

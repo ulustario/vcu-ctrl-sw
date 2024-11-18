@@ -7,7 +7,7 @@
 
 #define AL_MAX_TILE_ROWS 22 // see table A.1 of the HEVC specification
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Store information on skipped slice data.
 *****************************************************************************/
 typedef struct AL_TSkippedSlice
@@ -17,7 +17,7 @@ typedef struct AL_TSkippedSlice
   uint16_t uNumTiles; /*!< Number of tiles in the slice */
 }AL_TSkippedSlice;
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief This structure is designed to store data information of a skipped picture.
    \see GenerateSkippedPicture
 *****************************************************************************/

@@ -1,11 +1,9 @@
 // SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
-/****************************************************************************
-   -----------------------------------------------------------------------------
- **************************************************************************//*!
+/******************************************************************************
    \addtogroup lib_base
-   @{
+   !@{
    \file
  *****************************************************************************/
 #pragma once
@@ -13,7 +11,7 @@
 #include "lib_common/SliceConsts.h"
 #include "lib_common_dec/DecBuffersInternal.h"
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Slice Parameters : Mimics structure for IP registers
 *****************************************************************************/
 typedef struct AL_TDecSliceParam
@@ -89,4 +87,4 @@ typedef struct AL_TDecSliceParam
   uint32_t entry_point_offset[AL_MAX_ENTRY_POINT + 1];
 }AL_TDecSliceParam;
 
-/*@}*/
+/*!@}*/

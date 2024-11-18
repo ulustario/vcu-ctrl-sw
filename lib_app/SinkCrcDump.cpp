@@ -19,7 +19,7 @@ extern "C"
 class StreamCrcDump : public IFrameSink
 {
 public:
-  StreamCrcDump(std::string& path)
+  StreamCrcDump(std::string const& path)
   {
     if(!path.empty())
     {
@@ -46,7 +46,7 @@ private:
   std::ofstream m_CrcFile;
 };
 
-IFrameSink* createStreamCrcDump(std::string path)
+IFrameSink* createStreamCrcDump(std::string const& path)
 {
   return new StreamCrcDump(path);
 }

@@ -38,6 +38,4 @@ endif
 endif
 
 
-LDFLAGS+=$(LPTHREAD)
-
 REF_LDFLAGS+=$(LDFLAGS)

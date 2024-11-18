@@ -1,9 +1,9 @@
 // SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
-/**************************************************************************//*!
+/******************************************************************************
    \addtogroup Allocator
-   @{
+   !@{
    \file
  *****************************************************************************/
 #pragma once
@@ -25,7 +25,7 @@ struct AL_TLinuxDmaAllocator
 };
 /*! \endcond *****************************************************************/
 
-/**************************************************************************//*!
+/******************************************************************************
    \brief Get the dmabuf file descriptor used by the handle
    The linux dma buffer keeps ownership of the file descriptor. Use dup2 to
    get your own file descriptor if you need to.
@@ -43,7 +43,7 @@ int AL_LinuxDmaAllocator_GetFd(AL_TLinuxDmaAllocator* pAllocator, AL_HANDLE hBuf
   return pAllocator->vtable->pfnGetFd(pAllocator, hBuf);
 }
 
-/**************************************************************************//*!
+/******************************************************************************
    \brief Create a buffer handle from a dmabuf file descriptor
    The linux dma buffer doesn't take ownership of the file descriptor.
 
@@ -60,4 +60,4 @@ AL_HANDLE AL_LinuxDmaAllocator_ImportFromFd(AL_TLinuxDmaAllocator* pAllocator, i
   return pAllocator->vtable->pfnImportFromFd(pAllocator, fd);
 }
 
-/*@}*/
+/*!@}*/

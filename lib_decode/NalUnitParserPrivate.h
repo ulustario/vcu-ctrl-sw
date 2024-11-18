@@ -3,7 +3,7 @@
 
 #pragma once
 
-void UpdateCircBuffer(AL_TRbspParser* pRP, TCircBuffer* pBufStream, int* pSliceHdrLength);
+void UpdateCircBuffer(AL_TRbspParser* pRP, AL_TCircBuffer* pBufStream, int* pSliceHdrLength);
 bool SkipNal(void);
 
 AL_TRbspParser getParserOnNonVclNal(AL_TDecCtx* pCtx, uint8_t* pBuf, int32_t pBufNoAESize);

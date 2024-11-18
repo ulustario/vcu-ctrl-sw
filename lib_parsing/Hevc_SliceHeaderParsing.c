@@ -120,7 +120,7 @@ static bool AL_HEVC_sReadWPCoeff(AL_TRbspParser* pRP, AL_THevcSliceHdr* pSlice, 
   return true;
 }
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief the pred_weight_table function parses the weighted pred table syntax
          elements from a Slice Header NAL
    \param[in]  pRP    Pointer to NAL buffer
@@ -142,7 +142,7 @@ static bool AL_HEVC_spread_weight_table(AL_TRbspParser* pRP, AL_THevcSliceHdr* p
   return true;
 }
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief This function parses the reordering syntax elements from a Slice
          Header NAL
    \param[in]  pRP             Pointer to NAL buffer
@@ -259,6 +259,9 @@ bool AL_HEVC_ParseSliceHeader(AL_THevcSliceHdr* pSlice, AL_THevcSliceHdr* pIndSl
   pSlice->nuh_layer_id = u(pRP, 6);
   pSlice->nuh_temporal_id_plus1 = u(pRP, 3);
 
+  if(pSlice->nuh_temporal_id_plus1 < 1 || pSlice->nuh_temporal_id_plus1 > MAX_SUB_LAYER)
+    return false;
+
   pSlice->RapPicFlag = (pSlice->nal_unit_type >= AL_HEVC_NUT_BLA_W_LP && pSlice->nal_unit_type <= AL_HEVC_NUT_RSV_IRAP_VCL23) ? 1 : 0;
   pSlice->IdrPicFlag = isHevcIDR(pSlice->nal_unit_type) ? 1 : 0;
 
@@ -303,6 +306,9 @@ bool AL_HEVC_ParseSliceHeader(AL_THevcSliceHdr* pSlice, AL_THevcSliceHdr* pIndSl
 
   pSlice->pSPS = pPps->pSPS;
   const AL_THevcSps* pSps = pSlice->pSPS;
+
+  if(pSlice->nuh_temporal_id_plus1 - 1 > pSps->sps_max_sub_layers_minus1)
+    return false;
 
   if(!pSlice->first_slice_segment_in_pic_flag)
   {
@@ -379,8 +385,19 @@ bool AL_HEVC_ParseSliceHeader(AL_THevcSliceHdr* pSlice, AL_THevcSliceHdr* pIndSl
       if(pSps->long_term_ref_pics_present_flag)
       {
         if(pSps->num_long_term_ref_pics_sps > 0)
+        {
           pSlice->num_long_term_sps = ue(pRP);
+
+          if(pSlice->num_long_term_sps > pSps->num_long_term_ref_pics_sps)
+            return false;
+        }
+
         pSlice->num_long_term_pics = ue(pRP);
+
+        int CurrRpsIdx = pSlice->short_term_ref_pic_set_sps_flag ? pSlice->short_term_ref_pic_set_idx : pSps->num_short_term_ref_pic_sets;
+
+        if(pSlice->num_long_term_pics > pSps->sps_max_dec_pic_buffering_minus1[pSlice->nuh_temporal_id_plus1 - 1] - pSlice->num_long_term_sps - pSps->NumDeltaPocs[CurrRpsIdx])
+          return false;
 
         for(int i = 0; i < pSlice->num_long_term_sps + pSlice->num_long_term_pics; ++i)
         {

@@ -13,6 +13,7 @@
 #include "lib_app/YuvIO.h"
 
 using namespace std;
+
 extern "C"
 {
 #include "lib_common/PixMapBuffer.h"
@@ -20,7 +21,6 @@ extern "C"
 }
 
 /*****************************************************************************/
-
 static inline int RoundUp(int iVal, int iRnd)
 {
   return (iVal + iRnd - 1) / iRnd * iRnd;
@@ -134,7 +134,7 @@ int GetPictureSize(AL_TYUVFileInfo FI)
 
     int iChromaSize = uNumRowC * uRowSizeC;
 
-    if(tPicFormat.ePlaneMode != AL_PLANE_MODE_SEMIPLANAR)
+    if(tPicFormat.ePlaneMode == AL_PLANE_MODE_PLANAR)
       iChromaSize *= 2;
 
     iPictSize += iChromaSize;
@@ -150,13 +150,13 @@ void GotoFirstPicture(AL_TYUVFileInfo const& FI, ifstream& File, unsigned int iF
   File.seekg(iPictLen * iFirstPict);
 }
 
-typedef struct tPaddingParams
+struct TPaddingParams
 {
   uint32_t uPadValue;
   uint32_t uNBByteToPad;
   uint32_t uPaddingOffset;
   uint32_t uFirst32PackPadMask;
-}TPaddingParams;
+};
 
 /*****************************************************************************/
 static TPaddingParams GetColumnPaddingParameters(TFourCC tFourCC, AL_TDimension tDim, int iPitch, uint32_t uFileRowSize, bool isLuma)
@@ -341,8 +341,9 @@ static void ReadFile(ifstream& File, AL_TBuffer* pBuf, uint32_t uFileRowSize, ui
     ReadFileChroma(File, pBuf, AL_PLANE_UV, uFileRowSize, uFileNumRow, uRoundedNumRow);
   else if(tPicFormat.eChromaMode != AL_CHROMA_MONO)
   {
-    ReadFileChroma(File, pBuf, tPicFormat.eComponentOrder == AL_COMPONENT_ORDER_YUV ? AL_PLANE_U : AL_PLANE_V, uFileRowSize, uFileNumRow, uRoundedNumRow);
-    ReadFileChroma(File, pBuf, tPicFormat.eComponentOrder == AL_COMPONENT_ORDER_YUV ? AL_PLANE_V : AL_PLANE_U, uFileRowSize, uFileNumRow, uRoundedNumRow);
+    bool bPlaneOrderYuvOrRGB = (tPicFormat.eComponentOrder == AL_COMPONENT_ORDER_YUV || tPicFormat.eComponentOrder == AL_COMPONENT_ORDER_RGB);
+    ReadFileChroma(File, pBuf, bPlaneOrderYuvOrRGB ? AL_PLANE_U : AL_PLANE_V, uFileRowSize, uFileNumRow, uRoundedNumRow);
+    ReadFileChroma(File, pBuf, bPlaneOrderYuvOrRGB ? AL_PLANE_V : AL_PLANE_U, uFileRowSize, uFileNumRow, uRoundedNumRow);
   }
 }
 

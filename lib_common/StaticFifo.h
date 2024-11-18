@@ -4,7 +4,7 @@
 #pragma once
 #include "lib_rtos/types.h"
 
-/*************************************************************************//*!
+/*****************************************************************************
   Thread-safe implementation for SINGLE producer/consumer if <int> writes are atomics
   Note that Empty() is head==tail, thus only total_elements-1 entries may be used.
 *****************************************************************************/

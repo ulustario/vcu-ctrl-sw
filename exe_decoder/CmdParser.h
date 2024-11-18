@@ -48,8 +48,8 @@ struct Config
   AL_TDecOutputSettings tUserOutputSettings {};
   bool bEnableCrop = false;
 
-  AL_EDeviceType iDeviceType = AL_DEVICE_TYPE_BOARD; // board
-  AL_ESchedulerType iSchedulerType = AL_SCHEDULER_TYPE_MCU;
+  AL_EDeviceType eDeviceType = AL_EDeviceType::AL_DEVICE_TYPE_BOARD;
+  AL_ESchedulerType eSchedulerType = AL_ESchedulerType::AL_SCHEDULER_TYPE_MCU;
   bool bSelectDeviceWithLowestAvailableResources = false;
   int iOutputBitDepth = OUTPUT_BD_ALLOC;
   TFourCC tOutputFourCC = FOURCC(NULL);
@@ -59,7 +59,7 @@ struct Config
   bool bEnableYUVOutput = true;
   unsigned int uInputBufferNum = 2;
   size_t zInputBufferSize = zDefaultInputBufferSize;
-  AL_EIpCtrlMode ipCtrlMode = AL_IPCTRL_MODE_STANDARD;
+  AL_EIpCtrlMode ipCtrlMode = AL_EIpCtrlMode::AL_IPCTRL_MODE_STANDARD;
   string md5File = "";
   string apbFile = "";
   string sSplitSizesFile = "";

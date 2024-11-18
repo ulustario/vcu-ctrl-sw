@@ -3,7 +3,6 @@
 
 #include "lib_app/plateform.h"
 
-#define NOMINMAX
 #include <windows.h>
 
 void InitializePlateform(void)

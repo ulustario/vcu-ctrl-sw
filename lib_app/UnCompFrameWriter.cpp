@@ -38,7 +38,7 @@ void UnCompFrameWriter::WriteFrame(AL_TBuffer* pBuf, AL_TCropInfo* pCrop, AL_EPi
   AL_EFbStorageMode currentStorageMode = AL_GetStorageMode(m_tFourCC);
 
   if(currentStorageMode != m_eStorageMode)
-    return;
+    throw std::runtime_error("Incompatible Storage Format.");
 
   m_tPicDim = AL_PixMapBuffer_GetDimension(pBuf);
 

@@ -4,7 +4,6 @@
 #include "lib_common_enc/IpEncFourCC.h"
 
 #include "lib_common/FourCC.h"
-#include "lib_assert/al_assert.h"
 #include "lib_common_enc/EncBuffers.h"
 
 /****************************************************************************/
@@ -12,10 +11,10 @@ TFourCC AL_EncGetSrcFourCC(AL_TPicFormat const picFmt)
 {
   if(AL_FB_RASTER == picFmt.eStorageMode)
   {
-    AL_Assert(picFmt.eChromaMode == AL_CHROMA_MONO
-              || picFmt.ePlaneMode == AL_PLANE_MODE_SEMIPLANAR
-              || (picFmt.eChromaMode == AL_CHROMA_4_4_4 && picFmt.ePlaneMode == AL_PLANE_MODE_PLANAR));
-    AL_Assert(picFmt.uBitDepth == 8 || (AL_SAMPLE_PACK_MODE_PACKED_XV == picFmt.eSamplePackMode));
+    Rtos_Assert(picFmt.eChromaMode == AL_CHROMA_MONO
+                || picFmt.ePlaneMode == AL_PLANE_MODE_SEMIPLANAR
+                || (picFmt.eChromaMode == AL_CHROMA_4_4_4 && picFmt.ePlaneMode == AL_PLANE_MODE_PLANAR));
+    Rtos_Assert(picFmt.uBitDepth == 8 || (AL_SAMPLE_PACK_MODE_PACKED_XV == picFmt.eSamplePackMode));
   }
 
   return AL_GetFourCC(picFmt);
@@ -65,7 +64,7 @@ AL_TPicFormat AL_EncGetSrcPicFormat(AL_EChromaMode eChromaMode, uint8_t uBitDept
 /****************************************************************************/
 TFourCC AL_GetRecFourCC(AL_TPicFormat const picFmt)
 {
-  AL_Assert(picFmt.eStorageMode == AL_FB_TILE_64x4);
+  Rtos_Assert(picFmt.eStorageMode == AL_FB_TILE_64x4);
   return AL_GetFourCC(picFmt);
 }
 

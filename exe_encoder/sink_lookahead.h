@@ -3,10 +3,12 @@
 
 #pragma once
 
-#include "sink_encoder.h"
-
 #include <memory>
 #include <stdexcept>
+#include <cassert>
+#include "CfgParser.h"
+#include "lib_app/Sink.h"
+#include "TwoPassMngr.h"
 
 /*
 ** Special EncoderSink structure, used for encoding the first pass
@@ -18,13 +20,14 @@
 */
 struct EncoderLookAheadSink : IFrameSink
 {
-  EncoderLookAheadSink(ConfigFile const& cfg, EncoderSink* pBaseSink, AL_IEncScheduler* pScheduler, AL_TAllocator* pAllocator) :
+
+  explicit EncoderLookAheadSink(ConfigFile const& cfg
+                                , AL_IEncScheduler* pScheduler
+                                , AL_TAllocator* pAllocator) :
     CmdFile(cfg.sCmdFileName),
     EncCmd(CmdFile, cfg.RunInfo.iScnChgLookAhead, cfg.Settings.tChParam[0].tGopParam.uFreqLT),
     lookAheadMngr(cfg.Settings.LookAhead, cfg.Settings.bEnableFirstPassSceneChangeDetection)
   {
-    (void)pBaseSink;
-
     BitstreamOutput.reset(new NullFrameSink);
     RecOutput.reset(new NullFrameSink);
 

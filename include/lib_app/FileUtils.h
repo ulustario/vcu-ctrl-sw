@@ -10,10 +10,10 @@
 void formatFolderPath(std::string& folderPath);
 
 /****************************************************************************/
-std::string combinePath(const std::string& folder, const std::string& filename);
+std::string combinePath(std::string const& folder, std::string const& filename);
 
 /****************************************************************************/
-std::string createFileNameWithID(const std::string& path, const std::string& motif, const std::string& extension, int iFrameID);
+std::string createFileNameWithID(std::string const& path, std::string const& motif, std::string const& extension, int iFrameID);
 
 /****************************************************************************/
 bool checkFolder(std::string folderPath);

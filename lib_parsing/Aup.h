@@ -6,6 +6,7 @@
 #include "lib_common/VPS.h"
 #include "lib_common/SPS.h"
 #include "lib_common/PPS.h"
+#include "lib_common/SliceConsts.h"
 #include "lib_common/HDR.h"
 
 typedef struct

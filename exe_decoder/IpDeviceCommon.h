@@ -22,8 +22,8 @@ typedef struct AL_TDriver AL_TDriver;
 /*****************************************************************************/
 struct CIpDeviceParam
 {
-  int iDeviceType;
-  int iSchedulerType;
+  AL_EDeviceType eDeviceType;
+  AL_ESchedulerType eSchedulerType;
   bool bTrackDma = false;
   uint8_t uNumCore = 0;
   int iHangers = 0;

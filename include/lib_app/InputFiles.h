@@ -1,11 +1,9 @@
 // SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
-/****************************************************************************
-   -----------------------------------------------------------------------------
- **************************************************************************//*!
+/******************************************************************************
    \addtogroup lib_base
-   @{
+   !@{
    \file
  *****************************************************************************/
 #pragma once
@@ -16,19 +14,10 @@ extern "C"
 #include "lib_common/FourCC.h"
 }
 
-/*************************************************************************//*!
-   \brief Chroma sampling format for video source file
-*****************************************************************************/
-typedef enum AL_EFileFormat
-{
-  FILE_MONOCHROME, /*!< YUV file is monochrome and contains only luma samples */
-  FILE_YUV_4_2_0,  /*!< YUV file contains 4:2:0 chroma samples and is stored in planar IYUV (also called I420) format */
-}AL_EFileFormat;
-
-/*************************************************************************//*!
+/*****************************************************************************
    \brief YUV File size and format information
 *****************************************************************************/
-typedef AL_INTROSPECT (category = "debug") struct AL_TYUVFileInfo
+AL_INTROSPECT(category = "debug") struct AL_TYUVFileInfo
 {
   int PictWidth;  /*!< Frame width in pixels */
   int PictHeight; /*!< Frame height in pixels */
@@ -36,6 +25,6 @@ typedef AL_INTROSPECT (category = "debug") struct AL_TYUVFileInfo
   TFourCC FourCC; /*!< FOURCC identifying the file format */
 
   unsigned int FrameRate;  /*!< Frame by second */
-}AL_TYUVFileInfo;
+};
 
-/*@}*/
+/*!@}*/

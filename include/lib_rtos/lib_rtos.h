@@ -1,14 +1,14 @@
 // SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
-/**************************************************************************//*!
+/******************************************************************************
    \defgroup lib_rtos RTOS
 
    The Rtos functions wrap all calls to the operating system facilities
    like memory allocation, thread and synchronisation primitives.
    They can be reimplemented by the user to fit his platform of choice.
 
-   @{
+   !@{
    \file
  *****************************************************************************/
 #pragma once
@@ -26,6 +26,20 @@ typedef void* AL_THREAD;
 #define AL_WAIT_FOREVER 0xFFFFFFFF
 
 /****************************************************************************/
+/* Assert */
+/****************************************************************************/
+void Rtos_AssertWithMessage(bool bCondition, char const* sMsg, char const* sFile, int iLine);
+
+#if !defined(NDEBUG)
+#define Rtos_Assert(bCondition) \
+  do \
+  { \
+    Rtos_AssertWithMessage(bCondition, # bCondition, __FILE__, __LINE__); \
+  } while(false)
+#else
+#define Rtos_Assert(bCondition) \
+  (void)(bCondition);
+#endif
 
 /****************************************************************************/
 /*  Memory */
@@ -45,7 +59,7 @@ int Rtos_Memcmp(void const* pBuf1, void const* pBuf2, size_t zSize);
 #define AL_LOG_VERBOSE 7
 #define AL_LOG_DEBUG 20
 
-void Rtos_LogWithoutLevel(char const* const sMsg, ...);
+void Rtos_LogWithoutLevel(char const* sMsg, ...);
 
 #define Rtos_Log(level, ...) \
   do \
@@ -114,7 +128,7 @@ int Rtos_DriverIoctl(void* drv, unsigned long int req, void* data);
 #define AL_POLLHUP 0x010   /* Hung up.  */
 #define AL_POLLNVAL 0x020       /* Invalid polling request.  */
 
-typedef struct Rtos_PollCtx_t
+typedef struct Rtos_PollCtx
 {
   unsigned long events;
   unsigned long revents;
@@ -141,4 +155,4 @@ void Rtos_FlushCacheMemory(void* pMem, size_t zSize);
 
 /****************************************************************************/
 
-/*@}*/
+/*!@}*/

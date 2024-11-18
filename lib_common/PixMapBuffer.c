@@ -2,8 +2,8 @@
 // SPDX-License-Identifier: MIT
 
 #include "PixMapBufferInternal.h"
+#include "include/lib_common/PicFormat.h"
 #include "lib_common/BufferAPIInternal.h"
-#include "lib_assert/al_assert.h"
 
 AL_TBuffer* AL_PixMapBuffer_Create(AL_TAllocator* pAllocator, PFN_RefCount_CallBack pCallBack, AL_TDimension tDim, TFourCC tFourCC)
 {
@@ -210,10 +210,24 @@ uint32_t AL_PixMapBuffer_GetPositionOffset(AL_TBuffer const* pBuf, AL_TPosition 
       tPos.iX /= 2;
   }
 
-  if(uBitdepth > 8)
+  AL_EFbStorageMode eStorageMode = AL_GetStorageMode(pMeta->tFourCC);
+  switch(eStorageMode)
   {
-    return tPos.iY * uPitch + tPos.iX * 4 / 3;
+  case AL_FB_RASTER:
+
+    if(uBitdepth > 8)
+    {
+      return tPos.iY * uPitch + tPos.iX * 4 / 3;
+    }
+    else
+      return tPos.iY * uPitch + tPos.iX;
+    break;
+  case AL_FB_TILE_32x4:
+  case AL_FB_TILE_64x4:
+    return uPitch * tPos.iY / 4 + GetTileSize(eStorageMode, uBitdepth) * tPos.iX / GetTileWidth(eStorageMode, uBitdepth);
+    break;
+  default:
+    return 0;
+    break;
   }
-  else
-    return tPos.iY * uPitch + tPos.iX;
 }

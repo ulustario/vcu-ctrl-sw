@@ -1,11 +1,9 @@
 // SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
-/****************************************************************************
-   -----------------------------------------------------------------------------
- **************************************************************************//*!
+/******************************************************************************
    \addtogroup lib_base
-   @{
+   !@{
    \file
  *****************************************************************************/
 
@@ -13,8 +11,6 @@
 #include "lib_common_dec/DecBuffersInternal.h"
 #include "lib_common/Utils.h"
 #include "lib_common/BufferPixMapMeta.h"
-
-#include "lib_assert/al_assert.h"
 
 /*****************************************************************************/
 int32_t RndPitch(int32_t iWidth, AL_TPicFormat const* pPicFormat)
@@ -81,7 +77,7 @@ static int GetChromaAllocSize(AL_EChromaMode eChromaMode, int iAllocSizeY)
   case AL_CHROMA_4_4_4:
     return iAllocSizeY << 1;
   default:
-    AL_Assert(0);
+    Rtos_Assert(false);
     break;
   }
 
@@ -194,7 +190,7 @@ AL_TMetaData* AL_CreateRecBufMetaData(AL_TDimension tDim, int iMinPitch, TFourCC
   if(!bSuccess)
   {
     AL_MetaData_Destroy((AL_TMetaData*)pSrcMeta);
-    AL_Assert(bSuccess);
+    Rtos_Assert(bSuccess);
     return NULL;
   }
 

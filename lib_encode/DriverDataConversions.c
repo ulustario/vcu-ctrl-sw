@@ -14,7 +14,7 @@ static void write(struct al5_params* msg, void* data, int size)
   msg->size += ((size + 3) / 4) * 4;
 }
 
-void setChannelParam(struct al5_params* msg, TMemDesc* pMDChParam, TMemDesc* pEP1)
+void setChannelParam(struct al5_params* msg, AL_TMemDesc* pMDChParam, AL_TMemDesc* pEP1)
 {
   uint32_t uMcuVirtAddr;
   static_assert(2 * sizeof(uMcuVirtAddr) <= sizeof(msg->opaque), "Driver channel_param struct is too small");

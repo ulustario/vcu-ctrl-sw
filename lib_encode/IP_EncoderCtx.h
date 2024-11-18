@@ -1,11 +1,9 @@
 // SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
-/****************************************************************************
-   -----------------------------------------------------------------------------
- **************************************************************************//*!
+/******************************************************************************
    \addtogroup lib_encode
-   @{
+   !@{
    \file
  *****************************************************************************/
 #pragma once
@@ -24,7 +22,7 @@
 
 typedef struct AL_IEncScheduler AL_IEncScheduler;
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Structure containing infos for non-vcl nals generation
 *****************************************************************************/
 typedef struct AL_THLSInfo
@@ -42,7 +40,7 @@ typedef struct AL_THLSInfo
   int8_t iHDRID;
 }AL_HLSInfo;
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Frame encoding info structure
 *****************************************************************************/
 typedef struct AL_TFrameInfo
@@ -87,7 +85,7 @@ typedef struct
   int iCurStreamRecv;
   AL_TBuffer* StreamSent[AL_MAX_STREAM_BUFFER];
 
-  TMemDesc tMDChParam;
+  AL_TMemDesc tMDChParam;
 
   AL_TCbUserParam callback_user_param;
   AL_CB_EndEncoding tEndEncodingCallback;
@@ -99,7 +97,7 @@ typedef struct
   AL_TBuffer* pSrc;
 }AL_TFrameCtx;
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Pool of FrameInfos
 *****************************************************************************/
 #define INVALID_POOL_ID -1
@@ -116,7 +114,7 @@ typedef struct AL_TFrameInfoPool
   AL_TFrameInfo FrameInfos[MAX_NUM_LAYER * ENC_MAX_CMD];
 }AL_TFrameInfoPool;
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Pool of HDR SEIs
 *****************************************************************************/
 typedef struct AL_THDRPool
@@ -127,7 +125,7 @@ typedef struct AL_THDRPool
   bool bHDRChanged;
 }AL_THDRPool;
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Encoder Context structure
 *****************************************************************************/
 typedef struct AL_TEncCtx
@@ -166,10 +164,10 @@ typedef struct AL_TEncCtx
   int iInitialNumB;
   uint16_t uInitialFrameRate;
 
-  TMemDesc tMDSettings;
+  AL_TMemDesc tMDSettings;
 }AL_TEncCtx;
 
 AL_HLSInfo* AL_GetHLSInfo(AL_TEncCtx* pCtx, int iPicID);
 AL_TNalsData AL_ExtractNalsData(AL_TEncCtx* pCtx, int iLayerID, int iPicID);
 
-/*@}*/
+/*!@}*/

@@ -8,13 +8,12 @@
 #include "lib_common/BufferSeiMeta.h"
 #include "lib_common/StreamSection.h"
 #include "lib_common/BufferStreamMeta.h"
-#include "lib_assert/al_assert.h"
 #include "lib_decode/WorkPool.h"
 
 UNIT_ERROR AL_Decoder_TryDecodeOneUnit(AL_HDecoder hDec, AL_TBuffer* pBuf);
 void AL_Decoder_InternalFlush(AL_HDecoder hDec);
 
-typedef struct al_t_SplitBufferFeeder
+typedef struct AL_TSplitBufferFeeder
 {
   const AL_TFeederVtable* vtable;
   AL_HANDLE hDec;
@@ -46,7 +45,7 @@ static bool enqueueBuffer(AL_TSplitBufferFeeder* this, AL_TBuffer* pBuf)
 
 static void freeBuf(AL_TFeeder* hFeeder, AL_TBuffer* pBuf)
 {
-  AL_Assert(pBuf);
+  Rtos_Assert(pBuf);
   AL_TSplitBufferFeeder* this = (AL_TSplitBufferFeeder*)hFeeder;
   AL_WorkPool_Remove(&this->workPool, pBuf);
   AL_Buffer_Unref(pBuf);
@@ -91,7 +90,7 @@ static bool Process(AL_TSplitBufferFeeder* this)
   AL_Buffer_Ref(workBuf);
 
   AL_TCircMetaData* pMeta = (AL_TCircMetaData*)AL_Buffer_GetMetaData(workBuf, AL_META_TYPE_CIRCULAR);
-  AL_Assert(pMeta);
+  Rtos_Assert(pMeta);
 
   Rtos_FlushCacheMemory(AL_Buffer_GetData(workBuf) + pMeta->iOffset, pMeta->iAvailSize);
   AL_WorkPool_PushBack(&this->workPool, workBuf);
@@ -245,7 +244,7 @@ static void destroy(AL_TFeeder* hFeeder)
   if(this->process)
     destroy_process(hFeeder);
 
-  AL_Assert(AL_WorkPool_IsEmpty(&this->workPool));
+  Rtos_Assert(AL_WorkPool_IsEmpty(&this->workPool));
 
   AL_WorkPool_Deinit(&this->workPool);
   AL_Fifo_Deinit(&this->inputFifo);
@@ -316,7 +315,7 @@ static bool addEOSMeta(AL_TBuffer* pEOSBuffer)
 
 AL_TFeeder* AL_SplitBufferFeeder_Create(AL_HANDLE hDec, int iMaxBufNum, AL_TBuffer* pEOSBuffer, bool bEOSParsingCB)
 {
-  AL_Assert(pEOSBuffer);
+  Rtos_Assert(pEOSBuffer);
 
   if(!addEOSMeta(pEOSBuffer))
     return NULL;

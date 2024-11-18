@@ -5,7 +5,7 @@
 
 #include "lib_common/PixMapBuffer.h"
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Get the physical address of a plane of a AL_TBuffer
    \param[in] pBuf Pointer to the AL_TBuffer
    \param[in] ePlaneId Type of plane
@@ -14,7 +14,7 @@
 *****************************************************************************/
 AL_PADDR AL_PixMapBuffer_GetPlanePhysicalAddress(AL_TBuffer const* pBuf, AL_EPlaneId ePlaneId);
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Get the index of the memory chunk containing the specified plane
    \param[in] pBuf Pointer to the AL_TBuffer
    \param[in] ePlaneId Type of plane
@@ -22,7 +22,7 @@ AL_PADDR AL_PixMapBuffer_GetPlanePhysicalAddress(AL_TBuffer const* pBuf, AL_EPla
 *****************************************************************************/
 int AL_PixMapBuffer_GetPlaneChunkIdx(AL_TBuffer const* pBuf, AL_EPlaneId ePlaneId);
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Get the list of planes defined in a frame buffer. It might differ
           from the currently used planes if a PixMapBuffer has been over-allocated
           compared to its current use. For instance, if a buffer is allocated
@@ -36,7 +36,7 @@ int AL_PixMapBuffer_GetPlaneChunkIdx(AL_TBuffer const* pBuf, AL_EPlaneId ePlaneI
 *****************************************************************************/
 int AL_PixMapBuffer_GetDefinedPlanes(AL_TBuffer const* pBuf, AL_EPlaneId planes[AL_PLANE_MAX_ENUM]);
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Get the Offset (in bytes) of the pixel at the specified position
           from the base address of the the specified plane
    \param[in] pBuf Pointer to the AL_TBuffer

@@ -12,6 +12,32 @@
 #include <malloc.h>
 #include <stdio.h>
 #include <stdarg.h>
+#include <assert.h>
+#include <stdbool.h>
+
+/****************************************************************************/
+void Rtos_LogWithoutLevel(char const* sMsg, ...)
+{
+  va_list args;
+  va_start(args, sMsg);
+  vprintf(sMsg, args);
+  va_end(args);
+}
+
+/****************************************************************************/
+void Rtos_AssertWithMessage(bool bCondition, char const* sMsg, char const* sFile, int iLine)
+{
+  (void)bCondition;
+  (void)sMsg;
+  (void)sFile;
+  (void)iLine;
+
+  if(bCondition)
+    return;
+
+  Rtos_LogWithoutLevel("[%s:%i] %s\n", sFile, iLine, sMsg);
+  assert(false);
+}
 
 /****************************************************************************/
 void* Rtos_Malloc(size_t zSize)
@@ -50,14 +76,6 @@ int Rtos_Memcmp(void const* pBuf1, void const* pBuf2, size_t zSize)
 }
 
 /****************************************************************************/
-void Rtos_LogWithoutLevel(char const* const sMsg, ...)
-{
-  va_list args;
-  va_start(args, sMsg);
-  vprintf(sMsg, args);
-  va_end(args);
-}
-
 #else
 
 /****************************************************************************/
@@ -87,7 +105,7 @@ int Rtos_Memcmp(void const* pBuf1, void const* pBuf2, size_t zSize)
 }
 
 /****************************************************************************/
-void Rtos_LogWithoutLevel(char const* const sMsg, ...)
+void Rtos_LogWithoutLevel(char const* sMsg, ...)
 {
   (void)sMsg;
 }
@@ -690,6 +708,14 @@ Rtos_AtomicInt Rtos_AtomicDecrement(Rtos_AtomicInt* iVal)
 
 #if __MICROBLAZE__
 #include "McuSys.h"
+#include "McuDebug.h"
+
+void Rtos_AssertWithMessage(bool bCondition, char const* sMsg, char const* sFile, int iLine)
+{
+  (void)sFile;
+  (void)iLine;
+  Mcu_Debug_Assert(bCondition, sMsg);
+}
 
 void Rtos_InitCacheCB(void* ctx, Rtos_MemoryFnCB pfnInvalCB, Rtos_MemoryFnCB pfnFlushCB)
 {

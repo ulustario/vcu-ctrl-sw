@@ -50,6 +50,7 @@ ifneq ($(ENABLE_CODEC),0)
   LIB_COMMON_SRC+=lib_common/BufferSeiMeta.c
 
 
+
 ifneq ($(ENABLE_ENC_SW_MULTIPASS),0)
   LIB_COMMON_SRC+=lib_common/BufferLookAheadMeta.c
 endif
@@ -60,3 +61,9 @@ endif
 endif
 
 
+
+BUILD_IP_STATE=0
+
+ifneq ($(BUILD_IP_STATE),0)
+  LIB_COMMON_SRC+=lib_common/IpState.c
+endif

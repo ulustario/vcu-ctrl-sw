@@ -3,7 +3,6 @@
 
 #include "lib_common/BufferStreamMeta.h"
 #include "lib_rtos/lib_rtos.h"
-#include "lib_assert/al_assert.h"
 
 static bool StreamMeta_Destroy(AL_TMetaData* pMeta)
 {
@@ -94,7 +93,7 @@ int AL_StreamMetaData_AddSection(AL_TStreamMetaData* pMetaData, uint32_t uOffset
 /****************************************************************************/
 void AL_StreamMetaData_ChangeSection(AL_TStreamMetaData* pMetaData, uint16_t uSectionID, uint32_t uOffset, uint32_t uLength)
 {
-  AL_Assert(pMetaData && uSectionID < pMetaData->uNumSection);
+  Rtos_Assert(pMetaData && uSectionID < pMetaData->uNumSection);
 
   pMetaData->pSections[uSectionID].uOffset = uOffset;
   pMetaData->pSections[uSectionID].uLength = uLength;
@@ -103,21 +102,21 @@ void AL_StreamMetaData_ChangeSection(AL_TStreamMetaData* pMetaData, uint16_t uSe
 /****************************************************************************/
 void AL_StreamMetaData_SetSectionFlags(AL_TStreamMetaData* pMetaData, uint16_t uSectionID, AL_ESectionFlags eFlags)
 {
-  AL_Assert(pMetaData && uSectionID < pMetaData->uNumSection);
+  Rtos_Assert(pMetaData && uSectionID < pMetaData->uNumSection);
   pMetaData->pSections[uSectionID].eFlags = eFlags;
 }
 
 /****************************************************************************/
 void AL_StreamMetaData_ClearAllSections(AL_TStreamMetaData* pMetaData)
 {
-  AL_Assert(pMetaData);
+  Rtos_Assert(pMetaData);
   pMetaData->uNumSection = 0;
 }
 
 /****************************************************************************/
 int AL_StreamMetaData_GetLastSectionOfFlag(AL_TStreamMetaData* pMetaData, uint32_t flag)
 {
-  AL_Assert(pMetaData);
+  Rtos_Assert(pMetaData);
   AL_TStreamSection* pSections = pMetaData->pSections;
   int flagSectionId = pMetaData->uNumSection - 1;
 

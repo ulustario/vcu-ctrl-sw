@@ -6,6 +6,7 @@
 #include "lib_app/JsonFile.h"
 
 #include <algorithm>
+#include <cassert>
 #include <climits>
 #include <cstring>
 #include <deque>
@@ -28,6 +29,7 @@ extern "C"
 #include "lib_common/RoundUp.h"
 #include "lib_common/SEI.h"
 #include "lib_common/SliceConsts.h"
+#include "lib_common_enc/RateCtrlMeta.h"
 }
 
 using std::cout;
@@ -110,6 +112,7 @@ static map<string, EnumDescription<int>> const getOutputFourCCs(void)
   fourCCs["XV10"] = { FOURCC(XV10), "YUV file contains packed 10-bit monochrome samples with 3 samples per 32-bit words (the 2 LSBs are not used).", allCodecs() };
   fourCCs["XV15"] = { FOURCC(XV15), "YUV file contains packed 4:2:0 10-bit samples in semi-planar format with 3 samples per 32-bit words (the 2 LSBs are not used) and with all picture luma (Y) samples followed by interleaved U and V chroma sample.", allCodecs() };
   SetEnumDescr<int>(fourCCs, "XV20", FOURCC(XV20), "YUV file contains packed 4:2:2 10 bits samples in semi-planar format with 3 samples per 32bits words (The 2 LSBs are not used) and with all picture luma (Y) samples followed by interleaved U and V chroma samples.", aomituCodecs());
+
   return fourCCs;
 }
 
@@ -139,6 +142,7 @@ static map<string, EnumDescription<int>> const getInputFourCCs(void)
   fourCCs["XV10"] = { FOURCC(XV10), "YUV file contains packed 10-bit monochrome samples with 3 samples per 32-bit words (the 2 LSBs are not used).", allCodecs() };
   fourCCs["XV15"] = { FOURCC(XV15), "YUV file contains packed 4:2:0 10-bit samples in semi-planar format with 3 samples per 32-bit words (the 2 LSBs are not used) and with all picture luma (Y) samples followed by interleaved U and V chroma sample.", allCodecs() };
   SetEnumDescr<int>(fourCCs, "XV20", FOURCC(XV20), "YUV file contains packed 4:2:2 10 bits samples in semi-planar format with 3 samples per 32bits words (The 2 LSBs are not used) and with all picture luma (Y) samples followed by interleaved U and V chroma samples.", aomituCodecs());
+
   return fourCCs;
 }
 
@@ -563,7 +567,7 @@ static void populateGopSection(ConfigParser& parser, ConfigFile& cfg)
   parser.addSeeAlso(curSection, "Gop.EnableLT", { Section::Input, "CmdFile" });
   parser.addSeeAlso(curSection, "Gop.EnableLT", { Section::Input, "Format" });
   parser.addArith(curSection, "Gop.FreqLT", GopParam.uFreqLT, "Specifies the Long Term reference picture refresh frequency in number of frames", {
-    { aomituCodecs(), 0, UINT32_MAX }
+    { ituCodecs(), 0, UINT32_MAX },
   });
   parser.addArith(curSection, "Gop.NumB", GopParam.uNumB, "Maximum number of consecutive B frames in a Group Of Pictures. Used only when GopCtrlMode is set to DEFAULT_GOP, ADAPTIVE_GOP or PYRAMIDAL_GOP.", {
     { ituCodecs(), 0, 4 },
@@ -601,11 +605,8 @@ static void populateGopSection(ConfigParser& parser, ConfigFile& cfg)
   });
 }
 
-static void populateSettingsSection(ConfigParser& parser, ConfigFile& cfg, Temporary& temp, std::ostream& warnStream)
+static void populateProfileAndLevel(ConfigParser& parser, ConfigFile& cfg, Section& curSection)
 {
-  (void)temp;
-  (void)warnStream;
-  auto curSection = Section::Settings;
   map<string, EnumDescription<int>> profiles;
 
   profiles["HEVC_MONO12"] = { AL_PROFILE_HEVC_MONO12, "See HEVC/H.265 specification", isOnlyCodec(Codec::Hevc) };
@@ -656,55 +657,10 @@ static void populateSettingsSection(ConfigParser& parser, ConfigFile& cfg, Tempo
   tiers["MAIN_TIER"] = { 0, "Use Main Tier profile", filterCodecs({ Codec::Hevc, Codec::Av1, Codec::Vvc }) };
   tiers["HIGH_TIER"] = { 1, "Use High Tier profile", filterCodecs({ Codec::Hevc, Codec::Av1, Codec::Vvc }) };
   parser.addEnum(curSection, "Tier", cfg.Settings.tChParam[0].uTier, tiers, "Specifies the tier to which the bitstream conforms");
-  parser.addArith(curSection, "NumSlices", cfg.Settings.tChParam[0].uNumSlices, "Number of slices used for each frame. Each slice contains one or more full LCU row(s) and they are spread over the frame as regularly as possible", {
-    { isOnlyCodec(Codec::Avc), 1, 4096 / GetBlkSizeInv(AVC_MAX_CU_SIZE) },
-    { filterCodecs({ Codec::Hevc, Codec::Vvc }), 1, 4096 / GetBlkSizeInv(CODEC_MIN_CTB_SIZE) },
-  });
-  parser.addNote(curSection, "NumSlices", "The maximum value is determined according to the maximum picture height and the minimum LCU size. The maximum value may no be reachable as the number of slices are also dependent to the level conformance and multicore encoding for instance.");
-  map<string, EnumDescription<int>> sliceSizeEnums;
-  sliceSizeEnums["DISABLE"] = { 0, "Disable Slice size", ituCodecs() };
-  parser.addArithFuncOrEnum<decltype(cfg.Settings.tChParam[0].uSliceSize), int>(curSection, "SliceSize", cfg.Settings.tChParam[0].uSliceSize, [](int sliceSize)
-  {
-    return (decltype(cfg.Settings.tChParam[0].uSliceSize))sliceSize * 95 / 100;
-  }, [](decltype(cfg.Settings.tChParam[0].uSliceSize) sliceSize)
-  {
-    return (int)sliceSize * 100 / 95;
-  }, sliceSizeEnums, "Target Slice Size. If set to 0, slices are defined by the NumSlices parameter, Otherwise it specifies the target slice size, in bytes, that the encoder uses to automatically split the bitstream into approximately equally sized slices, with a granularity of one LCU. This impacts performance, adding an overhead of one LCU per slice to the processing time of a command.", {
-    { ituCodecs(), 100, UINT16_MAX },
-  });
-  parser.addNote(curSection, "SliceSize", "This parameter is directly sent to the Encoder IP and specifies only the size of the Slice Data. It doesn't include any margin for the Slice header. So it is recommended to set the SliceSize parameter with the target value lowered by 5%. For example if your target value is 1500 bytes per slice, you should set SliceSize equals to 1425.");
+}
 
-  parser.addNote(curSection, "SliceSize", "Not supported in AVC multicores");
-  parser.addBool(curSection, "DependentSlice", cfg.Settings.bDependentSlice, "When there are several slices per frame (e.g. NumSlices is greater than 1 or SliceSize is greater than 0), this parameter specifies whether the additional slices are dependent slice segments or regular slices", isOnlyCodec(Codec::Hevc));
-  parser.addSeeAlso(curSection, "DependentSlice", { curSection, "NumSlices" });
-  parser.addSeeAlso(curSection, "DependentSlice", { curSection, "SliceSize" });
-  parser.addBool(curSection, "SubframeLatency", cfg.Settings.tChParam[0].bSubframeLatency, "Enable the subframe latency mode. This option requires multiple slices per frame.", allCodecs());
-  parser.addSeeAlso(curSection, "SubframeLatency", { curSection, "NumSlices" });
-  parser.addBool(curSection, "UniformSliceType", cfg.Settings.tChParam[0].bUseUniformSliceType, "Enable uniform slice types encoding. This means that all the slices will have the same type. The encoder will use a slice_type between 5 and 9.", isOnlyCodec(Codec::Avc));
-  map<string, EnumDescription<int>> startCodeBytesAligned;
-  startCodeBytesAligned["SC_AUTO"] = { AL_START_CODE_AUTO, "Software select the start code bytes alignment", ituCodecs() };
-  startCodeBytesAligned["SC_3_BYTES"] = { AL_START_CODE_3_BYTES, "Force start code 3-bytes alignment: 0x00 0x00 0x01", ituCodecs() };
-  startCodeBytesAligned["SC_4_BYTES"] = { AL_START_CODE_4_BYTES, "Force start code 4-bytes alignment: 0x00 0x00 0x00 0x01", ituCodecs() };
-  parser.addEnum(curSection, "StartCode", cfg.Settings.tChParam[0].eStartCodeBytesAligned, startCodeBytesAligned, "Start code size alignment");
-  map<string, EnumDescription<int>> seis;
-  seis["SEI_NONE"] = { AL_SEI_NONE, "No SEI message is inserted", ituCodecs() };
-  seis["SEI_BP"] = { AL_SEI_BP, "Buffering Period SEI", ituCodecs() };
-  seis["SEI_PT"] = { AL_SEI_PT, "Picture Timing SEI", ituCodecs() };
-  seis["SEI_RP"] = { AL_SEI_RP, "Recovery Point SEI", ituCodecs() };
-  seis["SEI_MDCV"] = { AL_SEI_MDCV, "Mastering Display Colour Volume SEI", ituCodecs() };
-  seis["SEI_CLL"] = { AL_SEI_CLL, "Content Light Level SEI", ituCodecs() };
-  seis["SEI_ATC"] = { AL_SEI_ATC, "Alternative Transfer Characteristics SEI", ituCodecs() };
-  seis["SEI_ST2094_10"] = { AL_SEI_ST2094_10, "ST2094-10 SEI", ituCodecs() };
-  seis["SEI_ST2094_40"] = { AL_SEI_ST2094_40, "ST2094-40 SEI", ituCodecs() };
-  seis["SEI_ALL"] = { (int)AL_SEI_ALL, "means SEI_PT | SEI_BP | SEI_RP", ituCodecs() };
-  parser.addEnum(curSection, "EnableSEI", cfg.Settings.uEnableSEI, seis, "Determines which Supplemental Enhancement Information are sent with the stream");
-  parser.addBool(curSection, "EnableAUD", cfg.Settings.bEnableAUD, "Determines if Access Unit Delimiter are added to the stream or not", ituCodecs());
-  map<string, EnumDescription<int>> fillerEnums;
-  fillerEnums["DISABLE"] = { AL_FILLER_DISABLE, "Disable Filler data", aomituCodecs() };
-  fillerEnums["ENABLE"] = { AL_FILLER_ENC, "Filler data is written by the encoder", aomituCodecs() }; // for backward compatibility
-  fillerEnums["ENC"] = { AL_FILLER_ENC, "Filler data is written by the encoder", aomituCodecs() };
-  fillerEnums["APP"] = { AL_FILLER_APP, "Filler data is written by the application", aomituCodecs() };
-  parser.addEnum(curSection, "EnableFillerData", cfg.Settings.eEnableFillerData, fillerEnums, "Specifies whether Filler Data are inserted when target bitrate cannot be achieved in CBR");
+static void populateVUIParameters(ConfigParser& parser, ConfigFile& cfg, Section& curSection)
+{
   map<string, EnumDescription<int>> aspectRatios;
   aspectRatios["ASPECT_RATIO_AUTO"] = { AL_ASPECT_RATIO_AUTO, "Aspect Ratio is selected automatically", ituCodecs() };
   aspectRatios["ASPECT_RATIO_1_1"] = { AL_ASPECT_RATIO_1_1, "1:1 Aspect Ratio", ituCodecs() };
@@ -765,40 +721,58 @@ static void populateSettingsSection(ConfigParser& parser, ConfigFile& cfg, Tempo
   colourMatrices["COLOUR_MAT_CHROMA_DERIVED_CLS"] = { AL_COLOUR_MAT_COEFF_CHROMA_DERIVED_CLS, "Use chroma derived CLS coefficients colour matrix", ituCodecs() };
   colourMatrices["COLOUR_MAT_BT_2100_ICTCP"] = { AL_COLOUR_MAT_COEFF_BT_2100_ICTCP, "Use BT-2100-ICTCP coefficients colour matrix", ituCodecs() };
   parser.addEnum(curSection, "ColourMatrix", cfg.Settings.tColorConfig.eColourMatrixCoeffs, colourMatrices, "Specifies the matrix coefficients used in deriving luma and chroma signals from RGB (HDR setting)");
-
-  map<string, EnumDescription<int>> chromaModes;
-  SetEnumDescr<int>(chromaModes, "CHROMA_MONO", AL_CHROMA_MONO, "The stream is encoded in monochrome", allCodecs());
-  SetEnumDescr<int>(chromaModes, "CHROMA_4_0_0", AL_CHROMA_4_0_0, "Same as CHROMA_MONO", allCodecs());
-  SetEnumDescr<int>(chromaModes, "CHROMA_4_2_0", AL_CHROMA_4_2_0, "The stream is encoded with 4:2:0 chroma subsampling", aomituCodecs());
-  SetEnumDescr<int>(chromaModes, "CHROMA_4_2_2", AL_CHROMA_4_2_2, "The stream is encoded with 4:2:2 chroma subsampling", aomituCodecs());
-  parser.addCustom(curSection, "ChromaMode", [chromaModes, &cfg](std::deque<Token>& tokens)
-  {
-    AL_EChromaMode mode = (AL_EChromaMode)parseEnum(tokens, chromaModes);
-    AL_SET_CHROMA_MODE(&cfg.Settings.tChParam[0].ePicFormat, mode);
-  }, [chromaModes, &cfg](void)
-  {
-    AL_EChromaMode mode = AL_GET_CHROMA_MODE(cfg.Settings.tChParam[0].ePicFormat);
-    return getDefaultEnumValue(mode, chromaModes);
-  }, "Set the expected chroma mode of the encoder. Depending on the input FourCC, this might lead to a conversion. Together with the BitDepth, these options determine the final FourCC the encoder is expecting.", { ParameterType::String }, { toCallbackInfo(chromaModes) });
-
   parser.addBool(curSection, "VideoFullRange", cfg.Settings.tChParam[0].bVideoFullRange, "Specifies if we are using the full range YUV or the reduced range (CCIR601) legacy range", allCodecs());
+}
 
-  map<string, EnumDescription<int>> entropymodes;
-  entropymodes["MODE_CAVLC"] = { AL_MODE_CAVLC, "Residual block in CAVLC semantics", isOnlyCodec(Codec::Avc) };
-  entropymodes["MODE_CABAC"] = { AL_MODE_CABAC, "Residual block in CABAC semantics", isOnlyCodec(Codec::Avc) };
-  parser.addEnum(curSection, "EntropyMode", cfg.Settings.tChParam[0].eEntropyMode, entropymodes, "Selects the entropy coding mode");
-  std::vector<int> bitDepthValues = { 8 };
-  bitDepthValues.push_back(10);
-  parser.addCustom(curSection, "BitDepth", [&](std::deque<Token>& tokens)
-  {
-    auto bitdepth = parseArithmetic<int>(tokens);
-    AL_SET_BITDEPTH(&cfg.Settings.tChParam[0].ePicFormat, bitdepth);
-  }, [&]() {
-    return std::to_string(AL_GET_BITDEPTH(cfg.Settings.tChParam[0].ePicFormat));
-  }, "Number of bits used to encode one pixel", { ParameterType::String }, toCallbackInfo(std::vector<ArithInfoList<int>> {
-    { aomituCodecs(), bitDepthValues },
-  }, 0));
+static void populateMultipassOptions(ConfigParser& parser, ConfigFile& cfg, Section& curSection)
+{
+  parser.addNote(curSection, "LookAhead", "TwoPass, SCDFirstPass and LookAhead are exclusive modes. Only one of them can be enabled at the same time.");
+  map<string, EnumDescription<int>> twoPassEnums;
+  twoPassEnums["DISABLE"] = { 0, "single pass mode", aomituCodecs() };
+  twoPassEnums["1"] = { 1, "first pass of a two-pass encoding", aomituCodecs() };
+  twoPassEnums["2"] = { 2, "second pass of a two-pass encoding", aomituCodecs() };
+  parser.addArithOrEnum(curSection, "TwoPass", cfg.Settings.TwoPass, twoPassEnums, "Enables/Disables the two_pass encoding mode and specifies which pass is considered for the current encoding. In two-pass encoding some information from the first pass are stored in a file and read back by the second pass", {
+    { aomituCodecs(), 0, 2 }
+  });
+  map<string, EnumDescription<int>> lookAheadEnums;
+  lookAheadEnums["DISABLE"] = { 0, "Disable the lookAhead encoding mode", aomituCodecs() };
+  parser.addArithOrEnum(curSection, "LookAhead", cfg.Settings.LookAhead, lookAheadEnums, "Enables/Disables the lookAhead encoding mode and specifies the number of frames in advance for the first analysis pass. this option increase the encoding latency and the number of required memory buffers.", {
+    { aomituCodecs(), 1, 20 },
+  });
+  parser.addBool(curSection, "SCDFirstPass", cfg.Settings.bEnableFirstPassSceneChangeDetection, "During first pass, to encode faster, enable only the scene change detection", allCodecs());
+  parser.addPath(curSection, "TwoPassFile", cfg.sTwoPassFileName, "File containing the first pass statistics", aomituCodecs());
+}
 
+static void populateOptionalNUTOptions(ConfigParser& parser, ConfigFile& cfg, Section& curSection)
+{
+  map<string, EnumDescription<int>> startCodeBytesAligned;
+  startCodeBytesAligned["SC_AUTO"] = { AL_START_CODE_AUTO, "Software select the start code bytes alignment", ituCodecs() };
+  startCodeBytesAligned["SC_3_BYTES"] = { AL_START_CODE_3_BYTES, "Force start code 3-bytes alignment: 0x00 0x00 0x01", ituCodecs() };
+  startCodeBytesAligned["SC_4_BYTES"] = { AL_START_CODE_4_BYTES, "Force start code 4-bytes alignment: 0x00 0x00 0x00 0x01", ituCodecs() };
+  parser.addEnum(curSection, "StartCode", cfg.Settings.tChParam[0].eStartCodeBytesAligned, startCodeBytesAligned, "Start code size alignment");
+  map<string, EnumDescription<int>> seis;
+  seis["SEI_NONE"] = { AL_SEI_NONE, "No SEI message is inserted", ituCodecs() };
+  seis["SEI_BP"] = { AL_SEI_BP, "Buffering Period SEI", ituCodecs() };
+  seis["SEI_PT"] = { AL_SEI_PT, "Picture Timing SEI", ituCodecs() };
+  seis["SEI_RP"] = { AL_SEI_RP, "Recovery Point SEI", ituCodecs() };
+  seis["SEI_MDCV"] = { AL_SEI_MDCV, "Mastering Display Colour Volume SEI", ituCodecs() };
+  seis["SEI_CLL"] = { AL_SEI_CLL, "Content Light Level SEI", ituCodecs() };
+  seis["SEI_ATC"] = { AL_SEI_ATC, "Alternative Transfer Characteristics SEI", ituCodecs() };
+  seis["SEI_ST2094_10"] = { AL_SEI_ST2094_10, "ST2094-10 SEI", ituCodecs() };
+  seis["SEI_ST2094_40"] = { AL_SEI_ST2094_40, "ST2094-40 SEI", ituCodecs() };
+  seis["SEI_ALL"] = { (int)AL_SEI_ALL, "means SEI_PT | SEI_BP | SEI_RP", ituCodecs() };
+  parser.addEnum(curSection, "EnableSEI", cfg.Settings.uEnableSEI, seis, "Determines which Supplemental Enhancement Information are sent with the stream");
+  parser.addBool(curSection, "EnableAUD", cfg.Settings.bEnableAUD, "Determines if Access Unit Delimiter are added to the stream or not", ituCodecs());
+  map<string, EnumDescription<int>> fillerEnums;
+  fillerEnums["DISABLE"] = { AL_FILLER_DISABLE, "Disable Filler data", aomituCodecs() };
+  fillerEnums["ENABLE"] = { AL_FILLER_ENC, "Filler data is written by the encoder", aomituCodecs() }; // for backward compatibility
+  fillerEnums["ENC"] = { AL_FILLER_ENC, "Filler data is written by the encoder", aomituCodecs() };
+  fillerEnums["APP"] = { AL_FILLER_APP, "Filler data is written by the application", aomituCodecs() };
+  parser.addEnum(curSection, "EnableFillerData", cfg.Settings.eEnableFillerData, fillerEnums, "Specifies whether Filler Data are inserted when target bitrate cannot be achieved in CBR");
+}
+
+static void populateScalingListOptions(ConfigParser& parser, ConfigFile& cfg, Temporary& temp, Section& curSection)
+{
   map<string, EnumDescription<int>> scalingmodes;
   scalingmodes["FLAT"] = { AL_SCL_FLAT, "Scaling list flat: all matrices coefficients are set to 16", ituCodecs() };
   scalingmodes["DEFAULT"] = { AL_SCL_DEFAULT, "Default value", ituCodecs() };
@@ -810,7 +784,10 @@ static void populateSettingsSection(ConfigParser& parser, ConfigFile& cfg, Tempo
   parser.addPath(curSection, "FileScalingList", temp.sScalingListFile, "if ScalingList is CUSTOM, specifies the file containing the quantization matrices", ituCodecs());
   parser.addNote(curSection, "FileScalingList", "For more details on file structure, see :ref:`File formats page<tests_application/encoder/user_manuals/file_formats-label>`");
   parser.addSeeAlso(curSection, "FileScalingList", { curSection, "ScalingList" });
+}
 
+static void populateQpCtrlOptions(ConfigParser& parser, ConfigFile& cfg, Section& curSection)
+{
   map<string, EnumDescription<int>> qpctrls;
   qpctrls["UNIFORM_QP"] = { AL_GENERATE_UNIFORM_QP, "All CUs of the slice use the same QP", aomituCodecs() };
   qpctrls["LOAD_QP"] = { AL_GENERATE_LOAD_QP, "The QPs of each CTB come from an external buffer loaded from a file. The file shall be named QPs.hex and located in the directory specified by QPTablesFolder", aomituCodecs() };
@@ -853,7 +830,11 @@ static void populateSettingsSection(ConfigParser& parser, ConfigFile& cfg, Tempo
   parser.addNote(curSection, "QPCtrlMode", "ROI_QP mode needs an input file stored in ROIFile parameter.");
   parser.addSeeAlso(curSection, "QPCtrlMode", { Section::Input, "ROIFile" });
   parser.addNote(curSection, "QPCtrlMode", "For more details on file structure, see :ref:`File formats page<tests_application/encoder/user_manuals/file_formats-label>`");
+}
 
+static void populateLdaCtrlOptions(ConfigParser& parser, ConfigFile& cfg, Temporary& temp, Section& curSection)
+{
+  (void)temp;
   map<string, EnumDescription<int>> ldamodes;
   ldamodes["DEFAULT_LDA"] = { AL_DEFAULT_LDA, "Uses the pre-programmed lambda factors", aomituCodecs() };
   ldamodes["AUTO_LDA"] = { AL_AUTO_LDA, "Automatically select between DEFAULT_LDA and DYNAMIC_LDA depending on RateCtrlMode and GopCtrlMode", aomituCodecs() };
@@ -881,6 +862,81 @@ static void populateSettingsSection(ConfigParser& parser, ConfigFile& cfg, Tempo
     auto const NumFactors = sizeof(pChan->LdaFactors) / sizeof(*pChan->LdaFactors);
     return getDefaultArrayValue(pChan->LdaFactors, NumFactors, 256);
   }, "Specifies a lambda factor for each pictures. The factors are ordered as: I, P, B(temporalId = 1), B(temporalId = 2), B(temporalId = 3), and B(temporalId = 4). A factor on LOAD_LDA lambdas is available for each picture type and temporal ID with the LambdaFactors table. Example: LambdaFactors = 0.20 0.35 0.59 0.60 1 1", { ParameterType::Array }, toCallbackInfo(ldaFactorsInfo));
+}
+
+static void populateSettingsSection(ConfigParser& parser, ConfigFile& cfg, Temporary& temp, std::ostream& warnStream)
+{
+  (void)temp;
+  (void)warnStream;
+  auto curSection = Section::Settings;
+
+  populateProfileAndLevel(parser, cfg, curSection);
+
+  parser.addArith(curSection, "NumSlices", cfg.Settings.tChParam[0].uNumSlices, "Number of slices used for each frame. Each slice contains one or more full LCU row(s) and they are spread over the frame as regularly as possible", {
+    { isOnlyCodec(Codec::Avc), 1, 4096 / GetBlkSizeInv(AVC_MAX_CU_SIZE) },
+    { filterCodecs({ Codec::Hevc, Codec::Vvc }), 1, 4096 / GetBlkSizeInv(CODEC_MIN_CTB_SIZE) },
+  });
+  parser.addNote(curSection, "NumSlices", "The maximum value is determined according to the maximum picture height and the minimum LCU size. The maximum value may no be reachable as the number of slices are also dependent to the level conformance and multicore encoding for instance.");
+  map<string, EnumDescription<int>> sliceSizeEnums;
+  sliceSizeEnums["DISABLE"] = { 0, "Disable Slice size", ituCodecs() };
+  parser.addArithFuncOrEnum<decltype(cfg.Settings.tChParam[0].uSliceSize), int>(curSection, "SliceSize", cfg.Settings.tChParam[0].uSliceSize, [](int sliceSize)
+  {
+    return (decltype(cfg.Settings.tChParam[0].uSliceSize))sliceSize * 95 / 100;
+  }, [](decltype(cfg.Settings.tChParam[0].uSliceSize) sliceSize)
+  {
+    return (int)sliceSize * 100 / 95;
+  }, sliceSizeEnums, "Target Slice Size. If set to 0, slices are defined by the NumSlices parameter, Otherwise it specifies the target slice size, in bytes, that the encoder uses to automatically split the bitstream into approximately equally sized slices, with a granularity of one LCU. This impacts performance, adding an overhead of one LCU per slice to the processing time of a command.", {
+    { ituCodecs(), 100, UINT16_MAX },
+  });
+  parser.addNote(curSection, "SliceSize", "This parameter is directly sent to the Encoder IP and specifies only the size of the Slice Data. It doesn't include any margin for the Slice header. So it is recommended to set the SliceSize parameter with the target value lowered by 5%. For example if your target value is 1500 bytes per slice, you should set SliceSize equals to 1425.");
+
+  parser.addNote(curSection, "SliceSize", "Not supported in AVC multicores");
+  parser.addBool(curSection, "DependentSlice", cfg.Settings.bDependentSlice, "When there are several slices per frame (e.g. NumSlices is greater than 1 or SliceSize is greater than 0), this parameter specifies whether the additional slices are dependent slice segments or regular slices", isOnlyCodec(Codec::Hevc));
+  parser.addSeeAlso(curSection, "DependentSlice", { curSection, "NumSlices" });
+  parser.addSeeAlso(curSection, "DependentSlice", { curSection, "SliceSize" });
+  parser.addBool(curSection, "SubframeLatency", cfg.Settings.tChParam[0].bSubframeLatency, "Enable the subframe latency mode. This option requires multiple slices per frame.", allCodecs());
+  parser.addSeeAlso(curSection, "SubframeLatency", { curSection, "NumSlices" });
+  parser.addBool(curSection, "UniformSliceType", cfg.Settings.tChParam[0].bUseUniformSliceType, "Enable uniform slice types encoding. This means that all the slices will have the same type. The encoder will use a slice_type between 5 and 9.", isOnlyCodec(Codec::Avc));
+
+  populateOptionalNUTOptions(parser, cfg, curSection);
+  populateVUIParameters(parser, cfg, curSection);
+
+  map<string, EnumDescription<int>> chromaModes;
+  SetEnumDescr<int>(chromaModes, "CHROMA_MONO", AL_CHROMA_MONO, "The stream is encoded in monochrome", allCodecs());
+  SetEnumDescr<int>(chromaModes, "CHROMA_4_0_0", AL_CHROMA_4_0_0, "Same as CHROMA_MONO", allCodecs());
+  SetEnumDescr<int>(chromaModes, "CHROMA_4_2_0", AL_CHROMA_4_2_0, "The stream is encoded with 4:2:0 chroma subsampling", aomituCodecs());
+  SetEnumDescr<int>(chromaModes, "CHROMA_4_2_2", AL_CHROMA_4_2_2, "The stream is encoded with 4:2:2 chroma subsampling", aomituCodecs());
+  parser.addCustom(curSection, "ChromaMode", [chromaModes, &cfg](std::deque<Token>& tokens)
+  {
+    AL_EChromaMode mode = (AL_EChromaMode)parseEnum(tokens, chromaModes);
+    AL_SET_CHROMA_MODE(&cfg.Settings.tChParam[0].ePicFormat, mode);
+  }, [chromaModes, &cfg](void)
+  {
+    AL_EChromaMode mode = AL_GET_CHROMA_MODE(cfg.Settings.tChParam[0].ePicFormat);
+    return getDefaultEnumValue(mode, chromaModes);
+  }, "Set the expected chroma mode of the encoder. Depending on the input FourCC, this might lead to a conversion. Together with the BitDepth, these options determine the final FourCC the encoder is expecting.", { ParameterType::String }, { toCallbackInfo(chromaModes) });
+
+  map<string, EnumDescription<int>> entropymodes;
+  entropymodes["MODE_CAVLC"] = { AL_MODE_CAVLC, "Residual block in CAVLC semantics", isOnlyCodec(Codec::Avc) };
+  entropymodes["MODE_CABAC"] = { AL_MODE_CABAC, "Residual block in CABAC semantics", isOnlyCodec(Codec::Avc) };
+  parser.addEnum(curSection, "EntropyMode", cfg.Settings.tChParam[0].eEntropyMode, entropymodes, "Selects the entropy coding mode");
+  std::vector<int> bitDepthValues = { 8 };
+  bitDepthValues.push_back(10);
+  parser.addCustom(curSection, "BitDepth", [&](std::deque<Token>& tokens)
+  {
+    auto bitdepth = parseArithmetic<int>(tokens);
+    AL_SET_BITDEPTH(&cfg.Settings.tChParam[0].ePicFormat, bitdepth);
+  }, [&]() {
+    return std::to_string(AL_GET_BITDEPTH(cfg.Settings.tChParam[0].ePicFormat));
+  }, "Number of bits used to encode one pixel", { ParameterType::String }, toCallbackInfo(std::vector<ArithInfoList<int>> {
+    { aomituCodecs(), bitDepthValues },
+  }, 0));
+
+  populateScalingListOptions(parser, cfg, temp, curSection);
+
+  populateQpCtrlOptions(parser, cfg, curSection);
+  populateLdaCtrlOptions(parser, cfg, temp, curSection);
+
   parser.addArith(curSection, "CabacInit", cfg.Settings.tChParam[0].uCabacInitIdc, "As defined by the standard, it specifies the CABAC initialization table", {
     { isOnlyCodec(Codec::Avc), 0, 2 },
     { filterCodecs({ Codec::Hevc, Codec::Vvc }), 0, 1 },
@@ -968,21 +1024,7 @@ static void populateSettingsSection(ConfigParser& parser, ConfigFile& cfg, Tempo
 
   parser.addBool(curSection, "ForcePpsIdToZero", cfg.Settings.tChParam[0].bForcePpsIdToZero, "Every PPS ID is set to 0. Not compatible with reordering. By default, the pps id increases by 1 each time a PPS with different settings must be sent.", ituCodecs());
 
-  parser.addNote(curSection, "LookAhead", "TwoPass, SCDFirstPass and LookAhead are exclusive modes. Only one of them can be enabled at the same time.");
-  map<string, EnumDescription<int>> twoPassEnums;
-  twoPassEnums["DISABLE"] = { 0, "single pass mode", aomituCodecs() };
-  twoPassEnums["1"] = { 1, "first pass of a two-pass encoding", aomituCodecs() };
-  twoPassEnums["2"] = { 2, "second pass of a two-pass encoding", aomituCodecs() };
-  parser.addArithOrEnum(curSection, "TwoPass", cfg.Settings.TwoPass, twoPassEnums, "Enables/Disables the two_pass encoding mode and specifies which pass is considered for the current encoding. In two-pass encoding some information from the first pass are stored in a file and read back by the second pass", {
-    { aomituCodecs(), 0, 2 }
-  });
-  map<string, EnumDescription<int>> lookAheadEnums;
-  lookAheadEnums["DISABLE"] = { 0, "Disable the lookAhead encoding mode", aomituCodecs() };
-  parser.addArithOrEnum(curSection, "LookAhead", cfg.Settings.LookAhead, lookAheadEnums, "Enables/Disables the lookAhead encoding mode and specifies the number of frames in advance for the first analysis pass. this option increase the encoding latency and the number of required memory buffers.", {
-    { aomituCodecs(), 1, 20 },
-  });
-  parser.addBool(curSection, "SCDFirstPass", cfg.Settings.bEnableFirstPassSceneChangeDetection, "During first pass, to encode faster, enable only the scene change detection", allCodecs());
-  parser.addPath(curSection, "TwoPassFile", cfg.sTwoPassFileName, "File containing the first pass statistics", aomituCodecs());
+  populateMultipassOptions(parser, cfg, curSection);
 
 }
 
@@ -995,8 +1037,8 @@ static void populateRunSection(ConfigParser& parser, ConfigFile& cfg)
   parser.addCustom(curSection, "UseBoard", [&](std::deque<Token>& tokens)
   {
     bool bUseBoard = parseBoolEnum(tokens, createBoolEnums(allCodecs()));
-    cfg.RunInfo.iDeviceType = bUseBoard ? AL_DEVICE_TYPE_BOARD : AL_DEVICE_TYPE_REFSW;
-  }, [&]() { return (cfg.RunInfo.iDeviceType == AL_DEVICE_TYPE_BOARD) ? "ENABLE" : "DISABLE"; }, "Specifies if we are using the reference model (DISABLE) or the actual hardware (ENABLE)", { ParameterType::String }, toCallbackInfo(useBoardEnum));
+    cfg.RunInfo.eDeviceType = bUseBoard ? AL_EDeviceType::AL_DEVICE_TYPE_BOARD : AL_EDeviceType::AL_DEVICE_TYPE_REFSW;
+  }, [&]() { return (cfg.RunInfo.eDeviceType == AL_EDeviceType::AL_DEVICE_TYPE_BOARD) ? "ENABLE" : "DISABLE"; }, "Specifies if we are using the reference model (DISABLE) or the actual hardware (ENABLE)", { ParameterType::String }, toCallbackInfo(useBoardEnum));
 
   parser.addBool(curSection, "Loop", cfg.RunInfo.bLoop, "Specifies if it should loop back to the beginning of YUV input stream when it reaches the end of the file", allCodecs());
   map<string, EnumDescription<int>> maxPicts;
@@ -1025,6 +1067,14 @@ static void populateRunSection(ConfigParser& parser, ConfigFile& cfg)
   parser.addArith(curSection, "ForceStreamBufSize", cfg.iForceStreamBufSize, "Force the Output bitstreram Size (in bytes)", {
     { allCodecs(), 0, INT_MAX },
   });
+
+  map<string, EnumDescription<int>> rateCtrlStatModes;
+  rateCtrlStatModes["STATS"] = { AL_RATECTRL_STAT_MODE_DEFAULT, "Basic Rate Control Statistics. For each frame NumBytes, MinQP, MaxQP, NumSkip and NumIntra values are printed to rate_ctrl_stats.txt file.", aomituCodecs() };
+  rateCtrlStatModes["MOTION_VECTORS"] = { AL_RATECTRL_STAT_MODE_MV, "Append used Motion Vectors to the stream buffers. For each frame motion vectors are written to motion_vectors.bin file.", aomituCodecs() };
+  parser.addEnum(curSection, "RateCtrlStats", cfg.RunInfo.rateCtrlStat, rateCtrlStatModes, "Selects the rate control statistics to embbed with stream buffers.");
+  parser.addSeeAlso(curSection, "RateCtrlStats", { curSection, "RateCtrlStats.Path" });
+  parser.addPath(curSection, "RateCtrlStats.Path", cfg.RunInfo.rateCtrlMetaPath, "If RateCtrlStats enum is set, specifys a path where the statistics files should be written", aomituCodecs());
+  parser.addSeeAlso(curSection, "RateCtrlStats.Path", { curSection, "RateCtrlStats" });
 }
 
 static void try_to_push_secondary_input(ConfigFile& cfg, Temporary& temp, vector<TConfigYUVInput>& inputList)

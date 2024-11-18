@@ -924,3 +924,17 @@
   Fixes:
     -- Performances when logs are disabled
     -- Minors bug and typos fixes and types
+
+YYYY-MM-DD (v1.0.??)
+--------------------
+  Added Features:
+    --
+
+  API:
+    -- Version of the API is now 0.45.0
+    -- Move all lib_conv_yuv into lib_app
+      - Remove duplicated files
+      - Several files renames
+
+  Fixes:
+    -- Minors bug and typos fixes and types

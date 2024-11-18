@@ -1,6 +1,8 @@
 // SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
+#include "lib_app/SinkRateCtrlMeta.h"
+#include "lib_common/PicFormat.h"
 #include <climits>
 #include <cstdarg>
 #include <cstdlib>
@@ -57,8 +59,7 @@ extern "C" {
 #include "lib_common_enc/IpEncFourCC.h"
 }
 
-#include "lib_conv_yuv/lib_conv_yuv.h"
-#include "lib_conv_yuv/AL_RasterConvert.h"
+#include "lib_app/AL_RasterConvert.h"
 
 #include "sink_encoder.h"
 #include "sink_yuv_md5.h"
@@ -78,6 +79,20 @@ static int constexpr g_defaultMinBuffers = 2;
 static bool g_MultiChunk = false;
 
 using namespace std;
+
+static std::string toStringPathsSet(std::vector<std::string> paths)
+{
+  std::string out;
+
+  for(auto const& path : paths)
+  {
+    if(out.length() != 0)
+      out += string(", ");
+    out += path;
+  }
+
+  return out;
+}
 
 /*****************************************************************************/
 AL_HANDLE alignedAlloc(AL_TAllocator* pAllocator, char const* pBufName, uint32_t uSize, uint32_t uAlign, uint32_t* uAllocatedSize, uint32_t* uAlignmentOffset)
@@ -138,14 +153,14 @@ void SetDefaults(ConfigFile& cfg)
   cfg.MainInput.FileInfo.FrameRate = 0;
   cfg.MainInput.FileInfo.PictHeight = 0;
   cfg.MainInput.FileInfo.PictWidth = 0;
-  cfg.RunInfo.encDevicePath = { ENCODER_DEVICES };
-  cfg.RunInfo.iDeviceType = AL_DEVICE_TYPE_BOARD;
-  cfg.RunInfo.iSchedulerType = AL_SCHEDULER_TYPE_MCU;
+  cfg.RunInfo.encDevicePaths = ENCODER_DEVICES;
+  cfg.RunInfo.eDeviceType = AL_EDeviceType::AL_DEVICE_TYPE_BOARD;
+  cfg.RunInfo.eSchedulerType = AL_ESchedulerType::AL_SCHEDULER_TYPE_MCU;
   cfg.RunInfo.bLoop = false;
   cfg.RunInfo.iMaxPict = INT_MAX; // ALL
   cfg.RunInfo.iFirstPict = 0;
   cfg.RunInfo.iScnChgLookAhead = 3;
-  cfg.RunInfo.ipCtrlMode = AL_IPCTRL_MODE_STANDARD;
+  cfg.RunInfo.ipCtrlMode = AL_EIpCtrlMode::AL_IPCTRL_MODE_STANDARD;
   cfg.RunInfo.uInputSleepInMilliseconds = 0;
   cfg.strict_mode = false;
   cfg.iForceStreamBufSize = 0;
@@ -252,6 +267,7 @@ static void SetCodingResolution(ConfigFile& cfg)
     cfg.Settings.tChParam[0].uEncWidth = cfg.Settings.tChParam[0].uSrcCropWidth;
     cfg.Settings.tChParam[0].uEncHeight = cfg.Settings.tChParam[0].uSrcCropHeight;
   }
+
 }
 
 /*****************************************************************************/
@@ -375,10 +391,11 @@ void ParseCommandLine(int argc, char** argv, ConfigFile& cfg, CfgParser& cfgPars
 
   opt.addInt("--stream-buf-size", &cfg.iForceStreamBufSize, "Specify stream buffers size");
   opt.addFlag("--non-realtime", &cfg.Settings.tChParam[0].bNonRealtime, "Specifies that the channel is a non-realtime channel");
-  opt.addFlag("--print-ratectrl-stat", &cfg.RunInfo.printRateCtrlStat, "Write rate-control related statistics for each frame in the file. Only a subset of the statistics is written, more data and motion vectors are also available.", true);
   opt.addFlag("--print-picture-type", &cfg.RunInfo.printPictureType, "Write picture type for each frame in the file", true);
 
-  opt.addString("--device", &cfg.RunInfo.encDevicePath, std::string(std::string("Path of the driver device file used to talk with the IP. Default is: ") + cfg.RunInfo.encDevicePath.c_str()));
+  opt.addOption("--device", [&](string) {
+    cfg.RunInfo.encDevicePaths.push_back(opt.popWord());
+  }, std::string(std::string("Path of the driver device(s) file(s) used to talk with the IP. Default(s) are: ") + toStringPathsSet(cfg.RunInfo.encDevicePaths)));
   opt.startSection("Misc");
 
   opt.addOption("--color", [&](string)
@@ -525,6 +542,17 @@ void SetMoreDefaults(ConfigFile& cfg)
       RecFourCC = FileInfo.FourCC;
     }
   }
+
+  AL_TPicFormat tRecPicFormat;
+
+  if(AL_GetPicFormat(RecFourCC, &tRecPicFormat))
+  {
+    auto& RecFileName = cfg.RecFileName;
+
+    if(!RecFileName.empty())
+      if(tRecPicFormat.eStorageMode != AL_FB_RASTER && !tRecPicFormat.bCompressed)
+        throw runtime_error("Reconstructed storage format can only be tiled if compressed.");
+  }
 }
 
 /*****************************************************************************/
@@ -537,7 +565,7 @@ static shared_ptr<AL_TBuffer> AllocateConversionBuffer(int iWidth, int iHeight, 
   return shared_ptr<AL_TBuffer>(pYuv, &AL_Buffer_Destroy);
 }
 
-bool ReadSourceFrameBuffer(AL_TBuffer* pBuffer, AL_TBuffer* conversionBuffer, unique_ptr<FrameReader> const& frameReader, AL_TDimension tUpdatedDim, uint8_t uSrcBitDepth, IConvSrc* hConv)
+bool ReadSourceFrameBuffer(AL_TBuffer* pBuffer, AL_TBuffer* conversionBuffer, unique_ptr<FrameReader> const& frameReader, AL_TDimension tUpdatedDim, IConvSrc* hConv)
 {
 
   AL_PixMapBuffer_SetDimension(pBuffer, tUpdatedDim);
@@ -548,7 +576,7 @@ bool ReadSourceFrameBuffer(AL_TBuffer* pBuffer, AL_TBuffer* conversionBuffer, un
 
     if(!frameReader->ReadFrame(conversionBuffer))
       return false;
-    hConv->ConvertSrcBuf(uSrcBitDepth, conversionBuffer, pBuffer);
+    hConv->ConvertSrcBuf(conversionBuffer, pBuffer);
   }
   else
     return frameReader->ReadFrame(pBuffer);
@@ -556,14 +584,14 @@ bool ReadSourceFrameBuffer(AL_TBuffer* pBuffer, AL_TBuffer* conversionBuffer, un
   return true;
 }
 
-shared_ptr<AL_TBuffer> ReadSourceFrame(BaseBufPool* pBufPool, AL_TBuffer* conversionBuffer, unique_ptr<FrameReader> const& frameReader, AL_TDimension tUpdatedDim, uint8_t uSrcBitDepth, IConvSrc* hConv)
+shared_ptr<AL_TBuffer> ReadSourceFrame(BaseBufPool* pBufPool, AL_TBuffer* conversionBuffer, unique_ptr<FrameReader> const& frameReader, AL_TDimension tUpdatedDim, IConvSrc* hConv)
 {
   shared_ptr<AL_TBuffer> sourceBuffer = pBufPool->GetSharedBuffer();
 
   if(sourceBuffer == nullptr)
     throw runtime_error("sourceBuffer must exist");
 
-  if(!ReadSourceFrameBuffer(sourceBuffer.get(), conversionBuffer, frameReader, tUpdatedDim, uSrcBitDepth, hConv))
+  if(!ReadSourceFrameBuffer(sourceBuffer.get(), conversionBuffer, frameReader, tUpdatedDim, hConv))
     return nullptr;
   return sourceBuffer;
 }
@@ -574,6 +602,15 @@ AL_TPicFormat GetSrcPicFormat(AL_TEncChanParam const& tChParam)
   auto eChromaMode = AL_GET_CHROMA_MODE(tChParam.ePicFormat);
 
   return AL_EncGetSrcPicFormat(eChromaMode, tChParam.uSrcBitDepth, eSrcMode);
+}
+
+void CheckSrcComp(TFourCC tFileFourCC, TFourCC tSrcFourCC)
+{
+  if(AL_GetBitDepth(tFileFourCC) != AL_GetBitDepth(tSrcFourCC))
+    throw runtime_error("We can't convert BitDepth for compressed source.");
+
+  if(AL_GetChromaMode(tFileFourCC) != AL_GetChromaMode(tSrcFourCC))
+    throw runtime_error("We can't convert ChromaMode for compressed source.");
 }
 
 struct SrcConverterParams
@@ -593,6 +630,9 @@ unique_ptr<IConvSrc> AllocateSrcConverter(SrcConverterParams const& tSrcConverte
 
   if(!bIsConversionNeeded)
     return nullptr;
+
+  if(AL_IsCompressed(tSrcFourCC))
+    CheckSrcComp(tSrcConverterParams.tFileFourCC, tSrcFourCC);
 
   // ********** Allocate the YUV buffer to read in the file **********
   pFileReaderYuv = AllocateConversionBuffer(tSrcConverterParams.tDim.iWidth, tSrcConverterParams.tDim.iHeight, tSrcConverterParams.tFileFourCC);
@@ -647,7 +687,7 @@ static shared_ptr<AL_TBuffer> GetSrcFrame(int& iReadCount, int iPictCount, uniqu
     auto tUpdatedDim = AL_TDimension {
       AL_GetSrcWidth(tChParam), AL_GetSrcHeight(tChParam)
     };
-    frame = ReadSourceFrame(&SrcBufPool, Yuv, frameReader, tUpdatedDim, tChParam.uSrcBitDepth, pSrcConv);
+    frame = ReadSourceFrame(&SrcBufPool, Yuv, frameReader, tUpdatedDim, pSrcConv);
 
     iReadCount++;
   }
@@ -885,6 +925,8 @@ void LayerResources::Init(ConfigFile& cfg, AL_TEncoderInfo tEncInfo, int iLayerI
   if(!InitStreamBufPool(StreamBufPool, Settings, iLayerID, tEncInfo.uNumCore, cfg.iForceStreamBufSize, pAllocator))
     throw std::runtime_error("Error creating stream buffer pool");
 
+  AL_TDimension tDim = { Settings.tChParam[iLayerID].uEncWidth, Settings.tChParam[iLayerID].uEncHeight };
+
   bool bUsePictureMeta = false;
   bUsePictureMeta |= cfg.RunInfo.printPictureType;
 
@@ -900,13 +942,12 @@ void LayerResources::Init(ConfigFile& cfg, AL_TEncoderInfo tEncInfo, int iLayerI
 
     if(!bRet)
       throw std::runtime_error("Meta must be added in stream pool");
-    Rtos_Free(pMeta);
+    AL_MetaData_Destroy(pMeta);
   }
 
-  if(cfg.RunInfo.printRateCtrlStat)
+  if(cfg.RunInfo.rateCtrlStat != AL_RATECTRL_STAT_MODE_NONE)
   {
-    AL_TDimension tDim = { Settings.tChParam[iLayerID].uEncWidth, Settings.tChParam[iLayerID].uEncHeight };
-    auto pMeta = (AL_TMetaData*)AL_RateCtrlMetaData_Create(pAllocator, tDim, Settings.tChParam[iLayerID].uLog2MaxCuSize, AL_GET_CODEC(Settings.tChParam[iLayerID].eProfile));
+    auto pMeta = (AL_TMetaData*)AL_RateCtrlMetaData_CustomCreate(pAllocator, cfg.RunInfo.rateCtrlStat, tDim, Settings.tChParam[iLayerID].uLog2MaxCuSize, AL_GET_CODEC(Settings.tChParam[iLayerID].eProfile));
 
     if(pMeta == nullptr)
       throw std::runtime_error("Meta must be created");
@@ -914,7 +955,8 @@ void LayerResources::Init(ConfigFile& cfg, AL_TEncoderInfo tEncInfo, int iLayerI
 
     if(!bRet)
       throw std::runtime_error("Meta must be added in stream pool");
-    Rtos_Free(pMeta);
+
+    AL_MetaData_Destroy(pMeta);
   }
 
   // --------------------------------------------------------------------------------
@@ -987,7 +1029,7 @@ void LayerResources::PushResources(ConfigFile& cfg, EncoderSink* enc
 
   for(int i = 0; i < (int)StreamBufPool.GetNumBuf(); ++i)
   {
-    std::shared_ptr<AL_TBuffer> pStream = StreamBufPool.GetSharedBuffer(AL_BUF_MODE_NONBLOCK);
+    std::shared_ptr<AL_TBuffer> pStream = StreamBufPool.GetSharedBuffer(AL_EBufMode::AL_BUF_MODE_NONBLOCK);
 
     if(pStream == nullptr)
       throw runtime_error("pStream must exist");
@@ -1123,15 +1165,14 @@ void SafeChannelMain(ConfigFile& cfg, CIpDevice* pIpDevice, CIpDeviceParam& para
 
   // --------------------------------------------------------------------------------
   // Create Encoder
-  enc.reset(new EncoderSink(cfg, pScheduler
-                            , pAllocator
-                            ));
+
+  enc.reset(new EncoderSink(cfg, pScheduler, pAllocator));
 
   IFrameSink* firstSink = enc.get();
 
   if(AL_TwoPassMngr_HasLookAhead(cfg.Settings))
   {
-    encFirstPassLA.reset(new EncoderLookAheadSink(cfg, enc.get(), pScheduler, pAllocator));
+    encFirstPassLA.reset(new EncoderLookAheadSink(cfg, pScheduler, pAllocator));
 
     encFirstPassLA->next = firstSink;
     firstSink = encFirstPassLA.get();
@@ -1179,6 +1220,12 @@ void SafeChannelMain(ConfigFile& cfg, CIpDevice* pIpDevice, CIpDeviceParam& para
   {
     std::unique_ptr<IFrameSink> bitrateOutput(createBitrateWriter(RunInfo.bitrateFile, cfg));
     multisink->addSink(bitrateOutput);
+  }
+
+  if(RunInfo.rateCtrlStat != AL_RATECTRL_STAT_MODE_NONE && !RunInfo.rateCtrlMetaPath.empty())
+  {
+    std::unique_ptr<IFrameSink> rateCtrlMetaSink(createRateCtrlMetaSink(RunInfo.rateCtrlMetaPath));
+    multisink->addSink(rateCtrlMetaSink);
   }
 
   enc->BitstreamOutput[0] = std::move(multisink);
@@ -1313,8 +1360,8 @@ void SafeMain(int argc, char* argv[])
     throw runtime_error("Can't setup encode library");
 
   CIpDeviceParam param;
-  param.iSchedulerType = RunInfo.iSchedulerType;
-  param.iDeviceType = RunInfo.iDeviceType;
+  param.eSchedulerType = RunInfo.eSchedulerType;
+  param.eDeviceType = RunInfo.eDeviceType;
 
   param.pCfgFile = &cfg;
   param.bTrackDma = RunInfo.trackDma;

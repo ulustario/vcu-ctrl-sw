@@ -1,11 +1,9 @@
 // SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
-/****************************************************************************
-   -----------------------------------------------------------------------------
- **************************************************************************//*!
+/******************************************************************************
    \addtogroup lib_bitstream
-   @{
+   !@{
    \file
  *****************************************************************************/
 
@@ -15,12 +13,12 @@
 #include "lib_common/AUD.h"
 #include "lib_common/HDR.h"
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief This class implements helpful functions to encode Raw Byte Sequence
    Payload such as SPS, PPS ...
 *****************************************************************************/
 
-/*********************************************************************//*!
+/*************************************************************************
    \brief Writes Access Unit delimiter to the managed CBitstreamLite
    \param[in] pRE Pointer to TRbspEncoding Object
    \param[in] eSliceType Slice type
@@ -38,4 +36,4 @@ void AL_RbspEncoding_WriteST2094_10(AL_TBitStreamLite* pBS, AL_TDynamicMeta_ST20
 void AL_RbspEncoding_WriteST2094_40(AL_TBitStreamLite* pBS, AL_TDynamicMeta_ST2094_40* pST2094_40);
 /****************************************************************************/
 
-/*@}*/
+/*!@}*/

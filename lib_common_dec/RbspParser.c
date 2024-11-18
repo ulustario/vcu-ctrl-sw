@@ -1,17 +1,14 @@
 // SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
-/****************************************************************************
-   -----------------------------------------------------------------------------
- **************************************************************************//*!
+/******************************************************************************
    \addtogroup lib_base
-   @{
+   !@{
    \file
  *****************************************************************************/
 #include "RbspParser.h"
 
 #include "lib_common_dec/DecBuffersInternal.h"
-#include "lib_assert/al_assert.h"
 
 #define odd(a) ((a) & 1)
 #define even(a) (!odd(a))
@@ -28,7 +25,7 @@ static const uint8_t tab_log2[256] =
   7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7
 };
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief The log2 function computes the log2 mathematical operation on value
    \param[in] value the value on which the log2 mathematical operation will be done
    \return    return the value of log2(value)
@@ -158,7 +155,7 @@ static bool fetch_data(AL_TRbspParser* pRP)
 }
 
 /*****************************************************************************/
-void InitRbspParser(TCircBuffer const* pStream, uint8_t* pNoAEBuffer, int32_t iNoAESize, bool bHasSC, AL_TRbspParser* pRP)
+void InitRbspParser(AL_TCircBuffer const* pStream, uint8_t* pNoAEBuffer, int32_t iNoAESize, bool bHasSC, AL_TRbspParser* pRP)
 {
   pRP->pBufIn = pStream->tMD.pVirtualAddr;
   pRP->iBufInSize = pStream->tMD.uSize;
@@ -294,7 +291,7 @@ bool rbsp_trailing_bits(AL_TRbspParser* pRP)
 /*****************************************************************************/
 uint8_t getbyte(AL_TRbspParser* pRP)
 {
-  AL_Assert(byte_aligned(pRP));
+  Rtos_Assert(byte_aligned(pRP));
 
   if(pRP->iTrailingBitOneIndex < pRP->iCurrentBitIndex + 8 && !fetch_data(pRP))
   {
@@ -303,7 +300,7 @@ uint8_t getbyte(AL_TRbspParser* pRP)
     return 0;
   }
 
-  AL_Assert(pRP->iCurrentBitIndex <= pRP->iTrailingBitOneIndex);
+  Rtos_Assert(pRP->iCurrentBitIndex <= pRP->iTrailingBitOneIndex);
 
   int byte_offset = (int)(pRP->iCurrentBitIndex >> 3);
 
@@ -518,4 +515,4 @@ int se(AL_TRbspParser* pRP)
   return even(k + 1) ? iValue : -iValue;
 }
 
-/*@}*/
+/*!@}*/

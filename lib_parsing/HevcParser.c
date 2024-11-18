@@ -215,10 +215,10 @@ AL_PARSE_RESULT AL_HEVC_ParsePPS(AL_TAup* pIAup, AL_TRbspParser* pRP, uint16_t* 
       pPPS->diff_cu_chroma_qp_offset_depth = ue(pRP);
       pPPS->chroma_qp_offset_list_len_minus1 = Clip3(ue(pRP), 0, 5);
 
-      for(int i = 0; i <= pPPS->chroma_qp_offset_list_len_minus1; ++i)
+      for(uint8_t u = 0; u <= pPPS->chroma_qp_offset_list_len_minus1; u++)
       {
-        pPPS->cb_qp_offset_list[i] = se(pRP);
-        pPPS->cr_qp_offset_list[i] = se(pRP);
+        pPPS->cb_qp_offset_list[u] = se(pRP);
+        pPPS->cr_qp_offset_list[u] = se(pRP);
       }
     }
     pPPS->log2_sao_offset_scale_luma = ue(pRP);
@@ -465,6 +465,16 @@ AL_PARSE_RESULT AL_HEVC_ParseSPS(AL_TRbspParser* pRP, AL_THevcSps* pSPS)
     pSPS->sps_max_dec_pic_buffering_minus1[i] = ue(pRP);
     pSPS->sps_max_num_reorder_pics[i] = ue(pRP);
     pSPS->sps_max_latency_increase_plus1[i] = ue(pRP);
+  }
+
+  if(!pSPS->sps_sub_layer_ordering_info_present_flag)
+  {
+    for(int i = 0; i < layer_offset; ++i)
+    {
+      pSPS->sps_max_dec_pic_buffering_minus1[i] = pSPS->sps_max_dec_pic_buffering_minus1[layer_offset];
+      pSPS->sps_max_num_reorder_pics[i] = pSPS->sps_max_num_reorder_pics[layer_offset];
+      pSPS->sps_max_latency_increase_plus1[i] = pSPS->sps_max_latency_increase_plus1[layer_offset];
+    }
   }
 
   pSPS->log2_min_luma_coding_block_size_minus3 = ue(pRP);

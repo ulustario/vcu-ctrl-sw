@@ -1,17 +1,15 @@
 // SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
-/****************************************************************************
-   -----------------------------------------------------------------------------
- **************************************************************************//*!
+/******************************************************************************
    \addtogroup lib_base
-   @{
+   !@{
    \file
  *****************************************************************************/
 #include "lib_common/MemDesc.h"
 
 /****************************************************************************/
-void MemDesc_Init(TMemDesc* pMD)
+void AL_MemDesc_Init(AL_TMemDesc* pMD)
 {
   if(pMD)
   {
@@ -24,12 +22,12 @@ void MemDesc_Init(TMemDesc* pMD)
 }
 
 /****************************************************************************/
-bool MemDesc_Alloc(TMemDesc* pMD, AL_TAllocator* pAllocator, size_t zSize)
+bool AL_MemDesc_Alloc(AL_TMemDesc* pMD, AL_TAllocator* pAllocator, size_t zSize)
 {
-  return MemDesc_AllocNamed(pMD, pAllocator, zSize, "unknown");
+  return AL_MemDesc_AllocNamed(pMD, pAllocator, zSize, "unknown");
 }
 
-bool MemDesc_AllocNamed(TMemDesc* pMD, AL_TAllocator* pAllocator, size_t zSize, char const* name)
+bool AL_MemDesc_AllocNamed(AL_TMemDesc* pMD, AL_TAllocator* pAllocator, size_t zSize, char const* name)
 {
   bool bRet = false;
 
@@ -51,12 +49,12 @@ bool MemDesc_AllocNamed(TMemDesc* pMD, AL_TAllocator* pAllocator, size_t zSize, 
 }
 
 /****************************************************************************/
-bool MemDesc_Free(TMemDesc* pMD)
+bool AL_MemDesc_Free(AL_TMemDesc* pMD)
 {
   if(pMD && pMD->pAllocator && pMD->hAllocBuf)
   {
     AL_Allocator_Free(pMD->pAllocator, pMD->hAllocBuf);
-    MemDesc_Init(pMD);
+    AL_MemDesc_Init(pMD);
     return true;
   }
   else

@@ -1,11 +1,9 @@
 // SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
-/****************************************************************************
-   -----------------------------------------------------------------------------
- **************************************************************************//*!
+/******************************************************************************
    \addtogroup lib_common
-   @{
+   !@{
    \file
  *****************************************************************************/
 #pragma once
@@ -13,7 +11,7 @@
 #include "lib_common/SEI.h"
 #include "common_syntax_elements.h"
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Mimics structure for AVC SEI buffering period
 *****************************************************************************/
 typedef struct AL_TAvcBufPeriod
@@ -23,7 +21,7 @@ typedef struct AL_TAvcBufPeriod
   uint32_t initial_cpb_removal_delay_offset[32];
 }AL_TAvcBufPeriod;
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Mimics structure for HEVC SEI buffering period
 *****************************************************************************/
 typedef struct AL_THevcBufPeriod
@@ -48,7 +46,7 @@ typedef struct AL_THevcBufPeriod
   uint32_t vcl_initial_alt_cpb_removal_delay_offset[6];
 }AL_THevcBufPeriod;
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Mimics structure for AVC picture timing
 *****************************************************************************/
 typedef struct AL_TSeiClockTS
@@ -91,7 +89,7 @@ typedef struct AL_TRecoveryPoint
   bool broken_link;
 }AL_TRecoveryPoint;
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Mimics structure for HEVC picture timing
 *****************************************************************************/
 typedef struct AL_THevcPicTiming
@@ -111,7 +109,7 @@ typedef struct AL_THevcPicTiming
   uint32_t* du_cpb_removal_delay_increment_minus1;
 }AL_THevcPicTiming;
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief AVC Supplemental enhancement information structure
 *****************************************************************************/
 typedef struct AL_TAvcSei
@@ -122,7 +120,7 @@ typedef struct AL_TAvcSei
   AL_TRecoveryPoint recovery_point;
 }AL_TAvcSei;
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief HEVC Supplemental enhancement information structure
 *****************************************************************************/
 typedef struct AL_THevcSei
@@ -135,4 +133,4 @@ typedef struct AL_THevcSei
 
 /****************************************************************************/
 
-/*@}*/
+/*!@}*/

@@ -1,9 +1,9 @@
 // SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
-/**************************************************************************//*!
+/******************************************************************************
    \addtogroup lib_rtos
-   @{
+   !@{
    \file
 ******************************************************************************/
 #pragma once
@@ -40,15 +40,15 @@
 
 #define AL_DEPRECATED_ENUM_VALUE(eType, name, val, msg) AL_DEPRECATED(msg) static const eType name = val
 
-typedef uint64_t __AL_ALIGNED__ (8) AL_64U; // Ensure that 64bits has same alignment on all platforms (especially 32bits platforms)
-typedef int64_t __AL_ALIGNED__ (8) AL_64S; // Ensure that 64bits has same alignment on all platforms (especially 32bits platforms)
-typedef uint8_t* AL_VADDR; /*!< Virtual address. byte pointer */
+typedef uint64_t __AL_ALIGNED__ (8) AL_64U; /*!< Ensure that unsigned 64-bit has same alignment on all platforms (especially 32-bit platforms) */
+typedef int64_t __AL_ALIGNED__ (8) AL_64S; /*!< Ensure that signed 64-bit has same alignment on all platforms (especially 32-bit platforms) */
+typedef uint8_t* AL_VADDR; /*!< Virtual address byte pointer */
 
 typedef uint32_t AL_PADDR; /*!< Physical address, 32-bit address registers */
-#define AL_PRINT_PADDR "%08" PRIX32
+#define AL_PRINT_PADDR "%08" PRIX32 /*!< Use to print PADDR */
 
 typedef AL_64U AL_PTR64;
-typedef void* AL_HANDLE;
-typedef void const* AL_CONST_HANDLE;
+typedef void* AL_HANDLE; /*!< Handle type */
+typedef void const* AL_CONST_HANDLE; /*!< Handle const type */
 
-/*@}*/
+/*!@}*/

@@ -2,11 +2,18 @@
 // SPDX-License-Identifier: MIT
 
 #include <algorithm>
+#include <stdexcept>
 
 #include "CmdParser.h"
 #include "exe_decoder/CodecUtils.h"
 #include "lib_app/CommandLineParser.h"
+#include "lib_app/CommonCmdParser.h"
+
+extern "C"
+{
 #include "lib_common/RoundUp.h"
+#include "lib_common/BufCommon.h"
+}
 
 /******************************************************************************/
 static void Usage(CommandLineParser const& opt, char* ExeName)
@@ -276,17 +283,6 @@ static void ProcessOutputArgs(Config& config, const string& sRasterOut)
 }
 
 /******************************************************************************/
-static AL_EFbStorageMode ParseFrameBufferFormat(const string& sBufFormat, bool& bBufComp)
-{
-  bBufComp = false;
-
-  if(sBufFormat == "raster")
-    return AL_FB_RASTER;
-
-  throw runtime_error("Invalid buffer format");
-}
-
-/******************************************************************************/
 template<int Offset>
 static int IntWithOffset(const string& word)
 {
@@ -311,19 +307,6 @@ static TCouple CoupleWithSeparator(const string& str)
   pCouple->second = atoi(str.substr(sep + 1).c_str());
 
   return Couple;
-}
-
-/******************************************************************************/
-static std::string GetFrameBufferFormatOptDesc(bool bSecondOutput = false)
-{
-  std::string sFBufFormatOptDesc = "raster";
-
-  if(!bSecondOutput)
-  {
-
-  }
-
-  return sFBufFormatOptDesc;
 }
 
 /******************************************************************************/

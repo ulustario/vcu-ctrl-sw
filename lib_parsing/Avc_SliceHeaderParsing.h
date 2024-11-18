@@ -8,7 +8,7 @@
 #include "lib_common_dec/RbspParser.h"
 #include "lib_common/Error.h"
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief This function parses an Avc SliceHeader
    \param[out] pSlice    Pointer to the slice header structure that will be filled
    \param[in]  pRP       Pointer to NAL buffer

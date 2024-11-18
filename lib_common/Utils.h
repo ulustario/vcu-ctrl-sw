@@ -1,14 +1,10 @@
 // SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
-/****************************************************************************
-   -----------------------------------------------------------------------------
- **************************************************************************//*!
+/******************************************************************************
    \addtogroup lib_base
-   @{
+   !@{
    \file
-
-
  *****************************************************************************/
 #pragma once
 
@@ -45,21 +41,15 @@ static inline AL_64S Clip3ll(AL_64S iVal, AL_64S iMin, AL_64S iMax)
 }
 
 /***************************************************************************/
-static inline float Clip3f(float fVal, float fMin, float fMax)
-{
-  return ((fVal) < (fMin)) ? (fMin) : ((fVal) > (fMax)) ? (fMax) : (fVal);
-}
-
-/***************************************************************************/
 static inline int Max(int iVal1, int iVal2)
 {
   return (iVal1 < iVal2) ? iVal2 : iVal1;
 }
 
 /***************************************************************************/
-static inline uint32_t UnsignedMax(uint32_t iVal1, uint32_t iVal2)
+static inline size_t UnsignedMax(size_t zVal1, size_t zVal2)
 {
-  return (iVal1 < iVal2) ? iVal2 : iVal1;
+  return (zVal1 < zVal2) ? zVal2 : zVal1;
 }
 
 /***************************************************************************/
@@ -117,10 +107,10 @@ static inline size_t UnsignedRoundDown(size_t zVal, size_t zRnd)
 }
 
 /***************************************************************************/
-int ceil_log2(uint16_t n);
+int ceil_log2(int n);
 
 /****************************************************************************/
-int floor_log2(uint16_t n);
+int floor_log2(int n);
 
 /****************************************************************************/
 int GetBlkNumber(AL_TDimension tDim, uint32_t uBlkWidth, uint32_t uBlkHeight);
@@ -140,7 +130,7 @@ bool IsWindowEmpty(AL_TWindow tWindow);
 /****************************************************************************/
 AL_HANDLE AlignedAlloc(AL_TAllocator* pAllocator, const char* pBufName, uint32_t uSize, uint32_t uAlign, uint32_t* uAllocatedSize, uint32_t* uAlignmentOffset);
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Reference picture status
  ***************************************************************************/
 typedef enum
@@ -152,4 +142,4 @@ typedef enum
   AL_MARKING_REF_MAX_ENUM, /* sentinel */
 }AL_EMarkingRef;
 
-/*@}*/
+/*!@}*/

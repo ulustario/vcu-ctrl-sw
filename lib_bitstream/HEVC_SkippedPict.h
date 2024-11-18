@@ -1,17 +1,15 @@
 // SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
-/****************************************************************************
-   -----------------------------------------------------------------------------
- **************************************************************************//*!
+/******************************************************************************
    \addtogroup lib_bitstream
-   @{
+   !@{
    \file
  *****************************************************************************/
 #pragma once
 
 #include "SkippedPicture.h"
-/*************************************************************************//*!
+/*****************************************************************************
    \brief The GenerateSkippedPicture function generate Slice data for skipped
    picture.
    \param[out] pSkipPict Pointer to TSkippedPicture that receives the skipped
@@ -29,6 +27,4 @@
 *****************************************************************************/
 extern bool AL_HEVC_GenerateSkippedPicture(AL_TSkippedPicture* pSkipPict, int iWidth, int iHeight, uint8_t uLog2MaxCuSize, uint8_t uLog2MinCuSize, int iTileColumns, int iTileRows, uint16_t* pTileWidths, uint16_t* pTileHeights, bool bSliceSplit);
 
-/****************************************************************************/
-
-/*@}*/
+/*!@}*/

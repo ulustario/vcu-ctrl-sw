@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: MIT
 
 #include "DPBConstraints.h"
-#include "lib_assert/al_assert.h"
 
 /****************************************************************************/
 uint8_t AL_DPBConstraint_GetMaxRef_DefaultGop(const AL_TGopParam* pGopParam, AL_ECodec eCodec)
@@ -152,7 +151,7 @@ uint8_t AL_DPBConstraint_GetMaxRef(const AL_TGopParam* pGopParam, AL_ECodec eCod
     uMaxRef = AL_DPBConstraint_GetMaxRef_LowDelayGop(pGopParam, eCodec);
   else
   {
-    AL_Assert(0);
+    Rtos_Assert(false);
   }
 
   if(eVideoMode != AL_VM_PROGRESSIVE)
@@ -171,9 +170,9 @@ uint8_t AL_DPBConstraint_GetMaxDPBSize(const AL_TEncChanParam* pChParam)
   AL_ECodec eCodec = AL_GET_CODEC(pChParam->eProfile);
   uint8_t uMaxDPBSize = AL_DPBConstraint_GetMaxRef(&pChParam->tGopParam, eCodec, pChParam->eVideoMode, uLookAheadAdditionalRef);
 
-  if(eCodec == AL_CODEC_HEVC)
+  if(eCodec == AL_CODEC_HEVC || eCodec == AL_CODEC_VVC)
   {
-    /* Reconstructed buffer is an actual part of the dpb algorithm in hevc */
+    /* Reconstructed buffer is an actual part of the dpb algorithm in hevc & vvc*/
     uMaxDPBSize++;
   }
 

@@ -3,13 +3,15 @@
 
 #include "lib_common/HardwareConfig.h"
 
-AL_EChromaMode AL_HWConfig_Enc_GetSupportedChromaMode(void)
+AL_EChromaMode AL_HWConfig_Enc_GetSupportedChromaMode(AL_EProfile eProfile)
 {
+  (void)eProfile;
   return AL_CHROMA_4_2_2;
 }
 
-int AL_HWConfig_Enc_GetSupportedBitDepth(void)
+int AL_HWConfig_Enc_GetSupportedBitDepth(AL_EProfile eProfile)
 {
+  (void)eProfile;
   return 10;
 }
 

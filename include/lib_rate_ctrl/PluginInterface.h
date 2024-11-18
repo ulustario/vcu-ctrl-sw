@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
-/**************************************************************************//*!
+/******************************************************************************
    \defgroup Rate_Control_Plugin Rate Control Plugin
 
    The rate control plugin makes it possible to add your own rate control in the
@@ -10,7 +10,7 @@
    Your rate control should implement the RC_Plugin_Vtable API and the RC_Plugin_Init() function.
    See app_microblaze/README_PLUGIN for more information about the compilation process and the AL_Encoder.exe commandline to use your plugin.
 
-   @{
+   !@{
    \file
  *****************************************************************************/
 #pragma once
@@ -20,7 +20,7 @@
 #include "lib_common/SliceConsts.h"
 #include "lib_common_enc/RateCtrlStats.h"
 
-/*************************************************************************//*!
+/*****************************************************************************
     \brief Rate Control parameters.
     Contains the user defined constraints on the stream in term of quality and bandwidth.
     Also contains the hardware constraints that will affect the rate control (See AL_RC_OPT_DELAYED)
@@ -41,7 +41,7 @@ typedef struct
   uint32_t eOptions; /*!< Options bitfield. \see AL_ERateCtrlOption for the available flags*/
 }Plugin_RCParam;
 
-/*************************************************************************//*!
+/*****************************************************************************
     \brief Group of Picture parameters.
     Contains information about the structure of the GOP. Its length and how many
     B frames are in it. Also how many frame we have to wait before we get a new IDR.
@@ -53,7 +53,7 @@ typedef struct
   uint8_t uNumB; /*!< Number of B frames per Group of Picture in the encoded stream */
 }Plugin_GopParam;
 
-/*************************************************************************//*!
+/*****************************************************************************
     \brief Information about the picture and how it was/will be added in the stream.
 *****************************************************************************/
 typedef struct
@@ -66,9 +66,9 @@ typedef struct
   AL_EPicStruct ePicStruct; /*!< The pic_struct field (Are we using interlaced fields or not) */
 }Plugin_PictureInfo;
 
-typedef AL_RateCtrl_Statistics Plugin_Statistics;
+typedef AL_TRateCtrl_Statistics Plugin_Statistics;
 
-/*************************************************************************//*!
+/*****************************************************************************
      \brief The rate control plugin vtable contains the API you will have to implement to create your own rate control plugin.
 
      It is used by the firmware to call your rate control plugin implementation.
@@ -76,7 +76,7 @@ typedef AL_RateCtrl_Statistics Plugin_Statistics;
 *****************************************************************************/
 typedef struct
 {
-/*************************************************************************//*!
+/*****************************************************************************
    \brief First initialization step: Initialize the rate control with the stream parameters.
    This function will be called before any other function in the API. It will only be called once.
 
@@ -86,7 +86,7 @@ typedef struct
 *****************************************************************************/
   void (* setStreamInfo)(void* pHandle, int iWidth, int iHeight);
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Second initialization step: Initialize the RateControl object with Bitstream constraint.
    This function will be called right after setStreamInfo.
    It might be called multiple time in the channel lifetime if the user wants to change some parameter on the fly.
@@ -97,7 +97,7 @@ typedef struct
 *****************************************************************************/
   void (* setRateControlParameters)(void* pHandle, Plugin_RCParam const* pRCParam, Plugin_GopParam const* pGopParam);
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Checks the buffer level and reports if an overflow or underflow will occur if we add the picture of iPictureSize in the buffer
    This function might be called multiple times per frame and at different stage of the encoding process. The picture size might be the real
    picture size or it might be an estimated size. The implementation shouldn't make assumption about how many time it will be called and when.
@@ -113,7 +113,7 @@ typedef struct
 *****************************************************************************/
   void (* checkCompliance)(void* pHandle, Plugin_Statistics* pStatus, int iPictureSize, bool bCheckSkip, int* pFillOrSkip);
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Updates the decoder buffer level with the encoded picture results.
 
    This will be called when the picture has been encoded and we know that the picture is of iPictureSize.
@@ -147,7 +147,7 @@ typedef struct
 *****************************************************************************/
   void (* update)(void* pHandle, Plugin_PictureInfo const* pPicInfo, Plugin_Statistics const* pStatus, int iPictureSize, bool bSkipped, int iFillerSize);
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Returns the QP (Quality Parameter) that will be used by the hardware to encode the current picture
    This QP will influence the size of the encoded version of the current picture.
    \param[in] pHandle Pointer to the plugin rate control context
@@ -156,21 +156,21 @@ typedef struct
 *****************************************************************************/
   void (* choosePictureQP)(void* pHandle, Plugin_PictureInfo const* pPicInfo, int16_t* pQP);
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Returns the current CPB Removal Delay
    \param[in] pHandle Pointer to the plugin rate control context
    \param[out] pDelay Pointer which receives the current CPB removal delay with 90kHz resolution
 *****************************************************************************/
   void (* getRemovalDelay)(void* pHandle, int* pDelay);
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Destroy the plugin rate control context pointed to by the interface pointer
    \param[in] pHandle Pointer to the object to destroy
 *****************************************************************************/
   void (* deinit)(void* pHandle);
 }RC_Plugin_Vtable;
 
-/*************************************************************************//*!
+/*****************************************************************************
      \brief This API is given to you by the firmware and contains
      useful utils to develop your rate control plugin.
 
@@ -179,14 +179,14 @@ typedef struct
 *****************************************************************************/
 typedef struct
 {
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Print function that can be used to debug the plugin rate control
    \param[in] msg ASCII message that will be sent to the driver to be printed
    \param[in] msgSize size in bytes of the message that will be sent
 *****************************************************************************/
   void (* trace)(char const* msg, size_t msgSize);
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief When the plugin rate control attempts to get data from a dma buffer
    allocated on the cpu, care must be taken to invalidate the data cache to get the correct
    data. If the data cache isn't invalidated, you might get out of date data.
@@ -195,7 +195,7 @@ typedef struct
 *****************************************************************************/
   void (* invalidateCache)(AL_VADDR memoryBaseAddr, uint32_t memorySize);
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief When the plugin rate control attempts to put data to a dma buffer
    allocated on the cpu, care must be taken to flush the data cache so the cpu
    get the correct data. If the data cache isn't flush, host cpu may access
@@ -220,4 +220,4 @@ typedef struct
  *****************************************************************************/
 void* RC_Plugin_Init(RC_Plugin_Vtable* pRcPlugin, Mcu_Export_Vtable* pMcu, AL_TAllocator* pAllocator, AL_VADDR pDmaContext, uint32_t zDmaSize) __attribute__((section(".text_plugin")));
 
-/*@}*/
+/*!@}*/

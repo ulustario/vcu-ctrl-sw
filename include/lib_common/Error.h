@@ -1,13 +1,13 @@
 // SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
-/**************************************************************************//*!
+/******************************************************************************
    \addtogroup Errors
 
    This regroups all the errors and warnings that can be launched
    from the decoder or the encoder libraries.
 
-   @{
+   !@{
    \file
  *****************************************************************************/
 
@@ -124,11 +124,11 @@ static inline bool AL_IS_SUCCESS_CODE(AL_ERR eErrorCode)
   return eErrorCode == AL_SUCCESS;
 }
 
-/**************************************************************************//*!
+/******************************************************************************
    \brief Get a string corresponding to an error/warning code
    \param[in] eErrorCode The error code to get a string description from
    \return a string describing the error
 ******************************************************************************/
 const char* AL_Codec_ErrorToString(AL_ERR eErrorCode);
 
-/*@}*/
+/*!@}*/

@@ -309,21 +309,21 @@ static bool ParseCommonSei(SeiParserParam* pParam, AL_TRbspParser* pRP, AL_ESeiP
   {
     bParsingOk = SeiMasteringDisplayColourVolume(&pParam->pIAup->tParsedHDRSEIs.tMDCV, pRP);
     pParam->pIAup->tParsedHDRSEIs.bHasMDCV = true;
-    bCanSendToUser = false;
+    *bCanSendToUser = false;
     break;
   }
   case SEI_PTYPE_CONTENT_LIGHT_LEVEL:
   {
     bParsingOk = SeiContentLightLevel(&pParam->pIAup->tParsedHDRSEIs.tCLL, pRP);
     pParam->pIAup->tParsedHDRSEIs.bHasCLL = true;
-    bCanSendToUser = false;
+    *bCanSendToUser = false;
     break;
   }
   case SEI_PTYPE_ALTERNATIVE_TRANSFER_CHARACTERISTICS:
   {
     bParsingOk = SeiAlternativeTransferCharacteristics(&pParam->pIAup->tParsedHDRSEIs.tATC, pRP);
     pParam->pIAup->tParsedHDRSEIs.bHasATC = true;
-    bCanSendToUser = false;
+    *bCanSendToUser = false;
     break;
   }
   case SEI_PTYPE_USER_DATA_REGISTERED:
@@ -339,24 +339,24 @@ static bool ParseCommonSei(SeiParserParam* pParam, AL_TRbspParser* pRP, AL_ESeiP
     {
       bParsingOk = SeiSt2094_10(&pParam->pIAup->tParsedHDRSEIs.tST2094_10, pRP);
       pParam->pIAup->tParsedHDRSEIs.bHasST2094_10 = true;
-      bCanSendToUser = false;
+      *bCanSendToUser = false;
       break;
     }
     case AL_UDR_SEI_ST2094_40:
     {
       bParsingOk = SeiSt2094_40(&pParam->pIAup->tParsedHDRSEIs.tST2094_40, pRP);
       pParam->pIAup->tParsedHDRSEIs.bHasST2094_40 = true;
-      bCanSendToUser = false;
+      *bCanSendToUser = false;
       break;
     }
     default:
     {
-      AL_Assert(0);
+      Rtos_Assert(false);
       break;
     }
     }
 
-    bCanSendToUser = false;
+    *bCanSendToUser = false;
     break;
   }
   default: // Payload not supported

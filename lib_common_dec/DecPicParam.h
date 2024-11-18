@@ -1,11 +1,9 @@
 // SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
-/****************************************************************************
-   -----------------------------------------------------------------------------
- **************************************************************************//*!
+/******************************************************************************
    \addtogroup lib_base
-   @{
+   !@{
    \file
  *****************************************************************************/
 #pragma once
@@ -56,7 +54,7 @@ static const AL_TDecBufIDs tEmptyBufIDs =
   0xFF, 0xFF,
 };
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Slice Parameters : Mimics structure for IP registers
 *****************************************************************************/
 typedef struct AL_TDecPictParam
@@ -115,7 +113,7 @@ typedef struct AL_TDecPictParam
 }AL_TDecPicParam;
 
 /****************************************************************************/
-typedef struct AL_TPictBuffers
+typedef struct AL_TDecBuffers
 {
   TBuffer tCompData;
   TBuffer tCompMap;
@@ -133,27 +131,32 @@ typedef struct AL_TPictBuffers
 
   uint32_t uPitch;
 
-}AL_TDecPicBuffers;
+}AL_TDecBuffers;
 
 /****************************************************************************/
-typedef struct AL_TDecPicBufferAddrs
+typedef struct AL_TDecPictBufferAddrs
+{
+  AL_PADDR pRecY;
+  AL_PADDR pRecC1;
+  AL_PADDR pRecFbcMapY;
+  AL_PADDR pRecFbcMapC1;
+  uint32_t uPitch;
+}AL_TDecPictBufferAddrs;
+
+/****************************************************************************/
+typedef struct AL_TDecBufferAddrs
 {
   AL_PADDR pCompData;
   AL_PADDR pCompMap;
   AL_PADDR pListRef;
   AL_PADDR pStream;
   uint32_t uStreamSize;
-  AL_PADDR pRecY;
-  AL_PADDR pRecC1;
-  AL_PADDR pRecFbcMapY;
-  AL_PADDR pRecFbcMapC1;
-  uint32_t uPitch;
   AL_PADDR pScl;
   AL_PADDR pPoc;
   AL_PADDR pMV;
   AL_PADDR pWP;
-
-}AL_TDecPicBufferAddrs;
+  AL_TDecPictBufferAddrs tDecBuffers;
+}AL_TDecBufferAddrs;
 
 /*****************************************************************************/
 typedef uint8_t AL_TDecPicState;
@@ -183,4 +186,4 @@ typedef struct AL_TDecPicStatus
 
 /*****************************************************************************/
 
-/*@}*/
+/*!@}*/

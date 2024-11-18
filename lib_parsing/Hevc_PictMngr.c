@@ -1,11 +1,9 @@
 // SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
-/****************************************************************************
-   -----------------------------------------------------------------------------
- **************************************************************************//*!
+/******************************************************************************
    \addtogroup lib_decode_hls
-   @{
+   !@{
    \file
  *****************************************************************************/
 
@@ -155,7 +153,7 @@ void AL_HEVC_PictMngr_EndFrame(AL_TPictMngrCtx* pCtx, uint32_t uPocLsb, AL_ENut 
   AL_Dpb_HEVC_Cleanup(pDpb, pSlice->pSPS->SpsMaxLatency, pSlice->pSPS->sps_max_num_reorder_pics[pSlice->pSPS->sps_max_sub_layers_minus1]);
 }
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Prepares the reference picture set for the current slice reference picture list construction
    \param[in]  pCtx       Pointer to a Picture manager context object
    \param[in]  pSlice     Pointer to the slice header of the current slice
@@ -307,7 +305,7 @@ void AL_HEVC_PictMngr_InitRefPictSet(AL_TPictMngrCtx* pCtx, AL_THevcSliceHdr con
   }
 }
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Builds the reference picture list of the current slice
    \param[in]  pCtx     Pointer to a Picture manager context object
    \param[in]  pSlice   Pointer to the slice header of the current slice
@@ -420,4 +418,4 @@ bool AL_HEVC_PictMngr_BuildPictureList(AL_TPictMngrCtx* pCtx, AL_THevcSliceHdr c
   return true;
 }
 
-/*@}*/
+/*!@}*/

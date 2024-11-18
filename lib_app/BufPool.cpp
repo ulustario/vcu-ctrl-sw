@@ -303,23 +303,18 @@ static size_t Fifo_GetMaxElements(App_Fifo* pFifo)
 
 uint32_t AL_GetWaitMode(AL_EBufMode eMode)
 {
-  uint32_t Wait = 0;
   switch(eMode)
   {
-  case AL_BUF_MODE_BLOCK:
-    Wait = AL_WAIT_FOREVER;
-    break;
-  case AL_BUF_MODE_NONBLOCK:
-    Wait = AL_NO_WAIT;
-    break;
+  case AL_EBufMode::AL_BUF_MODE_BLOCK: return AL_WAIT_FOREVER;
+  case AL_EBufMode::AL_BUF_MODE_NONBLOCK: return AL_NO_WAIT;
   default:
 
-    if(eMode < AL_BUF_MODE_MAX)
+    if(eMode < AL_EBufMode::AL_BUF_MODE_MAX)
       throw std::runtime_error("eMode should be higher or equal than AL_BUF_MODE_MAX");
     break;
   }
 
-  return Wait;
+  return 0;
 }
 
 BaseBufPool::~BaseBufPool(void)
@@ -359,7 +354,7 @@ AL_TBuffer* BaseBufPool::GetBuffer(AL_EBufMode mode)
 {
   AL_TBuffer* pBuf = AL_BufPool_GetBuffer(&m_pool, mode);
 
-  if(mode == AL_BUF_MODE_BLOCK && pBuf == nullptr)
+  if(mode == AL_EBufMode::AL_BUF_MODE_BLOCK && pBuf == nullptr)
     throw bufpool_decommited_error();
 
   return pBuf;

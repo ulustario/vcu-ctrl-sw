@@ -1,19 +1,17 @@
 // SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
-/****************************************************************************
-   -----------------------------------------------------------------------------
- **************************************************************************//*!
+/******************************************************************************
    \addtogroup lib_decode_hls
-   @{
+   !@{
    \file
  *****************************************************************************/
 
-#include "lib_common/Utils.h"
-#include "lib_common/SyntaxConversion.h"
-
 #include "common_syntax.h"
-#include <string.h>
+#include "lib_common/Utils.h"
+#include "lib_common/ScalingList.h"
+#include "lib_common/common_syntax_elements.h"
+#include "lib_rtos/lib_rtos.h"
 
 /*****************************************************************************/
 void hevc_profile_tier_level(AL_THevcProfilevel* pPrfLvl, int iMaxSubLayersMinus1, AL_TRbspParser* pRP)
@@ -96,6 +94,8 @@ void hevc_profile_tier_level(AL_THevcProfilevel* pPrfLvl, int iMaxSubLayersMinus
 
   pPrfLvl->general_level_idc = u(pRP, 8);
 
+  Rtos_Assert(iMaxSubLayersMinus1 <= MAX_SUB_LAYER);
+
   for(int i = 0; i < iMaxSubLayersMinus1; ++i)
   {
     pPrfLvl->sub_layer_profile_present_flag[i] = u(pRP, 1);
@@ -104,7 +104,7 @@ void hevc_profile_tier_level(AL_THevcProfilevel* pPrfLvl, int iMaxSubLayersMinus
 
   if(iMaxSubLayersMinus1 > 0)
   {
-    for(int i = iMaxSubLayersMinus1; i < 8; i++)
+    for(int i = iMaxSubLayersMinus1; i <= MAX_SUB_LAYER; i++)
       skip(pRP, 2); // reserved_zero_2_bits
   }
 
@@ -235,6 +235,12 @@ void avc_scaling_list_data(uint8_t* pScalingList, AL_TRbspParser* pRP, int iSize
 }
 
 /*****************************************************************************/
+bool hevc_is_default_dc_coeff(uint8_t uSizeID)
+{
+  return uSizeID > 1;
+}
+
+/*****************************************************************************/
 void hevc_scaling_list_data(AL_TSCLParam* pSCLParam, AL_TRbspParser* pRP)
 {
   for(uint8_t uSizeID = 0; uSizeID < 4; ++uSizeID)
@@ -251,25 +257,25 @@ void hevc_scaling_list_data(AL_TSCLParam* pSCLParam, AL_TRbspParser* pRP)
 
         if(!pSCLParam->scaling_list_pred_matrix_id_delta[uSizeID][uMatrixID])
         {
-          if(uSizeID > 1) /* default dc coeff */
+          if(hevc_is_default_dc_coeff(uSizeID))
             pSCLParam->scaling_list_dc_coeff[uSizeID - 2][uMatrixID] = 16;
 
           if(uSizeID) /* superior to 4x4 */
-            memcpy(pSCLParam->ScalingList[uSizeID][uMatrixID], AL_HEVC_DefaultScalingLists8x8[uMatrixID / 3], 64);
+            Rtos_Memcpy(pSCLParam->ScalingList[uSizeID][uMatrixID], AL_HEVC_DefaultScalingLists8x8[uMatrixID / 3], 64);
           else /* equal to 4x4 */
-            memcpy(pSCLParam->ScalingList[uSizeID][uMatrixID], AL_HEVC_DefaultScalingLists4x4[uMatrixID / 3], 16);
+            Rtos_Memcpy(pSCLParam->ScalingList[uSizeID][uMatrixID], AL_HEVC_DefaultScalingLists4x4[uMatrixID / 3], 16);
         }
         else
         {
           uint8_t uPredMatrixID = Clip3(uMatrixID - pSCLParam->scaling_list_pred_matrix_id_delta[uSizeID][uMatrixID], 0, ((uSizeID == 3) ? 0 : 4));
 
-          if(uSizeID > 1) /* default dc coeff */
+          if(hevc_is_default_dc_coeff(uSizeID))
             pSCLParam->scaling_list_dc_coeff[uSizeID - 2][uMatrixID] = pSCLParam->scaling_list_dc_coeff[uSizeID - 2][uPredMatrixID];
 
           if(uSizeID) /* superior to 4x4 */
-            memcpy(pSCLParam->ScalingList[uSizeID][uMatrixID], pSCLParam->ScalingList[uSizeID][uPredMatrixID], 64);
+            Rtos_Memcpy(pSCLParam->ScalingList[uSizeID][uMatrixID], pSCLParam->ScalingList[uSizeID][uPredMatrixID], 64);
           else /* equal to 4x4 */
-            memcpy(pSCLParam->ScalingList[uSizeID][uMatrixID], pSCLParam->ScalingList[uSizeID][uPredMatrixID], 16);
+            Rtos_Memcpy(pSCLParam->ScalingList[uSizeID][uMatrixID], pSCLParam->ScalingList[uSizeID][uPredMatrixID], 16);
         }
       }
       else
@@ -278,7 +284,7 @@ void hevc_scaling_list_data(AL_TSCLParam* pSCLParam, AL_TRbspParser* pRP)
         uint16_t uCoeffNum = Min(64, (1 << (4 + (uSizeID << 1))));
         uint8_t const* pScanOrder = (uCoeffNum == 64) ? AL_HEVC_ScanOrder8x8 : AL_HEVC_ScanOrder4x4;
 
-        if(uSizeID > 1)
+        if(hevc_is_default_dc_coeff(uSizeID))
         {
           uNextCoeff = Clip3(se(pRP), -7, 247) + 8;
           pSCLParam->scaling_list_dc_coeff[uSizeID - 2][uMatrixID] = uNextCoeff;
@@ -593,4 +599,4 @@ void hevc_vui_parameters(AL_TVuiParam* pVuiParam, int iMaxSubLayersMinus1, AL_TR
   }
 }
 
-/*@}*/
+/*!@}*/

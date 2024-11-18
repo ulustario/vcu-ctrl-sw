@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: MIT
 
 #include "lib_decode/WorkPool.h"
-#include "lib_assert/al_assert.h"
 
 #define INVALID_BUF_POS -1
 
@@ -65,7 +64,7 @@ void AL_WorkPool_Remove(WorkPool* pool, AL_TBuffer* pBuf)
   while(iPos != INVALID_BUF_POS && pool->elems[iPos].buf != pBuf)
     iPos = pool->elems[iPos].next;
 
-  AL_Assert(iPos != INVALID_BUF_POS);
+  Rtos_Assert(iPos != INVALID_BUF_POS);
 
   WorkPoolElem* pElem = &pool->elems[iPos];
 

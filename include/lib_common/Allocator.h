@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
-/**************************************************************************//*!
+/******************************************************************************
    \addtogroup Allocator
 
    The AL_TAllocator structure defines an interface object used to allocate and
@@ -11,7 +11,7 @@
    The user can provide his own implementation if the provided ones don't fit his
    constraints.
 
-   @{
+   !@{
    \file
  *****************************************************************************/
 #pragma once
@@ -19,7 +19,7 @@
 #include "lib_rtos/types.h"
 #include "lib_rtos/lib_rtos.h"
 
-/**************************************************************************//*!
+/******************************************************************************
    \brief Generic memory allocator interface object
 ******************************************************************************/
 typedef struct AL_TAllocator AL_TAllocator;
@@ -43,7 +43,7 @@ struct AL_TAllocator
 };
 /*! \endcond *****************************************************************/
 
-/**************************************************************************//*!
+/******************************************************************************
    \brief Destroy the Allocator interface object itself
    \param[in] pAllocator the Allocator interface object to be destroyed
 ******************************************************************************/
@@ -52,7 +52,7 @@ static inline void AL_Allocator_Destroy(AL_TAllocator* pAllocator)
   pAllocator->vtable->pfnDestroy(pAllocator);
 }
 
-/**************************************************************************//*!
+/******************************************************************************
    \brief Allocates a new memory buffer
    \param[in] pAllocator a Allocator interface object
    \param[in] zSize number of byte of the requested memory buffer
@@ -66,7 +66,7 @@ AL_HANDLE AL_Allocator_Alloc(AL_TAllocator* pAllocator, size_t zSize)
   return pAllocator->vtable->pfnAlloc(pAllocator, zSize);
 }
 
-/**************************************************************************//*!
+/******************************************************************************
    \brief Allocates a new memory buffer, and associates a name for tracking purpose
    \param[in] pAllocator a Allocator interface object
    \param[in] zSize number of byte of the requested buffer
@@ -87,7 +87,7 @@ AL_HANDLE AL_Allocator_AllocNamed(AL_TAllocator* pAllocator, size_t zSize, char 
   return pAllocator->vtable->pfnAllocNamed(pAllocator, zSize, sName);
 }
 
-/**************************************************************************//*!
+/******************************************************************************
    /brief Frees an existing memory buffer, if the HANDLE is NULL, this does nothing
    \param[in] pAllocator the Allocator interface object used to allocate the
    memory buffer
@@ -100,7 +100,7 @@ bool AL_Allocator_Free(AL_TAllocator* pAllocator, AL_HANDLE hBuf)
   return pAllocator->vtable->pfnFree(pAllocator, hBuf);
 }
 
-/**************************************************************************//*!
+/******************************************************************************
    \brief Retrieves the buffer address in the user address space
    \param[in] pAllocator the Allocator interface object used to allocate the
    memory buffer
@@ -113,7 +113,7 @@ AL_VADDR AL_Allocator_GetVirtualAddr(AL_TAllocator* pAllocator, AL_HANDLE hBuf)
   return pAllocator->vtable->pfnGetVirtualAddr(pAllocator, hBuf);
 }
 
-/**************************************************************************//*!
+/******************************************************************************
    \brief Retrieves the buffer address in the IP address space
    \param[in] pAllocator the Allocator interface object used to allocate the
    memory buffer
@@ -126,7 +126,7 @@ AL_PADDR AL_Allocator_GetPhysicalAddr(AL_TAllocator* pAllocator, AL_HANDLE hBuf)
   return pAllocator->vtable->pfnGetPhysicalAddr(pAllocator, hBuf);
 }
 
-/**************************************************************************//*!
+/******************************************************************************
    \brief Synchronize a memory area for the CPU
    \param[in] pAllocator the Allocator interface object used to allocate the
    memory buffers
@@ -141,7 +141,7 @@ void AL_Allocator_SyncForCpu(AL_TAllocator* pAllocator, AL_VADDR pVirtualAddr, s
     pAllocator->vtable->pfnSyncForCpu(pAllocator, pVirtualAddr, zSize);
 }
 
-/**************************************************************************//*!
+/******************************************************************************
    \brief Synchronize a memory area for the Device
    \param[in] pAllocator the Allocator interface object used to allocate the
    memory buffers
@@ -156,7 +156,7 @@ void AL_Allocator_SyncForDevice(AL_TAllocator* pAllocator, AL_VADDR pVirtualAddr
     pAllocator->vtable->pfnSyncForDevice(pAllocator, pVirtualAddr, zSize);
 }
 
-/**************************************************************************//*!
+/******************************************************************************
    \brief Setup cache callbacks to use the allocator ones
    \param[in] pAllocator the Allocator interface object to use for cache
    callbacks
@@ -168,14 +168,14 @@ void AL_Allocator_InitCacheCallbacks(AL_TAllocator* pAllocator)
   Rtos_InitCacheCB(pAllocator, (Rtos_MemoryFnCB)AL_Allocator_SyncForCpu, (Rtos_MemoryFnCB)AL_Allocator_SyncForDevice);
 }
 
-/**************************************************************************//*!
+/******************************************************************************
    \brief Get default implementation of the allocator
    This allocator doesn't support dma (GetPhysicalAddr is not supported)
    and uses Rtos_Free and Rtos_Malloc to allocate and free.
 ******************************************************************************/
 AL_TAllocator* AL_GetDefaultAllocator(void);
 
-/**************************************************************************//*!
+/******************************************************************************
    \brief Get wrapper implementation of the allocator
    This allocator doesn't support dma (GetPhysicalAddr is not supported)
    Allocating with this allocator will use Rtos_Malloc and will set
@@ -186,7 +186,7 @@ AL_TAllocator* AL_GetDefaultAllocator(void);
 AL_TAllocator* AL_GetWrapperAllocator(void);
 
 typedef void (* PFN_WrapDestructor)(void* pUserData, uint8_t* pData);
-/**************************************************************************//*!
+/******************************************************************************
    \brief Create a handle for an already allocated data.
    This permits to use the allocator function on data allocated using other means.
    Use the AL_GetWrapperAllocator to manipulate the created handle.
@@ -204,4 +204,4 @@ AL_HANDLE AL_WrapperAllocator_WrapData(uint8_t* pData, PFN_WrapDestructor destru
  */
 AL_TAllocator* AL_AlignedAllocator_Create(AL_TAllocator* pMemoryAllocator, AL_TAllocator* pRealAllocator, uint32_t uAlign);
 
-/*@}*/
+/*!@}*/

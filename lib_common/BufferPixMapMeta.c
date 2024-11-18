@@ -4,7 +4,6 @@
 #include "lib_rtos/lib_rtos.h"
 #include "lib_common/BufferPixMapMeta.h"
 #include "lib_common/BufCommon.h"
-#include "lib_assert/al_assert.h"
 
 static bool SrcMeta_Destroy(AL_TMetaData* pMeta)
 {

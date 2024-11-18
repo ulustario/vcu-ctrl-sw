@@ -1,17 +1,14 @@
 // SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
-/****************************************************************************
-   -----------------------------------------------------------------------------
- **************************************************************************//*!
+/******************************************************************************
    \addtogroup lib_decode_hls
-   @{
+   !@{
    \file
  *****************************************************************************/
 
 #include "DPB.h"
 #include "lib_common/AvcUtils.h"
-#include "lib_assert/al_assert.h"
 
 static void DispFifo_Init(AL_TDispFifo* pFifo)
 {
@@ -585,14 +582,14 @@ uint8_t AL_Dpb_GetHeadPOC(AL_TDpb const* pDpb)
 /*****************************************************************************/
 uint8_t AL_Dpb_GetNextPOC(AL_TDpb const* pDpb, uint8_t uNode)
 {
-  AL_Assert(uNode < MAX_DPB_SIZE);
+  Rtos_Assert(uNode < MAX_DPB_SIZE);
   return pDpb->Nodes[uNode].uNextPOC;
 }
 
 /*****************************************************************************/
 uint8_t AL_Dpb_GetOutputFlag(AL_TDpb const* pDpb, uint8_t uNode)
 {
-  AL_Assert(uNode < MAX_DPB_SIZE);
+  Rtos_Assert(uNode < MAX_DPB_SIZE);
   return pDpb->Nodes[uNode].pic_output_flag;
 }
 
@@ -605,14 +602,14 @@ uint8_t AL_Dpb_GetNumOutputPict(AL_TDpb const* pDpb)
 /*****************************************************************************/
 uint8_t AL_Dpb_GetMarkingFlag(AL_TDpb const* pDpb, uint8_t uNode)
 {
-  AL_Assert(uNode < MAX_DPB_SIZE);
+  Rtos_Assert(uNode < MAX_DPB_SIZE);
   return pDpb->Nodes[uNode].eMarking_flag;
 }
 
 /*************************************************************************/
 uint32_t AL_Dpb_GetPicLatency_FromNode(AL_TDpb const* pDpb, uint8_t uNode)
 {
-  AL_Assert(uNode < MAX_DPB_SIZE);
+  Rtos_Assert(uNode < MAX_DPB_SIZE);
   return pDpb->Nodes[uNode].uPicLatency;
 }
 
@@ -622,7 +619,7 @@ uint8_t AL_Dpb_GetPicID_FromNode(AL_TDpb const* pDpb, uint8_t uNode)
   if(uNode == uEndOfList)
     return UndefID;
 
-  AL_Assert(uNode < MAX_DPB_SIZE);
+  Rtos_Assert(uNode < MAX_DPB_SIZE);
   return pDpb->Nodes[uNode].uPicID;
 }
 
@@ -632,7 +629,7 @@ uint8_t AL_Dpb_GetMvID_FromNode(AL_TDpb const* pDpb, uint8_t uNode)
   if(uNode == uEndOfList)
     return UndefID;
 
-  AL_Assert(uNode < MAX_DPB_SIZE);
+  Rtos_Assert(uNode < MAX_DPB_SIZE);
   return pDpb->Nodes[uNode].uMvID;
 }
 
@@ -642,7 +639,7 @@ uint8_t AL_Dpb_GetFrmID_FromNode(AL_TDpb const* pDpb, uint8_t uNode)
   if(uNode == uEndOfList)
     return UndefID;
 
-  AL_Assert(uNode < MAX_DPB_SIZE);
+  Rtos_Assert(uNode < MAX_DPB_SIZE);
   return pDpb->Nodes[uNode].uFrmID;
 }
 
@@ -652,7 +649,7 @@ uint8_t AL_Dpb_GetPicStruct_FromNode(AL_TDpb const* pDpb, uint8_t uNode)
   if(uNode == uEndOfList)
     return UndefID;
 
-  AL_Assert(uNode < MAX_DPB_SIZE);
+  Rtos_Assert(uNode < MAX_DPB_SIZE);
   return pDpb->Nodes[uNode].ePicStruct;
 }
 
@@ -1696,4 +1693,4 @@ int32_t AL_Dpb_GetNumExistingRef(AL_TDpb const* pDpb, TBufferListRef const* pLis
   return iNumExisting;
 }
 
-/*@}*/
+/*!@}*/

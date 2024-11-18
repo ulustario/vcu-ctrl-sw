@@ -1,9 +1,9 @@
 // SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
-/**************************************************************************//*!
+/******************************************************************************
    \addtogroup Encoder_API
-   @{
+   !@{
    \file
  *****************************************************************************/
 #pragma once
@@ -13,7 +13,7 @@
 typedef struct AL_TDriver AL_TDriver;
 typedef struct AL_IEncScheduler AL_IEncScheduler;
 
-/*************************************************************************//*!
+/*****************************************************************************
     \brief Interfaces with a scheduler that runs on different process.
     Its main usage is to interface with the MCU scheduler (microcontroller) when used with an hardware driver.
     It can also be used with a proxy driver to access a scheduler on another process.
@@ -23,4 +23,4 @@ typedef struct AL_IEncScheduler AL_IEncScheduler;
 *****************************************************************************/
 AL_IEncScheduler* AL_SchedulerMcu_Create(AL_TDriver* driver, AL_TLinuxDmaAllocator* pDmaAllocator, char const* deviceFile);
 
-/*@}*/
+/*!@}*/

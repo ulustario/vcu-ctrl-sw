@@ -18,7 +18,7 @@ AL_PARSE_RESULT AL_HEVC_ParseVPS(AL_TAup* pIAup, AL_TRbspParser* pRP);
 bool AL_HEVC_ParseSEI(AL_TAup* pIAup, AL_TRbspParser* pRP, bool bIsPrefix, AL_CB_ParsedSei* cb, AL_TSeiMetaData* pMeta);
 void AL_HEVC_GetCropInfo(AL_THevcSps const* pSPS, AL_TCropInfo* pCropInfo);
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief the short term reference picture computation
    \param[out] pSPS   Pointer to the SPS structure containing the ref_pic_set structure and variables
    \param[in]  RpsIdx Idx of the current ref_pic_set

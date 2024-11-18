@@ -1,11 +1,9 @@
 // SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
-/****************************************************************************
-   -----------------------------------------------------------------------------
- **************************************************************************//*!
+/******************************************************************************
    \addtogroup lib_decode_hls
-   @{
+   !@{
    \file
  *****************************************************************************/
 
@@ -361,4 +359,4 @@ int32_t AL_AVC_PictMngr_GetNumExistingRef(AL_TPictMngrCtx const* pCtx, TBufferLi
   return AL_Dpb_GetNumExistingRef(&pCtx->DPB, pListRef);
 }
 
-/*@}*/
+/*!@}*/

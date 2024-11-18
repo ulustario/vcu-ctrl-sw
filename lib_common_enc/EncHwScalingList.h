@@ -1,11 +1,9 @@
 // SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
-/****************************************************************************
-   -----------------------------------------------------------------------------
- **************************************************************************//*!
+/******************************************************************************
    \addtogroup lib_common
-   @{
+   !@{
    \file
  *****************************************************************************/
 #pragma once
@@ -114,7 +112,7 @@ static const int AL_AVC_ENC_SCL_ORDER_4x4[16] =
   12, 13, 14, 15
 };
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Dump HEVC hardware formatted encoder scaling list into buffer of bytes
    \param[in]  pSclLst Pointer to the inverse scaling list coefficients
    \param[in]  pHwSclLst Pointer to the forward scaling list coefficients
@@ -123,7 +121,7 @@ static const int AL_AVC_ENC_SCL_ORDER_4x4[16] =
 *****************************************************************************/
 void AL_HEVC_WriteEncHwScalingList(AL_TSCLParam const* pSclLst, AL_THwScalingList(*pHwSclLst)[2][6], uint8_t* pBuf);
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Dump AVC hardware formatted encoder scaling list into buffer of bytes
    \param[in]  pSclLst Pointer to the inverse scaling list coefficients
    \param[in]  pHwSclLst Pointer to the forward scaling list coefficients
@@ -133,4 +131,4 @@ void AL_HEVC_WriteEncHwScalingList(AL_TSCLParam const* pSclLst, AL_THwScalingLis
 *****************************************************************************/
 void AL_AVC_WriteEncHwScalingList(AL_TSCLParam const* pSclLst, AL_THwScalingList(*pHwSclLst)[2][6], uint8_t chroma_format_idc, uint8_t* pBuf);
 
-/*@}*/
+/*!@}*/

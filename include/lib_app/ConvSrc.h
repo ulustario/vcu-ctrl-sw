@@ -13,7 +13,7 @@ struct IConvSrc
 {
   virtual ~IConvSrc() = default;
 
-  virtual void ConvertSrcBuf(uint8_t uBitDepth, AL_TBuffer const* pSrcIn, AL_TBuffer* pSrcOut) = 0;
+  virtual void ConvertSrcBuf(AL_TBuffer const* pSrcIn, AL_TBuffer* pSrcOut) = 0;
 };
 
 struct TFrameInfo

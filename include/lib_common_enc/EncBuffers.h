@@ -1,11 +1,11 @@
 // SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
-/**************************************************************************//*!
+/******************************************************************************
    \addtogroup Encoder_Buffers Buffer size
    \ingroup Encoder
 
-   @{
+   !@{
    \file
  *****************************************************************************/
 #pragma once
@@ -33,7 +33,7 @@ static const AL_TBufInfo EP2_BUF_QP_BY_MB =
   4, 0, 48 + AL_QPTABLE_SEGMENTS_SIZE
 }; // no fixed size
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Retrieves the size of a Encoder parameters buffer 2 (QP Ctrl)
    \param[in] tDim Frame size in pixels
    \param[in] eCodec Codec
@@ -45,7 +45,7 @@ uint32_t AL_GetAllocSizeEP2(AL_TDimension tDim, AL_ECodec eCodec, uint8_t uLog2M
 // AL_DEPRECATED("Doesn't support pitch different of AL_EncGetMinPitch. Use AL_GetAllocSizeSrc(). Will be removed in 0.9")
 uint32_t AL_GetAllocSize_Src(AL_TDimension tDim, uint8_t uBitDepth, AL_EChromaMode eChromaMode, AL_ESrcMode eSrcFmt);
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Retrieves the size of a Source YUV frame buffer
    \param[in] tDim Frame size in pixels
    \param[in] pPicFormat picture format of the frame
@@ -57,7 +57,7 @@ uint32_t AL_GetAllocSize_Src(AL_TDimension tDim, uint8_t uBitDepth, AL_EChromaMo
 *****************************************************************************/
 uint32_t AL_GetAllocSizeSrc(AL_TDimension tDim, AL_TPicFormat const* pPicFormat, int iPitch, int iStrideHeight);
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Retrieves the size of one pixel component of a YUV frame buffer
    \param[in] pPicFormat picture format of the frame
    \param[in] iPitch Pitch / stride of the source frame buffer
@@ -67,7 +67,7 @@ uint32_t AL_GetAllocSizeSrc(AL_TDimension tDim, AL_TPicFormat const* pPicFormat,
 *****************************************************************************/
 uint32_t AL_GetAllocSizeSrc_PixPlane(AL_TPicFormat const* pPicFormat, int iPitch, int iStrideHeight, AL_EPlaneId ePlaneId);
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Retrieves the minimal pitch value supported by the ip depending
    on the source format
    \param[in] iWidth Frame width in pixel unit
@@ -76,28 +76,28 @@ uint32_t AL_GetAllocSizeSrc_PixPlane(AL_TPicFormat const* pPicFormat, int iPitch
 *****************************************************************************/
 int AL_EncGetMinPitch(int iWidth, AL_TPicFormat const* pPicFormat);
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Retrieves the Source frame buffer storage mode depending on Source mode
    \param[in] eSrcMode Source Mode
    \return Source Storage Mode
 *****************************************************************************/
 AL_EFbStorageMode AL_GetSrcStorageMode(AL_ESrcMode eSrcMode);
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Check if the Source frame buffer is compressed depending on the Source mode
    \param[in] eSrcMode Source Mode
    \return true if Source is compressed, false otherwise
 *****************************************************************************/
 bool AL_IsSrcCompressed(AL_ESrcMode eSrcMode);
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Check if the Source frame buffer is interleaved depending on the Source mode
    \param[in] eSrcMode Source Mode
    \return true if source mode is interleaved, false otherwise
 *****************************************************************************/
 bool AL_IsSrcInterleaved(AL_ESrcMode eSrcMode);
 
-/*************************************************************************//*!
+/*****************************************************************************
    \brief Check if the Source frame buffer is in MSB format depending on the Source mode
    \param[in] eSrcMode Source Mode
    \return true if source mode is in MSB (Most Significant Bit) format, false otherwise
@@ -112,4 +112,4 @@ uint32_t AL_GetAllocSizeSrc_Y(AL_ESrcMode eSrcFmt, int iPitch, int iStrideHeight
 AL_DEPRECATED("Use AL_GetAllocSizeSrc_PixPlane.")
 uint32_t AL_GetAllocSizeSrc_UV(AL_ESrcMode eSrcFmt, int iPitch, int iStrideHeight, AL_EChromaMode eChromaMode);
 
-/*@}*/
+/*!@}*/

@@ -14,8 +14,6 @@
 #include "lib_bitstream/HEVC_RbspEncod.h"
 #include "lib_encode/HEVC_Sections.h"
 
-#include "lib_assert/al_assert.h"
-
 static int getBytesOffset(AL_TBitStreamLite* pStream)
 {
   return AL_BitStreamLite_GetBitsCount(pStream) / 8;
@@ -58,7 +56,7 @@ static void GenerateNal(IRbspWriter* writer, AL_TBitStreamLite* bitstream, int b
   int size = WriteNal(writer, bitstream, bitstreamSize, nal, eStartCodeBytesAligned);
   /* we should always be able to write the configuration nals as we reserved
    * enough space for them */
-  AL_Assert(size >= 0);
+  Rtos_Assert(size >= 0);
   AL_StreamMetaData_AddSection(pMeta, start, size, uFlags);
 }
 
@@ -192,7 +190,7 @@ void GenerateSections(IRbspWriter* writer, AL_TNuts nuts, AL_TNalsData const* pN
 
     if(AL_HAS_SEI_PREFIX(pNalsData->seiFlags))
     {
-      AL_Assert(pNalsData->seiFlags != AL_SEI_NONE);
+      Rtos_Assert(pNalsData->seiFlags != AL_SEI_NONE);
 
       uint32_t uFlags = generateSeiFlags(pPicStatus, bForceSEIRecoveryPointOnIDR);
       uFlags |= generateHDRSeiFlags(bWriteSPS, pNalsData->bMustWriteDynHDR);
@@ -316,8 +314,8 @@ uint32_t getUserSeiPrefixOffset(AL_TStreamMetaData* pStreamMeta)
 int AL_WriteSeiSection(AL_ECodec eCodec, AL_TNuts nuts, AL_TBuffer* pStream, bool isPrefix, int iPayloadType, uint8_t* pPayload, int iPayloadSize, int iTempId, AL_EStartCodeBytesAlignedMode eStartCodeBytesAligned)
 {
   AL_TStreamMetaData* pMetaData = (AL_TStreamMetaData*)AL_Buffer_GetMetaData(pStream, AL_META_TYPE_STREAM);
-  AL_Assert(pMetaData);
-  AL_Assert(iPayloadType >= 0);
+  Rtos_Assert(pMetaData);
+  Rtos_Assert(iPayloadType >= 0);
 
   uint32_t uOffset = isPrefix ? getUserSeiPrefixOffset(pMetaData) : AL_StreamMetaData_GetUnusedStreamPart(pMetaData);
 

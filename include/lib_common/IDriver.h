@@ -1,9 +1,9 @@
 // SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
-/**************************************************************************//*!
+/******************************************************************************
    \addtogroup Driver
-   @{
+   !@{
    \file
  *****************************************************************************/
 #pragma once
@@ -19,7 +19,7 @@ typedef enum AL_EDriverError
 
 #define AL_POLL_MSG 0xfffffffc
 
-/*************************************************************************//*!
+/*****************************************************************************
     \brief Interfaces with a device.
     The device can either be the interface of a kernel driver like al5e, al5r or al5d
     or it could also be a socket, this is implementation dependant.
@@ -62,4 +62,4 @@ AL_EDriverError AL_Driver_PostNonBlockingMessage(AL_TDriver* driver, int fd, lon
   return driver->vtable->pfnPostMessage(driver, fd, messageId, data, false);
 }
 
-/*@}*/
+/*!@}*/

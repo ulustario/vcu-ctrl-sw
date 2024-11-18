@@ -5,7 +5,10 @@
 
 #include <lib_app/Sink.h>
 
+extern "C"
+{
 #include "lib_common/PicFormat.h"
+}
 
 struct SinkCrop final : IFrameSink
 {

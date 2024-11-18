@@ -18,6 +18,7 @@ ifneq ($(ENABLE_ROI),0)
 endif
 
 
+
 ifneq ($(ENABLE_ENC_SW_MULTIPASS),0)
   EXE_ENCODER_SRCS+=$(THIS_EXE_ENCODER)/TwoPassMngr.cpp
 endif
@@ -25,7 +26,6 @@ endif
 ifneq ($(ENABLE_HIGH_DYNAMIC_RANGE),0)
   EXE_ENCODER_SRCS+=$(THIS_EXE_ENCODER)/HDRParser.cpp
 endif
-
 
 
 
@@ -41,7 +41,7 @@ $(BIN)/$(THIS_EXE_ENCODER)/main.cpp.o: INTROSPECT_FLAGS=-DAL_COMPIL_FLAGS='"$(CF
 $(BIN)/$(THIS_EXE_ENCODER)/main.cpp.o: INTROSPECT_FLAGS+=-DHAS_COMPIL_FLAGS=1
 
 
-$(BIN)/AL_Encoder.exe: $(EXE_ENCODER_OBJ) $(LIB_REFENC_A) $(LIB_REFALLOC_A) $(LIB_ENCODER_A) $(LIB_APP_A) $(LIB_CONV_YUV_A)
+$(BIN)/AL_Encoder.exe: $(EXE_ENCODER_OBJ) $(LIB_REFENC_A) $(LIB_REFALLOC_A) $(LIB_ENCODER_A) $(LIB_APP_A) $(LIB_REFFBC_A)
 AL_Encoder.exe: $(BIN)/AL_Encoder.exe
 TARGETS+=AL_Encoder.exe
 
@@ -60,7 +60,7 @@ EXE_CFG_PARSER_SRCS:=\
 
 EXE_CFG_PARSER_OBJ:=$(EXE_CFG_PARSER_SRCS:%=$(BIN)/%.o)
 
-$(BIN)/AL_CfgParser.exe: $(EXE_CFG_PARSER_OBJ) $(LIB_ENCODER_A) $(LIB_APP_A)
+$(BIN)/AL_CfgParser.exe: $(EXE_CFG_PARSER_OBJ) $(LIB_ENCODER_A) $(LIB_APP_A) $(LIB_REFFBC_A)
 AL_CfgParser.exe: $(BIN)/AL_CfgParser.exe
 TARGETS+=AL_CfgParser.exe
 

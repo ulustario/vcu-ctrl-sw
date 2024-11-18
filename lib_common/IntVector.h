@@ -5,7 +5,6 @@
 
 #include <lib_rtos/types.h> // bool
 #include <lib_common/Utils.h> // Min
-#include <lib_assert/al_assert.h>
 
 #define MAX_ELEMENTS 32
 
@@ -25,5 +24,5 @@ void IntVector_Revert(IntVector* self);
 void IntVector_Copy(IntVector const* from, IntVector* to);
 
 #define VECTOR_FOREACH(iterator, v) \
-  AL_Assert((v).count <= MAX_ELEMENTS); \
+  Rtos_Assert((v).count <= MAX_ELEMENTS); \
   for(int i = 0, iterator = (v).elements[0]; i < (v).count; i++, iterator = (v).elements[Min(i, MAX_ELEMENTS - 1)])
