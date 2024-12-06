@@ -376,7 +376,7 @@ static uint8_t UpdateEncoderInfos(AL_TEncCtx* pCtx, AL_TEncInfo* pEI, AL_TEncCha
   if(!AL_IS_AOM(pChParam->eProfile))
   {
     Rtos_GetMutex(pCtx->Mutex);
-    uSpsId = AL_GetSps(&pCtx->tHeadersCtx[iLayerID], pChParam->uEncWidth, pChParam->uEncHeight);
+    uSpsId = AL_GetSps(&pCtx->tHeadersCtx[iLayerID], pChParam->uEncWidth, pChParam->uEncHeight, pChParam->eProfile);
     pEI->uPpsId = AL_GetPps(&pCtx->tHeadersCtx[iLayerID], uSpsId, pChParam->iCbPicQpOffset, pChParam->iCrPicQpOffset);
     Rtos_ReleaseMutex(pCtx->Mutex);
   }
@@ -878,20 +878,33 @@ static void ResetSettings(AL_TEncCtx* pCtx)
   Rtos_Memset(pCtx->tMDSettings.pVirtualAddr, 0, pCtx->tMDSettings.uSize);
 }
 
-static void SetupHeaders(AL_TEncCtx* pCtx)
+static void SetupHeaders(AL_TEncCtx* pCtx, AL_TEncSettings const* pSettings)
 {
+  (void)pSettings;
   int i;
+
+  int iMaxSpsId = MAX_SPS_IDS;
+
+  if(AL_GET_CODEC(pSettings->tChParam[0].eProfile) == AL_CODEC_HEVC)
+  {
+    iMaxSpsId = AL_HEVC_MAX_SPS;
+  }
+
+  if(AL_GET_CODEC(pSettings->tChParam[0].eProfile) == AL_CODEC_AVC)
+  {
+    iMaxSpsId = AL_AVC_MAX_SPS;
+  }
 
   for(i = 0; i < MAX_NUM_LAYER; i++)
   {
-    pCtx->tHeadersCtx[i].iPrevSps = (MAX_SPS_IDS - 1 + i) % MAX_SPS_IDS;
+    pCtx->tHeadersCtx[i].iPrevSps = (iMaxSpsId - 1 + i) % iMaxSpsId;
     pCtx->tHeadersCtx[i].iPrevPps = (MAX_PPS_IDS - 1 + i) % MAX_PPS_IDS;
     pCtx->tHeadersCtx[i].ppsCtx[(MAX_PPS_IDS - 1 + i) % MAX_PPS_IDS].uSpsId = ~0;
   }
 }
 
 /***************************************************************************/
-AL_TEncCtx* AL_Common_Encoder_Create(AL_TAllocator* pAlloc)
+AL_TEncCtx* AL_Common_Encoder_Create(AL_TAllocator* pAlloc, AL_TEncSettings const* pSettings)
 {
   AL_TEncCtx* pCtx = Rtos_Malloc(sizeof(AL_TEncCtx));
 
@@ -905,7 +918,7 @@ AL_TEncCtx* AL_Common_Encoder_Create(AL_TAllocator* pAlloc)
 
   FillSettingsPointers(pCtx);
   ResetSettings(pCtx);
-  SetupHeaders(pCtx);
+  SetupHeaders(pCtx, pSettings);
 
   return pCtx;
 

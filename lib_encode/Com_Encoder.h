@@ -19,7 +19,7 @@
    \brief Creates an encoder object
    \return Pointer to the encoder created if succeeded, NULL otherwise
 *****************************************************************************/
-AL_TEncCtx* AL_Common_Encoder_Create(AL_TAllocator* pAlloc);
+AL_TEncCtx* AL_Common_Encoder_Create(AL_TAllocator* pAlloc, AL_TEncSettings const* pSettings);
 
 /*****************************************************************************
    \brief Destroy an encoder object

@@ -16,7 +16,7 @@ void AL_CreateAvcEncoder(HighLevelEncoder* pCtx);
 
 static AL_ERR CreateEncCtx(AL_IEncScheduler* pScheduler, AL_TAllocator* pAlloc, AL_TEncSettings const* pSettings, AL_CB_EndEncoding callback, AL_TEncCtx** ppCtx)
 {
-  *ppCtx = AL_Common_Encoder_Create(pAlloc);
+  *ppCtx = AL_Common_Encoder_Create(pAlloc, pSettings);
 
   if(*ppCtx == NULL)
     return AL_ERR_NO_MEMORY;

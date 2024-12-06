@@ -6,6 +6,8 @@
  *****************************************************************************/
 
 #include "EncUtils.h"
+#include "lib_common/Profiles.h"
+#include "lib_common/SPS.h"
 #include "lib_common/Utils.h"
 #include "lib_common_enc/EncPicInfo.h"
 
@@ -292,8 +294,9 @@ bool HasCuQpDeltaDepthEnabled(AL_TEncSettings const* pSettings, AL_TEncChanParam
 }
 
 /****************************************************************************/
-uint8_t AL_GetSps(AL_THeadersCtx* pHdrs, uint16_t uWidth, uint16_t uHeight)
+uint8_t AL_GetSps(AL_THeadersCtx* pHdrs, uint16_t uWidth, uint16_t uHeight, AL_EProfile eProfile)
 {
+  (void)eProfile;
   AL_TSpsCtx* pPrev = &pHdrs->spsCtx[pHdrs->iPrevSps];
   AL_TSpsCtx* pCurrent;
 
@@ -303,7 +306,15 @@ uint8_t AL_GetSps(AL_THeadersCtx* pHdrs, uint16_t uWidth, uint16_t uHeight)
     return pHdrs->iPrevSps;
   }
 
-  pHdrs->iPrevSps = (pHdrs->iPrevSps + 1) % MAX_SPS_IDS;
+  int iMaxSpsIds = MAX_SPS_IDS;
+
+  if(AL_GET_CODEC(eProfile) == AL_CODEC_HEVC)
+    iMaxSpsIds = AL_HEVC_MAX_SPS;
+
+  if(AL_GET_CODEC(eProfile) == AL_CODEC_AVC)
+    iMaxSpsIds = AL_AVC_MAX_SPS;
+
+  pHdrs->iPrevSps = (pHdrs->iPrevSps + 1) % iMaxSpsIds;
   pCurrent = &pHdrs->spsCtx[pHdrs->iPrevSps];
   Rtos_Assert(pCurrent->iRefCnt == 0);
   pCurrent->bHasBeenSent = false;
