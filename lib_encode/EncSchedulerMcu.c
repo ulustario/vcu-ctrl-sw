@@ -134,7 +134,7 @@ static void createEncodeMsg(struct al5_encode_msg* msg, AL_TEncInfo* pEncInfo, A
   for(size_t i = 0; i < sizeof(pBuffersAddrs->tQpTableAddrs) / sizeof(*pBuffersAddrs->tQpTableAddrs); ++i)
   {
     if(pBuffersAddrs->tQpTableAddrs[i].pPAddr)
-      pBuffersAddrs->tQpTableAddrs[i].pVAddr = (pBuffersAddrs->tQpTableAddrs[i].pVAddr & 0x7FFFFFFF) + DCACHE_OFFSET;
+      pBuffersAddrs->tQpTableAddrs[i].pVAddr = (pBuffersAddrs->tQpTableAddrs[i].pPAddr & 0x7FFFFFFF) + DCACHE_OFFSET;
     else
       pBuffersAddrs->tQpTableAddrs[i].pVAddr = 0;
   }
