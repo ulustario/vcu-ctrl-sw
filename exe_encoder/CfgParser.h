@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 /******************************************************************************
@@ -31,7 +31,7 @@ typedef AL_INTROSPECT (category = "debug") struct tCfgRunInfo
   AL_EDeviceType eDeviceType;
   AL_ESchedulerType eSchedulerType;
   bool bLoop;
-  int iMaxPict;
+  int32_t iMaxPict;
   unsigned int iFirstPict;
   unsigned int iScnChgLookAhead;
   std::string sRecMd5Path;
@@ -39,7 +39,7 @@ typedef AL_INTROSPECT (category = "debug") struct tCfgRunInfo
   AL_EIpCtrlMode ipCtrlMode;
   std::string logsFile = "";
   std::string apbFile = "";
-  bool trackDma = false;
+  AL_ETrackDmaMode eTrackDmaMode = AL_ETrackDmaMode::AL_TRACK_DMA_MODE_NONE;
   bool printPictureType = false;
   AL_ERateCtrlStatMode rateCtrlStat = AL_RATECTRL_STAT_MODE_NONE;
   std::string rateCtrlMetaPath = "";
@@ -128,7 +128,7 @@ AL_INTROSPECT(category = "debug") struct ConfigFile
   // \brief control the strictness when parsing the configuration file
   bool strict_mode;
 
-  int iForceStreamBufSize = 0;
+  int32_t iForceStreamBufSize = 0;
 };
 
 struct Temporary

@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #include "lib_common/FourCC.h"
@@ -121,7 +121,7 @@ static const TFourCCMapping FourCCMappings[] =
 
 };
 
-static int const FourCCMappingSize = sizeof(FourCCMappings) / sizeof(FourCCMappings[0]);
+static int32_t const FourCCMappingSize = sizeof(FourCCMappings) / sizeof(FourCCMappings[0]);
 
 /****************************************************************************/
 bool AL_GetPicFormat(TFourCC tFourCC, AL_TPicFormat* tPicFormat)
@@ -211,12 +211,12 @@ uint8_t AL_GetBitDepth(TFourCC tFourCC)
 }
 
 /****************************************************************************/
-int AL_GetPixelSize(TFourCC tFourCC)
+int32_t AL_GetPixelSize(TFourCC tFourCC)
 {
   if(tFourCC == FOURCC(Y410))
     return sizeof(uint32_t);
 
-  int iPixSize = (AL_GetBitDepth(tFourCC) > 8) ? sizeof(uint16_t) : sizeof(uint8_t);
+  int32_t iPixSize = (AL_GetBitDepth(tFourCC) > 8) ? sizeof(uint16_t) : sizeof(uint8_t);
 
   if(AL_IsInterleaved(tFourCC))
   {
@@ -230,7 +230,7 @@ int AL_GetPixelSize(TFourCC tFourCC)
 }
 
 /****************************************************************************/
-void AL_GetSubsampling(TFourCC fourcc, int* sx, int* sy)
+void AL_GetSubsampling(TFourCC fourcc, int32_t* sx, int32_t* sy)
 {
   switch(AL_GetChromaMode(fourcc))
   {
@@ -286,11 +286,18 @@ bool AL_Is10bPacked(TFourCC tFourCC)
 }
 
 /*****************************************************************************/
+bool AL_IsRasterMSB(TFourCC tFourCC)
+{
+  AL_TPicFormat tPicFormat;
+  return AL_GetPicFormat(tFourCC, &tPicFormat) && tPicFormat.bMSB;
+}
+
+/*****************************************************************************/
 bool AL_IsTiled(TFourCC tFourCC)
 {
   AL_EFbStorageMode eStorageMode = AL_GetStorageMode(tFourCC);
 
-  if(eStorageMode == AL_FB_TILE_32x4 || eStorageMode == AL_FB_TILE_64x4)
+  if(eStorageMode != AL_FB_RASTER)
     return true;
 
   return false;
@@ -312,4 +319,30 @@ AL_EFbStorageMode AL_GetStorageMode(TFourCC tFourCC)
 {
   AL_TPicFormat tPicFormat;
   return AL_GetPicFormat(tFourCC, &tPicFormat) ? tPicFormat.eStorageMode : AL_FB_RASTER;
+}
+
+AL_StringFourCC AL_FourCCToString(TFourCC tFourCC)
+{
+  AL_StringFourCC tStringFourCC;
+  tStringFourCC.cFourcc[0] = tFourCC & 0xFF;
+  tStringFourCC.cFourcc[1] = (tFourCC & 0xFF00) >> 8;
+  tStringFourCC.cFourcc[2] = (tFourCC & 0xFF0000) >> 16;
+  tStringFourCC.cFourcc[3] = (tFourCC & 0xFF000000) >> 24;
+  tStringFourCC.cFourcc[4] = '\0';
+  return tStringFourCC;
+}
+
+bool AL_IsCompatible(TFourCC tInFourCC, TFourCC tOutFourCC)
+{
+  if(tInFourCC == tOutFourCC)
+    return true;
+
+  if(AL_IsMonochrome(tOutFourCC))
+    return (AL_GetPlaneMode(tInFourCC) == AL_PLANE_MODE_PLANAR || AL_GetPlaneMode(tInFourCC) == AL_PLANE_MODE_SEMIPLANAR)
+           && (AL_GetBitDepth(tInFourCC) == AL_GetBitDepth(tOutFourCC))
+           && (AL_IsRasterMSB(tInFourCC) == AL_IsRasterMSB(tOutFourCC))
+           && (AL_IsTiled(tInFourCC) == AL_IsTiled(tOutFourCC))
+           && (AL_IsCompressed(tInFourCC) == AL_IsCompressed(tOutFourCC));
+
+  return false;
 }

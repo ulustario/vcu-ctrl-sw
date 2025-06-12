@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #pragma once
@@ -21,8 +21,8 @@ AL_PADDR AL_Buffer_GetPhysicalAddress(const AL_TBuffer* pBuf);
    \return Returns the physical address of the memory chunk if succeeded,
    0 otherwise
 *****************************************************************************/
-AL_PADDR AL_Buffer_GetPhysicalAddressChunk(const AL_TBuffer* pBuf, int iChunkIdx);
+AL_PADDR AL_Buffer_GetPhysicalAddressChunk(const AL_TBuffer* pBuf, int32_t iChunkIdx);
 
 /* debug funcs */
 AL_VADDR AL_Buffer_GetVirtualAddress(const AL_TBuffer* hBuf);
-AL_VADDR AL_Buffer_GetVirtualAddressChunk(const AL_TBuffer* hBuf, int iChunkIdx);
+AL_VADDR AL_Buffer_GetVirtualAddressChunk(const AL_TBuffer* hBuf, int32_t iChunkIdx);

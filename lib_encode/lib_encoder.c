@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #include "lib_encode/lib_encoder.h"
@@ -58,7 +58,7 @@ bool AL_Encoder_GetInfo(AL_HEncoder hEnc, AL_TEncoderInfo* pEncInfo)
 }
 
 /*****************************************************************************/
-void AL_Encoder_NotifySceneChange(AL_HEncoder hEnc, int iAhead)
+void AL_Encoder_NotifySceneChange(AL_HEncoder hEnc, int32_t iAhead)
 {
   if(!pArch)
     return;
@@ -121,7 +121,7 @@ bool AL_Encoder_Process(AL_HEncoder hEnc, AL_TBuffer* pFrame, AL_TBuffer* pQpTab
 }
 
 /*****************************************************************************/
-int AL_Encoder_AddSei(AL_HEncoder hEnc, AL_TBuffer* pStream, bool isPrefix, int iPayloadType, uint8_t* pPayload, int iPayloadSize, int iTempId)
+int32_t AL_Encoder_AddSei(AL_HEncoder hEnc, AL_TBuffer* pStream, bool isPrefix, int32_t iPayloadType, uint8_t* pPayload, int32_t iPayloadSize, int32_t iTempId)
 {
   if(!pArch)
     return AL_ERROR;
@@ -186,7 +186,7 @@ bool AL_Encoder_RestartGopRecoveryPoint(AL_HEncoder hEnc)
 }
 
 /*****************************************************************************/
-bool AL_Encoder_SetGopLength(AL_HEncoder hEnc, int iGopLength)
+bool AL_Encoder_SetGopLength(AL_HEncoder hEnc, int32_t iGopLength)
 {
   if(!pArch)
     return false;
@@ -195,7 +195,7 @@ bool AL_Encoder_SetGopLength(AL_HEncoder hEnc, int iGopLength)
 }
 
 /*****************************************************************************/
-bool AL_Encoder_SetGopNumB(AL_HEncoder hEnc, int iNumB)
+bool AL_Encoder_SetGopNumB(AL_HEncoder hEnc, int32_t iNumB)
 {
   if(!pArch)
     return false;
@@ -204,7 +204,7 @@ bool AL_Encoder_SetGopNumB(AL_HEncoder hEnc, int iNumB)
 }
 
 /*****************************************************************************/
-bool AL_Encoder_SetFreqIDR(AL_HEncoder hEnc, int iFreqIDR)
+bool AL_Encoder_SetFreqIDR(AL_HEncoder hEnc, int32_t iFreqIDR)
 {
   if(!pArch)
     return false;
@@ -213,7 +213,7 @@ bool AL_Encoder_SetFreqIDR(AL_HEncoder hEnc, int iFreqIDR)
 }
 
 /*****************************************************************************/
-bool AL_Encoder_SetBitRate(AL_HEncoder hEnc, int iBitRate)
+bool AL_Encoder_SetBitRate(AL_HEncoder hEnc, int32_t iBitRate)
 {
   if(!pArch)
     return false;
@@ -222,7 +222,7 @@ bool AL_Encoder_SetBitRate(AL_HEncoder hEnc, int iBitRate)
 }
 
 /*****************************************************************************/
-bool AL_Encoder_SetMaxBitRate(AL_HEncoder hEnc, int iTargetBitRate, int iMaxBitRate)
+bool AL_Encoder_SetMaxBitRate(AL_HEncoder hEnc, int32_t iTargetBitRate, int32_t iMaxBitRate)
 {
   if(!pArch)
     return false;
@@ -276,21 +276,21 @@ bool AL_Encoder_SetQPBoundsPerFrameType(AL_HEncoder hEnc, int16_t iMinQP, int16_
 }
 
 /*****************************************************************************/
-bool AL_Encoder_SetQPIPDelta(AL_HEncoder hEnc, int16_t uIPDelta)
+bool AL_Encoder_SetQPIPDelta(AL_HEncoder hEnc, int16_t iIPDelta)
 {
   if(!pArch)
     return false;
 
-  return pArch->vtable->EncoderSetQPIPDelta(hEnc, uIPDelta);
+  return pArch->vtable->EncoderSetQPIPDelta(hEnc, iIPDelta);
 }
 
 /*****************************************************************************/
-bool AL_Encoder_SetQPPBDelta(AL_HEncoder hEnc, int16_t uPBDelta)
+bool AL_Encoder_SetQPPBDelta(AL_HEncoder hEnc, int16_t iPBDelta)
 {
   if(!pArch)
     return false;
 
-  return pArch->vtable->EncoderSetQPPBDelta(hEnc, uPBDelta);
+  return pArch->vtable->EncoderSetQPPBDelta(hEnc, iPBDelta);
 }
 
 /*****************************************************************************/
@@ -300,6 +300,15 @@ bool AL_Encoder_SetInputResolution(AL_HEncoder hEnc, AL_TDimension tDim)
     return false;
 
   return pArch->vtable->EncoderSetInputResolution(hEnc, tDim);
+}
+
+/*****************************************************************************/
+bool AL_Encoder_SetLoopFilterMode(AL_HEncoder hEnc, uint8_t uMode)
+{
+  if(!pArch)
+    return false;
+
+  return pArch->vtable->EncoderSetLoopFilterMode(hEnc, uMode);
 }
 
 /*****************************************************************************/

@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 /****************************************************************************
@@ -10,7 +10,7 @@
 #include "Cabac.h"
 
 /******************************************************************************/
-void AL_AVC_GenerateSkippedPictureCavlc(AL_TBitStreamLite* pBS, int iNumMBs)
+void AL_AVC_GenerateSkippedPictureCavlc(AL_TBitStreamLite* pBS, int32_t iNumMBs)
 {
   AL_BitStreamLite_PutUE(pBS, iNumMBs);
   AL_BitStreamLite_PutU(pBS, 1, 1);
@@ -28,7 +28,7 @@ static const uint8_t AL_TabValMPS[3] =
 };
 // #include "stdio.h"
 /****************************************************************************/
-unsigned int AL_AVC_GenerateSkippedPictureCabac(AL_TBitStreamLite* pBS, int iCabacInitIdc, int32_t iNumMBs)
+uint32_t AL_AVC_GenerateSkippedPictureCabac(AL_TBitStreamLite* pBS, int32_t iCabacInitIdc, int32_t iNumMBs)
 {
   uint8_t uState = AL_TabState[iCabacInitIdc];
   uint8_t uValMPS = AL_TabValMPS[iCabacInitIdc];
@@ -38,7 +38,7 @@ unsigned int AL_AVC_GenerateSkippedPictureCabac(AL_TBitStreamLite* pBS, int iCab
 
   unsigned int uBins = 0;
 
-  for(int iMB = 1; iMB <= iNumMBs; iMB++)
+  for(int32_t iMB = 1; iMB <= iNumMBs; iMB++)
   {
     // mb_skip_flag
     AL_Cabac_WriteBin(pBS, &Ctx, &uState, &uValMPS, 1);
@@ -55,10 +55,10 @@ unsigned int AL_AVC_GenerateSkippedPictureCabac(AL_TBitStreamLite* pBS, int iCab
 }
 
 /******************************************************************************/
-bool AL_AVC_GenerateSkippedPicture(AL_TSkippedPicture* pSkipPict, int32_t iNumMBs, bool bCabac, int iCabacInitIdc)
+bool AL_AVC_GenerateSkippedPicture(AL_TSkippedPicture* pSkipPict, int32_t iNumMBs, bool bCabac, int32_t iCabacInitIdc)
 {
   AL_TBitStreamLite BS;
-  int iBinsCount;
+  int32_t iBinsCount;
 
   if(!pSkipPict || !pSkipPict->pData)
     return false;

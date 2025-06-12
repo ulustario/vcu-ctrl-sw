@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #include "lib_common/Allocator.h"
@@ -58,7 +58,7 @@ static AL_HANDLE AL_AlignedAllocator_AllocNamed(AL_TAllocator* pAllocator, size_
 
 static AL_HANDLE AL_AlignedAllocator_Alloc(AL_TAllocator* pAllocator, size_t zSize)
 {
-  return AL_AlignedAllocator_AllocNamed(pAllocator, zSize, "");
+  return AL_AlignedAllocator_AllocNamed(pAllocator, zSize, "unknown");
 }
 
 static bool AL_AlignedAllocator_Free(AL_TAllocator* pAllocator, AL_HANDLE hBuf)

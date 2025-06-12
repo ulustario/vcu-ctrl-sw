@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 /****************************************************************************
@@ -24,10 +24,10 @@ static bool Matches(uint8_t const* pData)
 }
 
 /****************************************************************************/
-static void AntiEmul(AL_TBitStreamLite* pStream, uint8_t const* pData, int iNumBytes)
+static void AntiEmul(AL_TBitStreamLite* pStream, uint8_t const* pData, int32_t iNumBytes)
 {
   // Write all but the last two bytes.
-  int iByte;
+  int32_t iByte;
 
   for(iByte = 2; iByte < iNumBytes; iByte++)
   {
@@ -48,34 +48,34 @@ static void AntiEmul(AL_TBitStreamLite* pStream, uint8_t const* pData, int iNumB
 }
 
 /****************************************************************************/
-void FlushNAL(IRbspWriter* pWriter, AL_TBitStreamLite* pStream, uint8_t uNUT, AL_TNalHeader const* pHeader, uint8_t* pDataInNAL, int iBitsInNAL, AL_EStartCodeBytesAlignedMode eStartCodeBytesAligned)
+void FlushNAL(IRbspWriter* pWriter, AL_TBitStreamLite* pStream, uint8_t uNUT, AL_TNalHeader const* pHeader, uint8_t* pDataInNAL, int32_t iBitsInNAL, AL_EStartCodeBytesAlignedMode eStartCodeBytesAligned)
 {
   pWriter->WriteStartCode(pStream, uNUT, eStartCodeBytesAligned);
 
-  for(int i = 0; i < pHeader->size; i++)
+  for(int32_t i = 0; i < pHeader->size; i++)
     writeByte(pStream, pHeader->bytes[i]);
 
-  int iBytesInNAL = BitsToBytes(iBitsInNAL);
+  int32_t iBytesInNAL = BitsToBytes(iBitsInNAL);
 
   if(pDataInNAL && iBytesInNAL)
     AntiEmul(pStream, pDataInNAL, iBytesInNAL);
 }
 
 /****************************************************************************/
-void WriteFillerData(IRbspWriter* pWriter, AL_TBitStreamLite* pStream, uint8_t uNUT, AL_TNalHeader const* pHeader, int iBytesCount, bool bDontFill, AL_EStartCodeBytesAlignedMode eStartCodeBytesAligned)
+void WriteFillerData(IRbspWriter* pWriter, AL_TBitStreamLite* pStream, uint8_t uNUT, AL_TNalHeader const* pHeader, int32_t iBytesCount, bool bDontFill, AL_EStartCodeBytesAlignedMode eStartCodeBytesAligned)
 {
-  int bookmark = AL_BitStreamLite_GetBitsCount(pStream);
+  int32_t bookmark = AL_BitStreamLite_GetBitsCount(pStream);
   pWriter->WriteStartCode(pStream, uNUT, eStartCodeBytesAligned);
 
-  for(int i = 0; i < pHeader->size; i++)
+  for(int32_t i = 0; i < pHeader->size; i++)
     writeByte(pStream, pHeader->bytes[i]);
 
-  int headerInBytes = (AL_BitStreamLite_GetBitsCount(pStream) - bookmark) / 8;
-  int bytesToWrite = iBytesCount - headerInBytes;
-  int spaceRemainingInBytes = (pStream->iMaxBits / 8) - (AL_BitStreamLite_GetBitsCount(pStream) / 8);
+  int32_t headerInBytes = (AL_BitStreamLite_GetBitsCount(pStream) - bookmark) / 8;
+  int32_t bytesToWrite = iBytesCount - headerInBytes;
+  int32_t spaceRemainingInBytes = (pStream->iMaxBits / 8) - (AL_BitStreamLite_GetBitsCount(pStream) / 8);
 
   bytesToWrite = Min(spaceRemainingInBytes, bytesToWrite);
-  int byteWritten = bytesToWrite;
+  int32_t byteWritten = bytesToWrite;
   bytesToWrite -= 1; // -1 for the final 0x80
   uint8_t* pInitialStreamData = AL_BitStreamLite_GetCurData(pStream);
 
@@ -95,7 +95,7 @@ void WriteFillerData(IRbspWriter* pWriter, AL_TBitStreamLite* pStream, uint8_t u
 /****************************************************************************/
 void AddFlagsToAllSections(AL_TStreamMetaData* pStreamMeta, uint32_t flags)
 {
-  for(int i = 0; i < pStreamMeta->uNumSection; i++)
+  for(int32_t i = 0; i < pStreamMeta->uNumSection; i++)
   {
     AL_TStreamSection section = pStreamMeta->pSections[i];
     AL_StreamMetaData_SetSectionFlags(pStreamMeta, i, flags | section.eFlags);

@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #pragma once
@@ -128,9 +128,9 @@ static inline void SetEnumDescr(std::map<std::string, EnumDescription<T>>& enumD
     enumDescr[key] = { name, descr, codecs };
 }
 
-int parseEnum(std::deque<Token>& tokens, std::map<std::string, EnumDescription<int>> const& availableEnums);
+int32_t parseEnum(std::deque<Token>& tokens, std::map<std::string, EnumDescription<int>> const& availableEnums);
 std::map<std::string, EnumDescription<int>> createBoolEnums(std::vector<Codec> codecs);
-int parseBoolEnum(std::deque<Token>& tokens, std::map<std::string, EnumDescription<int>> boolEnums);
+int32_t parseBoolEnum(std::deque<Token>& tokens, std::map<std::string, EnumDescription<int>> boolEnums);
 bool hasOnlyOneIdentifier(std::deque<Token>& tokens);
 
 struct TokenError : public std::runtime_error
@@ -293,7 +293,7 @@ static T applyOperator(Token const& token, std::vector<T>& values)
   }
 }
 
-static inline int getNumberOperand(Token const& token)
+static inline int32_t getNumberOperand(Token const& token)
 {
   return (token.type == TokenType::UnaryMinus || token.type == TokenType::UnaryPlus) ? 1 : 2;
 }
@@ -319,7 +319,7 @@ static T get(ArithToken<T> const& arith)
   if(arith.valid)
     return arith.value;
   Token const& token = arith.token;
-  int base = 10;
+  int32_t base = 10;
 
   if(token.type == TokenType::HexIntegral)
     base = 16;
@@ -353,7 +353,7 @@ static T reversePolishEval(std::deque<Token> tokens)
     {
       std::vector<T> values;
 
-      for(int i = 0; i < getNumberOperand(token); ++i)
+      for(int32_t i = 0; i < getNumberOperand(token); ++i)
       {
         if(!stack.empty())
         {
@@ -389,7 +389,7 @@ template<typename T>
 std::vector<T> parseArray(std::deque<Token>& tokens, size_t expectedSize)
 {
   std::vector<T> array;
-  int sign = 1;
+  int32_t sign = 1;
 
   for(auto& token : tokens)
   {
@@ -484,7 +484,7 @@ std::string getDefaultEnumValue(T const& t, std::map<std::string, EnumDescriptio
 }
 
 template<typename T>
-std::string getDefaultArrayValue(T* t, int arraySize, int rescale = 1)
+std::string getDefaultArrayValue(T* t, int32_t arraySize, int32_t rescale = 1)
 {
   std::string s = "";
 
@@ -541,7 +541,7 @@ struct Callback
   bool isAdvancedFeature = false;
 };
 
-static int safeToLower(int c)
+static int32_t safeToLower(int32_t c)
 {
   if(c < 0 && c != EOF)
     throw std::runtime_error("Character is not ASCII");
@@ -549,7 +549,7 @@ static int safeToLower(int c)
 }
 
 template<typename T>
-static std::string setPrecision(T value, int precision = 2)
+static std::string setPrecision(T value, int32_t precision = 2)
 {
   std::stringstream ss;
   ss << std::setprecision(precision) << std::fixed << value;
@@ -569,7 +569,7 @@ static std::string describeArith(T min, T max)
 }
 
 template<typename T>
-static std::string describeArithList(std::vector<T> List, int precision = 2)
+static std::string describeArithList(std::vector<T> List, int32_t precision = 2)
 {
   std::stringstream ss;
   ss << "{";
@@ -601,7 +601,7 @@ static std::vector<CallbackInfo> toCallbackInfo(std::vector<ArithInfo<T>> const&
 }
 
 template<typename T>
-static std::vector<CallbackInfo> toCallbackInfo(std::vector<ArithInfoList<T>> const& arithInfo, int precision = 2)
+static std::vector<CallbackInfo> toCallbackInfo(std::vector<ArithInfoList<T>> const& arithInfo, int32_t precision = 2)
 {
   std::vector<CallbackInfo> callbackInfo {};
 
@@ -741,7 +741,7 @@ struct ConfigParser
   }
 
   template<typename T, typename U>
-  void addArithList(Section section, char const* name, T& t, std::string description, std::vector<ArithInfoList<U>> info, int precision = 2)
+  void addArithList(Section section, char const* name, T& t, std::string description, std::vector<ArithInfoList<U>> info, int32_t precision = 2)
   {
     std::vector<ParameterType> types {
       ParameterType::ArithExpr
@@ -765,7 +765,7 @@ struct ConfigParser
   }
 
   template<typename T, typename U = long long int, typename Func, typename Func2>
-  void addArithFuncList(Section section, char const* name, T& t, Func f, Func2 m, std::string description, std::vector<ArithInfoList<U>> info, int precision = 2)
+  void addArithFuncList(Section section, char const* name, T& t, Func f, Func2 m, std::string description, std::vector<ArithInfoList<U>> info, int32_t precision = 2)
   {
     std::vector<ParameterType> types {
       ParameterType::ArithExpr

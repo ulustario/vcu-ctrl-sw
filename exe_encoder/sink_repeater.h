@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #pragma once
@@ -7,7 +7,7 @@
 
 struct RepeaterSink : IFrameSink
 {
-  RepeaterSink(int bufferingCount, int maxPicCount) : m_bufferingCount{bufferingCount}, m_picCount{maxPicCount}
+  RepeaterSink(int32_t bufferingCount, int32_t maxPicCount) : m_bufferingCount{bufferingCount}, m_picCount{maxPicCount}
   {
   }
 
@@ -62,8 +62,8 @@ struct RepeaterSink : IFrameSink
   IFrameSink* next;
 
 private:
-  int m_bufferingCount;
-  int m_picCount;
+  int32_t m_bufferingCount;
+  int32_t m_picCount;
   bool m_hasAlreadyStarted = false;
 
   std::vector<AL_TBuffer*> frames;

@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #include "SplitBufferFeeder.h"
@@ -313,7 +313,7 @@ static bool addEOSMeta(AL_TBuffer* pEOSBuffer)
   return true;
 }
 
-AL_TFeeder* AL_SplitBufferFeeder_Create(AL_HANDLE hDec, int iMaxBufNum, AL_TBuffer* pEOSBuffer, bool bEOSParsingCB)
+AL_TFeeder* AL_SplitBufferFeeder_Create(AL_HANDLE hDec, int32_t iMaxBufNum, AL_TBuffer* pEOSBuffer, bool bEOSParsingCB)
 {
   Rtos_Assert(pEOSBuffer);
 

@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #pragma once
@@ -20,7 +20,7 @@ AL_PADDR AL_PixMapBuffer_GetPlanePhysicalAddress(AL_TBuffer const* pBuf, AL_EPla
    \param[in] ePlaneId Type of plane
    \return Returns the index of the memory chunk containing the specified plane
 *****************************************************************************/
-int AL_PixMapBuffer_GetPlaneChunkIdx(AL_TBuffer const* pBuf, AL_EPlaneId ePlaneId);
+int32_t AL_PixMapBuffer_GetPlaneChunkIdx(AL_TBuffer const* pBuf, AL_EPlaneId ePlaneId);
 
 /*****************************************************************************
    \brief Get the list of planes defined in a frame buffer. It might differ
@@ -34,7 +34,7 @@ int AL_PixMapBuffer_GetPlaneChunkIdx(AL_TBuffer const* pBuf, AL_EPlaneId ePlaneI
                       buffer
    \return Returns the number of planes defined
 *****************************************************************************/
-int AL_PixMapBuffer_GetDefinedPlanes(AL_TBuffer const* pBuf, AL_EPlaneId planes[AL_PLANE_MAX_ENUM]);
+int32_t AL_PixMapBuffer_GetDefinedPlanes(AL_TBuffer const* pBuf, AL_EPlaneId planes[AL_PLANE_MAX_ENUM]);
 
 /*****************************************************************************
    \brief Get the Offset (in bytes) of the pixel at the specified position

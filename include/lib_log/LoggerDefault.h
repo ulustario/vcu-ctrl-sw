@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #pragma once
@@ -17,8 +17,8 @@ typedef struct AL_TDefaultLoggerSample
 typedef struct AL_TDefaultLoggerEvents
 {
   AL_TDefaultLoggerSample* samples;
-  int count;
-  int max;
+  int32_t count;
+  int32_t max;
 }AL_TDefaultLoggerEvents;
 
 AL_ILogger* AL_DefaultLogger_Init(AL_TAllocator* allocator, AL_ITimer* timer, AL_TDefaultLoggerEvents* events);

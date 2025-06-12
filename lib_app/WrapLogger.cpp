@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #include "lib_app/WrapLogger.h"
@@ -26,7 +26,7 @@ Logger::~Logger()
 
   std::ofstream tracer(outputFile);
 
-  for(int i = 0; i < events.count; i++)
+  for(int32_t i = 0; i < events.count; i++)
     tracer << std::string(samples[i].label) << " " << samples[i].timestamp << std::endl;
 }
 

@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 /******************************************************************************
@@ -26,13 +26,13 @@ class HDRParser
 public:
   explicit HDRParser(const std::string& sHDRFile);
 
-  bool ReadHDRSEIs(AL_THDRSEIs& tHDRSEIs, int iSEIsIndex = 0);
+  bool ReadHDRSEIs(AL_THDRSEIs& tHDRSEIs, int32_t iSEIsIndex = 0);
 
 private:
   const std::string sHDRFile;
 
   bool ReadLegacy(const std::string& sHDRFile, AL_THDRSEIs& tHDRSEIs);
-  bool ReadJson(const std::string& sHDRFile, AL_THDRSEIs& tHDRSEIs, int iSEIsIndex);
+  bool ReadJson(const std::string& sHDRFile, AL_THDRSEIs& tHDRSEIs, int32_t iSEIsIndex);
 
   bool ReadMasteringDisplayColorVolume(TJsonValue* pSEIObject, AL_TMasteringDisplayColourVolume& tMDCV);
   bool ReadContentLightLevel(TJsonValue* pSEIObject, AL_TContentLightLevel& tCLL);

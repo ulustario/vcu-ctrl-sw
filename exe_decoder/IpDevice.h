@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #pragma once
@@ -41,13 +41,13 @@ private:
   std::string m_tSelectedDevice;
   AL_EDeviceType m_eDeviceType;
   AL_IDecScheduler* m_pScheduler = nullptr;
-  AL_TAllocator* m_pAllocator = nullptr;
+  std::shared_ptr<AL_TAllocator> m_pAllocator = nullptr;
   AL_ITimer* m_pTimer = nullptr;
   std::set<std::string> m_FailedDevices;
-  int m_nDevices = 0;
+  int32_t m_nDevices = 0;
   std::array<std::string, 4> m_SelectedDevices;
   bool m_bSelectDeviceWithLowestAvailableResources;
-  int m_numDevices;
+  int32_t m_numDevices;
 
   void ConfigureMcu(AL_TDriver* driver, bool useProxy);
   std::string SelectMcuDevice(std::set<std::string> const& tDevices);
@@ -60,7 +60,7 @@ inline void* CIpDevice::GetScheduler(void)
 
 inline AL_TAllocator* CIpDevice::GetAllocator(void)
 {
-  return m_pAllocator;
+  return m_pAllocator.get();
 }
 
 inline AL_ITimer* CIpDevice::GetTimer(void)

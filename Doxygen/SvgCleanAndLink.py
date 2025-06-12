@@ -43,17 +43,27 @@ def parse_g(tree, links):
         parse_g(g, links)
 
     for text in tree.findall("SVG:text", namespaces):
-        for tspan in text.findall("SVG:tspan", namespaces):
-            text.text = tspan.text
-            if tspan.text in links:
-                link = ET.Element(
-                    "a",
-                    {"href": links[tspan.text], "target": "_top"},
-                )
-                link.append(text)
-                tree.append(link)
-                tree.remove(text)
-            text.remove(tspan)
+        if text.text in links:
+            link = ET.Element(
+                "a",
+                {"href": links[text.text], "target": "_top"},
+            )
+            link.append(text)
+            tree.append(link)
+            tree.remove(text)
+
+        else:
+            for tspan in text.findall("SVG:tspan", namespaces):
+                text.text = tspan.text
+                if tspan.text in links:
+                    link = ET.Element(
+                        "a",
+                        {"href": links[tspan.text], "target": "_top"},
+                    )
+                    link.append(text)
+                    tree.append(link)
+                    tree.remove(text)
+                text.remove(tspan)
 
 
 def get_function_links(funcfile, links):

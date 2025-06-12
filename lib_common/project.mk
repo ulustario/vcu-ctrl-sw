@@ -13,7 +13,6 @@ LIB_COMMON_SRC:=\
   lib_common/PixMapBuffer.c\
   lib_common/IntVector.c\
   lib_common/Planes.c\
-  lib_common/HardwareConfig.c\
   lib_common/Error.c\
   lib_common/DisplayInfoMeta.c\
   lib_common/PicFormat.c\
@@ -37,11 +36,11 @@ endif
 
 
 
+
 ifneq ($(ENABLE_CODEC),0)
   LIB_COMMON_SRC+=lib_common/LevelLimit.c
   LIB_COMMON_SRC+=lib_common/StreamBuffer.c
   LIB_COMMON_SRC+=lib_common/ChannelResources.c
-  LIB_COMMON_SRC+=lib_common/HwScalingList.c
   LIB_COMMON_SRC+=lib_common/SyntaxConversion.c
   LIB_COMMON_SRC+=lib_common/BufferCircMeta.c
   LIB_COMMON_SRC+=lib_common/BufferStreamMeta.c
@@ -51,7 +50,7 @@ ifneq ($(ENABLE_CODEC),0)
 
 
 
-ifneq ($(ENABLE_ENC_SW_MULTIPASS),0)
+ifneq ($(ENABLE_MULTIPASS_OR_LOOKAHEAD),0)
   LIB_COMMON_SRC+=lib_common/BufferLookAheadMeta.c
 endif
 

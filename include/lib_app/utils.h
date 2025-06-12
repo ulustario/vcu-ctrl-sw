@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #pragma once
@@ -6,7 +6,7 @@
 #include <memory>
 #include "lib_app/console.h" // EConColor
 
-extern int g_Verbosity;
+extern int32_t g_Verbosity;
 
 void LogError(const char* sMsg, ...);
 void LogWarning(const char* sMsg, ...);
@@ -19,6 +19,9 @@ void LogVerbose(EConColor Color, const char* sMsg, ...);
 
 void OpenInput(std::ifstream& fp, std::string const& filename, bool binary = true);
 void OpenOutput(std::ofstream& fp, std::string const& filename, bool binary = true);
+
+/* Version Utils */
+const std::string VersionToStr(uint32_t const& version);
 
 /*****************************************************************************/
 

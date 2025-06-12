@@ -1,11 +1,5 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
-
-/******************************************************************************
-   \addtogroup lib_base
-   !@{
-   \file
- *****************************************************************************/
 
 #pragma once
 
@@ -69,7 +63,8 @@ typedef enum
   AL_OPT_UPDATE_COST_MODE = 0x01000,
   AL_OPT_SET_QP = 0x00100,
   AL_OPT_SET_INPUT_RESOLUTION = 0x00200,
-  AL_OPT_SET_LF_OFFSETS = 0x00400,
+  AL_OPT_SET_LF_MODE = 0x00400,
+  AL_OPT_SET_LF_OFFSETS = 0x00800,
   AL_OPT_SET_AUTO_QP = 0x08000,
   AL_OPT_UPDATE_AUTO_QP_VALUES = 0x20000,
   AL_OPT_SET_QP_OFFSET = 0x40000,
@@ -87,6 +82,7 @@ typedef struct
   AL_TGopParam gop;
   int16_t iQPSet;
   int16_t iQPOffset;
+  uint8_t uLFMode;
   int8_t iLFBetaOffset;
   int8_t iLFTcOffset;
   bool costMode;
@@ -188,10 +184,12 @@ typedef struct
 
 typedef struct
 {
+  AL_PADDR pPAddr;
+  AL_PTR64 pVAddr;
+}AL_TQpTableAddrs;
+typedef struct
+{
   AL_TSrcAddrs tSrcAddrs;
   AL_TSrcInfo tSrcInfo;
-  AL_PADDR pEP2;
-  AL_PTR64 pEP2_v;
+  AL_TQpTableAddrs tQpTableAddrs[3];
 }AL_TEncPicBufAddrs;
-
-/*!@}*/

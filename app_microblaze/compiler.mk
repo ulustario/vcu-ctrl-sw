@@ -1,19 +1,14 @@
 # compiler quirks
-
-COMPILER_NAME:=$(shell $(CC) --version | head -n 1 | cut -d ' ' -f 1)
-
-ifeq ($(findstring gcc,$(COMPILER_NAME)),gcc)
-
-GCC_MAJOR_VER:=$(shell $(CC) -dumpversion | sed 's/\..*//')
+CC_MAJOR_VER:=$(shell $(CC) -dumpversion | sed 's/\..*//')
 
 # Tested version are 4.9.2 and 9.2
-GCC_IS_OLD:=$(shell test $(GCC_MAJOR_VER) -lt 8 && echo 1 || echo 0)
+CC_IS_OLD:=$(shell test $(CC_MAJOR_VER) -lt 8 && echo 1 || echo 0)
 
 # gcc 4.9.2 has a bug with the --relax option and generate wrong jump table in some cases,
 # resulting in switch statement jumping to the wrong address
 
 CFLAGS+=-Os
-ifneq ($(GCC_IS_OLD),0)
+ifneq ($(CC_IS_OLD),0)
 	LDFLAGS+=-Wl,--no-relax
 else
 	# The Os optim doesn't do aggressive inline anymore and this impacts runtime in the firmware
@@ -27,6 +22,4 @@ else
 	CFLAGS+=-fvect-cost-model
 	CFLAGS+=-ftree-partial-pre
 	CFLAGS+=-fipa-cp-clone
-endif
-
 endif

@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #pragma once
@@ -8,8 +8,8 @@
 typedef struct
 {
   AL_TBuffer* buf;
-  int prev;
-  int next;
+  int32_t prev;
+  int32_t next;
 }WorkPoolElem;
 
 typedef struct
@@ -17,17 +17,17 @@ typedef struct
   WorkPoolElem* elems;
   AL_MUTEX lock;
   AL_EVENT spaceAvailable;
-  int freeHead;
-  int freeQueue;
-  int filledHead;
-  int filledQueue;
-  int capacity;
+  int32_t freeHead;
+  int32_t freeQueue;
+  int32_t filledHead;
+  int32_t filledQueue;
+  int32_t capacity;
 }WorkPool;
 
-bool AL_WorkPool_Init(WorkPool* pool, int iMaxBufNum);
+bool AL_WorkPool_Init(WorkPool* pool, int32_t iMaxBufNum);
 void AL_WorkPool_Deinit(WorkPool* pool);
 void AL_WorkPool_Remove(WorkPool* pool, AL_TBuffer* pBuf);
 void AL_WorkPool_PushBack(WorkPool* pool, AL_TBuffer* pBuf);
 bool AL_WorkPool_IsEmpty(WorkPool* pool); /* Not thread safe */
 bool AL_WorkPool_IsFull(WorkPool* pool);  /* Not thread safe */
-int AL_WorkPool_GetSize(WorkPool* pool);  /* Not thread safe */
+int32_t AL_WorkPool_GetSize(WorkPool* pool);  /* Not thread safe */

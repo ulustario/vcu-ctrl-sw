@@ -1,11 +1,6 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
-/******************************************************************************
-   \addtogroup lib_base
-   !@{
-   \file
- *****************************************************************************/
 #pragma once
 
 #include "lib_rtos/types.h"
@@ -41,5 +36,3 @@ typedef struct AL_TSliceStatus
 
   uint32_t SyntaxElements;
 }AL_TEncSliceStatus;
-
-/*!@}*/

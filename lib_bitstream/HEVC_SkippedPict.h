@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 /******************************************************************************
@@ -25,6 +25,6 @@
    \param[in] bSliceSplit Specifies if we want to generate multiple skipped-slices,
    one for each tile row, or if we want only one skipped-slice for the whole frame
 *****************************************************************************/
-extern bool AL_HEVC_GenerateSkippedPicture(AL_TSkippedPicture* pSkipPict, int iWidth, int iHeight, uint8_t uLog2MaxCuSize, uint8_t uLog2MinCuSize, int iTileColumns, int iTileRows, uint16_t* pTileWidths, uint16_t* pTileHeights, bool bSliceSplit);
+extern bool AL_HEVC_GenerateSkippedPicture(AL_TSkippedPicture* pSkipPict, int32_t iWidth, int32_t iHeight, uint8_t uLog2MaxCuSize, uint8_t uLog2MinCuSize, int32_t iTileColumns, int32_t iTileRows, uint16_t* pTileWidths, uint16_t* pTileHeights, bool bSliceSplit);
 
 /*!@}*/

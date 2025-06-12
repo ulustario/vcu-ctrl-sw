@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 /******************************************************************************
@@ -13,14 +13,14 @@
 #include "lib_common/BufferStreamMeta.h"
 
 /****************************************************************************/
-typedef struct t_NalHeader
+typedef struct AL_TNalHeader
 {
   uint8_t bytes[2];
-  int size;
+  int32_t size;
 }AL_TNalHeader;
 
-void WriteFillerData(IRbspWriter* pWriter, AL_TBitStreamLite* pStream, uint8_t uNUT, AL_TNalHeader const* pHeader, int iBytesCount, bool bDoNotFill, AL_EStartCodeBytesAlignedMode eStartCodeBytesAligned);
-void FlushNAL(IRbspWriter* pWriter, AL_TBitStreamLite* pStream, uint8_t uNUT, AL_TNalHeader const* pHeader, uint8_t* pDataInNAL, int iBitsInNAL, AL_EStartCodeBytesAlignedMode eStartCodeBytesAligned);
+void WriteFillerData(IRbspWriter* pWriter, AL_TBitStreamLite* pStream, uint8_t uNUT, AL_TNalHeader const* pHeader, int32_t iBytesCount, bool bDoNotFill, AL_EStartCodeBytesAlignedMode eStartCodeBytesAligned);
+void FlushNAL(IRbspWriter* pWriter, AL_TBitStreamLite* pStream, uint8_t uNUT, AL_TNalHeader const* pHeader, uint8_t* pDataInNAL, int32_t iBitsInNAL, AL_EStartCodeBytesAlignedMode eStartCodeBytesAligned);
 
 void AddFlagsToAllSections(AL_TStreamMetaData* pStreamMeta, uint32_t flags);
 

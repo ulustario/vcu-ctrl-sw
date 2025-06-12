@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #include "lib_decode/lib_decode.h"
@@ -50,7 +50,7 @@ void AL_Decoder_Destroy(AL_HDecoder hDec)
 }
 
 /*****************************************************************************/
-void AL_Decoder_SetParam(AL_HDecoder hDec, const char* sPrefix, int iFrmID, int iNumFrm, bool bShouldPrintFrameDelimiter)
+void AL_Decoder_SetParam(AL_HDecoder hDec, const char* sPrefix, int32_t iFrmID, int32_t iNumFrm, bool bShouldPrintFrameDelimiter)
 {
   if(!pArch)
     return;
@@ -112,7 +112,7 @@ AL_ECodec AL_Decoder_GetCodec(AL_HDecoder hDec)
 }
 
 /*****************************************************************************/
-int AL_Decoder_GetMaxBD(AL_HDecoder hDec)
+int32_t AL_Decoder_GetMaxBD(AL_HDecoder hDec)
 {
   if(!pArch)
     return 0;

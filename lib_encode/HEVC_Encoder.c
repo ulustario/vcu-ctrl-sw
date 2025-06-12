@@ -1,11 +1,11 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #include "Com_Encoder.h"
 #include "HEVC_Sections.h"
 #include "lib_common_enc/PictureInfo.h"
 
-static void updateHlsAndWriteSections(AL_TEncCtx* pCtx, AL_TEncPicStatus* pPicStatus, AL_TBuffer* pStream, int iLayerID, int iPicID)
+static void updateHlsAndWriteSections(AL_TEncCtx* pCtx, AL_TEncPicStatus* pPicStatus, AL_TBuffer* pStream, int32_t iLayerID, int32_t iPicID)
 {
   AL_HLSInfo* pHLSInfo = AL_GetHLSInfo(pCtx, iPicID);
   AL_HEVC_UpdateSPS(&pCtx->tLayerCtx[iLayerID].sps, pCtx->pSettings, pPicStatus, pHLSInfo, &pCtx->tHeadersCtx[iLayerID], iLayerID);
@@ -18,7 +18,7 @@ static void updateHlsAndWriteSections(AL_TEncCtx* pCtx, AL_TEncPicStatus* pPicSt
 
   if(pPicStatus->eType == AL_SLICE_I)
   {
-    int const iDefaultCpbRemovalDelay = 0;
+    int32_t const iDefaultCpbRemovalDelay = 0;
     pCtx->cpbRemovalDelay = iDefaultCpbRemovalDelay;
   }
 }
@@ -35,10 +35,10 @@ static void initHls(AL_TEncCtx* pCtx, AL_TEncChanParam* pChParam)
   uint32_t* pSpsParam = &pChParam->uSpsParam;
   *pSpsParam = AL_SPS_TEMPORAL_MVP_EN_FLAG; // TODO
 
-  int log2_max_poc = (pChParam->tRCParam.eOptions & AL_RC_OPT_ENABLE_SKIP) ? 16 : 10;
+  int32_t log2_max_poc = (pChParam->tRCParam.eOptions & AL_RC_OPT_ENABLE_SKIP) ? 16 : 10;
   AL_SET_SPS_LOG2_MAX_POC(pSpsParam, log2_max_poc);
 
-  int num_short_term_ref_pic_sets_log2 = 0;
+  int32_t num_short_term_ref_pic_sets_log2 = 0;
 
   AL_SET_SPS_LOG2_NUM_SHORT_TERM_RPS(pSpsParam, num_short_term_ref_pic_sets_log2);
   pChParam->uPpsParam |= AL_PPS_ENABLE_REORDERING;
@@ -64,6 +64,9 @@ static void initHls(AL_TEncCtx* pCtx, AL_TEncChanParam* pChParam)
   if(!(pChParam->eEncTools & AL_OPT_LF))
     pChParam->uPpsParam |= AL_PPS_DISABLE_LF;
 
+  if(pChParam->eEncTools & AL_OPT_LF_X_SLICE)
+    pChParam->uPpsParam |= AL_PPS_LF_X_SLICE_EN_FLAG;
+
   if((AL_GET_CHROMA_MODE(pChParam->ePicFormat) != AL_CHROMA_MONO) && (pChParam->iCbSliceQpOffset || pChParam->iCrSliceQpOffset))
     pChParam->uPpsParam |= AL_PPS_SLICE_CHROMA_QP_OFFSET_PRES_FLAG;
 
@@ -76,18 +79,18 @@ static void SetMotionEstimationRange(AL_TEncChanParam* pChParam)
 
 static void ComputeQPInfo(AL_TEncChanParam* pChParam)
 {
-  int iCbOffset = pChParam->iCbPicQpOffset + pChParam->iCbSliceQpOffset;
-  int iCrOffset = pChParam->iCrPicQpOffset + pChParam->iCrSliceQpOffset;
+  int32_t iCbOffset = pChParam->iCbPicQpOffset + pChParam->iCbSliceQpOffset;
+  int32_t iCrOffset = pChParam->iCrPicQpOffset + pChParam->iCrSliceQpOffset;
   AL_Common_Encoder_ComputeRCParam(iCbOffset, iCrOffset, 10, pChParam);
 }
 
-static void generateNals(AL_TEncCtx* pCtx, int iLayerID, bool bWriteVps)
+static void generateNals(AL_TEncCtx* pCtx, int32_t iLayerID, bool bWriteVps)
 {
   AL_TEncChanParam* pChParam = &pCtx->pSettings->tChParam[iLayerID];
 
   uint32_t uCpbBitSize = (uint32_t)((AL_64U)pChParam->tRCParam.uCPBSize * (AL_64U)pChParam->tRCParam.uMaxBitRate / 90000uLL);
   AL_HEVC_GenerateSPS(&pCtx->tLayerCtx[iLayerID].sps, pCtx->pSettings, pChParam, pCtx->iMaxNumRef, uCpbBitSize, iLayerID);
-  AL_HEVC_GeneratePPS(&pCtx->tLayerCtx[iLayerID].pps, pCtx->pSettings, pChParam, pCtx->iMaxNumRef, iLayerID);
+  AL_HEVC_GeneratePPS(&pCtx->tLayerCtx[iLayerID].pps, pCtx->pSettings, pChParam, iLayerID);
 
   if(bWriteVps)
     AL_HEVC_GenerateVPS(&pCtx->vps, pCtx->pSettings, pCtx->iMaxNumRef);
@@ -117,4 +120,3 @@ void AL_CreateHevcEncoder(HighLevelEncoder* pCtx)
   pCtx->generateNals = &generateNals;
   pCtx->updateHlsAndWriteSections = &updateHlsAndWriteSections;
 }
-

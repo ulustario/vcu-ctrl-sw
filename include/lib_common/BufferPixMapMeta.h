@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 /******************************************************************************
@@ -17,9 +17,9 @@
 *****************************************************************************/
 typedef struct AL_TPlane
 {
-  int iChunkIdx;   /*!< Index of the chunk containing the plane */
-  int iOffset;      /*!< Offset of the plane from beginning of the buffer chunk (in bytes) */
-  int iPitch;       /*!< Pitch of the plane (in bytes) */
+  int32_t iChunkIdx;   /*!< Index of the chunk containing the plane */
+  int32_t iOffset;      /*!< Offset of the plane from beginning of the buffer chunk (in bytes) */
+  int32_t iPitch;       /*!< Pitch of the plane (in bytes) */
 }AL_TPlane;
 
 /*****************************************************************************
@@ -75,26 +75,26 @@ bool AL_PixMapMetaData_AddPlane(AL_TPixMapMetaData* pMeta, AL_TPlane tPlane, AL_
    \param[in] ePlaneId plane type
    \return Returns the plane buffer offset
 *****************************************************************************/
-int AL_PixMapMetaData_GetOffset(AL_TPixMapMetaData* pMeta, AL_EPlaneId ePlaneId);
+int32_t AL_PixMapMetaData_GetOffset(AL_TPixMapMetaData* pMeta, AL_EPlaneId ePlaneId);
 
 /*****************************************************************************
    \brief Get the size of the luma inside the picture
    \param[in] pMeta A pointer the pixmap metadata
    \return Returns size of the luma region
 *****************************************************************************/
-int AL_PixMapMetaData_GetLumaSize(AL_TPixMapMetaData* pMeta);
+int32_t AL_PixMapMetaData_GetLumaSize(AL_TPixMapMetaData* pMeta);
 
 /*****************************************************************************
    \brief Get the size of the chroma inside the picture
    \param[in] pMeta A pointer the pixmap metadata
    \return Returns size of the chroma region
 *****************************************************************************/
-int AL_PixMapMetaData_GetChromaSize(AL_TPixMapMetaData* pMeta);
+int32_t AL_PixMapMetaData_GetChromaSize(AL_TPixMapMetaData* pMeta);
 
 AL_DEPRECATED("Use AL_PixMapMetaData_GetOffset.")
-int AL_PixMapMetaData_GetOffsetY(AL_TPixMapMetaData* pMeta);
+int32_t AL_PixMapMetaData_GetOffsetY(AL_TPixMapMetaData* pMeta);
 AL_DEPRECATED("Use AL_PixMapMetaData_GetOffset.")
-int AL_PixMapMetaData_GetOffsetUV(AL_TPixMapMetaData* pMeta);
+int32_t AL_PixMapMetaData_GetOffsetUV(AL_TPixMapMetaData* pMeta);
 AL_DEPRECATED("Renamed. Use AL_TPixMapMetaData.")
 typedef AL_TPixMapMetaData AL_TSrcMetaData;
 

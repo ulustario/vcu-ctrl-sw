@@ -1,24 +1,11 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
-/******************************************************************************
-   \addtogroup lib_base
-   !@{
-   \file
- *****************************************************************************/
 #pragma once
 
 #include "lib_rtos/types.h"
 
-/****************************************************************************/
-static const size_t AL_SL_INTRA = 0;
-static const size_t AL_SL_INTER = 1;
-
 /******************************************************************************/
-typedef uint32_t AL_TLevels4x4[4 * 4];
-typedef uint32_t AL_TLevels8x8[8 * 8];
-typedef uint32_t AL_TLevelsDC[4];
-
 typedef uint8_t AL_TMtx8x8[8 * 8];
 typedef uint8_t AL_TMtx4x4[4 * 4];
 typedef uint8_t AL_TMtxDC[4];
@@ -40,24 +27,6 @@ typedef struct AL_THevcScalingList
   AL_TMtx4x4 t4x4Cr;
   AL_TMtxDC tDC;
 }AL_TScl[2];  // common for AVC and HEVC
-
-/*****************************************************************************
-   \brief Scaling List Matrices in hardware preprocessed format
-*****************************************************************************/
-typedef struct AL_THwScalingList
-{
-  AL_TLevels8x8 t32x32;
-  AL_TLevels8x8 t16x16Y;
-  AL_TLevels8x8 t16x16Cb;
-  AL_TLevels8x8 t16x16Cr;
-  AL_TLevels8x8 t8x8Y;
-  AL_TLevels8x8 t8x8Cb;
-  AL_TLevels8x8 t8x8Cr;
-  AL_TLevels4x4 t4x4Y;
-  AL_TLevels4x4 t4x4Cb;
-  AL_TLevels4x4 t4x4Cr;
-  AL_TLevelsDC tDC;
-}AL_THwScalingList;
 
 /*****************************************************************************
    \brief Diagonal scanning order
@@ -208,5 +177,3 @@ static const int32_t AL_DecScanBlock8x8[2][64] =
     54, 62, 23, 31, 39, 47, 55, 63
   }, // Field
 };
-
-/*!@}*/

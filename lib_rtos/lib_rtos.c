@@ -1,7 +1,8 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #include "lib_rtos/lib_rtos.h"
+#include "lib_rtos/utils.h"
 
 /****************************************************************************/
 /*** W i n 3 2  &  L i n u x  c o m m o n ***/
@@ -20,12 +21,14 @@ void Rtos_LogWithoutLevel(char const* sMsg, ...)
 {
   va_list args;
   va_start(args, sMsg);
-  vprintf(sMsg, args);
+  VPRINTF(sMsg, args);
   va_end(args);
+  /* fflush all streams. It can be a performance issue if logs are enabled */
+  FFLUSH(NULL);
 }
 
 /****************************************************************************/
-void Rtos_AssertWithMessage(bool bCondition, char const* sMsg, char const* sFile, int iLine)
+void Rtos_AssertWithMessage(bool bCondition, char const* sMsg, char const* sFile, int32_t iLine)
 {
   (void)bCondition;
   (void)sMsg;
@@ -64,13 +67,13 @@ void* Rtos_Memmove(void* pDst, void const* pSrc, size_t zSize)
 }
 
 /****************************************************************************/
-void* Rtos_Memset(void* pDst, int iVal, size_t zSize)
+void* Rtos_Memset(void* pDst, int32_t iVal, size_t zSize)
 {
   return memset(pDst, iVal, zSize);
 }
 
 /****************************************************************************/
-int Rtos_Memcmp(void const* pBuf1, void const* pBuf2, size_t zSize)
+int32_t Rtos_Memcmp(void const* pBuf1, void const* pBuf2, size_t zSize)
 {
   return memcmp(pBuf1, pBuf2, zSize);
 }
@@ -93,13 +96,13 @@ void* Rtos_Memcpy(void* pDst, void const* pSrc, size_t zSize)
 }
 
 /****************************************************************************/
-void* Rtos_Memset(void* pDst, int iVal, size_t zSize)
+void* Rtos_Memset(void* pDst, int32_t iVal, size_t zSize)
 {
   return memset(pDst, iVal, zSize);
 }
 
 /****************************************************************************/
-int Rtos_Memcmp(void const* pBuf1, void const* pBuf2, size_t zSize)
+int32_t Rtos_Memcmp(void const* pBuf1, void const* pBuf2, size_t zSize)
 {
   return memcmp(pBuf1, pBuf2, zSize);
 }
@@ -164,7 +167,7 @@ bool Rtos_ReleaseMutex(AL_MUTEX Mutex)
 }
 
 /****************************************************************************/
-AL_SEMAPHORE Rtos_CreateSemaphore(int iInitialCount)
+AL_SEMAPHORE Rtos_CreateSemaphore(int32_t iInitialCount)
 {
   return (AL_SEMAPHORE)CreateSemaphore(NULL, iInitialCount, LONG_MAX, NULL);
 }
@@ -279,7 +282,7 @@ void Rtos_DriverClose(void* drv)
   // not implemented
 }
 
-int Rtos_DriverIoctl(void* drv, unsigned long int req, void* data)
+int32_t Rtos_DriverIoctl(void* drv, unsigned long int req, void* data)
 {
   (void)drv;
   (void)req;
@@ -287,7 +290,7 @@ int Rtos_DriverIoctl(void* drv, unsigned long int req, void* data)
   return -1; // not implemented
 }
 
-int Rtos_DriverPoll(void* drv, Rtos_PollCtx* ctx)
+int32_t Rtos_DriverPoll(void* drv, Rtos_PollCtx* ctx)
 {
   (void)drv, (void)ctx;
   return -1; // not implemented
@@ -346,6 +349,7 @@ AL_MUTEX Rtos_CreateMutex(void)
 /****************************************************************************/
 void Rtos_DeleteMutex(AL_MUTEX Mutex)
 {
+  Rtos_Assert(Mutex);
   pthread_mutex_t* pMutex = (pthread_mutex_t*)Mutex;
 
   if(pMutex)
@@ -358,12 +362,13 @@ void Rtos_DeleteMutex(AL_MUTEX Mutex)
 /****************************************************************************/
 bool Rtos_GetMutex(AL_MUTEX Mutex)
 {
+  Rtos_Assert(Mutex);
   pthread_mutex_t* pMutex = (pthread_mutex_t*)Mutex;
 
   if(!pMutex)
     return false;
 
-  if(pthread_mutex_lock(pMutex) < 0)
+  if(pthread_mutex_lock(pMutex) != 0)
     return false;
 
   return true;
@@ -372,17 +377,19 @@ bool Rtos_GetMutex(AL_MUTEX Mutex)
 /****************************************************************************/
 bool Rtos_ReleaseMutex(AL_MUTEX Mutex)
 {
+  Rtos_Assert(Mutex);
+
   if(!Mutex)
     return false;
 
-  if((pthread_mutex_unlock((pthread_mutex_t*)Mutex)) < 0)
+  if((pthread_mutex_unlock((pthread_mutex_t*)Mutex)) != 0)
     return false;
 
   return true;
 }
 
 /****************************************************************************/
-AL_SEMAPHORE Rtos_CreateSemaphore(int iInitialCount)
+AL_SEMAPHORE Rtos_CreateSemaphore(int32_t iInitialCount)
 {
   sem_t* pSem = (sem_t*)Rtos_Malloc(sizeof(sem_t));
 
@@ -412,7 +419,7 @@ bool Rtos_GetSemaphore(AL_SEMAPHORE Semaphore, uint32_t Wait)
   if(!pSem)
     return false;
 
-  int ret;
+  int32_t ret;
 
   if(Wait == AL_NO_WAIT)
   {
@@ -552,7 +559,10 @@ AL_THREAD Rtos_CreateThread(void* (*pFunc)(void* pParam), void* pParam)
   pthread_t* thread = Rtos_Malloc(sizeof(pthread_t));
 
   if(thread)
-    pthread_create(thread, NULL, pFunc, pParam);
+  {
+    int success = pthread_create(thread, NULL, pFunc, pParam);
+    Rtos_Assert(success == 0);
+  }
   return (AL_THREAD)thread;
 }
 
@@ -565,7 +575,7 @@ void Rtos_SetCurrentThreadName(const char* pThreadName)
 /****************************************************************************/
 bool Rtos_JoinThread(AL_THREAD Thread)
 {
-  int iRet;
+  int32_t iRet;
   iRet = pthread_join(GetNative(Thread), NULL);
   return iRet == 0;
 }
@@ -581,7 +591,7 @@ void Rtos_DeleteThread(AL_THREAD Thread)
 
 void* Rtos_DriverOpen(char const* name)
 {
-  int fd = open(name, O_RDWR | O_NONBLOCK);
+  int32_t fd = open(name, O_RDWR | O_NONBLOCK);
 
   if(fd == -1)
     return NULL;
@@ -590,25 +600,25 @@ void* Rtos_DriverOpen(char const* name)
 
 void Rtos_DriverClose(void* drv)
 {
-  int fd = (int)(intptr_t)drv;
+  int32_t fd = (int)(intptr_t)drv;
   close(fd);
 }
 
-int Rtos_DriverIoctl(void* drv, unsigned long int req, void* data)
+int32_t Rtos_DriverIoctl(void* drv, unsigned long int req, void* data)
 {
-  int fd = (int)(intptr_t)drv;
+  int32_t fd = (int)(intptr_t)drv;
   return ioctl(fd, req, data);
 }
 
 #include <poll.h>
-int Rtos_DriverPoll(void* drv, Rtos_PollCtx* ctx)
+int32_t Rtos_DriverPoll(void* drv, Rtos_PollCtx* ctx)
 {
   struct pollfd pollData;
   /* bitfield are bit compatible */
   pollData.events = ctx->events;
   pollData.fd = (int)(intptr_t)drv;
 
-  int err = poll(&pollData, 1, ctx->timeout);
+  int32_t err = poll(&pollData, 1, ctx->timeout);
 
   if(err == -1 || err == 0)
     return err;
@@ -653,7 +663,7 @@ bool Rtos_ReleaseMutex(AL_MUTEX Mutex)
 }
 
 /****************************************************************************/
-AL_SEMAPHORE Rtos_CreateSemaphore(int iInitialCount)
+AL_SEMAPHORE Rtos_CreateSemaphore(int32_t iInitialCount)
 {
   (void)iInitialCount;
   return 0;
@@ -710,7 +720,7 @@ Rtos_AtomicInt Rtos_AtomicDecrement(Rtos_AtomicInt* iVal)
 #include "McuSys.h"
 #include "McuDebug.h"
 
-void Rtos_AssertWithMessage(bool bCondition, char const* sMsg, char const* sFile, int iLine)
+void Rtos_AssertWithMessage(bool bCondition, char const* sMsg, char const* sFile, int32_t iLine)
 {
   (void)sFile;
   (void)iLine;

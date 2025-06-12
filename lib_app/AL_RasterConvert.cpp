@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #include <cassert>
@@ -12,7 +12,7 @@
 extern "C"
 {
 #include "lib_common/PixMapBuffer.h"
-#include "lib_common_enc/IpEncFourCC.h"
+#include "lib_common/FourCC.h"
 }
 
 using namespace std;
@@ -24,17 +24,9 @@ CYuvSrcConv::CYuvSrcConv(TFrameInfo const& FrameInfo) :
 }
 
 /*****************************************************************************/
-static string FourCCToString(TFourCC tFourCC)
-{
-  stringstream ss;
-  ss << static_cast<char>(tFourCC & 0xFF) << static_cast<char>((tFourCC & 0xFF00) >> 8) << static_cast<char>((tFourCC & 0xFF0000) >> 16) << static_cast<char>((tFourCC & 0xFF000000) >> 24);
-  return ss.str();
-}
-
-/*****************************************************************************/
 static void NoConversionFound(TFourCC tInFourCC, TFourCC tOutFourCC)
 {
-  cout << "No conversion known from " << FourCCToString(tInFourCC) << " to " << FourCCToString(tOutFourCC) << endl;
+  cout << "No conversion known from " << AL_FourCCToString(tInFourCC).cFourcc << " to " << AL_FourCCToString(tOutFourCC).cFourcc << endl;
   assert(0);
 }
 
@@ -88,6 +80,8 @@ static void convertToY800(AL_TBuffer const* pSrcIn, TFourCC inFourCC, AL_TBuffer
   case FOURCC(I420):
   case FOURCC(I422):
   case FOURCC(I444):
+  case FOURCC(NV12):
+  case FOURCC(NV16):
     return I420_To_Y800(pSrcIn, pSrcOut);
   default: return NoConversionFound(inFourCC, FOURCC(Y800));
   }
@@ -427,6 +421,10 @@ static void convertToT6m8(AL_TBuffer const* pSrcIn, TFourCC inFourCC, AL_TBuffer
   case FOURCC(I422):
   case FOURCC(I444):
     return Y800_To_T6m8(pSrcIn, pSrcOut);
+  case FOURCC(T608):
+  case FOURCC(T628):
+  case FOURCC(T648): T6xx_To_T6mx(pSrcIn, pSrcOut);
+    return;
   case FOURCC(T6m8): CopyPixMapBuffer(pSrcIn, pSrcOut);
     return;
   default: return NoConversionFound(inFourCC, FOURCC(T6m8));
@@ -443,6 +441,10 @@ static void convertToT6mA(AL_TBuffer const* pSrcIn, TFourCC inFourCC, AL_TBuffer
   case FOURCC(I2AL):
   case FOURCC(I4AL):
     return Y010_To_T6mA(pSrcIn, pSrcOut);
+  case FOURCC(T60A):
+  case FOURCC(T62A):
+  case FOURCC(T64A): T6xx_To_T6mx(pSrcIn, pSrcOut);
+    return;
   case FOURCC(T6mA): CopyPixMapBuffer(pSrcIn, pSrcOut);
     return;
   default: return NoConversionFound(inFourCC, FOURCC(T6mA));
@@ -458,6 +460,10 @@ static void convertToT6mC(AL_TBuffer const* pSrcIn, TFourCC inFourCC, AL_TBuffer
   case FOURCC(I0CL):
   case FOURCC(I2CL):
   case FOURCC(I4CL): return I0CL_To_T6mC(pSrcIn, pSrcOut);
+  case FOURCC(T60C):
+  case FOURCC(T62C):
+  case FOURCC(T64C): T6xx_To_T6mx(pSrcIn, pSrcOut);
+    return;
   case FOURCC(T6mC): CopyPixMapBuffer(pSrcIn, pSrcOut);
     return;
   default: return NoConversionFound(inFourCC, FOURCC(T6mC));

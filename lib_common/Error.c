@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #include "lib_common/Error.h"
@@ -32,6 +32,11 @@ const char* AL_Codec_ErrorToString(AL_ERR eErrorCode)
   case AL_ERR_REQUEST_INVALID_MIN_WIDTH: return "Minimal frame width not reached (2x LCU size)";
   case AL_ERR_REQUEST_INVALID_MAX_HEIGHT: return "Maximal frame height exceeded";
   case AL_ERR_INVALID_CMD_VALUE: return "Value associated with the command is invalid";
+
+  case AL_ERR_CORRUPTED_STREAM: return "Stream is corrupted";
+  case AL_ERR_CORRUPTED_QUANTIZATION_MATRIX: return "Quantization matrix is corrupted";
+  case AL_ERR_BUFFER_TOO_SMALL: return "Buffer is too small";
+  case AL_ERR_ALIGNMENT: return "Alignment constraint not respected";
 
   /* Warnings */
   case AL_WARN_CONCEAL_DETECT: return "Decoder had to conceal some errors in the stream";

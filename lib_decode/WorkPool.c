@@ -1,11 +1,11 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #include "lib_decode/WorkPool.h"
 
 #define INVALID_BUF_POS -1
 
-bool AL_WorkPool_Init(WorkPool* pool, int iMaxBufNum)
+bool AL_WorkPool_Init(WorkPool* pool, int32_t iMaxBufNum)
 {
   pool->elems = Rtos_Malloc(sizeof(WorkPoolElem) * iMaxBufNum);
 
@@ -35,7 +35,7 @@ bool AL_WorkPool_Init(WorkPool* pool, int iMaxBufNum)
   pool->filledQueue = INVALID_BUF_POS;
   pool->capacity = iMaxBufNum;
 
-  for(int i = 0; i < pool->capacity; ++i)
+  for(int32_t i = 0; i < pool->capacity; ++i)
   {
     pool->elems[i].buf = NULL;
     pool->elems[i].prev = i - 1;
@@ -59,7 +59,7 @@ void AL_WorkPool_Remove(WorkPool* pool, AL_TBuffer* pBuf)
 {
   Rtos_GetMutex(pool->lock);
 
-  int iPos = pool->filledHead;
+  int32_t iPos = pool->filledHead;
 
   while(iPos != INVALID_BUF_POS && pool->elems[iPos].buf != pBuf)
     iPos = pool->elems[iPos].next;
@@ -107,7 +107,7 @@ void AL_WorkPool_PushBack(WorkPool* pool, AL_TBuffer* pBuf)
     Rtos_GetMutex(pool->lock);
   }
 
-  int iPos = pool->freeHead;
+  int32_t iPos = pool->freeHead;
   WorkPoolElem* pElem = &pool->elems[iPos];
 
   /* Remove from free list */
@@ -142,10 +142,10 @@ bool AL_WorkPool_IsFull(WorkPool* pool)
   return pool->freeHead == INVALID_BUF_POS;
 }
 
-int AL_WorkPool_GetSize(WorkPool* pool)
+int32_t AL_WorkPool_GetSize(WorkPool* pool)
 {
-  int iCnt = 0;
-  int iPos = pool->filledHead;
+  int32_t iCnt = 0;
+  int32_t iPos = pool->filledHead;
 
   while(iPos != INVALID_BUF_POS)
   {

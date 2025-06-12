@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #include "Avc_SliceHeaderParsing.h"
@@ -9,7 +9,11 @@
 #include "lib_common_dec/RbspParser.h"
 #include "lib_rtos/lib_rtos.h"
 
-static const int AVC_SLICE_TYPE[5] =
+static int32_t const AL_AVC_MAX_SLICE_TYPE = 9;
+static int32_t const AL_AVC_MAX_IDR_PIC_ID = 65535;
+static int32_t const AL_AVC_MAX_REORDER_IDC = 3;
+static int32_t const AL_AVC_MAX_CABAC_INIT_IDC = 2;
+static int32_t const AVC_SLICE_TYPE[5] =
 {
   1, 0, 2, 3, 4
 };
@@ -82,9 +86,9 @@ static bool AL_AVC_sref_pic_list_reordering(AL_TRbspParser* pRP, AL_TAvcSliceHdr
 {
   if(pSlice->slice_type != AL_SLICE_I)
   {
-    int idx1 = -1;
-    int idx2 = -1;
-    int idx3 = -1;
+    int32_t idx1 = -1;
+    int32_t idx2 = -1;
+    int32_t idx3 = -1;
 
     pSlice->ref_pic_list_reordering_flag_l0 = u(pRP, 1);
 
@@ -93,7 +97,7 @@ static bool AL_AVC_sref_pic_list_reordering(AL_TRbspParser* pRP, AL_TAvcSliceHdr
       do
       {
         ++idx1;
-        pSlice->reordering_of_pic_nums_idc_l0[idx1] = Clip3(ue(pRP), 0, AL_MAX_REORDER_IDC);
+        pSlice->reordering_of_pic_nums_idc_l0[idx1] = Clip3(ue(pRP), 0, AL_AVC_MAX_REORDER_IDC);
 
         if(pSlice->reordering_of_pic_nums_idc_l0[idx1] == 0
            || pSlice->reordering_of_pic_nums_idc_l0[idx1] == 1)
@@ -107,7 +111,7 @@ static bool AL_AVC_sref_pic_list_reordering(AL_TRbspParser* pRP, AL_TAvcSliceHdr
           pSlice->long_term_pic_num_l0[idx3] = ue(pRP);
         }
       }
-      while(idx1 + 1 < AL_MAX_REFERENCE_PICTURE_REORDER && pSlice->reordering_of_pic_nums_idc_l0[idx1] != 3);
+      while(idx1 + 1 < AL_AVC_MAX_REFERENCE_PICTURE_REORDER && pSlice->reordering_of_pic_nums_idc_l0[idx1] != 3);
 
       if(pSlice->reordering_of_pic_nums_idc_l0[idx1] != 3)
         return false;
@@ -116,9 +120,9 @@ static bool AL_AVC_sref_pic_list_reordering(AL_TRbspParser* pRP, AL_TAvcSliceHdr
 
   if(pSlice->slice_type == AL_SLICE_B)
   {
-    int idx1 = -1;
-    int idx2 = -1;
-    int idx3 = -1;
+    int32_t idx1 = -1;
+    int32_t idx2 = -1;
+    int32_t idx3 = -1;
 
     pSlice->ref_pic_list_reordering_flag_l1 = u(pRP, 1);
 
@@ -127,7 +131,7 @@ static bool AL_AVC_sref_pic_list_reordering(AL_TRbspParser* pRP, AL_TAvcSliceHdr
       do
       {
         ++idx1;
-        pSlice->reordering_of_pic_nums_idc_l1[idx1] = Clip3(ue(pRP), 0, AL_MAX_REORDER_IDC);
+        pSlice->reordering_of_pic_nums_idc_l1[idx1] = Clip3(ue(pRP), 0, AL_AVC_MAX_REORDER_IDC);
 
         if(pSlice->reordering_of_pic_nums_idc_l1[idx1] == 0
            || pSlice->reordering_of_pic_nums_idc_l1[idx1] == 1)
@@ -141,7 +145,7 @@ static bool AL_AVC_sref_pic_list_reordering(AL_TRbspParser* pRP, AL_TAvcSliceHdr
           pSlice->long_term_pic_num_l1[idx3] = ue(pRP);
         }
       }
-      while(idx1 + 1 < AL_MAX_REFERENCE_PICTURE_REORDER && pSlice->reordering_of_pic_nums_idc_l1[idx1] != 3);
+      while(idx1 + 1 < AL_AVC_MAX_REFERENCE_PICTURE_REORDER && pSlice->reordering_of_pic_nums_idc_l1[idx1] != 3);
 
       if(pSlice->reordering_of_pic_nums_idc_l1[idx1] != 3)
         return false;
@@ -166,13 +170,13 @@ static void AL_AVC_sdec_ref_pic_marking(AL_TRbspParser* pRP, AL_TAvcSliceHdr* pS
   if(!pSlice->adaptive_ref_pic_marking_mode_flag)
     return;
 
-  int idx1 = 0;
-  int idx2 = 0;
-  int idx3 = 0;
-  int idx4 = 0;
-  int idx5 = 0;
+  int32_t idx1 = 0;
+  int32_t idx2 = 0;
+  int32_t idx3 = 0;
+  int32_t idx4 = 0;
+  int32_t idx5 = 0;
 
-  int op;
+  int32_t op;
 
   do
   {
@@ -259,7 +263,7 @@ AL_ERR AL_AVC_ParseSliceHeader(AL_TAvcSliceHdr* pSlice, AL_TRbspParser* pRP, AL_
 
   pSlice->pic_parameter_set_id = currentPPSId;
 
-  int const MaxNumMb = (pPPSTable[currentPPSId].pSPS->pic_height_in_map_units_minus1 + 1) * (pPPSTable[currentPPSId].pSPS->pic_width_in_mbs_minus1 + 1);
+  int32_t const MaxNumMb = (pPPSTable[currentPPSId].pSPS->pic_height_in_map_units_minus1 + 1) * (pPPSTable[currentPPSId].pSPS->pic_width_in_mbs_minus1 + 1);
 
   if(pSlice->first_mb_in_slice >= MaxNumMb)
   {
@@ -332,7 +336,7 @@ AL_ERR AL_AVC_ParseSliceHeader(AL_TAvcSliceHdr* pSlice, AL_TRbspParser* pRP, AL_
     return AL_WARN_CONCEAL_DETECT;
   }
 
-  int const iFrameNumSize = pSps->log2_max_frame_num_minus4 + 4;
+  int32_t const iFrameNumSize = pSps->log2_max_frame_num_minus4 + 4;
 
   pSlice->frame_num = u(pRP, iFrameNumSize);
 
@@ -356,11 +360,11 @@ AL_ERR AL_AVC_ParseSliceHeader(AL_TAvcSliceHdr* pSlice, AL_TRbspParser* pRP, AL_
   }
 
   if(pSlice->nal_unit_type == AL_AVC_NUT_VCL_IDR)
-    pSlice->idr_pic_id = Clip3(ue(pRP), 0, AL_MAX_IDR_PIC_ID);
+    pSlice->idr_pic_id = Clip3(ue(pRP), 0, AL_AVC_MAX_IDR_PIC_ID);
 
   if(pSps->pic_order_cnt_type == 0)
   {
-    int PicOrderCntSize = pSps->log2_max_pic_order_cnt_lsb_minus4 + 4;
+    int32_t PicOrderCntSize = pSps->log2_max_pic_order_cnt_lsb_minus4 + 4;
     pSlice->pic_order_cnt_lsb = u(pRP, PicOrderCntSize);
 
     if(pPps->bottom_field_pic_order_in_frame_present_flag && !(pSlice->field_pic_flag))
@@ -438,7 +442,7 @@ AL_ERR AL_AVC_ParseSliceHeader(AL_TAvcSliceHdr* pSlice, AL_TRbspParser* pRP, AL_
   }
 
   if(pPps->entropy_coding_mode_flag && pSlice->slice_type != AL_SLICE_I)
-    pSlice->cabac_init_idc = Clip3(ue(pRP), 0, AL_MAX_CABAC_INIT_IDC);
+    pSlice->cabac_init_idc = Clip3(ue(pRP), 0, AL_AVC_MAX_CABAC_INIT_IDC);
   pSlice->slice_qp_delta = se(pRP);
 
   if(pPps->deblocking_filter_control_present_flag)

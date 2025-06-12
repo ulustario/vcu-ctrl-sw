@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #include "InputLoader.h"
@@ -155,7 +155,7 @@ struct NalInfo
 }
 
 /******************************************************************************/
-static int NalHeaderSize(AL_ECodec eCodec)
+static int32_t NalHeaderSize(AL_ECodec eCodec)
 {
   switch(eCodec)
   {
@@ -188,7 +188,7 @@ static bool isFirstSlice(uint8_t* pBuf, uint32_t uPos)
 /*****************************************************************************/
 static uint32_t skipNalHeader(uint32_t uPos, AL_ECodec eCodec, uint32_t uSize)
 {
-  int iNalHdrSize = NalHeaderSize(eCodec);
+  int32_t iNalHdrSize = NalHeaderSize(eCodec);
 
   if(iNalHdrSize <= 0)
     throw runtime_error("iNalHdrSize must be positive!");
@@ -214,7 +214,7 @@ static bool isFirstSliceNAL(CircBuffer& BufStream, NalInfo nal, AL_ECodec eCodec
 /*****************************************************************************/
 static bool sFindNextStartCode(CircBuffer& BufStream, NalInfo& nal, uint32_t& uCurOffset)
 {
-  int iNumZeros = 0;
+  int32_t iNumZeros = 0;
   auto iSize = BufStream.tBuf.iSize;
 
   uint32_t uCur = uCurOffset;
@@ -313,7 +313,7 @@ static CircBufferFrame SearchStartCodes(CircBuffer Stream, AL_ECodec eCodec, boo
 
     if(parser->IsVcl(nalCurrent.NUT))
     {
-      int iNalHdrSize = NalHeaderSize(eCodec);
+      int32_t iNalHdrSize = NalHeaderSize(eCodec);
 
       if(iNalHdrSize <= 0)
         throw runtime_error("iNalHdrSize must be positive!");
@@ -353,7 +353,7 @@ static CircBufferFrame SearchStartCodes(CircBuffer Stream, AL_ECodec eCodec, boo
 }
 
 /******************************************************************************/
-SplitInput::SplitInput(int iSize, AL_ECodec eCodec, bool bSliceCut) : m_eCodec(eCodec), m_bSliceCut(bSliceCut)
+SplitInput::SplitInput(int32_t iSize, AL_ECodec eCodec, bool bSliceCut) : m_eCodec(eCodec), m_bSliceCut(bSliceCut)
 {
   auto const numBuf = 2;
   m_Stream.resize(iSize * numBuf);
@@ -556,7 +556,7 @@ uint32_t SplitInputFromSizes::ReadStream(istream& ifFileStream, AL_TBuffer* pBuf
   string sFrmSize;
   getline(m_FileSizes, sFrmSize);
 
-  int iFrmSize = atoi(sFrmSize.c_str());
+  int32_t iFrmSize = atoi(sFrmSize.c_str());
 
   if(iFrmSize)
   {

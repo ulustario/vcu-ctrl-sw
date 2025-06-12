@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #pragma once
@@ -8,8 +8,8 @@
 typedef struct AL_TDecTraceHook
 {
   void* pUserParam;
-  void (* RecordStart)(void*, AL_ECodecHook, int, int, int, int, bool);
-  void (* RecordEnd)(void*, AL_ECodecHook, int, int, int, int, bool);
+  void (* RecordStart)(void*, AL_ECodecHook, int, int, int, int);
+  void (* RecordEnd)(void*, AL_ECodecHook, int, int, int, int);
   void (* SetActiveWorker)(void*, AL_ECodecHook, int, int);
   void (* BeginTraces)(void*);
   void (* EndTraces)(void*);

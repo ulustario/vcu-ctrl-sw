@@ -1,11 +1,11 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #include <fstream>
 #include <string>
 #include <stdexcept>
 
-#include "lib_app/SinkRateCtrlMeta.h"
+#include "sink_ratectrl_meta.h"
 #include "lib_app/Sink.h"
 #include "lib_app/utils.h"
 #include "lib_app/FileUtils.h"
@@ -42,7 +42,7 @@ public:
   {
     if(path.empty())
       throw std::runtime_error("Output directory for stat is not set");
-    else if(!checkFolder(path))
+    else if(!FolderExists(path))
       throw std::runtime_error("Output directory for stat does not exist");
     else
       output_dir_path = path;

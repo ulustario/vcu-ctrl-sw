@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #include "lib_encode/I_EncScheduler.h"
@@ -36,7 +36,7 @@ typedef struct
   AL_TEncScheduler_CB_EndEncoding CBs;
   AL_TCommonChannelInfo info;
   AL_TDriver* driver;
-  int fd;
+  int32_t fd;
   AL_THREAD thread;
   bool outputRec;
 }AL_TEncChannelMicroblaze;
@@ -131,10 +131,14 @@ static void createEncodeMsg(struct al5_encode_msg* msg, AL_TEncInfo* pEncInfo, A
     return;
   }
 
-  if(pBuffersAddrs->pEP2)
-    pBuffersAddrs->pEP2_v = (pBuffersAddrs->pEP2 & 0x7FFFFFFF) + DCACHE_OFFSET;
-  else
-    pBuffersAddrs->pEP2_v = 0;
+  for(size_t i = 0; i < sizeof(pBuffersAddrs->tQpTableAddrs) / sizeof(*pBuffersAddrs->tQpTableAddrs); ++i)
+  {
+    if(pBuffersAddrs->tQpTableAddrs[i].pPAddr)
+      pBuffersAddrs->tQpTableAddrs[i].pVAddr = (pBuffersAddrs->tQpTableAddrs[i].pVAddr & 0x7FFFFFFF) + DCACHE_OFFSET;
+    else
+      pBuffersAddrs->tQpTableAddrs[i].pVAddr = 0;
+  }
+
   setEncodeMsg(msg, pEncInfo, pReqInfo, pBuffersAddrs);
 }
 
@@ -317,7 +321,7 @@ static void API_PutStreamBuffer(AL_IEncScheduler* pIScheduler, AL_HANDLE hChanne
 /******************************************************************************/
 static void GetSchedulerVersion(AL_TEncSchedulerMicroblaze const* pScheduler, AL_TIEncSchedulerVersion* pVersion)
 {
-  int const fd = AL_Driver_Open(pScheduler->driver, pScheduler->deviceFile);
+  int32_t const fd = AL_Driver_Open(pScheduler->driver, pScheduler->deviceFile);
 
   if(fd < 0)
   {

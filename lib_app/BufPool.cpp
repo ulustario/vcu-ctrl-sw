@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #include <stdexcept>
@@ -319,7 +319,13 @@ uint32_t AL_GetWaitMode(AL_EBufMode eMode)
 
 BaseBufPool::~BaseBufPool(void)
 {
-  AL_BufPool_Deinit(&m_pool);
+  if(isInit)
+    AL_BufPool_Deinit(&m_pool);
+}
+
+bool BaseBufPool::IsInit(void)
+{
+  return isInit;
 }
 
 bool BaseBufPool::Init(AL_TAllocator* pAllocator, uint32_t uNumBuf)
@@ -337,7 +343,8 @@ bool BaseBufPool::Init(AL_TAllocator* pAllocator, uint32_t uNumBuf)
     tCreateBufCB
   };
 
-  return AL_BufPool_Init(&m_pool, &tConfig);
+  isInit = AL_BufPool_Init(&m_pool, &tConfig);
+  return isInit;
 }
 
 void BaseBufPool::RegisterAvailableBufCallback(AL_TBufPoolAvailableBufCB* pCB)
@@ -352,6 +359,9 @@ bool BaseBufPool::AddMetaData(AL_TMetaData* pMeta)
 
 AL_TBuffer* BaseBufPool::GetBuffer(AL_EBufMode mode)
 {
+  if(!isInit)
+    return nullptr;
+
   AL_TBuffer* pBuf = AL_BufPool_GetBuffer(&m_pool, mode);
 
   if(mode == AL_EBufMode::AL_BUF_MODE_BLOCK && pBuf == nullptr)
@@ -362,6 +372,9 @@ AL_TBuffer* BaseBufPool::GetBuffer(AL_EBufMode mode)
 
 std::shared_ptr<AL_TBuffer> BaseBufPool::GetSharedBuffer(AL_EBufMode mode)
 {
+  if(!isInit)
+    return nullptr;
+
   AL_TBuffer* pBuf = GetBuffer(mode);
 
   if(pBuf == nullptr)
@@ -372,11 +385,13 @@ std::shared_ptr<AL_TBuffer> BaseBufPool::GetSharedBuffer(AL_EBufMode mode)
 
 void BaseBufPool::Decommit(void)
 {
+  Rtos_Assert(isInit);
   AL_BufPool_Decommit(&m_pool);
 }
 
 void BaseBufPool::Commit(void)
 {
+  Rtos_Assert(isInit);
   AL_BufPool_Commit(&m_pool);
 }
 

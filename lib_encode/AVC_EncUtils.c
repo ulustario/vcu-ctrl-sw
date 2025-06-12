@@ -1,26 +1,28 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #include "EncUtils.h"
 #include "IP_EncoderCtx.h"
+#include "EncHwScalingList.h"
 #include "lib_common/SyntaxConversion.h"
 #include "lib_common/Utils.h"
-#include "lib_common_enc/EncHwScalingList.h"
+#include "lib_common/AvcLevelsLimit.h"
 #include "lib_common_enc/EncBuffersInternal.h"
+#include "lib_common_enc/Itu_Utils.h"
 
 /****************************************************************************/
-static int getScalingListPresentId(int iSizeId, int iIntraInter, int iYCbCr)
+static int32_t getScalingListPresentId(int32_t iSizeId, int32_t iIntraInter, int32_t iYCbCr)
 {
   return iSizeId == 0 ? ((iIntraInter * 3) + iYCbCr) : (6 + iIntraInter + iYCbCr * 2);
 }
 
 /****************************************************************************/
-static void fillScalingList(AL_TEncSettings const* pSettings, AL_TAvcSps* pSPS, int iSizeId, int iIntraInter, int iYCbCr)
+static void fillScalingList(AL_TEncSettings const* pSettings, AL_TAvcSps* pSPS, int32_t iSizeId, int32_t iIntraInter, int32_t iYCbCr)
 {
-  int iMatrixId = (3 * iIntraInter) + iYCbCr;
-  int iMatrixSize = iSizeId == 0 ? 16 : 64;
+  int32_t iMatrixId = (3 * iIntraInter) + iYCbCr;
+  int32_t iMatrixSize = iSizeId == 0 ? 16 : 64;
   uint8_t* pSL = pSPS->scaling_list_param.ScalingList[iSizeId][iMatrixId];
-  int iSLPresentId = getScalingListPresentId(iSizeId, iIntraInter, iYCbCr);
+  int32_t iSLPresentId = getScalingListPresentId(iSizeId, iIntraInter, iYCbCr);
 
   if(pSettings->SclFlag[iSizeId][iMatrixId] != 0)
   {
@@ -48,13 +50,13 @@ void AL_AVC_SelectScalingList(AL_TSps* pISPS, AL_TEncSettings const* pSettings)
 
   Rtos_Assert(eScalingList != AL_SCL_MAX_ENUM);
 
-  static const int iMaxScalingList = 12;
+  static const int32_t iMaxScalingList = 12;
 
   if(eScalingList == AL_SCL_FLAT)
   {
     pSPS->seq_scaling_matrix_present_flag = 0;
 
-    for(int i = 0; i < iMaxScalingList; i++)
+    for(int32_t i = 0; i < iMaxScalingList; i++)
       pSPS->seq_scaling_list_present_flag[i] = 0;
 
     return;
@@ -71,30 +73,30 @@ void AL_AVC_SelectScalingList(AL_TSps* pISPS, AL_TEncSettings const* pSettings)
     pSPS->seq_scaling_matrix_present_flag = 0;
   }
 
-  int iNb8x8SCL = AL_GET_CHROMA_MODE(pSettings->tChParam[0].ePicFormat) == AL_CHROMA_4_4_4 ? 3 : 1;
+  int32_t iNb8x8SCL = AL_GET_CHROMA_MODE(pSettings->tChParam[0].ePicFormat) == AL_CHROMA_4_4_4 ? 3 : 1;
 
   if(eScalingList == AL_SCL_CUSTOM)
   {
-    for(int iIntraInter = 0; iIntraInter < 2; ++iIntraInter)
+    for(int32_t iIntraInter = 0; iIntraInter < 2; ++iIntraInter)
     {
-      for(int iYCbCr = 0; iYCbCr < 3; iYCbCr++)
+      for(int32_t iYCbCr = 0; iYCbCr < 3; iYCbCr++)
         fillScalingList(pSettings, pSPS, 0, iIntraInter, iYCbCr);
 
-      for(int iYCbCr = 0; iYCbCr < iNb8x8SCL; iYCbCr++)
+      for(int32_t iYCbCr = 0; iYCbCr < iNb8x8SCL; iYCbCr++)
         fillScalingList(pSettings, pSPS, 1, iIntraInter, iYCbCr);
     }
   }
   else if(eScalingList == AL_SCL_DEFAULT)
   {
-    for(int i = 0; i < iMaxScalingList; i++)
+    for(int32_t i = 0; i < iMaxScalingList; i++)
       pSPS->seq_scaling_list_present_flag[i] = 0;
 
-    for(int iIntraInter = 0; iIntraInter < 2; ++iIntraInter)
+    for(int32_t iIntraInter = 0; iIntraInter < 2; ++iIntraInter)
     {
-      for(int iYCbCr = 0; iYCbCr < 3; iYCbCr++)
+      for(int32_t iYCbCr = 0; iYCbCr < 3; iYCbCr++)
         Rtos_Memcpy(pSPS->scaling_list_param.ScalingList[0][(3 * iIntraInter) + iYCbCr], AL_AVC_DefaultScalingLists4x4[iIntraInter], 16);
 
-      for(int iYCbCr = 0; iYCbCr < iNb8x8SCL; iYCbCr++)
+      for(int32_t iYCbCr = 0; iYCbCr < iNb8x8SCL; iYCbCr++)
         Rtos_Memcpy(pSPS->scaling_list_param.ScalingList[1][(3 * iIntraInter) + iYCbCr], AL_AVC_DefaultScalingLists8x8[iIntraInter], 64);
     }
   }
@@ -112,7 +114,7 @@ void AL_AVC_PreprocessScalingList(AL_TSCLParam const* pSclLst, uint8_t chroma_fo
 }
 
 /****************************************************************************/
-static void AL_AVC_UpdateHrdParameters(AL_TAvcSps* pSPS, AL_TSubHrdParam* pSubHrdParam, int const iCpbSize, AL_TEncSettings const* pSettings)
+static void AL_AVC_UpdateHrdParameters(AL_TAvcSps* pSPS, AL_TSubHrdParam* pSubHrdParam, int32_t const iCpbSize, AL_TEncSettings const* pSettings)
 {
   pSubHrdParam->bit_rate_value_minus1[0] = (pSettings->tChParam[0].tRCParam.uMaxBitRate / pSettings->NumView) >> 6;
   pSPS->vui_param.hrd_param.cpb_cnt_minus1[0] = 0;
@@ -138,11 +140,11 @@ static void AL_AVC_GenerateSPS_Resolution(AL_TAvcSps* pSPS, uint16_t uWidth, uin
 {
   uint8_t uLog2MaxCuSize = pSettings->tChParam->uLog2MaxCuSize;
 
-  int iMBWidth = ROUND_UP_POWER_OF_TWO(uWidth, uLog2MaxCuSize);
-  int iMBHeight = ROUND_UP_POWER_OF_TWO(uHeight, uLog2MaxCuSize);
+  int32_t iMBWidth = ROUND_UP_POWER_OF_TWO(uWidth, uLog2MaxCuSize);
+  int32_t iMBHeight = ROUND_UP_POWER_OF_TWO(uHeight, uLog2MaxCuSize);
 
-  int iCropLeft = 0;
-  int iCropTop = 0;
+  int32_t iCropLeft = 0;
+  int32_t iCropTop = 0;
 
   iCropLeft = pSettings->tChParam->uOutputCropPosX;
   iCropTop = pSettings->tChParam->uOutputCropPosY;
@@ -153,13 +155,13 @@ static void AL_AVC_GenerateSPS_Resolution(AL_TAvcSps* pSPS, uint16_t uWidth, uin
   if(pSettings->tChParam->uOutputCropHeight)
     uHeight = pSettings->tChParam->uOutputCropHeight;
 
-  int iCropRight = (iMBWidth << uLog2MaxCuSize) - (iCropLeft + uWidth);
-  int iCropBottom = (iMBHeight << uLog2MaxCuSize) - (iCropTop + uHeight);
+  int32_t iCropRight = (iMBWidth << uLog2MaxCuSize) - (iCropLeft + uWidth);
+  int32_t iCropBottom = (iMBHeight << uLog2MaxCuSize) - (iCropTop + uHeight);
 
   AL_EChromaMode eChromaMode = AL_GET_CHROMA_MODE(pSettings->tChParam->ePicFormat);
 
-  int iCropUnitX = eChromaMode == AL_CHROMA_4_2_0 || eChromaMode == AL_CHROMA_4_2_2 ? 2 : 1;
-  int iCropUnitY = eChromaMode == AL_CHROMA_4_2_0 ? 2 : 1;
+  int32_t iCropUnitX = eChromaMode == AL_CHROMA_4_2_0 || eChromaMode == AL_CHROMA_4_2_2 ? 2 : 1;
+  int32_t iCropUnitY = eChromaMode == AL_CHROMA_4_2_0 ? 2 : 1;
 
   pSPS->pic_width_in_mbs_minus1 = iMBWidth - 1;
 
@@ -186,7 +188,7 @@ static void AL_AVC_GenerateSPS_Resolution(AL_TAvcSps* pSPS, uint16_t uWidth, uin
 }
 
 /****************************************************************************/
-void AL_AVC_GenerateSPS(AL_TSps* pISPS, AL_TEncSettings const* pSettings, int iMaxRef, int iCpbSize)
+void AL_AVC_GenerateSPS(AL_TSps* pISPS, AL_TEncSettings const* pSettings, int32_t iMaxRef, int32_t iCpbSize)
 {
   AL_TAvcSps* pSPS = (AL_TAvcSps*)pISPS;
   AL_TEncChanParam const* pChannel = &pSettings->tChParam[0];
@@ -235,13 +237,37 @@ void AL_AVC_GenerateSPS(AL_TSps* pISPS, AL_TEncSettings const* pSettings, int iM
   // - is set to 0 whenever possible (we allow field pictures).
   // - must be set to 1 in Baseline (sec. A.2.1), or for certain levels (Table A-4).
 
-  // m_SPS.frame_mbs_only_flag = ((cp.iProfile == 66) || (cp.iLevel <= 20) || (cp.iLevel >= 42)) ? 1 : 0;
   pSPS->frame_mbs_only_flag = 1;
 
   // direct_8x8_inference_flag:
   // - is set to 1 whenever possible.
   // - must be set to 1 when level >= 3.0 (Table A-4), or when frame_mbs_only_flag == 0 (sec. 7.4.2.1).
   pSPS->direct_8x8_inference_flag = 1;
+
+  { // Comply to section A.3.3.2
+    // The table A-4 gives specific values to frame_mbs_only_flag and direct_8x8_inference_flag for
+    // specific combinations of profile & level
+
+    if((pChannel->eProfile == AL_PROFILE_AVC_MAIN)
+       | (pChannel->eProfile == AL_PROFILE_AVC_HIGH)
+       | (pChannel->eProfile == AL_PROFILE_AVC_PROG_HIGH)
+       // | ( pChannel->eProfile == AL_PROFILE_AVC_CONSTRAINED_HIGH )
+       | (pChannel->eProfile == AL_PROFILE_AVC_HIGH10)
+       // | ( pChannel->eProfile == AL_PROFILE_AVC_PROG_HIGH10 )
+       | (pChannel->eProfile == AL_PROFILE_AVC_HIGH_422)
+       | (pChannel->eProfile == AL_PROFILE_AVC_HIGH_444_PRED)
+       | (pChannel->eProfile == AL_PROFILE_AVC_HIGH10_INTRA)
+       | (pChannel->eProfile == AL_PROFILE_AVC_HIGH_422_INTRA)
+       | (pChannel->eProfile == AL_PROFILE_AVC_HIGH_444_INTRA)
+       | (pChannel->eProfile == AL_PROFILE_AVC_CAVLC_444_INTRA))
+    {
+      if(pChannel->uLevel <= 20 || pChannel->uLevel >= 42)
+        pSPS->frame_mbs_only_flag = 1;
+
+      if(pChannel->uLevel >= 30)
+        pSPS->direct_8x8_inference_flag = 1;
+    }
+  }
 
   pSPS->mb_adaptive_frame_field_flag = 0;
 
@@ -328,7 +354,15 @@ void AL_AVC_GenerateSPS(AL_TSps* pISPS, AL_TEncSettings const* pSettings, int iM
   if(AL_IS_XAVC_CBG(pChannel->eProfile) && AL_IS_INTRA_PROFILE(pChannel->eProfile))
     pSPS->vui_param.pic_struct_present_flag = 0;
 
-  pSPS->vui_param.bitstream_restriction_flag = 0;
+  pSPS->vui_param.bitstream_restriction_flag = 1;
+
+  pSPS->vui_param.motion_vectors_over_pic_boundaries_flag = 1;
+  pSPS->vui_param.max_bytes_per_pic_denom = 0;
+  pSPS->vui_param.max_bits_per_min_cu_denom = 0; // called max_bits_per_mb_denom in AVC
+  pSPS->vui_param.log2_max_mv_length_horizontal = ceil_log2(4 * AL_AVC_GetMaxMotionVectorWidth(pChannel->uLevel));
+  pSPS->vui_param.log2_max_mv_length_vertical = ceil_log2(4 * AL_AVC_GetMaxMotionVectorHeight(pChannel->uLevel));
+  pSPS->vui_param.max_num_reorder_frames = pChannel->tGopParam.uNumB;
+  pSPS->vui_param.max_dec_frame_buffering = iMaxRef;
 
   // MVC Extension
 }
@@ -346,7 +380,7 @@ void AL_AVC_GeneratePPS(AL_TPps* pIPPS, AL_TEncSettings const* pSettings, AL_TSp
   pPPS->bottom_field_pic_order_in_frame_present_flag = 0;
 
   pPPS->num_slice_groups_minus1 = 0;
-  int iNumRef = 1;
+  int32_t iNumRef = GetNumActiveRefIdx(pChannel);
 
   pPPS->num_ref_idx_l0_active_minus1 = iNumRef - 1;
   pPPS->num_ref_idx_l1_active_minus1 = iNumRef - 1;
@@ -406,7 +440,7 @@ void AL_AVC_UpdateSPS(AL_TSps* pISPS, AL_TEncSettings const* pSettings, AL_TEncP
 }
 
 /***************************************************************************/
-bool AL_AVC_UpdateAUD(AL_TAud* pAud, AL_TEncSettings const* pSettings, AL_TEncPicStatus const* pPicStatus, int iLayerID)
+bool AL_AVC_UpdateAUD(AL_TAud* pAud, AL_TEncSettings const* pSettings, AL_TEncPicStatus const* pPicStatus, int32_t iLayerID)
 {
   pAud->eType = pPicStatus->eType;
   return pSettings->bEnableAUD && isBaseLayer(iLayerID);

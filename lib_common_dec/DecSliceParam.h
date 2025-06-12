@@ -1,11 +1,6 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
-/******************************************************************************
-   \addtogroup lib_base
-   !@{
-   \file
- *****************************************************************************/
 #pragma once
 
 #include "lib_common/SliceConsts.h"
@@ -16,64 +11,64 @@
 *****************************************************************************/
 typedef struct AL_TDecSliceParam
 {
-  uint8_t MaxMergeCand;
-  uint8_t CabacInitIdc;
-  uint8_t ColocFromL0;
-  uint8_t mvd_l1_zero_flag;
-  uint16_t SliceId;
-  uint8_t NumRefIdxL1Minus1;
-  uint8_t NumRefIdxL0Minus1;
-  uint8_t WeightedPred;
-  uint8_t WeightedBiPred;
-  bool ValidConceal;
-  uint8_t SliceHeaderLength;
-  uint8_t TileNgbA;
-  uint8_t TileNgbB;
-  uint8_t TileNgbC;
-  uint8_t TileNgbD;
-  uint8_t TileNgbE;
-  uint8_t TileNgbH;
-  uint8_t TileNgbI;
-  uint16_t NumEntryPoint;
-  uint8_t PicIDL0[MAX_REF];
-  uint8_t PicIDL1[MAX_REF];
-  uint8_t ColocPicID;
-  uint8_t ConcealPicID;
+  uint8_t uMaxMergeCand;
+  uint8_t uCabacInitIdc;
+  bool bColocFromL0;
+  bool bMvdL1ZeroFlag;
+  uint16_t uSliceId;
+  uint8_t uNumRefIdxL0Minus1;
+  uint8_t uNumRefIdxL1Minus1;
+  bool bWeightedPred;
+  bool bWeightedBiPred;
+  bool bValidConceal;
+  uint8_t uSliceHeaderLength;
+  bool bTileNgbA;
+  bool bTileNgbB;
+  bool bTileNgbC;
+  bool bTileNgbD;
+  bool bTileNgbE;
+  bool bTileNgbH;
+  bool bTileNgbI;
+  uint16_t uNumEntryPoint;
+  uint8_t pPicIdL0s[MAX_REF];
+  uint8_t pPicIdL1s[MAX_REF];
+  uint8_t uColocPicID;
+  uint8_t uConcealPicID;
 
-  int8_t CbQpOffset;
-  int8_t CrQpOffset;
-  int8_t SliceQP;
-  int8_t tc_offset_div2;
-  int8_t beta_offset_div2;
+  int8_t iCbQpOffset;
+  int8_t iCrQpOffset;
+  int8_t iSliceQq;
+  int8_t iTcOffsetDiv2;
+  int8_t iBetaOffsetDiv2;
 
-  uint16_t TileWidth;
-  uint16_t TileHeight;
-  uint16_t FirstTileLCU;
-  uint16_t FirstLcuTileID;
-  uint16_t LcuTileWidth;
-  uint16_t LcuTileHeight;
+  uint16_t uTileWidth;
+  uint16_t uTileHeight;
+  uint16_t uFirstTileLcu;
+  uint16_t uFirstLcuTileId;
+  uint16_t uLcuTileWidth;
+  uint16_t uLcuTileHeight;
 
-  uint32_t SliceFirstLCU;
-  uint32_t SliceNumLCU;
+  uint32_t uSliceFirstLcu;
+  uint32_t uSliceNumLcu;
 
-  uint32_t NextSliceSegment;
-  uint32_t FirstLcuSliceSegment;
-  uint32_t FirstLcuSlice;
+  uint32_t uNextSliceSegment;
+  uint32_t uFirstLcuSliceSegment;
+  uint32_t uFirstLcuSlice;
 
   union
   {
-    bool DirectSpatial;
-    bool TemporalMVP;
+    bool bDirectSpatial;
+    bool bTemporalMvp;
   };
   bool bIsLastSlice;
-  bool DependentSlice;
-  bool SAOFilterChroma;
-  bool SAOFilterLuma;
-  bool DisableLoopFilter;
-  bool XSliceLoopFilter;
-  bool CuChromaQpOffset;
-  bool NextIsDependent;
-  bool Tile;
+  bool bDependentSlice;
+  bool bSaoFilterLuma;
+  bool bSaoFilterChroma;
+  bool bDisableLoopFilter;
+  bool bAcrossSliceLoopFilter;
+  bool bCuChromaQpOffset;
+  bool bNextIsDependent;
+  bool bTile;
 
   AL_ESliceType eSliceType;
   uint32_t uStrAvailSize;
@@ -84,7 +79,7 @@ typedef struct AL_TDecSliceParam
   /* Keep this at last position of structure since it allows to copy only
    * necessary entry_point_offset content.
    */
-  uint32_t entry_point_offset[AL_MAX_ENTRY_POINT + 1];
+  uint32_t pEntryPointOffsets[AL_MAX_ENTRY_POINT + 1];
+
 }AL_TDecSliceParam;
 
-/*!@}*/

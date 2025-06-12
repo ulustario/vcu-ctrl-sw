@@ -1,11 +1,6 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
-/******************************************************************************
-   \addtogroup lib_base
-   !@{
-   \file
- *****************************************************************************/
 #pragma once
 
 #include "lib_rtos/types.h"
@@ -39,8 +34,8 @@
 #define AL_DEC_OPT_WaveFront 0x00400000
 #define AL_DEC_OPT_CuQPDeltaFlag 0x00800000
 
-#define AL_SET_DEC_OPT(pPictParam, Opt, Val) (pPictParam)->OptionFlags = (((pPictParam)->OptionFlags & ~(AL_DEC_OPT_ ## Opt)) | (((Val) * (AL_DEC_OPT_ ## Opt)) & (AL_DEC_OPT_ ## Opt)))
-#define AL_GET_DEC_OPT(pPictParam, Opt) ((pPictParam)->OptionFlags & (AL_DEC_OPT_ ## Opt))
+#define AL_SET_DEC_OPT(pPictParam, Opt, Val) (pPictParam)->uOptionFlags = (((pPictParam)->uOptionFlags & ~(AL_DEC_OPT_ ## Opt)) | (((Val) * (AL_DEC_OPT_ ## Opt)) & (AL_DEC_OPT_ ## Opt)))
+#define AL_GET_DEC_OPT(pPictParam, Opt) ((pPictParam)->uOptionFlags & (AL_DEC_OPT_ ## Opt))
 
 /****************************************************************************/
 typedef struct AL_TDecBufIDs
@@ -59,58 +54,80 @@ static const AL_TDecBufIDs tEmptyBufIDs =
 *****************************************************************************/
 typedef struct AL_TDecPictParam
 {
-  AL_ECodec Codec;
+  AL_ECodec eCodec;
 
   AL_TDecBufIDs tBufIDs;
 
-  uint8_t MaxTransfoDepthIntra;
-  uint8_t MaxTransfoDepthInter;
-  uint8_t Log2MinTUSize;
-  uint8_t Log2MaxTUSize;
-  uint8_t Log2MaxTUSkipSize;
-  int8_t Log2MinPCMSize;
-  int8_t Log2MaxPCMSize;
-  int8_t Log2MinCUSize;
-  uint8_t Log2MaxCUSize;
-  uint8_t PcmBitDepthY;
-  uint8_t PcmBitDepthC;
-  uint8_t BitDepthLuma;
-  uint8_t BitDepthChroma;
-  uint8_t ChromaQpOffsetDepth;
-  uint8_t QpOffLstSize;
-  uint8_t ParallelMerge;
-  uint8_t ColocPicID;
+  uint8_t uMaxTransfoDepthIntra;
+  uint8_t uMaxTransfoDepthInter;
+  uint8_t uLog2MinTuSize;
+  uint8_t uLog2MaxTuSize;
+  uint8_t uLog2MaxTuSkipSize;
+  uint8_t uLog2MinPcmSize;
+  uint8_t uLog2MaxPcmSize;
+  uint8_t uLog2MinCuSize;
+  uint8_t uLog2MaxCuSize;
+  uint8_t uPcmBitDepthY;
+  uint8_t uPcmBitDepthC;
+  uint8_t uBitDepthLuma;
+  uint8_t uBitDepthChroma;
+  uint8_t uChromaQpOffsetDepth;
+  uint8_t uQpOffLstSize;
+  uint8_t uParallelMerge;
+  uint8_t uColocPicID;
 
-  int8_t PicCbQpOffset;
-  int8_t PicCrQpOffset;
-  int8_t CbQpOffLst[6];
-  int8_t CrQpOffLst[6];
-  int8_t DeltaQPCUDepth;
+  int8_t iPicCbQpOffset;
+  int8_t iPicCrQpOffset;
+  int8_t pCbQpOffsets[6];
+  int8_t pCrQpOffsets[6];
+  uint8_t uDeltaQpCuDepth;
 
-  uint16_t PicWidth;
-  uint16_t PicHeight;
-  uint16_t LcuPicWidth;
-  uint16_t LcuPicHeight;
-  uint16_t tile_column_width[AL_MAX_COLUMNS_TILE];
-  uint16_t tile_row_height[AL_MAX_ROWS_TILE];
-  uint16_t num_tile_columns;
-  uint16_t num_tile_rows;
+  uint16_t uPicWidth;
+  uint16_t uPicHeight;
+  uint16_t uLcuPicWidth;
+  uint16_t uLcuPicHeight;
+  uint16_t pTileColWidths[AL_MAX_COLUMNS_TILE];
+  uint16_t pTileRowHeights[AL_MAX_ROWS_TILE];
+  uint16_t uNumTileCols;
+  uint16_t uNumTileRows;
 
-  int32_t CurrentPOC;
+  int32_t iCurrentPoc;
   AL_EPicStruct ePicStruct;
 
-  uint32_t OptionFlags;
+  uint32_t uOptionFlags;
 
-  AL_EChromaMode ChromaMode;
+  AL_EChromaMode eChromaMode;
   AL_EEntropyMode eEntMode;
 
   int32_t iFrmNum;
-  AL_64U UserParam;
+  AL_64U uUserParam;
 
-  uint8_t log2_sao_offset_scale_luma;
-  uint8_t log2_sao_offset_scale_chroma;
+  uint8_t uLog2SaoOffsetScaleLuma;
+  uint8_t uLog2SaoOffsetScaleChroma;
 
 }AL_TDecPicParam;
+
+/****************************************************************************/
+static inline void DecPicParam_SetPicDim(AL_TDecPicParam* pPicParam, AL_TDimension tPicDim)
+{
+  pPicParam->uPicWidth = tPicDim.iWidth;
+  pPicParam->uPicHeight = tPicDim.iHeight;
+  pPicParam->uLcuPicWidth = (tPicDim.iWidth + (1 << pPicParam->uLog2MaxCuSize) - 1) >> pPicParam->uLog2MaxCuSize;
+  pPicParam->uLcuPicHeight = (tPicDim.iHeight + (1 << pPicParam->uLog2MaxCuSize) - 1) >> pPicParam->uLog2MaxCuSize;
+}
+
+/****************************************************************************/
+static inline uint32_t DecPicParam_GetNumLcuInFrame(AL_TDecPicParam const* pPicParam)
+{
+  return pPicParam->uLcuPicWidth * pPicParam->uLcuPicHeight;
+}
+
+/****************************************************************************/
+static inline AL_TPosition DecPicParam_GetLcuPosFromIndex(AL_TDecPicParam const* pPicParam, int32_t idx)
+{
+  AL_TPosition tPos = { idx % pPicParam->uLcuPicWidth, idx / pPicParam->uLcuPicWidth };
+  return tPos;
+}
 
 /****************************************************************************/
 typedef struct AL_TDecBuffers
@@ -129,10 +146,43 @@ typedef struct AL_TDecBuffers
   TBuffer tMV;
   TBuffer tWP;
 
+  uint32_t uBitdepth;
   uint32_t uPitch;
 
 }AL_TDecBuffers;
 
+/****************************************************************************/
+typedef struct AL_TMvdTraceBufs
+{
+  AL_PADDR uDfeStreamStartPos;
+  AL_PADDR uDfeStreamEndPos;
+  uint32_t uDcpOffset;
+  uint32_t uDcpWrBinPos;
+  uint32_t uDcpUsedSize;
+  uint32_t uDcpTotalSize;
+  AL_PADDR uDcpBaseAddrForDbe[2];
+
+  uint32_t uSegBaseOffset;
+  uint32_t uSegSize;
+
+  TBuffer* ptMBI_rd0_buf;
+  TBuffer* ptMBI_rd1_buf;
+  TBuffer* ptMBI_rd2_buf;
+  TBuffer* ptMBI_wr_buf;
+
+  TBuffer* ptSeg_Src_buf;
+  TBuffer* ptSeg_Dst_buf;
+
+  AL_TAddress tSrcCoeffProbs;
+  AL_TAddress tSrcModeProbs;
+  AL_TAddress tDstCoeffProbs;
+  AL_TAddress tDstModeProbs;
+  uint32_t uCoeffProbSize;
+  uint32_t uModeProbSize;
+
+  /* ref frames */
+  AL_TBuffer* ptRefFrames[10]; /* 8 should actually be enough*/
+}AL_TMvdTraceBufs;
 /****************************************************************************/
 typedef struct AL_TDecPictBufferAddrs
 {
@@ -140,6 +190,7 @@ typedef struct AL_TDecPictBufferAddrs
   AL_PADDR pRecC1;
   AL_PADDR pRecFbcMapY;
   AL_PADDR pRecFbcMapC1;
+  uint32_t uBitdepth;
   uint32_t uPitch;
 }AL_TDecPictBufferAddrs;
 
@@ -183,7 +234,3 @@ typedef struct AL_TDecPicStatus
   uint32_t uCRC;
   AL_TDecPicState tDecPicState;
 }AL_TDecPicStatus;
-
-/*****************************************************************************/
-
-/*!@}*/

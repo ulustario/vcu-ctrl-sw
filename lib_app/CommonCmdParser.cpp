@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #include <stdexcept>
@@ -31,7 +31,7 @@ std::string GetFrameBufferFormatOptDesc(bool bSecondOutput)
 }
 
 /******************************************************************************/
-AL_TPosition ParsePosition(std::string s, int iMultiple)
+AL_TPosition ParsePosition(std::string s, int32_t iMultiple)
 {
   AL_TPosition tPos = { 0, 0 };
 
@@ -50,7 +50,7 @@ AL_TPosition ParsePosition(std::string s, int iMultiple)
 }
 
 /******************************************************************************/
-AL_TDimension ParseDimension(std::string s, int multiple)
+AL_TDimension ParseDimension(std::string s, int32_t multiple)
 {
   std::stringstream ss(s);
   ss.unsetf(std::ios::dec);

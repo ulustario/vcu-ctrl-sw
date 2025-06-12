@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #pragma once
@@ -24,7 +24,7 @@ struct TJsonValue
 
   EValueType eType {};
   bool boolValue {};
-  int intValue {};
+  int32_t intValue {};
   std::string stringValue {};
   std::vector<TJsonValue> arrayValue {};
   std::map<std::string, TJsonValue> objectValue {};
@@ -33,12 +33,12 @@ struct TJsonValue
   TJsonValue() : TJsonValue(JSON_VALUE_BOOL) {};
   TJsonValue(EValueType eType) : eType(eType) {};
   TJsonValue(bool boolValue) : eType(JSON_VALUE_BOOL), boolValue(boolValue) {};
-  TJsonValue(int intValue) : eType(JSON_VALUE_NUMBER), intValue(intValue) {};
+  TJsonValue(int32_t intValue) : eType(JSON_VALUE_NUMBER), intValue(intValue) {};
   TJsonValue(std::string stringValue) : eType(JSON_VALUE_STRING), stringValue(stringValue) {};
 
   /* ------- Arrays Helpers -------  */
-  bool HasValue(int i);
-  bool GetValue(int i, EValueType eValueType, TJsonValue*& pValue);
+  bool HasValue(int32_t i);
+  bool GetValue(int32_t i, EValueType eValueType, TJsonValue*& pValue);
   template<typename T>
   TJsonValue& PushBackValue(T tValue);
 
@@ -86,15 +86,15 @@ private:
   EJsonWriterState eState;
   bool bOneLinerStream;
 
-  void WriteValue(std::ofstream& ofs, const TJsonValue& tValue, int iTab);
-  void WriteArray(std::ofstream& ofs, const TJsonValue& tValue, int iTab);
-  void WriteObject(std::ofstream& ofs, const TJsonValue& tValue, int iTab);
+  void WriteValue(std::ofstream& ofs, const TJsonValue& tValue, int32_t iTab);
+  void WriteArray(std::ofstream& ofs, const TJsonValue& tValue, int32_t iTab);
+  void WriteObject(std::ofstream& ofs, const TJsonValue& tValue, int32_t iTab);
 
   void OpenArray(std::ofstream& ofs);
-  void CloseArray(std::ofstream& ofs, bool bOneLiner, int iTab);
-  void ArrayAlignment(std::ofstream& ofs, bool bFirstVal, bool bOneLiner, int iTab);
+  void CloseArray(std::ofstream& ofs, bool bOneLiner, int32_t iTab);
+  void ArrayAlignment(std::ofstream& ofs, bool bFirstVal, bool bOneLiner, int32_t iTab);
   bool IsOneLiner(const TJsonValue& tValue);
-  void NextLineAlignment(std::ofstream& ofs, int iTab);
+  void NextLineAlignment(std::ofstream& ofs, int32_t iTab);
   void WriteSeparator(std::ofstream& ofs);
 };
 

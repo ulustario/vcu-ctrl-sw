@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 /******************************************************************************
@@ -15,8 +15,8 @@ typedef struct AL_TLinuxDmaAllocator AL_TLinuxDmaAllocator;
 typedef struct AL_TDmaAllocLinuxVTable
 {
   AL_TAllocatorVTable base;
-  int (* pfnGetFd)(AL_TLinuxDmaAllocator* pAllocator, AL_HANDLE hBuf);
-  AL_HANDLE (* pfnImportFromFd)(AL_TLinuxDmaAllocator* pAllocator, int fd);
+  int32_t (* pfnGetFd)(AL_TLinuxDmaAllocator* pAllocator, AL_HANDLE hBuf);
+  AL_HANDLE (* pfnImportFromFd)(AL_TLinuxDmaAllocator* pAllocator, int32_t fd);
 }AL_TDmaAllocLinuxVTable;
 
 struct AL_TLinuxDmaAllocator
@@ -38,7 +38,7 @@ struct AL_TLinuxDmaAllocator
    \return dmabuf file descriptor related to the linux dma buffer.
  *****************************************************************************/
 static inline
-int AL_LinuxDmaAllocator_GetFd(AL_TLinuxDmaAllocator* pAllocator, AL_HANDLE hBuf)
+int32_t AL_LinuxDmaAllocator_GetFd(AL_TLinuxDmaAllocator* pAllocator, AL_HANDLE hBuf)
 {
   return pAllocator->vtable->pfnGetFd(pAllocator, hBuf);
 }
@@ -55,7 +55,7 @@ int AL_LinuxDmaAllocator_GetFd(AL_TLinuxDmaAllocator* pAllocator, AL_HANDLE hBuf
    \return handle to the dma memory wrapped by the dmabuf file descriptor.
  *****************************************************************************/
 static inline
-AL_HANDLE AL_LinuxDmaAllocator_ImportFromFd(AL_TLinuxDmaAllocator* pAllocator, int fd)
+AL_HANDLE AL_LinuxDmaAllocator_ImportFromFd(AL_TLinuxDmaAllocator* pAllocator, int32_t fd)
 {
   return pAllocator->vtable->pfnImportFromFd(pAllocator, fd);
 }

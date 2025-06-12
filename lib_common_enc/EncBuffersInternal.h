@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #pragma once
@@ -76,13 +76,14 @@ static const size_t MVBUFF_MV_OFFSET = 256; // Motion Vectors
    \brief Retrieves the size of a Reference YUV frame buffer
    \param[in] tDim Frame dimensions
    \param[in] uBitDepth YUV bit-depth
+   \param[in] eStorageMode YUV storage mode
    \param[in] uLCUSize Max size of a coding unit
    \param[in] eChromaMode Chroma Mode
    \param[in] eOptions Encoding option flags
    \param[in] uMVVRange extra buffer lines used for reconstructed buffering
    \return maximum size (in bytes) needed for the YUV frame buffer
 *****************************************************************************/
-uint32_t AL_GetAllocSize_EncReference(AL_TDimension tDim, uint8_t uBitDepth, uint8_t uLCUSize, AL_EChromaMode eChromaMode, AL_EChEncOption eOptions, uint16_t uMVVRange);
+uint32_t AL_GetAllocSize_EncReference(AL_TDimension tDim, uint8_t uBitDepth, AL_EFbStorageMode eStorageMode, uint8_t uLCUSize, AL_EChromaMode eChromaMode, AL_EChEncOption eOptions, uint16_t uMVVRange);
 
 /*****************************************************************************
    \brief Retrieves the size of a compressed buffer(LCU header + MVDs + Residuals)
@@ -121,7 +122,7 @@ uint32_t AL_GetAllocSize_MV(AL_TDimension tDim, uint8_t uLog2MaxCuSize, AL_ECode
    \param[in] uNumCore Number of used core
    \return the size (in bytes) needed for the entry_points size buffer
 *****************************************************************************/
-uint32_t AL_GetAllocSize_WPP(int iLCUPicHeight, int iNumSlices, uint8_t uNumCore);
+uint32_t AL_GetAllocSize_WPP(int32_t iLCUPicHeight, int32_t iNumSlices, uint8_t uNumCore);
 
 uint32_t AL_GetAllocSize_SliceSize(uint32_t uWidth, uint32_t uHeight, uint32_t uNumSlices, uint32_t uLog2MaxCuSize);
 
@@ -134,7 +135,7 @@ uint32_t AL_GetAllocSize_SliceSize(uint32_t uWidth, uint32_t uHeight, uint32_t u
    \param[in] iNumTilesPerCore Number of tiles on the frame that will be encode on each core
    \return the size (in bytes) needed for the entry_points size buffer
 *****************************************************************************/
-uint32_t GetAllocSize_StreamPart(AL_EProfile eProfile, int iNumCores, int iNumSlices, bool bSliceSize, int iNumTilesPerCore);
+uint32_t GetAllocSize_StreamPart(AL_EProfile eProfile, int32_t iNumCores, int32_t iNumSlices, bool bSliceSize, int32_t iNumTilesPerCore);
 
 /*****************************************************************************
    \brief Retrieves plane description of the reference buffer
@@ -142,9 +143,19 @@ uint32_t GetAllocSize_StreamPart(AL_EProfile eProfile, int iNumCores, int iNumSl
    \param[in] tDim Frame dimensions
    \param[in] eChromaMode Chroma Mode
    \param[in] uBitDepth YUV bit-depth
-   \param[in] bIsAvc AVC Codec
+   \param[in] eCodec Codec
    \param[in] uLCUSize Max size of a coding unit
    \param[in] uMVVRange extra buffer lines used for reconstructed buffering
    \param[in] eOptions Encoding option flags
 *****************************************************************************/
-void AL_FillPlaneDesc_EncReference(AL_TPlaneDescription* pPlaneDesc, AL_TDimension tDim, AL_EChromaMode eChromaMode, uint8_t uBitDepth, bool bIsAvc, uint8_t uLCUSize, uint16_t uMVVRange, AL_EChEncOption eOptions);
+void AL_FillPlaneDesc_EncReference(AL_TPlaneDescription* pPlaneDesc, AL_TDimension tDim, AL_TPicFormat tPicFormat, AL_ECodec eCodec, uint8_t uLCUSize, uint16_t uMVVRange, AL_EChEncOption eOptions);
+
+/*****************************************************************************
+   \brief Calculates the pitch of reconstructed
+   \param[in] tTileDim Dimension of tiles
+   \param[in] uBitDepth YUV bit-depth
+   \param[in] eStorageMode YUV storage mode
+   \param[in] uWidth Width of the Rec
+   \param[in] bIsLuma Is the plane Luma or Choma
+*****************************************************************************/
+uint32_t AL_GetRecPitch(AL_TDimension tTileDim, uint32_t uBitDepth, AL_EFbStorageMode eStorageMode, uint32_t uWidth, bool bIsLuma);

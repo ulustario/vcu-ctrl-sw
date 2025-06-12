@@ -1,14 +1,12 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #pragma once
 
-#include "lib_common/VPS.h"
-#include "lib_common/SPS.h"
-#include "lib_common/PPS.h"
 #include "lib_common/SliceConsts.h"
 #include "lib_common/HDR.h"
 
+#include "lib_common/HevcHeaders.h"
 typedef struct
 {
   // Context
@@ -20,6 +18,7 @@ typedef struct
   AL_EPicStruct ePicStruct;
 }AL_THevcAup;
 
+#include "lib_common/AvcHeaders.h"
 typedef struct
 {
   // Context

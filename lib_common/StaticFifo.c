@@ -1,9 +1,9 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #include "StaticFifo.h"
 
-bool StaticFifo_Init(StaticFifo* self, void* elements[], int total_elements)
+bool StaticFifo_Init(StaticFifo* self, void* elements[], int32_t total_elements)
 {
   if(NULL == self)
     return false;
@@ -25,7 +25,7 @@ bool StaticFifo_Empty(StaticFifo const* self)
   return self->head == self->tail;
 }
 
-int StaticFifo_Size(StaticFifo const* self)
+int32_t StaticFifo_Size(StaticFifo const* self)
 {
   return (self->tail + self->total_elements - self->head) % self->total_elements;
 }
@@ -55,9 +55,9 @@ void* StaticFifo_Front(StaticFifo const* self)
   return StaticFifo_At(self, 0);
 }
 
-void* StaticFifo_At(StaticFifo const* self, int iOffset)
+void* StaticFifo_At(StaticFifo const* self, int32_t iOffset)
 {
-  if(StaticFifo_Empty(self))
+  if(StaticFifo_Size(self) <= iOffset)
     return NULL;
 
   return self->elements[(self->head + iOffset) % self->total_elements];
@@ -68,7 +68,7 @@ bool StaticFifo_IsIn(StaticFifo const* self, void* element)
   if(StaticFifo_Empty(self))
     return false;
 
-  for(int index = self->head; index != self->tail; index = ((index + 1) % self->total_elements))
+  for(int32_t index = self->head; index != self->tail; index = ((index + 1) % self->total_elements))
   {
     if(element == self->elements[index])
       return true;

@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 /******************************************************************************
@@ -40,6 +40,8 @@ typedef enum AL_ECodec
   AL_CODEC_MPEG2 = 6,
   AL_CODEC_AVC_I = 7,
   AL_CODEC_LCEVC = 8,
+  AL_CODEC_AV2 = 9,
+  AL_CODEC_JPEG_XS = 10,
   AL_CODEC_INVALID, /* sentinel */
 }AL_ECodec;
 
@@ -116,7 +118,7 @@ static inline AL_ECodec AL_GET_CODEC(AL_EProfile eProfile)
 }
 
 /****************************************************************************/
-static inline int AL_GET_PROFILE_IDC(AL_EProfile eProfile)
+static inline int32_t AL_GET_PROFILE_IDC(AL_EProfile eProfile)
 {
   return eProfile & 0x000000FF;
 }
@@ -135,6 +137,7 @@ static inline bool AL_HAS_LEVEL(AL_EProfile eProfile)
   case AL_CODEC_HEVC: return true;
   case AL_CODEC_VVC: return true;
   case AL_CODEC_AV1: return true;
+  case AL_CODEC_AV2: return true;
   default: return false;
   }
 }
@@ -152,15 +155,21 @@ static inline bool AL_IS_AV1(AL_EProfile eProfile)
 }
 
 /****************************************************************************/
+static inline bool AL_IS_AV2(AL_EProfile eProfile)
+{
+  return AL_GET_CODEC(eProfile) == AL_CODEC_AV2;
+}
+
+/****************************************************************************/
 static inline bool AL_IS_AOM(AL_EProfile eProfile)
 {
-  return AL_IS_AV1(eProfile) || AL_IS_VP9(eProfile);
+  return AL_IS_AV1(eProfile) || AL_IS_VP9(eProfile) || AL_IS_AV2(eProfile);
 }
 
 /****************************************************************************/
 static inline bool AL_IS_AOM_CODEC(AL_ECodec eCodec)
 {
-  return ((eCodec) == AL_CODEC_VP9) || ((eCodec) == AL_CODEC_AV1);
+  return ((eCodec) == AL_CODEC_VP9) || ((eCodec) == AL_CODEC_AV1) || ((eCodec) == AL_CODEC_AV2);
 }
 
 /****************************************************************************/
@@ -221,6 +230,18 @@ static inline bool AL_IS_JPEG_CODEC(AL_ECodec eCodec)
 }
 
 /****************************************************************************/
+static inline bool AL_IS_JPEG_XS_CODEC(AL_ECodec eCodec)
+{
+  return eCodec == AL_CODEC_JPEG_XS;
+}
+
+/****************************************************************************/
+static inline bool AL_IS_JPEG_OR_JPEG_XS_CODEC(AL_ECodec eCodec)
+{
+  return eCodec == AL_CODEC_JPEG || eCodec == AL_CODEC_JPEG_XS;
+}
+
+/****************************************************************************/
 static inline bool AL_IS_LOW_BITRATE_PROFILE(AL_EProfile eProfile)
 {
   (void)eProfile;
@@ -250,7 +271,7 @@ static inline bool AL_IS_SHVC(AL_EProfile eProfile)
 }
 
 /****************************************************************************/
-static inline bool AL_IS_MultiLayer(int iLayers)
+static inline bool AL_IS_MultiLayer(int32_t iLayers)
 {
   return iLayers > 1;
 }

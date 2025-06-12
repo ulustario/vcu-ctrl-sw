@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #include <cstdlib>
@@ -21,11 +21,12 @@ extern "C"
 
 #include "CodecUtils.h"
 #include "lib_app/utils.h"
+#include "lib_rtos/utils.h"
 
 using namespace std;
 
 /******************************************************************************/
-void DisplayFrameStatus(int iFrameNum)
+void DisplayFrameStatus(int32_t iFrameNum)
 {
   (void)iFrameNum;
 #if VERBOSE_MODE
@@ -33,27 +34,27 @@ void DisplayFrameStatus(int iFrameNum)
 #else
   LogVerbose("\r  Encoding picture #%-6d - ", iFrameNum);
 #endif
-  fflush(stdout);
+  FFLUSH(stdout);
 }
 
 /*****************************************************************************/
-unsigned int ReadNextFrame(ifstream& File)
+uint32_t ReadNextFrame(ifstream& File)
 {
   string sLine;
 
   getline(File, sLine);
 
   if(File.fail())
-    return UINT_MAX;
+    return UINT32_MAX;
 
   return atoi(sLine.c_str());
 }
 
 /*****************************************************************************/
-unsigned int ReadNextFrameMV(ifstream& File, int& iX, int& iY)
+uint32_t ReadNextFrameMV(ifstream& File, int& iX, int& iY)
 {
   string sLine, sVal;
-  int iFrame = 0;
+  int32_t iFrame = 0;
   iX = iY = 0;
   getline(File, sLine);
   stringstream ss(sLine);
@@ -81,7 +82,7 @@ unsigned int ReadNextFrameMV(ifstream& File, int& iX, int& iY)
   while(!(ss.rdbuf()->in_avail() == 0));
 
   if(File.fail())
-    return UINT_MAX;
+    return UINT32_MAX;
 
   return iFrame - 1;
 }
@@ -112,7 +113,7 @@ void WriteOneSection(ofstream& File, AL_TBuffer* pStream, AL_TStreamSection* pCu
 /*****************************************************************************/
 
 /*****************************************************************************/
-static void FillSectionFillerData(AL_TBuffer* pStream, int iSection, const AL_TEncChanParam* pChannelParam)
+static void FillSectionFillerData(AL_TBuffer* pStream, int32_t iSection, const AL_TEncChanParam* pChannelParam)
 {
   (void)pChannelParam;
 
@@ -140,15 +141,15 @@ static void FillSectionFillerData(AL_TBuffer* pStream, int iSection, const AL_TE
 }
 
 /*****************************************************************************/
-int WriteStream(ofstream& File, AL_TBuffer* pStream, const AL_TEncSettings* pSettings, std::streampos& iHdrPos, int& iFrameSize)
+int32_t WriteStream(ofstream& File, AL_TBuffer* pStream, const AL_TEncSettings* pSettings, std::streampos& iHdrPos, int& iFrameSize)
 {
   (void)iHdrPos, (void)iFrameSize;
   AL_TStreamMetaData* pStreamMeta = (AL_TStreamMetaData*)AL_Buffer_GetMetaData(pStream, AL_META_TYPE_STREAM);
   auto& tChParam = pSettings->tChParam[0];
 
-  int iNumFrame = 0;
+  int32_t iNumFrame = 0;
 
-  for(int curSection = 0; curSection < pStreamMeta->uNumSection; ++curSection)
+  for(int32_t curSection = 0; curSection < pStreamMeta->uNumSection; ++curSection)
   {
     AL_TStreamSection* pCurSection = &pStreamMeta->pSections[curSection];
 
@@ -172,7 +173,7 @@ void GetImageStreamSize(AL_TBuffer* pStream, deque<ImageSize>& imageSizes)
   if(imageSizes.empty())
     throw runtime_error("You need at least one empty image size structure to begin the first frame");
 
-  for(int curSection = 0; curSection < pStreamMeta->uNumSection; ++curSection)
+  for(int32_t curSection = 0; curSection < pStreamMeta->uNumSection; ++curSection)
   {
     AL_TStreamSection& section = pStreamMeta->pSections[curSection];
 

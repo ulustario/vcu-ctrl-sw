@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 /******************************************************************************
@@ -10,7 +10,7 @@
 #pragma once
 
 #include "BitStreamLite.h"
-#include "lib_common/AUD.h"
+#include "lib_common_enc/AUD.h"
 #include "lib_common/HDR.h"
 
 /*****************************************************************************
@@ -24,9 +24,9 @@
    \param[in] eSliceType Slice type
 *************************************************************************/
 void AL_RbspEncoding_WriteAUD(AL_TBitStreamLite* pRE, AL_TAud const* pAud);
-int AL_RbspEncoding_BeginSEI(AL_TBitStreamLite* pRE, uint8_t payloadType);
-void AL_RbspEncoding_BeginSEI2(AL_TBitStreamLite* pBS, int iPayloadType, int iPayloadSize);
-void AL_RbspEncoding_EndSEI(AL_TBitStreamLite* pRE, int bookmarkSEI);
+int32_t AL_RbspEncoding_BeginSEI(AL_TBitStreamLite* pRE, uint8_t payloadType);
+void AL_RbspEncoding_BeginSEI2(AL_TBitStreamLite* pBS, int32_t iPayloadType, int32_t iPayloadSize);
+void AL_RbspEncoding_EndSEI(AL_TBitStreamLite* pRE, int32_t bookmarkSEI);
 void AL_RbspEncoding_CloseSEI(AL_TBitStreamLite* pRE);
 void AL_RbspEncoding_WriteUserDataUnregistered(AL_TBitStreamLite* pRE, uint8_t uuid[16], int8_t numSlices);
 void AL_RbspEncoding_WriteMasteringDisplayColourVolume(AL_TBitStreamLite* pBS, AL_TMasteringDisplayColourVolume* pMDCV);

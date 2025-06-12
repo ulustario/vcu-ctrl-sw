@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #pragma once
@@ -13,19 +13,23 @@ extern "C"
 
 static constexpr uint8_t CurrentCompFileVersion = 3;
 
+#define TM_TILE_32x4 1 << 0
+#define TM_TILE_64x4 1 << 1
+
 enum ETileMode : uint8_t
 {
   TILE_64x4_v0 = 0,
   TILE_64x4_v1 = 1,
   TILE_32x4_v1 = 2,
   RASTER = 5,
+
   TILE_MAX_ENUM,
 };
 
 ETileMode EFbStorageModeToETileMode(AL_EFbStorageMode eFbStorageMode, uint8_t uBitDepth);
 AL_EFbStorageMode ETileModeToEFbStorageMode(ETileMode eTileMode);
 
-static inline int GetTileSize(int iTileHeight)
+static inline int32_t GetTileSize(int32_t iTileHeight)
 {
   return iTileHeight == 8 ? 512 : 256;
 }

@@ -11,7 +11,6 @@ LIB_APP_SRC:=\
   lib_app/JsonFile.cpp\
   lib_app/FileUtils.cpp\
   lib_app/MD5.cpp\
-  lib_app/Parser.cpp\
   lib_app/Tokenizer.cpp\
   lib_app/FrameReader.cpp\
   lib_app/UnCompFrameReader.cpp\
@@ -20,17 +19,27 @@ LIB_APP_SRC:=\
   lib_app/CompFrameCommon.cpp\
   lib_app/BaseFrameWriter.cpp\
 	lib_app/SinkFrame.cpp\
+	lib_app/SinkYuvMd5.cpp\
 	lib_app/SinkCrop.cpp\
   lib_app/SinkCrcDump.cpp\
   lib_app/SinkStreamMd5.cpp\
-  lib_app/SinkRateCtrlMeta.cpp\
   lib_app/PlaneUtils.cpp\
   lib_app/RasterInputLoader.cpp\
   lib_app/AL_RasterConvert.cpp\
-	lib_app/WrapLogger.cpp \
+  lib_app/WrapLogger.cpp\
   $(LIB_LOG_SRC)\
   $(LIB_COMMON_SRC)\
   $(LIB_RTOS_SRC)
+
+NEED_PARSER=0
+ifneq ($(ENABLE_EXE_ENCODER),0)
+  NEED_PARSER = 1
+endif
+
+ifneq ($(NEED_PARSER),0)
+  LIB_APP_SRC+=lib_app/Parser.cpp
+endif
+
 
 
 

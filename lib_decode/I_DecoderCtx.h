@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 /******************************************************************************
@@ -13,6 +13,7 @@
 #include "lib_common_dec/ChannelState.h"
 #include "lib_common_dec/I_Feeder.h"
 #include "lib_common_dec/RbspParser.h"
+#include "lib_common_dec/ParseResult.h"
 
 #include "lib_parsing/I_PictMngr.h"
 #include "lib_parsing/Concealment.h"
@@ -31,6 +32,8 @@ typedef enum
   SEND_REMAINING_NAL,
 }AL_DecodeNalStep;
 
+typedef struct AL_TDecCtx AL_TDecCtx;
+
 typedef struct
 {
   AL_ENut dps;
@@ -46,9 +49,6 @@ typedef struct
   AL_ENut eos;
   AL_ENut eob;
 }AL_NonVclNuts;
-
-typedef struct AL_TDecCtx AL_TDecCtx;
-
 typedef struct
 {
   void (* parseDps)(AL_TAup*, AL_TRbspParser*);
@@ -59,7 +59,7 @@ typedef struct
   AL_PARSE_RESULT (* parsePh)(AL_TAup*, AL_TRbspParser*, AL_TDecCtx*);
   bool (* parseSei)(AL_TAup*, AL_TRbspParser*, bool, AL_CB_ParsedSei*, AL_TSeiMetaData* pMeta);
   // return false when there is nothing to process
-  bool (* decodeSliceData)(AL_TAup*, AL_TDecCtx*, AL_ENut, bool, int*);
+  bool (* decodeSliceData)(AL_TAup*, AL_TDecCtx*, AL_ENut, bool, int32_t*);
   bool (* isSliceData)(AL_ENut nut);
   void (* finishPendingRequest)(AL_TDecCtx*);
   AL_NonVclNuts (* getNonVclNuts)(void);
@@ -123,36 +123,36 @@ struct AL_TDecCtx
   TBufferListRef ListRef;            // Picture Reference List buffer
 
   // slice toggle management
-  TBuffer PoolSP[AL_DEC_SW_MAX_STACK_SIZE]; // Slice parameters
-  AL_TDecPicParam PoolPP[AL_DEC_SW_MAX_STACK_SIZE]; // Picture parameters
-  AL_TDecBuffers PoolPB[AL_DEC_SW_MAX_STACK_SIZE]; // Picture Buffers
+  TBuffer tPoolSliceParams[AL_DEC_SW_MAX_STACK_SIZE]; // Slice parameters
+  AL_TDecPicParam tPoolPicParams[AL_DEC_SW_MAX_STACK_SIZE]; // Picture parameters
+  AL_TDecBuffers tPoolPicBuffers[AL_DEC_SW_MAX_STACK_SIZE]; // Picture Buffers
   uint8_t uCurID; // ID of the last independent slice
 
   AL_TDecChanParam* pChanParam;
   AL_EDpbMode eDpbMode;
-  int iStackSize;
+  int32_t iStackSize;
   bool bForceFrameRate;
   bool bIntraOnlyProfile;
   bool bStillPictureProfile;
 
   // Trace stuff
   char sTracePrefix[8];
-  int iTraceFirstFrame;
-  int iTraceLastFrame;
-  int iTraceCounter;
+  int32_t iTraceFirstFrame;
+  int32_t iTraceLastFrame;
+  int32_t iTraceCounter;
   bool bShouldPrintFrameDelimiter;
 
   // stream context status
   bool bFirstIsValid;
   bool bIsFirstPicture;
-  int iStreamOffset[AL_DEC_SW_MAX_STACK_SIZE];
-  int iCurOffset;
-  int iCurNalStreamOffset;
+  int32_t iStreamOffset[AL_DEC_SW_MAX_STACK_SIZE];
+  int32_t iCurOffset;
+  int32_t iCurNalStreamOffset;
   int32_t iCurPocLsb;
   union
   {
     uint8_t uNoRaslOutputFlag;
-    uint8_t uNoIncorrectPicOutputFlag;
+    uint8_t uNoOutputBeforeRecoveryFlag;
   };
   uint8_t uFrameIDRefList[AL_DEC_SW_MAX_STACK_SIZE][AL_MAX_NUM_REF];
   uint8_t uMvIDRefList[AL_DEC_SW_MAX_STACK_SIZE][AL_MAX_NUM_REF];
@@ -172,8 +172,8 @@ struct AL_TDecCtx
 
   // decoder counters
   uint16_t uToggle;
-  int iNumFrmBlk1;
-  int iNumFrmBlk2;
+  int32_t iNumFrmBlk1;
+  int32_t iNumFrmBlk2;
 
   // reference frames and dpb manager
   AL_TPictMngrCtx PictMngr;
@@ -184,19 +184,19 @@ struct AL_TDecCtx
     AL_THevcSliceHdr HevcSliceHdr[2]; // Slice headers
   };
   AL_ERR error;
-  bool bIsFirstSPSChecked;
+  bool bAreFirstStreamSettingsChecked;
   bool bAreBuffersAllocated;
   bool bUseIFramesAsSyncPoint;
   AL_TStreamSettings tCurrentStreamSettings;
   AL_TStreamSettings tInitialStreamSettings;
   AL_TBuffer* eosBuffer;
 
-  int iNumSlicesRemaining;
+  int32_t iNumSlicesRemaining;
 
   AL_TPosition tOutputPosition;
 
   AL_TMemDesc tMDChanParam;
-  AL_NalParser parser;
+  AL_NalParser nalParser;
 };
 
 /****************************************************************************/

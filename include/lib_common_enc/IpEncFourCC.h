@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 /******************************************************************************
@@ -44,8 +44,9 @@ TFourCC AL_GetRecFourCC(AL_TPicFormat const picFmt);
    \param[in] eChromaMode reconstructed picture chroma mode
    \param[in] uBitDepth reconstructed picture bit depth
    \param[in] bIsCompressed true if reconstructed picture is compressed, false otherwise
+   \param[in] eStorageMode storage mode of the reconstructed (default should be AL_FB_TILE_64x4)
    \return Returns the corresponding TPicFormat
 *****************************************************************************/
-AL_TPicFormat AL_EncGetRecPicFormat(AL_EChromaMode eChromaMode, uint8_t uBitDepth, bool bIsCompressed);
+AL_TPicFormat AL_EncGetRecPicFormat(AL_EChromaMode eChromaMode, uint8_t uBitDepth, bool bIsCompressed, AL_EFbStorageMode eStorageMode);
 
 /*!@}*/

@@ -1,9 +1,9 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #pragma once
 
-#include "lib_common/SliceHeader.h"
+#include "lib_common/AvcHeaders.h"
 #include "lib_common_dec/DecPicParam.h"
 #include "lib_common/ScalingList.h"
 

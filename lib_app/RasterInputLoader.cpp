@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #include "lib_app/RasterInputLoader.h"
@@ -8,14 +8,14 @@
 
 namespace
 {
-void CopyPlanarComponent(uint8_t* pSrc, uint8_t* pDst, int iSrcPitch, int iDstPitch, int iHeight, int iLineDataSize)
+void CopyPlanarComponent(uint8_t const* pSrc, uint8_t* pDst, int32_t iSrcPitch, int32_t iDstPitch, int32_t iHeight, int32_t iLineDataSize)
 {
   for(auto iY = 0; iY < iHeight; ++iY, pDst += iDstPitch, pSrc += iSrcPitch)
     memcpy(pDst, pSrc, iLineDataSize);
 }
 
 template<typename T>
-void InterlacedChroma(T* pU, T* pV, int iSrcPitch, AL_TDimension const& tDimension, T* pOutC, int iPitch)
+void InterlacedChroma(T const* pU, T const* pV, int32_t iSrcPitch, AL_TDimension const& tDimension, T* pOutC, int32_t iPitch)
 {
   for(auto iY = 0; iY < tDimension.iHeight; ++iY)
   {
@@ -32,7 +32,7 @@ void InterlacedChroma(T* pU, T* pV, int iSrcPitch, AL_TDimension const& tDimensi
 }
 }
 
-void StorePictureInRaster(uint8_t* pSrcY, uint8_t* pSrcU, uint8_t* pSrcV, int iSrcPitchY, int iSrcPitchU, int iSrcPitchV, TFrameInfo const& tFrameInfo, AL_TBuffer* pDst)
+void StorePictureInRaster(uint8_t const* pSrcY, uint8_t const* pSrcU, uint8_t const* pSrcV, int32_t iSrcPitchY, int32_t iSrcPitchU, int32_t iSrcPitchV, TFrameInfo const& tFrameInfo, AL_TBuffer* pDst)
 {
   auto const pixelSize = tFrameInfo.iBitDepth > 8 ? sizeof(uint16_t) : sizeof(uint8_t);
   auto const size = tFrameInfo.tDimension.iWidth * pixelSize;
@@ -52,7 +52,7 @@ void StorePictureInRaster(uint8_t* pSrcY, uint8_t* pSrcU, uint8_t* pSrcV, int iS
     pC1 = AL_PixMapBuffer_GetPlaneAddress(pDst, AL_PLANE_U);
     pC2 = AL_PixMapBuffer_GetPlaneAddress(pDst, AL_PLANE_V);
   }
-  int iPitch = AL_PixMapBuffer_GetPlanePitch(pDst, AL_PLANE_Y);
+  int32_t iPitch = AL_PixMapBuffer_GetPlanePitch(pDst, AL_PLANE_Y);
   CopyPlanarComponent(pSrcY, pY, iSrcPitchY, iPitch, tFrameInfo.tDimension.iHeight, size);
 
   if(tFrameInfo.eCMode == AL_CHROMA_MONO)
@@ -60,7 +60,9 @@ void StorePictureInRaster(uint8_t* pSrcY, uint8_t* pSrcU, uint8_t* pSrcV, int iS
 
   if(tFrameInfo.eCMode == AL_CHROMA_4_4_4)
   {
+    iPitch = AL_PixMapBuffer_GetPlanePitch(pDst, AL_PLANE_U);
     CopyPlanarComponent(pSrcU, pC1, iSrcPitchU, iPitch, tFrameInfo.tDimension.iHeight, size);
+    iPitch = AL_PixMapBuffer_GetPlanePitch(pDst, AL_PLANE_V);
     CopyPlanarComponent(pSrcV, pC2, iSrcPitchV, iPitch, tFrameInfo.tDimension.iHeight, size);
     return;
   }
@@ -78,10 +80,12 @@ void StorePictureInRaster(uint8_t* pSrcY, uint8_t* pSrcU, uint8_t* pSrcV, int iS
     assert(0);
   }
 
+  iPitch = AL_PixMapBuffer_GetPlanePitch(pDst, AL_PLANE_UV);
+
   if(tFrameInfo.iBitDepth > 8)
   {
-    auto pInU = reinterpret_cast<uint16_t*>(pSrcU);
-    auto pInV = reinterpret_cast<uint16_t*>(pSrcV);
+    auto const pInU = reinterpret_cast<uint16_t const*>(pSrcU);
+    auto const pInV = reinterpret_cast<uint16_t const*>(pSrcV);
     auto pOutC = reinterpret_cast<uint16_t*>(pC1);
     InterlacedChroma(pInU, pInV, iSrcPitchU, Cdim, pOutC, iPitch);
   }
@@ -92,7 +96,7 @@ void StorePictureInRaster(uint8_t* pSrcY, uint8_t* pSrcU, uint8_t* pSrcV, int iS
 namespace
 {
 template<typename T>
-void I422_To_YUY2_Line(T* pSrcY, T* pSrcU, T* pSrcV, T* pOut, int iWidth)
+void I422_To_YUY2_Line(T const* pSrcY, T const* pSrcU, T const* pSrcV, T* pOut, int32_t iWidth)
 {
   for(auto iX = 0; iX < iWidth; iX += 2, pSrcY += 2, ++pSrcU, ++pSrcV, pOut += 4)
   {
@@ -104,7 +108,7 @@ void I422_To_YUY2_Line(T* pSrcY, T* pSrcU, T* pSrcV, T* pOut, int iWidth)
 }
 
 template<typename T>
-void Y400_To_YUY2(T* pSrcY, AL_TDimension const& tDimension, T* pOut)
+void Y400_To_YUY2(T const* pSrcY, AL_TDimension const& tDimension, T* pOut)
 {
   for(auto iY = 0; iY < tDimension.iHeight; ++iY)
     for(auto iX = 0; iX < tDimension.iWidth; ++iX, ++pSrcY, pOut += 2)
@@ -115,7 +119,7 @@ void Y400_To_YUY2(T* pSrcY, AL_TDimension const& tDimension, T* pOut)
 }
 
 template<typename T>
-void Y420_To_YUY2(T* pSrcY, T* pSrcU, T* pSrcV, AL_TDimension const& tDimension, T* pOut)
+void Y420_To_YUY2(T const* pSrcY, T const* pSrcU, T const* pSrcV, AL_TDimension const& tDimension, T* pOut)
 {
   for(auto iY = 0; iY < tDimension.iHeight; iY += 2)
   {
@@ -132,7 +136,7 @@ void Y420_To_YUY2(T* pSrcY, T* pSrcU, T* pSrcV, AL_TDimension const& tDimension,
 }
 
 template<typename T>
-void Y422_To_YUY2(T* pSrcY, T* pSrcU, T* pSrcV, AL_TDimension const& tDimension, T* pOut)
+void Y422_To_YUY2(T const* pSrcY, T const* pSrcU, T const* pSrcV, AL_TDimension const& tDimension, T* pOut)
 {
   for(auto iY = 0; iY < tDimension.iHeight; ++iY)
   {
@@ -145,7 +149,7 @@ void Y422_To_YUY2(T* pSrcY, T* pSrcU, T* pSrcV, AL_TDimension const& tDimension,
 }
 
 template<typename T>
-void ToYUY2Raster(T* pSrcY, T* pSrcU, T* pSrcV, AL_TDimension const& tDimension, AL_EChromaMode eCMode, T* pOut)
+void ToYUY2Raster(T const* pSrcY, T const* pSrcU, T const* pSrcV, AL_TDimension const& tDimension, AL_EChromaMode eCMode, T* pOut)
 {
   switch(eCMode)
   {
@@ -164,13 +168,13 @@ void ToYUY2Raster(T* pSrcY, T* pSrcU, T* pSrcV, AL_TDimension const& tDimension,
 }
 }
 
-void StorePictureInYUY2Raster(uint8_t* pSrcY, uint8_t* pSrcU, uint8_t* pSrcV, AL_TDimension const& tDimension, AL_EChromaMode eCMode, uint8_t iBitDepth, uint8_t* pOut)
+void StorePictureInYUY2Raster(uint8_t const* pSrcY, uint8_t const* pSrcU, uint8_t const* pSrcV, AL_TDimension const& tDimension, AL_EChromaMode eCMode, uint8_t iBitDepth, uint8_t* pOut)
 {
   if(iBitDepth > 8)
   {
-    auto pInY = reinterpret_cast<uint16_t*>(pSrcY);
-    auto pInU = reinterpret_cast<uint16_t*>(pSrcU);
-    auto pInV = reinterpret_cast<uint16_t*>(pSrcV);
+    auto const pInY = reinterpret_cast<uint16_t const*>(pSrcY);
+    auto const pInU = reinterpret_cast<uint16_t const*>(pSrcU);
+    auto const pInV = reinterpret_cast<uint16_t const*>(pSrcV);
     auto pBufOut = reinterpret_cast<uint16_t*>(pOut);
     ToYUY2Raster(pInY, pInU, pInV, tDimension, eCMode, pBufOut);
   }

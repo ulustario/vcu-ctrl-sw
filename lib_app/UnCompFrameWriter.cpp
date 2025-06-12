@@ -1,9 +1,9 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #include <iostream>
 #include <algorithm>
-#include <assert.h>
+#include <cassert>
 
 #include "lib_app/UnCompFrameWriter.h"
 
@@ -115,6 +115,8 @@ void UnCompFrameWriter::WriteFrame(AL_TBuffer* pBuf, AL_TCropInfo* pCrop, AL_EPi
       WritePix(pC1, iPitchInChroma, m_uHeightInTileCFile, m_uPitchCFile);
     }
   }
+
+  m_recFile->flush();
 }
 
 /****************************************************************************/
@@ -126,8 +128,9 @@ void UnCompFrameWriter::DimInTileCalculusRaster(void)
   m_uHeightInTileYFile = m_tPicDim.iHeight;
   m_uHeightInTileCFile = AL_RoundUp(m_uHeightInTileYFile, m_iChromaVertScale) / m_iChromaVertScale;
 
+  m_uPitchCFile = ((m_tPicDim.iWidth + m_iChromaHorzScale - 1) / m_iChromaHorzScale);
+
   if(m_tPicFormat.ePlaneMode == AL_PLANE_MODE_SEMIPLANAR)
-    m_uPitchCFile = m_uPitchYFile;
-  else
-    m_uPitchCFile = ((m_tPicDim.iWidth + m_iChromaHorzScale - 1) / m_iChromaHorzScale) * m_iNbBytesPerPix;
+    m_uPitchCFile *= 2;
+  m_uPitchCFile *= m_iNbBytesPerPix;
 }

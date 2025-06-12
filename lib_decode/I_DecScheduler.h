@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 /******************************************************************************
@@ -17,11 +17,12 @@
 #include "lib_common_dec/DecSliceParam.h"
 #include "lib_common_dec/DecPicParam.h"
 #include "lib_decode/I_DecSchedulerInfo.h"
+#include "lib_decode/I_DecSchedulerInternalInfo.h"
 
 /****************************************************************************/
 typedef struct
 {
-  void (* func)(void* pUserParam, int iFrameID, int iSliceID);
+  void (* func)(void* pUserParam, int32_t iFrameID, int32_t iSliceID);
   void* userParam;
 }AL_TDecScheduler_CB_EndParsing;
 
@@ -66,6 +67,7 @@ typedef struct AL_IDecSchedulerVtable
   void (* DecodeOneSlice)(AL_IDecScheduler* pScheduler, AL_HANDLE hChannel, AL_TDecPicParam* pPictParam, AL_TDecBufferAddrs* pPictAddrs, AL_TMemDesc* pSliceParams);
   void (* Get)(AL_IDecScheduler const* pScheduler, AL_EIDecSchedulerInfo info, void* pParam);
   void (* Set)(AL_IDecScheduler* pScheduler, AL_EIDecSchedulerInfo info, void const* pParam);
+  void (* InternalSet)(AL_IDecScheduler* pScheduler, AL_EIDecSchedulerInternalInfo info, void const* pParam);
 }AL_IDecSchedulerVtable;
 
 /*****************************************************************************
@@ -166,6 +168,18 @@ static inline
 void AL_IDecScheduler_DecodeOneSlice(AL_IDecScheduler* pThis, AL_HANDLE hChannel, AL_TDecPicParam* pPictParam, AL_TDecBufferAddrs* pPictAddrs, AL_TMemDesc* pSliceParams)
 {
   pThis->vtable->DecodeOneSlice(pThis, hChannel, pPictParam, pPictAddrs, pSliceParams);
+}
+
+/*****************************************************************************
+   \brief Scheduler internal setter
+   \param[in] pThis Decoder scheduler interface
+   \param[in] eInfo Info to set
+   \param[in] pParam parameter that will be set to the scheduler
+*****************************************************************************/
+static inline
+void AL_IDecScheduler_InternalSet(AL_IDecScheduler* pThis, AL_EIDecSchedulerInternalInfo eInfo, void const* pParam)
+{
+  pThis->vtable->InternalSet(pThis, eInfo, pParam);
 }
 
 /*!@}*/

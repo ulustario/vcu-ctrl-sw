@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #include "Hevc_SliceHeaderParsing.h"
@@ -22,7 +22,7 @@ void AL_HEVC_SetDefaultSliceHeader(AL_THevcSliceHdr* pSlice)
   uint8_t nuh_temporal_id_plus1 = pSlice->nuh_temporal_id_plus1;
   uint8_t RapFlag = pSlice->RapPicFlag;
   uint8_t IdrFlag = pSlice->IdrPicFlag;
-  int SliceSegAddr = pSlice->slice_segment_address;
+  int32_t SliceSegAddr = pSlice->slice_segment_address;
   AL_THevcPps const* pPPS = pSlice->pPPS;
   AL_THevcSps* pSPS = pSlice->pSPS;
 
@@ -87,8 +87,8 @@ static bool AL_HEVC_sReadWPCoeff(AL_TRbspParser* pRP, AL_THevcSliceHdr* pSlice, 
   for(uint8_t i = 0; i <= uNumRefIdx; i++)
   {
     // fast access
-    int iOffsetY = pSlice->pSPS->WpOffsetHalfRangeY;
-    int iOffsetC = pSlice->pSPS->WpOffsetHalfRangeC;
+    int32_t iOffsetY = pSlice->pSPS->WpOffsetHalfRangeY;
+    int32_t iOffsetC = pSlice->pSPS->WpOffsetHalfRangeC;
 
     // initial value
     pWpCoeff->luma_delta_weight[i] = 0;
@@ -106,7 +106,7 @@ static bool AL_HEVC_sReadWPCoeff(AL_TRbspParser* pRP, AL_THevcSliceHdr* pSlice, 
 
     if(pWpCoeff->chroma_weight_flag[i])
     {
-      int iChromaWeight;
+      int32_t iChromaWeight;
       uint8_t uOffset = (1 << pSlice->pred_weight_table.chroma_log2_weight_denom);
 
       pWpCoeff->chroma_delta_weight[i][0] = Clip3(se(pRP), AL_MIN_WP_CHROMA_DELTA_WEIGHT, AL_MAX_WP_CHROMA_DELTA_WEIGHT);
@@ -323,7 +323,7 @@ bool AL_HEVC_ParseSliceHeader(AL_THevcSliceHdr* pSlice, AL_THevcSliceHdr* pIndSl
       AL_HEVC_SetDefaultSliceHeader(pSlice);
     TransferRps(pSlice, pIndSlice);
 
-    int syntax_size = ceil_log2(uMaxLcu);
+    int32_t syntax_size = ceil_log2(uMaxLcu);
     pSlice->slice_segment_address = u(pRP, syntax_size);
 
     if((uint32_t)pSlice->slice_segment_address >= uMaxLcu)
@@ -363,7 +363,7 @@ bool AL_HEVC_ParseSliceHeader(AL_THevcSliceHdr* pSlice, AL_THevcSliceHdr* pIndSl
 
     if(!pSlice->IdrPicFlag)
     {
-      int syntax_size = pSps->log2_max_slice_pic_order_cnt_lsb_minus4 + 4;
+      int32_t syntax_size = pSps->log2_max_slice_pic_order_cnt_lsb_minus4 + 4;
       pSlice->slice_pic_order_cnt_lsb = u(pRP, syntax_size);
 
       pSlice->short_term_ref_pic_set_sps_flag = u(pRP, 1);
@@ -379,7 +379,7 @@ bool AL_HEVC_ParseSliceHeader(AL_THevcSliceHdr* pSlice, AL_THevcSliceHdr* pIndSl
       }
       else if(pSps->num_short_term_ref_pic_sets > 1)
       {
-        int syntax_size = ceil_log2(pSps->num_short_term_ref_pic_sets);
+        int32_t syntax_size = ceil_log2(pSps->num_short_term_ref_pic_sets);
         pSlice->short_term_ref_pic_set_idx = u(pRP, syntax_size);
         pSlice->pSPS->short_term_ref_pic_set[64] = pSlice->pSPS->short_term_ref_pic_set[pSlice->short_term_ref_pic_set_idx];
       }
@@ -396,18 +396,18 @@ bool AL_HEVC_ParseSliceHeader(AL_THevcSliceHdr* pSlice, AL_THevcSliceHdr* pIndSl
 
         pSlice->num_long_term_pics = ue(pRP);
 
-        int CurrRpsIdx = pSlice->short_term_ref_pic_set_sps_flag ? pSlice->short_term_ref_pic_set_idx : pSps->num_short_term_ref_pic_sets;
+        int32_t CurrRpsIdx = pSlice->short_term_ref_pic_set_sps_flag ? pSlice->short_term_ref_pic_set_idx : pSps->num_short_term_ref_pic_sets;
 
         if(pSlice->num_long_term_pics > pSps->sps_max_dec_pic_buffering_minus1[pSlice->nuh_temporal_id_plus1 - 1] - pSlice->num_long_term_sps - pSps->NumDeltaPocs[CurrRpsIdx])
           return false;
 
-        for(int i = 0; i < pSlice->num_long_term_sps + pSlice->num_long_term_pics; ++i)
+        for(int32_t i = 0; i < pSlice->num_long_term_sps + pSlice->num_long_term_pics; ++i)
         {
           if(i < pSlice->num_long_term_sps)
           {
             if(pSps->num_long_term_ref_pics_sps > 1)
             {
-              int syntax_size = ceil_log2(pSps->num_long_term_ref_pics_sps);
+              int32_t syntax_size = ceil_log2(pSps->num_long_term_ref_pics_sps);
               pSlice->lt_idx_sps[i] = u(pRP, syntax_size);
             }
 
@@ -417,7 +417,7 @@ bool AL_HEVC_ParseSliceHeader(AL_THevcSliceHdr* pSlice, AL_THevcSliceHdr* pIndSl
           }
           else
           {
-            int syntax_size = pSps->log2_max_slice_pic_order_cnt_lsb_minus4 + 4;
+            int32_t syntax_size = pSps->log2_max_slice_pic_order_cnt_lsb_minus4 + 4;
             pSlice->poc_lsb_lt[i] = u(pRP, syntax_size);
             pSlice->used_by_curr_pic_lt_flag[i] = u(pRP, 1);
 
@@ -511,7 +511,7 @@ bool AL_HEVC_ParseSliceHeader(AL_THevcSliceHdr* pSlice, AL_THevcSliceHdr* pIndSl
     if(!more_rbsp_data(pRP))
       return false;
 
-    int iQpBdOffset = 6 * pSps->bit_depth_luma_minus8;
+    int32_t iQpBdOffset = 6 * pSps->bit_depth_luma_minus8;
     pSlice->slice_qp_delta = Clip3(se(pRP), -26 - pPps->init_qp_minus26 - iQpBdOffset, 25 - pPps->init_qp_minus26);
 
     if(pPps->pps_slice_chroma_qp_offsets_present_flag)
@@ -534,8 +534,8 @@ bool AL_HEVC_ParseSliceHeader(AL_THevcSliceHdr* pSlice, AL_THevcSliceHdr* pIndSl
 
         if(!pSlice->slice_deblocking_filter_disabled_flag)
         {
-          pSlice->slice_beta_offset_div2 = Clip3(se(pRP), AL_MIN_DBF_PARAM, AL_MAX_DBF_PARAM);
-          pSlice->slice_tc_offset_div2 = Clip3(se(pRP), AL_MIN_DBF_PARAM, AL_MAX_DBF_PARAM);
+          pSlice->slice_beta_offset_div2 = Clip3(se(pRP), AL_HEVC_MIN_DBF_PARAM, AL_HEVC_MAX_DBF_PARAM);
+          pSlice->slice_tc_offset_div2 = Clip3(se(pRP), AL_HEVC_MIN_DBF_PARAM, AL_HEVC_MAX_DBF_PARAM);
         }
       }
     }
@@ -563,9 +563,9 @@ bool AL_HEVC_ParseSliceHeader(AL_THevcSliceHdr* pSlice, AL_THevcSliceHdr* pIndSl
       if(pSlice->offset_len_minus1 > 31)
         return false;
 
-      int syntax_size = pSlice->offset_len_minus1 + 1;
+      int32_t syntax_size = pSlice->offset_len_minus1 + 1;
 
-      for(int i = 1; i <= pSlice->num_entry_point_offsets; ++i)
+      for(int32_t i = 1; i <= pSlice->num_entry_point_offsets; ++i)
         pSlice->entry_point_offset_minus1[i] = u(pRP, syntax_size);
     }
   }

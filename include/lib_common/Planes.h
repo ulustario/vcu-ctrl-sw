@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 /******************************************************************************
@@ -29,7 +29,6 @@ typedef enum AL_EPlaneId
   AL_PLANE_MAP_U,
   AL_PLANE_MAP_V,
   AL_PLANE_MAP_UV,
-
   AL_PLANE_MAX_ENUM, /* sentinel */
 }AL_EPlaneId;
 
@@ -41,8 +40,8 @@ typedef enum AL_EPlaneId
 typedef struct AL_TPlaneDescription
 {
   AL_EPlaneId ePlaneId; /*!< Type of plane */
-  int iOffset;          /*!< Offset of the plane from beginning of the buffer (in bytes) */
-  int iPitch;           /*!< Pitch of the plane (in bytes) */
+  int32_t iOffset;          /*!< Offset of the plane from beginning of the buffer (in bytes) */
+  int32_t iPitch;           /*!< Pitch of the plane (in bytes) */
 }AL_TPlaneDescription;
 
 /*****************************************************************************
@@ -51,6 +50,13 @@ typedef struct AL_TPlaneDescription
    \return Returns true if the plane contains pixel data, false otherwise
 *****************************************************************************/
 bool AL_Plane_IsPixelPlane(AL_EPlaneId ePlaneId);
+
+/*****************************************************************************
+   \brief Check if a plane contains a luma plane
+   \param[in] ePlaneId The plane type
+   \return Returns true if the plane contains a luma plane, false otherwise
+*****************************************************************************/
+bool AL_Plane_IsLumaPlane(AL_EPlaneId ePlaneId);
 
 /*****************************************************************************
    \brief Check if a plane contains map data
@@ -66,7 +72,7 @@ bool AL_Plane_IsMapPlane(AL_EPlaneId ePlaneId);
               the frame buffer
    \return Returns the number of pixel planes contained in the frame buffer
 *****************************************************************************/
-int AL_Plane_GetBufferPixelPlanes(AL_TPicFormat tPicFormat, AL_EPlaneId usedPlanes[AL_MAX_BUFFER_PLANES]);
+int32_t AL_Plane_GetBufferPixelPlanes(AL_TPicFormat tPicFormat, AL_EPlaneId usedPlanes[AL_MAX_BUFFER_PLANES]);
 
 /*****************************************************************************
    \brief Get the list of map planes contained in a frame buffer
@@ -75,7 +81,7 @@ int AL_Plane_GetBufferPixelPlanes(AL_TPicFormat tPicFormat, AL_EPlaneId usedPlan
    the frame buffer
    \return Returns the number of map planes contained in the frame buffer
 *****************************************************************************/
-int AL_Plane_GetBufferMapPlanes(AL_TPicFormat tPicFormat, AL_EPlaneId usedPlanes[AL_MAX_BUFFER_PLANES]);
+int32_t AL_Plane_GetBufferMapPlanes(AL_TPicFormat tPicFormat, AL_EPlaneId usedPlanes[AL_MAX_BUFFER_PLANES]);
 
 /*****************************************************************************
    \brief Get the list of planes contained in a frame buffer
@@ -84,7 +90,7 @@ int AL_Plane_GetBufferMapPlanes(AL_TPicFormat tPicFormat, AL_EPlaneId usedPlanes
               buffer
    \return Returns the number of planes contained in the frame buffer
 *****************************************************************************/
-int AL_Plane_GetBufferPlanes(AL_TPicFormat tPicFormat, AL_EPlaneId usedPlanes[AL_MAX_BUFFER_PLANES]);
+int32_t AL_Plane_GetBufferPlanes(AL_TPicFormat tPicFormat, AL_EPlaneId usedPlanes[AL_MAX_BUFFER_PLANES]);
 
 /*****************************************************************************
    \brief Check that a plane is contained in a frame buffer

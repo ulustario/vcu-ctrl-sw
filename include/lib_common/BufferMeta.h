@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 /******************************************************************************
@@ -26,6 +26,7 @@ typedef enum AL_EMetaType
   AL_META_TYPE_RATECTRL, /*!< rate-control statistics */
   AL_META_TYPE_DISPLAY_INFO,
   AL_META_TYPE_PICTURE_DECODE, /* decode picture meta info*/
+  AL_META_QP_TABLE, /* QP table metadata that allows one QP table per type of frame I, P, B*/
   AL_META_TYPE_MAX, /* sentinel */
   AL_META_TYPE_EXTENDED = 0x7F000000 /*!< user can define their own metadatas after this value */
 }AL_EMetaType;

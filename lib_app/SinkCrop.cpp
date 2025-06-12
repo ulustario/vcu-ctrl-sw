@@ -1,19 +1,19 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #include "lib_app/SinkCrop.h"
-#include <assert.h>
 
 extern "C"
 {
 #include "lib_common/PixMapBuffer.h"
 #include "lib_common/DisplayInfoMeta.h"
+#include "lib_rtos/lib_rtos.h"
 }
 
 SinkCrop::SinkCrop(std::unique_ptr<IFrameSink>& pSink, AL_TCropInfo* pCropInfo) :
   m_pSink(std::move(pSink))
 {
-  assert(m_pSink);
+  Rtos_Assert(m_pSink != nullptr);
 
   if(pCropInfo)
   {
@@ -22,13 +22,13 @@ SinkCrop::SinkCrop(std::unique_ptr<IFrameSink>& pSink, AL_TCropInfo* pCropInfo) 
   }
 }
 
-static int GetPixSize(AL_TBuffer* pBuf)
+static int32_t GetPixSize(AL_TBuffer* pBuf)
 {
   AL_TPicFormat tPicFormat;
   AL_GetPicFormat(AL_PixMapBuffer_GetFourCC(pBuf), &tPicFormat);
 
   if(tPicFormat.ePlaneMode == AL_PLANE_MODE_INTERLEAVED)
-    return (tPicFormat.uBitDepth == 8 || (tPicFormat.uBitDepth == 10 && tPicFormat.eSamplePackMode == AL_SAMPLE_PACK_MODE_PACKED)) ? sizeof(uint32_t) : sizeof(uint64_t);
+    return (tPicFormat.uBitDepth == 8 || (tPicFormat.uBitDepth == 10 && tPicFormat.eSamplePackMode == AL_SAMPLE_PACK_MODE_PACKED)) ? sizeof(uint32_t) : sizeof(AL_64U);
   else
     return tPicFormat.uBitDepth > 8 ? sizeof(uint16_t) : sizeof(uint8_t);
 }
@@ -38,7 +38,7 @@ void SinkCrop::ProcessFrame(AL_TBuffer* pBuf)
   AL_TDisplayInfoMetaData* pMeta = reinterpret_cast<AL_TDisplayInfoMetaData*>(AL_Buffer_GetMetaData(pBuf, AL_META_TYPE_DISPLAY_INFO));
   AL_TCropInfo& tCrop = (pMeta && !m_bFixedCrop) ? pMeta->tCrop : m_tCrop;
 
-  int iPixSize = GetPixSize(pBuf);
+  int32_t iPixSize = GetPixSize(pBuf);
 
   if(tCrop.bCropping)
     ApplyCrop(pBuf, iPixSize, (int)tCrop.uCropOffsetLeft, (int)tCrop.uCropOffsetRight, (int)tCrop.uCropOffsetTop, (int)tCrop.uCropOffsetBottom);
@@ -49,7 +49,7 @@ void SinkCrop::ProcessFrame(AL_TBuffer* pBuf)
     ApplyCrop(pBuf, iPixSize, -(int)tCrop.uCropOffsetLeft, -(int)tCrop.uCropOffsetRight, -(int)tCrop.uCropOffsetTop, -(int)tCrop.uCropOffsetBottom);
 }
 
-void SinkCrop::ApplyCrop(AL_TBuffer* pYUV, int iPixSize, int iLeft, int iRight, int iTop, int iBottom)
+void SinkCrop::ApplyCrop(AL_TBuffer* pYUV, int32_t iPixSize, int32_t iLeft, int32_t iRight, int32_t iTop, int32_t iBottom)
 {
   AL_TPixMapMetaData* pMeta = (AL_TPixMapMetaData*)AL_Buffer_GetMetaData(pYUV, AL_META_TYPE_PIXMAP);
 

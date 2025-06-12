@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 /*****************************************************************************
@@ -116,33 +116,33 @@ AL_TBuffer* AL_Buffer_CreateEmpty(AL_TAllocator* pAllocator, PFN_RefCount_CallBa
    \param[in] pBuf Pointer to an AL_TBuffer
    \param[in] zSize Size of the chunk to allocate
    \param[in] name Name of the chunk (for debug purpose and allocation tracking)
-   \return Returns the chunk index if succeeded, BAD_CHUNK_INDEX otherwise
+   \return Returns the chunk index if succeeded, AL_BUFFER_BAD_CHUNK otherwise
 *****************************************************************************/
-int AL_Buffer_AllocateChunkNamed(AL_TBuffer* pBuf, size_t zSize, char const* name);
+int32_t AL_Buffer_AllocateChunkNamed(AL_TBuffer* pBuf, size_t zSize, char const* name);
 
 /*****************************************************************************
    \brief Allocate and bind a new memory chunk to the buffer
    \param[in] pBuf Pointer to an AL_TBuffer
    \param[in] zSize Size of the chunk to allocate
-   \return Returns the chunk index if succeeded, BAD_CHUNK_INDEX otherwise
+   \return Returns the chunk index if succeeded, AL_BUFFER_BAD_CHUNK otherwise
 *****************************************************************************/
-int AL_Buffer_AllocateChunk(AL_TBuffer* pBuf, size_t zSize);
+int32_t AL_Buffer_AllocateChunk(AL_TBuffer* pBuf, size_t zSize);
 
 /*****************************************************************************
    \brief Add an already allocated chunk to a buffer
    \param[in] pBuf Pointer to an AL_TBuffer
    \param[in] hChunk Handle to the chunk
    \param[in] zSize Size of the chunk
-   \return Returns the chunk index if succeeded, BAD_CHUNK_INDEX otherwise
+   \return Returns the chunk index if succeeded, AL_BUFFER_BAD_CHUNK otherwise
 *****************************************************************************/
-int AL_Buffer_AddChunk(AL_TBuffer* pBuf, AL_HANDLE hChunk, size_t zSize);
+int32_t AL_Buffer_AddChunk(AL_TBuffer* pBuf, AL_HANDLE hChunk, size_t zSize);
 
 /*****************************************************************************
    \brief Get the number of chunks belonging to the buffer
    \param[in] pBuf Pointer to an AL_TBuffer
    \return Returns the number of chunks of the buffer
 *****************************************************************************/
-static inline int8_t AL_Buffer_GetChunkCount(const AL_TBuffer* pBuf)
+static inline int8_t AL_Buffer_GetChunkCount(AL_TBuffer const* pBuf)
 {
   return pBuf->iChunkCnt;
 }
@@ -154,7 +154,7 @@ static inline int8_t AL_Buffer_GetChunkCount(const AL_TBuffer* pBuf)
    \return Returns true if the buffer contains a chunk with given index, false
    otherwise
 *****************************************************************************/
-static inline bool AL_Buffer_HasChunk(const AL_TBuffer* pBuf, int8_t iChunkIdx)
+static inline bool AL_Buffer_HasChunk(AL_TBuffer const* pBuf, int8_t iChunkIdx)
 {
   return iChunkIdx >= 0 && iChunkIdx < pBuf->iChunkCnt;
 }
@@ -202,7 +202,7 @@ void* AL_Buffer_GetUserData(AL_TBuffer* pBuf);
    \return Returns a pointer to the memory wrapped by the AL_TBuffer if
    successful, NULL otherwise
 *****************************************************************************/
-uint8_t* AL_Buffer_GetData(const AL_TBuffer* pBuf);
+uint8_t* AL_Buffer_GetData(AL_TBuffer const* pBuf);
 
 /*****************************************************************************
    \brief Gets a pointer to a chunk data.
@@ -211,7 +211,7 @@ uint8_t* AL_Buffer_GetData(const AL_TBuffer* pBuf);
    \return Returns a pointer to the chunk memory wrapped by the AL_TBuffer if
    successful, NULL otherwise
 *****************************************************************************/
-uint8_t* AL_Buffer_GetDataChunk(const AL_TBuffer* pBuf, int iChunkIdx);
+uint8_t* AL_Buffer_GetDataChunk(AL_TBuffer const* pBuf, int32_t iChunkIdx);
 
 /*****************************************************************************
    \brief Gets the buffer size. If the buffer contains multiple chunks,
@@ -219,7 +219,7 @@ uint8_t* AL_Buffer_GetDataChunk(const AL_TBuffer* pBuf, int iChunkIdx);
    \param[in] pBuf Pointer to an AL_TBuffer
    \return Returns the buffer size if successful, 0 otherwise
 *****************************************************************************/
-size_t AL_Buffer_GetSize(const AL_TBuffer* pBuf);
+size_t AL_Buffer_GetSize(AL_TBuffer const* pBuf);
 
 /*****************************************************************************
    \brief Gets the size of a chunk.
@@ -227,7 +227,7 @@ size_t AL_Buffer_GetSize(const AL_TBuffer* pBuf);
    \param[in] iChunkIdx Index of the chunk
    \return  Returns the chunk size if successful, 0 otherwise
 *****************************************************************************/
-size_t AL_Buffer_GetSizeChunk(const AL_TBuffer* pBuf, int iChunkIdx);
+size_t AL_Buffer_GetSizeChunk(AL_TBuffer const* pBuf, int32_t iChunkIdx);
 
 /*****************************************************************************
    \brief Binds a metadata to a buffer
@@ -295,19 +295,19 @@ AL_TMetaData* AL_Buffer_GetMetaData(AL_TBuffer const* pBuf, AL_EMetaType eType);
    \param[in] pBuf Pointer to an AL_TBuffer
    \param[in] iVal Value to set
 *****************************************************************************/
-void AL_Buffer_MemSet(const AL_TBuffer* pBuf, int iVal);
+void AL_Buffer_MemSet(AL_TBuffer* pBuf, int32_t iVal);
 
 /*****************************************************************************
    \brief Invalidate the memory backed by the buffer
    \param[in] pBuf Pointer to an AL_TBuffer
 *****************************************************************************/
-void AL_Buffer_InvalidateMemory(const AL_TBuffer* pBuf);
+void AL_Buffer_InvalidateMemory(AL_TBuffer const* pBuf);
 
 /*****************************************************************************
    \brief Flushed the memory backed by the buffer
    \param[in] pBuf Pointer to an AL_TBuffer
 *****************************************************************************/
-void AL_Buffer_FlushMemory(const AL_TBuffer* pBuf);
+void AL_Buffer_FlushMemory(AL_TBuffer const* pBuf);
 
 /*****************************************************************************
    \brief Set the memory buffer to zero if configured so

@@ -19,4 +19,5 @@ AL_VERSION=$Version doxygen "$DOXYGEN_CFG"
 
 ./SvgCleanAndLink.py Encoder.svg doc/html/Encoder.svg doc/html/globals_func.html
 ./SvgCleanAndLink.py Decoder.svg doc/html/Decoder.svg doc/html/globals_func.html
+./SvgCleanAndLink.py IcpDecoder.svg doc/html/IcpDecoder.svg doc/html/globals_func.html
 popd > /dev/null

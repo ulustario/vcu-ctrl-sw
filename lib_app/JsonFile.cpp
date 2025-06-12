@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #include "lib_app/JsonFile.h"
@@ -23,16 +23,16 @@ struct TJsonToken
 
   ETokenType eType;
   std::string stringContent;
-  int intContent;
+  int32_t intContent;
 };
 
-bool TJsonValue::HasValue(int i)
+bool TJsonValue::HasValue(int32_t i)
 {
   return eType == JSON_VALUE_ARRAY &&
          i < static_cast<int>(arrayValue.size());
 }
 
-bool TJsonValue::GetValue(int i, EValueType eValueType, TJsonValue*& pValue)
+bool TJsonValue::GetValue(int32_t i, EValueType eValueType, TJsonValue*& pValue)
 {
   if(!HasValue(i))
     return false;
@@ -337,7 +337,7 @@ bool CJsonWriter::Write(const TJsonValue& tValue)
     eState = JSON_STREAM_OPENED;
   }
 
-  int iTab = 0;
+  int32_t iTab = 0;
 
   if(eState == JSON_STREAM_OPENED)
   {
@@ -350,7 +350,7 @@ bool CJsonWriter::Write(const TJsonValue& tValue)
   return true;
 }
 
-void CJsonWriter::WriteValue(std::ofstream& ofs, const TJsonValue& tValue, int iTab)
+void CJsonWriter::WriteValue(std::ofstream& ofs, const TJsonValue& tValue, int32_t iTab)
 {
   switch(tValue.eType)
   {
@@ -372,7 +372,7 @@ void CJsonWriter::WriteValue(std::ofstream& ofs, const TJsonValue& tValue, int i
   }
 }
 
-void CJsonWriter::WriteArray(std::ofstream& ofs, const TJsonValue& tValue, int iTab)
+void CJsonWriter::WriteArray(std::ofstream& ofs, const TJsonValue& tValue, int32_t iTab)
 {
   OpenArray(ofs);
 
@@ -392,7 +392,7 @@ void CJsonWriter::WriteArray(std::ofstream& ofs, const TJsonValue& tValue, int i
   CloseArray(ofs, bOneLiner, iTab);
 }
 
-void CJsonWriter::WriteObject(std::ofstream& ofs, const TJsonValue& tValue, int iTab)
+void CJsonWriter::WriteObject(std::ofstream& ofs, const TJsonValue& tValue, int32_t iTab)
 {
   ofs << "{";
 
@@ -429,7 +429,7 @@ void CJsonWriter::OpenArray(std::ofstream& ofs)
   ofs << "[";
 }
 
-void CJsonWriter::CloseArray(std::ofstream& ofs, bool bOneLiner, int iTab)
+void CJsonWriter::CloseArray(std::ofstream& ofs, bool bOneLiner, int32_t iTab)
 {
   if(!bOneLiner)
     NextLineAlignment(ofs, iTab);
@@ -437,7 +437,7 @@ void CJsonWriter::CloseArray(std::ofstream& ofs, bool bOneLiner, int iTab)
   ofs << "]";
 }
 
-void CJsonWriter::ArrayAlignment(std::ofstream& ofs, bool bFirstVal, bool bOneLiner, int iTab)
+void CJsonWriter::ArrayAlignment(std::ofstream& ofs, bool bFirstVal, bool bOneLiner, int32_t iTab)
 {
   if(bOneLiner)
   {
@@ -462,11 +462,11 @@ bool CJsonWriter::IsOneLiner(const TJsonValue& tValue)
   }
 }
 
-void CJsonWriter::NextLineAlignment(std::ofstream& ofs, int iTab)
+void CJsonWriter::NextLineAlignment(std::ofstream& ofs, int32_t iTab)
 {
   ofs << std::endl;
 
-  for(int j = 0; j < iTab; j++)
+  for(int32_t j = 0; j < iTab; j++)
     ofs << "\t";
 }
 

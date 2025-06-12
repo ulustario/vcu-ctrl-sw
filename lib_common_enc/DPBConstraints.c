@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #include "DPBConstraints.h"
@@ -118,20 +118,20 @@ uint8_t AL_DPBConstraint_GetMaxRef_LowDelayGop(const AL_TGopParam* pGopParam, AL
 /****************************************************************************/
 static uint8_t AL_DPBConstraint_AdjustMaxRefInterlaced(AL_ECodec eCodec, uint8_t uProgressiveMaxRef)
 {
-  uint8_t uInterleavedMaxRef;
+  uint8_t uInterleavedMaxRef = uProgressiveMaxRef;
 
-  if(eCodec == AL_CODEC_AVC)
+  if(eCodec != AL_CODEC_AVC)
   {
-    // In AVC, top and bottom fields holds in a single reference. Yet, we still need to
-    // add a reference to keep the current buffer as reference when dealing with the
-    // second field.
-    uInterleavedMaxRef = uProgressiveMaxRef + 1;
+    // In AVC, top and bottom fields are handled as a single reference. For other codecs,
+    // each field is handled independently like any other frame, so they are independent
+    // in the DPB, meaning we must double the number of references.
+    uInterleavedMaxRef *= 2;
   }
-  else
-  {
-    // In HEVC, each field is handled as a separated reference.
-    uInterleavedMaxRef = 2 * uProgressiveMaxRef;
-  }
+
+  // When the DPB has hit its maximum number of references, and a new reference comes in
+  // to replace a previous reference, we need an additional slot to store the first field
+  // as a reference when dealing with the second field.
+  uInterleavedMaxRef += 1;
 
   return uInterleavedMaxRef;
 }

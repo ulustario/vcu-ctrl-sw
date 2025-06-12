@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #pragma once
@@ -11,18 +11,18 @@
 typedef struct
 {
   void** elements;
-  int head;
-  int tail;
-  int total_elements;
+  int32_t head;
+  int32_t tail;
+  int32_t total_elements;
 }StaticFifo;
 
-bool StaticFifo_Init(StaticFifo* self, void* elements[], int total_elements);
+bool StaticFifo_Init(StaticFifo* self, void* elements[], int32_t total_elements);
 
 bool StaticFifo_Enqueue(StaticFifo* self, void* element);
 void* StaticFifo_Dequeue(StaticFifo* self);
 bool StaticFifo_Empty(StaticFifo const* self);
 
 void* StaticFifo_Front(StaticFifo const* self);
-int StaticFifo_Size(StaticFifo const* self);
-void* StaticFifo_At(StaticFifo const* self, int iOffset);
+int32_t StaticFifo_Size(StaticFifo const* self);
+void* StaticFifo_At(StaticFifo const* self, int32_t iOffset);
 bool StaticFifo_IsIn(StaticFifo const* self, void* element);

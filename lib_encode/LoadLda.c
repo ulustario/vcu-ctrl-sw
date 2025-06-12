@@ -1,10 +1,10 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #include "lib_rtos/lib_rtos.h"
+#include "lib_rtos/utils.h"
 #include "lib_common_enc/EncBuffersInternal.h"
 #include "lib_common_enc/Lambdas.h"
-#include <stdio.h>
 
 #define LAMBDA_FILE_LINES_COUNT 52
 #define LAMBDA_FILE_LINE_BUFFER_SIZE 256
@@ -29,15 +29,15 @@ static const TLambdasTable CUSTOM_LDA_TABLE =
   0x13, 0x52, 0x11, 0x2C, 0x5A, 0x6C, 0xC0, 0xCB, 0x97, 0x78, 0xEE, 0x86, 0x1E,
 };
 
-static int FromHex(char a, char b)
+static int32_t FromHex(char a, char b)
 {
-  int A = ((a >= 'a') && (a <= 'f')) ? (a - 'a') + 10 :
-          ((a >= 'A') && (a <= 'F')) ? (a - 'A') + 10 :
-          ((a >= '0') && (a <= '9')) ? (a - '0') : 0;
+  int32_t A = ((a >= 'a') && (a <= 'f')) ? (a - 'a') + 10 :
+              ((a >= 'A') && (a <= 'F')) ? (a - 'A') + 10 :
+              ((a >= '0') && (a <= '9')) ? (a - '0') : 0;
 
-  int B = ((b >= 'a') && (b <= 'f')) ? (b - 'a') + 10 :
-          ((b >= 'A') && (b <= 'F')) ? (b - 'A') + 10 :
-          ((b >= '0') && (b <= '9')) ? (b - '0') : 0;
+  int32_t B = ((b >= 'a') && (b <= 'f')) ? (b - 'a') + 10 :
+              ((b >= 'A') && (b <= 'F')) ? (b - 'A') + 10 :
+              ((b >= '0') && (b <= '9')) ? (b - '0') : 0;
 
   return (A << 4) + B;
 }
@@ -52,14 +52,14 @@ bool LoadLambdaFromFile(char const* lambdaFileName, TBufferEP* pEP)
   AL_TLambdas* pLambdas = (AL_TLambdas*)(pEP->tMD.pVirtualAddr + EP1_BUF_LAMBDAS.Offset);
 
   char sLine[LAMBDA_FILE_LINE_BUFFER_SIZE];
-  int const iLinesCount = LAMBDA_FILE_LINES_COUNT;
+  int32_t const iLinesCount = LAMBDA_FILE_LINES_COUNT;
 
-  for(int i = 0; i < iLinesCount; i++)
+  for(int32_t i = 0; i < iLinesCount; i++)
   {
     /* failed to parse */
     if(!fgets(sLine, LAMBDA_FILE_LINE_BUFFER_SIZE, lambdaFile))
     {
-      fclose(lambdaFile);
+      FCLOSE(lambdaFile);
       return false;
     }
     pLambdas[i][0] = FromHex(sLine[6], sLine[7]);
@@ -70,7 +70,7 @@ bool LoadLambdaFromFile(char const* lambdaFileName, TBufferEP* pEP)
 
   pEP->uFlags |= EP1_BUF_LAMBDAS.Flag;
 
-  fclose(lambdaFile);
+  FCLOSE(lambdaFile);
 
   return true;
 }

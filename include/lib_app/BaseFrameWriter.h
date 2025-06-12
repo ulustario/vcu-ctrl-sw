@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #pragma once
@@ -45,9 +45,9 @@ protected:
   AL_TDimension m_tPicDim = {};
   AL_TPicFormat m_tPicFormat = {};
   TFourCC m_tFourCC = FOURCC(NULL);
-  int m_iNbBytesPerPix;
-  int m_iChromaVertScale;
-  int m_iChromaHorzScale;
+  int32_t m_iNbBytesPerPix;
+  int32_t m_iChromaVertScale;
+  int32_t m_iChromaHorzScale;
 
   static const std::string ErrorMessageWrite;
   static const std::string ErrorMessageBuffer;

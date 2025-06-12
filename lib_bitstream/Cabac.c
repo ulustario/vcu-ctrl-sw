@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 /****************************************************************************
@@ -55,7 +55,7 @@ static void PutBit(AL_TBitStreamLite* pBS, AL_TCabacCtx* pCtx, uint8_t b)
     return;
 
   unsigned int uValue = (1 - b) * (~0); // b ? 0x00000000 : 0xffffffff;
-  int iNumBits = pCtx->uOut;
+  int32_t iNumBits = pCtx->uOut;
 
   while(iNumBits > 32)
   {
@@ -119,7 +119,7 @@ void AL_Cabac_WriteBin(AL_TBitStreamLite* pBS, AL_TCabacCtx* pCtx, uint8_t* pSta
 }
 
 /******************************************************************************/
-void AL_Cabac_Terminate(AL_TBitStreamLite* pBS, AL_TCabacCtx* pCtx, int iBinVal)
+void AL_Cabac_Terminate(AL_TBitStreamLite* pBS, AL_TCabacCtx* pCtx, int32_t iBinVal)
 {
   pCtx->uRange -= 2;
 

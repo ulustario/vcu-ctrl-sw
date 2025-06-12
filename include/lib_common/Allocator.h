@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 /******************************************************************************
@@ -196,12 +196,13 @@ typedef void (* PFN_WrapDestructor)(void* pUserData, uint8_t* pData);
    \return handle to the allocated data.
 ******************************************************************************/
 AL_HANDLE AL_WrapperAllocator_WrapData(uint8_t* pData, PFN_WrapDestructor destructor, void* pUserData);
-/*****************************************************************************/
-
-/* pMemoryAllocator is used to allocate the context of the allocator / internal metadata,
- * pRealAllocator will be used to allocate the memory of the buffer
- * uAlign is the alignment of the buffer in bytes.
- */
-AL_TAllocator* AL_AlignedAllocator_Create(AL_TAllocator* pMemoryAllocator, AL_TAllocator* pRealAllocator, uint32_t uAlign);
+/******************************************************************************
+ * \brief Create an Allocator which always allocate buffer to uAlignment
+ * \param[in] pMemoryAllocator is used to allocate the context of the allocator / internal metadata
+ * \param[in] pRealAllocator will be used to allocate the memory of the buffer
+ * \param[in] uAlignment is the alignment of the buffer in bytes.
+ * return Allocator API
+******************************************************************************/
+AL_TAllocator* AL_AlignedAllocator_Create(AL_TAllocator* pMemoryAllocator, AL_TAllocator* pRealAllocator, uint32_t uAlignment);
 
 /*!@}*/

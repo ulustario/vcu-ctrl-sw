@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 /******************************************************************************
@@ -56,7 +56,7 @@ struct App_Fifo
   void** m_ElemBuffer;
   AL_MUTEX hMutex;
   AL_EVENT hEvent;
-  int m_iBufNumber;
+  int32_t m_iBufNumber;
   bool m_isDecommited;
   AL_SEMAPHORE hSpaceSem;
 };
@@ -156,6 +156,7 @@ struct BaseBufPool
   virtual ~BaseBufPool();
 
   bool Init(AL_TAllocator* pAllocator, uint32_t uNumBuf);
+  bool IsInit(void);
   void RegisterAvailableBufCallback(AL_TBufPoolAvailableBufCB* pCB);
   bool AddMetaData(AL_TMetaData* pMeta);
   AL_TBuffer* GetBuffer(AL_EBufMode mode = AL_EBufMode::AL_BUF_MODE_BLOCK);
@@ -166,6 +167,7 @@ struct BaseBufPool
   virtual AL_TBuffer* CreateBuf(AL_TAllocator* pAllocator, PFN_RefCount_CallBack pRefCntCallBack) = 0;
 
 private:
+  bool isInit = false;
   AL_TBufPool m_pool {};
   static AL_TBuffer* sCreateBuf(void* pUserParam, AL_TAllocator* pAllocator, PFN_RefCount_CallBack pRefCntCallBack);
 };

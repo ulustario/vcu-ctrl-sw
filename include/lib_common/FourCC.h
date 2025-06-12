@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 /******************************************************************************
@@ -19,6 +19,11 @@
    \brief FOURCC identifier type
 *****************************************************************************/
 typedef uint32_t TFourCC;
+
+typedef struct AL_StringFourCC
+{
+  char cFourcc[5];
+}AL_StringFourCC;
 
 #define FOURCC(A) ((TFourCC)(((uint32_t)((# A)[0])) \
                              | ((uint32_t)((# A)[1]) << 8) \
@@ -72,7 +77,7 @@ uint8_t AL_GetBitDepth(TFourCC tFourCC);
    \param[in] tFourCC FourCC format of the current picture
    \return number of bytes per color sample according to the tFourCC parameter
 *****************************************************************************/
-int AL_GetPixelSize(TFourCC tFourCC);
+int32_t AL_GetPixelSize(TFourCC tFourCC);
 
 /*****************************************************************************
    \brief Returns the chroma subsampling according to the tFourCC parameter
@@ -80,7 +85,7 @@ int AL_GetPixelSize(TFourCC tFourCC);
    \param[out] sx subsampling x
    \param[out] sy subsampling y
 *****************************************************************************/
-void AL_GetSubsampling(TFourCC tFourCC, int* sx, int* sy);
+void AL_GetSubsampling(TFourCC tFourCC, int32_t* sx, int32_t* sy);
 
 /*****************************************************************************
    \brief Returns true if YUV format specified by tFourCC is monochrome
@@ -139,6 +144,14 @@ bool AL_IsCompressed(TFourCC tFourCC);
 bool AL_Is10bPacked(TFourCC tFourCC);
 
 /*****************************************************************************
+   \brief Returns true if tFourCC specifies that the yuv buffer stores
+          significant bits in MSBs
+   \param[in] tFourCC FourCC format of the current picture
+   \return return true indicates that buffer uses MSBs
+*****************************************************************************/
+bool AL_IsRasterMSB(TFourCC tFourCC);
+
+/*****************************************************************************
    \brief Returns FourCC from AL_TPicFormat
    \param[in] tPicFormat the pict format
    \return return corresponding FourCC, 0 if picFormat does not exist
@@ -152,5 +165,20 @@ TFourCC AL_GetFourCC(AL_TPicFormat tPicFormat);
    \return return true if FourCC exists, false otherwise
 *****************************************************************************/
 bool AL_GetPicFormat(TFourCC tFourCC, AL_TPicFormat* tPicFormat);
+
+/*****************************************************************************
+   \brief Returns the FourCC code to string
+   \param[in] tFourCC the FourCC
+   \return return the string that corresponds to the given FourCC
+*****************************************************************************/
+AL_StringFourCC AL_FourCCToString(TFourCC tFourCC);
+
+/*****************************************************************************
+   \brief Checks if tInFourCC can directly be used as tOutFourCC
+   \param[in] tInFourCC the FourCC
+   \param[in] tOutFourCC the FourCC
+   \return return true if tInFourCC is compatible with tOutFourCC
+*****************************************************************************/
+bool AL_IsCompatible(TFourCC tInFourCC, TFourCC tOutFourCC);
 
 /*!@}*/

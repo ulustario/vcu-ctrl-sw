@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 /******************************************************************************
@@ -19,9 +19,9 @@ void AL_HEVC_PictMngr_UpdateRecInfo(AL_TPictMngrCtx* pCtx, AL_TCropInfo const* p
 }
 
 /*****************************************************************************/
-bool AL_HEVC_PictMngr_GetBuffers(AL_TPictMngrCtx* pCtx, AL_TDecSliceParam const* pSP, TBuffer* pListVirtAddr, TBuffer* pListAddr, TBufferPOC* pPOC, TBufferMV* pMV, AL_TRecBuffers* pRecs)
+bool AL_HEVC_PictMngr_GetBuffers(AL_TPictMngrCtx* pCtx, AL_TDecSliceParam const* pSliceParam, TBuffer* pListVirtAddr, TBuffer* pListAddr, TBufferPOC* pPOC, TBufferMV* pMV, AL_TRecBuffers* pRecs)
 {
-  return AL_PictMngr_GetBuffers(pCtx, pSP, pListVirtAddr, pListAddr, pPOC, pMV, pRecs);
+  return AL_PictMngr_GetBuffers(pCtx, pSliceParam, pListVirtAddr, pListAddr, pPOC, pMV, pRecs);
 }
 
 /*************************************************************************/
@@ -211,7 +211,7 @@ void AL_HEVC_PictMngr_InitRefPictSet(AL_TPictMngrCtx* pCtx, AL_THevcSliceHdr con
   }
 
   // Compute long term reference pictures
-  for(int i = 0; i < pSlice->NumPocLtCurr; ++i)
+  for(int32_t i = 0; i < pSlice->NumPocLtCurr; ++i)
   {
     uint8_t uPos;
 
@@ -222,7 +222,7 @@ void AL_HEVC_PictMngr_InitRefPictSet(AL_TPictMngrCtx* pCtx, AL_THevcSliceHdr con
     pCtx->HevcRef.RefPicSetLtCurr[i] = uPos;
   }
 
-  for(int i = 0; i < pSlice->NumPocLtFoll; ++i)
+  for(int32_t i = 0; i < pSlice->NumPocLtFoll; ++i)
   {
     uint8_t uPos;
 
@@ -234,20 +234,20 @@ void AL_HEVC_PictMngr_InitRefPictSet(AL_TPictMngrCtx* pCtx, AL_THevcSliceHdr con
   }
 
   // Compute short term reference pictures
-  for(int i = 0; i < pSlice->NumPocStCurrBefore; ++i)
+  for(int32_t i = 0; i < pSlice->NumPocStCurrBefore; ++i)
     pCtx->HevcRef.RefPicSetStCurrBefore[i] = AL_Dpb_SearchPOC(&pCtx->DPB, pCtx->HevcRef.PocStCurrBefore[i]);
 
-  for(int i = 0; i < pSlice->NumPocStCurrAfter; ++i)
+  for(int32_t i = 0; i < pSlice->NumPocStCurrAfter; ++i)
     pCtx->HevcRef.RefPicSetStCurrAfter[i] = AL_Dpb_SearchPOC(&pCtx->DPB, pCtx->HevcRef.PocStCurrAfter[i]);
 
-  for(int i = 0; i < pSlice->NumPocStFoll; ++i)
+  for(int32_t i = 0; i < pSlice->NumPocStFoll; ++i)
     pCtx->HevcRef.RefPicSetStFoll[i] = AL_Dpb_SearchPOC(&pCtx->DPB, pCtx->HevcRef.PocStFoll[i]);
 
-  int iNumRefAfterUpdate = pSlice->NumPocLtCurr
-                           + pSlice->NumPocLtFoll
-                           + pSlice->NumPocStCurrBefore
-                           + pSlice->NumPocStCurrAfter
-                           + pSlice->NumPocStFoll;
+  int32_t iNumRefAfterUpdate = pSlice->NumPocLtCurr
+                               + pSlice->NumPocLtFoll
+                               + pSlice->NumPocStCurrBefore
+                               + pSlice->NumPocStCurrAfter
+                               + pSlice->NumPocStFoll;
 
   // Error Concealment : do not change anything if there is no reference after RPS update
   if(pSlice->slice_type != AL_SLICE_I && iNumRefAfterUpdate == 0)
@@ -263,7 +263,7 @@ void AL_HEVC_PictMngr_InitRefPictSet(AL_TPictMngrCtx* pCtx, AL_THevcSliceHdr con
   }
 
   // mark long term reference pictures
-  for(int i = 0; i < pSlice->NumPocLtCurr; ++i)
+  for(int32_t i = 0; i < pSlice->NumPocLtCurr; ++i)
   {
     uNode = pCtx->HevcRef.RefPicSetLtCurr[i];
 
@@ -271,7 +271,7 @@ void AL_HEVC_PictMngr_InitRefPictSet(AL_TPictMngrCtx* pCtx, AL_THevcSliceHdr con
       AL_Dpb_SetMarkingFlag(pDpb, uNode, LONG_TERM_REF);
   }
 
-  for(int i = 0; i < pSlice->NumPocLtFoll; ++i)
+  for(int32_t i = 0; i < pSlice->NumPocLtFoll; ++i)
   {
     uNode = pCtx->HevcRef.RefPicSetLtFoll[i];
 
@@ -280,7 +280,7 @@ void AL_HEVC_PictMngr_InitRefPictSet(AL_TPictMngrCtx* pCtx, AL_THevcSliceHdr con
   }
 
   // mark short term reference pictures
-  for(int i = 0; i < pSlice->NumPocStCurrBefore; ++i)
+  for(int32_t i = 0; i < pSlice->NumPocStCurrBefore; ++i)
   {
     uNode = pCtx->HevcRef.RefPicSetStCurrBefore[i];
 
@@ -288,7 +288,7 @@ void AL_HEVC_PictMngr_InitRefPictSet(AL_TPictMngrCtx* pCtx, AL_THevcSliceHdr con
       AL_Dpb_SetMarkingFlag(pDpb, uNode, SHORT_TERM_REF);
   }
 
-  for(int i = 0; i < pSlice->NumPocStCurrAfter; ++i)
+  for(int32_t i = 0; i < pSlice->NumPocStCurrAfter; ++i)
   {
     uNode = pCtx->HevcRef.RefPicSetStCurrAfter[i];
 
@@ -296,7 +296,7 @@ void AL_HEVC_PictMngr_InitRefPictSet(AL_TPictMngrCtx* pCtx, AL_THevcSliceHdr con
       AL_Dpb_SetMarkingFlag(pDpb, uNode, SHORT_TERM_REF);
   }
 
-  for(int i = 0; i < pSlice->NumPocStFoll; ++i)
+  for(int32_t i = 0; i < pSlice->NumPocStFoll; ++i)
   {
     uNode = pCtx->HevcRef.RefPicSetStFoll[i];
 

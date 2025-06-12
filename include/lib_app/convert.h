@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #pragma once
@@ -67,6 +67,7 @@ void Y800_To_P010(AL_TBuffer const* pSrc, AL_TBuffer* pDst);
 void Y800_To_I0AL(AL_TBuffer const* pSrc, AL_TBuffer* pDst);
 void Y800_To_XV15(AL_TBuffer const* pSrc, AL_TBuffer* pDst);
 void Y800_To_Y010(AL_TBuffer const* pSrc, AL_TBuffer* pDst);
+void Y800_To_Y012(AL_TBuffer const* pSrc, AL_TBuffer* pDst);
 void Y012_To_Y010(AL_TBuffer const* pSrc, AL_TBuffer* pDst);
 void Y012_To_Y800(AL_TBuffer const* pSrc, AL_TBuffer* pDst);
 
@@ -129,6 +130,7 @@ void T608_To_Y800(AL_TBuffer const* pSrc, AL_TBuffer* pDst);
 void T608_To_Y010(AL_TBuffer const* pSrc, AL_TBuffer* pDst);
 void T608_To_P010(AL_TBuffer const* pSrc, AL_TBuffer* pDst);
 void T608_To_I0AL(AL_TBuffer const* pSrc, AL_TBuffer* pDst);
+void T608_To_I0CL(AL_TBuffer const* pSrc, AL_TBuffer* pDst);
 
 void T60A_To_YV12(AL_TBuffer const* pSrc, AL_TBuffer* pDst);
 void T60A_To_I420(AL_TBuffer const* pSrc, AL_TBuffer* pDst);
@@ -144,8 +146,9 @@ void T60A_To_XV10(AL_TBuffer const* pSrc, AL_TBuffer* pDst);
 void T60C_To_Y012(AL_TBuffer const* pSrc, AL_TBuffer* pDst);
 void T60C_To_Y010(AL_TBuffer const* pSrc, AL_TBuffer* pDst);
 void T60C_To_Y800(AL_TBuffer const* pSrc, AL_TBuffer* pDst);
-void T60C_To_I0CL(AL_TBuffer const* pSrc, AL_TBuffer* pDst);
 void T60C_To_I0AL(AL_TBuffer const* pSrc, AL_TBuffer* pDst);
+void T60C_To_I0CL(AL_TBuffer const* pSrc, AL_TBuffer* pDst);
+void T60C_To_P012(AL_TBuffer const* pSrc, AL_TBuffer* pDst);
 void T60C_To_I420(AL_TBuffer const* pSrc, AL_TBuffer* pDst);
 
 void T628_To_Y800(AL_TBuffer const* pSrc, AL_TBuffer* pDst);
@@ -175,6 +178,8 @@ void T648_To_I4AL(AL_TBuffer const* pSrc, AL_TBuffer* pDst);
 
 void T64A_To_I444(AL_TBuffer const* pSrc, AL_TBuffer* pDst);
 void T64A_To_I4AL(AL_TBuffer const* pSrc, AL_TBuffer* pDst);
+
+void T6xx_To_T6mx(AL_TBuffer const* pSrc, AL_TBuffer* pDst);
 
 void T64C_To_I444(AL_TBuffer const* pSrc, AL_TBuffer* pDst);
 void T64C_To_I4AL(AL_TBuffer const* pSrc, AL_TBuffer* pDst);
@@ -286,7 +291,7 @@ bool CopyPixMapBuffer(AL_TBuffer const* pSrc, AL_TBuffer* pDst);
    \param[in] pDst Destination buffer with data converted from pSrc
    \return 1 in case of error, 0 on success.
 ******************************************************************************/
-int ConvertPixMapBuffer(AL_TBuffer const* pSrc, AL_TBuffer* pDst);
+int32_t ConvertPixMapBuffer(AL_TBuffer const* pSrc, AL_TBuffer* pDst);
 
 using tConvFourCCFunc = std::function<void(AL_TBuffer const*, AL_TBuffer*)>;
 

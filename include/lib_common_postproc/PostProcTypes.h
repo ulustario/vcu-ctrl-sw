@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #pragma once
@@ -24,19 +24,6 @@ typedef enum AL_EPostProcMirror
   AL_POSTPROC_MIRROR_VERTICAL = 0x02,
   AL_POSTPROC_MIRROR_HV = 0x03,
 }AL_EPostProcMirror;
-
-typedef enum AL_EPostProcInput
-{
-  AL_POSTPROC_INPUT_TILE,
-  AL_POSTPROC_INPUT_RASTER,
-  AL_POSTPROC_INPUT_RASTER_YUY2,
-}AL_EPostProcInput;
-
-typedef enum AL_EPostProcAddrType
-{
-  AL_POSTPROC_ADDR_PHYSICAL,
-  AL_POSTPROC_ADDR_VIRTUAL,
-}AL_EPostProcAddrType;
 
 typedef enum AL_EChromaPositionInLumaSamples
 {

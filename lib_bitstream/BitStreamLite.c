@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #include "BitStreamLite.h"
@@ -6,7 +6,7 @@
 
 /******************************************************************************/
 
-void AL_BitStreamLite_Init(AL_TBitStreamLite* pBS, uint8_t* pBuf, int iMaxSize)
+void AL_BitStreamLite_Init(AL_TBitStreamLite* pBS, uint8_t* pBuf, int32_t iMaxSize)
 {
   pBS->pData = pBuf;
   pBS->iBitCount = 0;
@@ -40,7 +40,7 @@ uint8_t* AL_BitStreamLite_GetCurData(AL_TBitStreamLite* pBS)
 }
 
 /******************************************************************************/
-int AL_BitStreamLite_GetBitsCount(AL_TBitStreamLite* pBS)
+int32_t AL_BitStreamLite_GetBitsCount(AL_TBitStreamLite* pBS)
 {
   return pBS->iBitCount;
 }
@@ -118,7 +118,7 @@ void AL_BitStreamLite_PutBits(AL_TBitStreamLite* pBS, uint8_t iNumBits, uint32_t
   PutInByte(pBS, iNumBits, uValue);
 }
 
-void AL_BitStreamLite_SkipBits(AL_TBitStreamLite* pBS, int numBits)
+void AL_BitStreamLite_SkipBits(AL_TBitStreamLite* pBS, int32_t numBits)
 {
   pBS->iBitCount += numBits;
 
@@ -127,13 +127,13 @@ void AL_BitStreamLite_SkipBits(AL_TBitStreamLite* pBS, int numBits)
 }
 
 /******************************************************************************/
-void AL_BitStreamLite_PutU(AL_TBitStreamLite* pBS, int iNumBits, uint32_t uValue)
+void AL_BitStreamLite_PutU(AL_TBitStreamLite* pBS, int32_t iNumBits, uint32_t uValue)
 {
   AL_BitStreamLite_PutBits(pBS, iNumBits, uValue);
 }
 
 /******************************************************************************/
-void AL_BitStreamLite_PutI(AL_TBitStreamLite* pBS, int iNumBits, int32_t iValue)
+void AL_BitStreamLite_PutI(AL_TBitStreamLite* pBS, int32_t iNumBits, int32_t iValue)
 {
   uint32_t uValue;
 

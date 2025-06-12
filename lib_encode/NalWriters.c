@@ -1,17 +1,17 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #include "NalWriters.h"
 #include "lib_common/SEI.h"
 #include "lib_bitstream/RbspEncod.h"
 
-static void audWrite(IRbspWriter* writer, AL_TBitStreamLite* bitstream, void const* param, int layerId)
+static void audWrite(IRbspWriter* writer, AL_TBitStreamLite* bitstream, void const* param, int32_t layerId)
 {
   (void)layerId;
   writer->WriteAUD(bitstream, param);
 }
 
-AL_TNalUnit AL_CreateNalUnit(void (* Write)(IRbspWriter*, AL_TBitStreamLite*, void const*, int), void const* param, int nut, int nalRefIdc, int layerId, int tempId)
+AL_TNalUnit AL_CreateNalUnit(void (* Write)(IRbspWriter*, AL_TBitStreamLite*, void const*, int32_t), void const* param, int32_t nut, int32_t nalRefIdc, int32_t layerId, int32_t tempId)
 {
   AL_TNalUnit nal = { 0 };
   nal.Write = Write;
@@ -23,61 +23,61 @@ AL_TNalUnit AL_CreateNalUnit(void (* Write)(IRbspWriter*, AL_TBitStreamLite*, vo
   return nal;
 }
 
-AL_TNalUnit AL_CreateAud(int nut, AL_TAud* aud, int tempId)
+AL_TNalUnit AL_CreateAud(int32_t nut, AL_TAud* aud, int32_t tempId)
 {
   AL_TNalUnit nal = AL_CreateNalUnit(&audWrite, aud, nut, 0, 0, tempId);
   return nal;
 }
 
-static void spsWrite(IRbspWriter* writer, AL_TBitStreamLite* bitstream, void const* param, int layerId)
+static void spsWrite(IRbspWriter* writer, AL_TBitStreamLite* bitstream, void const* param, int32_t layerId)
 {
   writer->WriteSPS(bitstream, param, layerId);
 }
 
-AL_TNalUnit AL_CreateSps(int nut, AL_TSps* sps, int layerId, int tempId)
+AL_TNalUnit AL_CreateSps(int32_t nut, AL_TSps* sps, int32_t layerId, int32_t tempId)
 {
   AL_TNalUnit nal = AL_CreateNalUnit(&spsWrite, sps, nut, 1, layerId, tempId);
   return nal;
 }
 
-static void ppsWrite(IRbspWriter* writer, AL_TBitStreamLite* bitstream, void const* param, int layerId)
+static void ppsWrite(IRbspWriter* writer, AL_TBitStreamLite* bitstream, void const* param, int32_t layerId)
 {
   (void)layerId;
   writer->WritePPS(bitstream, param);
 }
 
-AL_TNalUnit AL_CreatePps(int nut, AL_TPps* pps, int layerId, int tempId)
+AL_TNalUnit AL_CreatePps(int32_t nut, AL_TPps* pps, int32_t layerId, int32_t tempId)
 {
   AL_TNalUnit nal = AL_CreateNalUnit(&ppsWrite, pps, nut, 1, layerId, tempId);
   return nal;
 }
 
-static void vpsWrite(IRbspWriter* writer, AL_TBitStreamLite* bitstream, void const* param, int layerId)
+static void vpsWrite(IRbspWriter* writer, AL_TBitStreamLite* bitstream, void const* param, int32_t layerId)
 {
   (void)layerId;
   writer->WriteVPS(bitstream, param);
 }
 
-AL_TNalUnit AL_CreateVps(int nut, AL_TVps* vps, int tempId)
+AL_TNalUnit AL_CreateVps(int32_t nut, AL_TVps* vps, int32_t tempId)
 {
   AL_TNalUnit nal = AL_CreateNalUnit(&vpsWrite, vps, nut, 0, 0, tempId);
   return nal;
 }
 
-static void seiPrefixAPSWrite(IRbspWriter* writer, AL_TBitStreamLite* bitstream, void const* param, int layerId)
+static void seiPrefixAPSWrite(IRbspWriter* writer, AL_TBitStreamLite* bitstream, void const* param, int32_t layerId)
 {
   (void)layerId;
   AL_TSeiPrefixAPSCtx* pCtx = (AL_TSeiPrefixAPSCtx*)param;
   writer->WriteSEI_ActiveParameterSets(bitstream, pCtx->vps, pCtx->sps);
 }
 
-AL_TNalUnit AL_CreateSeiPrefixAPS(AL_TSeiPrefixAPSCtx* ctx, int nut, int tempId)
+AL_TNalUnit AL_CreateSeiPrefixAPS(AL_TSeiPrefixAPSCtx* ctx, int32_t nut, int32_t layerId, int32_t tempId)
 {
-  AL_TNalUnit nal = AL_CreateNalUnit(&seiPrefixAPSWrite, ctx, nut, 0, 0, tempId);
+  AL_TNalUnit nal = AL_CreateNalUnit(&seiPrefixAPSWrite, ctx, nut, 0, layerId, tempId);
   return nal;
 }
 
-static void seiPrefixWrite(IRbspWriter* writer, AL_TBitStreamLite* bitstream, void const* param, int layerId)
+static void seiPrefixWrite(IRbspWriter* writer, AL_TBitStreamLite* bitstream, void const* param, int32_t layerId)
 {
   (void)layerId;
   AL_TSeiPrefixCtx* pCtx = (AL_TSeiPrefixCtx*)param;
@@ -138,33 +138,33 @@ static void seiPrefixWrite(IRbspWriter* writer, AL_TBitStreamLite* bitstream, vo
   }
 }
 
-AL_TNalUnit AL_CreateSeiPrefix(AL_TSeiPrefixCtx* ctx, int nut, int tempId)
+AL_TNalUnit AL_CreateSeiPrefix(AL_TSeiPrefixCtx* ctx, int32_t nut, int32_t layerId, int32_t tempId)
 {
-  AL_TNalUnit nal = AL_CreateNalUnit(&seiPrefixWrite, ctx, nut, 0, 0, tempId);
+  AL_TNalUnit nal = AL_CreateNalUnit(&seiPrefixWrite, ctx, nut, 0, layerId, tempId);
   return nal;
 }
 
-static void seiPrefixUDUWrite(IRbspWriter* writer, AL_TBitStreamLite* bitstream, void const* param, int layerId)
+static void seiPrefixUDUWrite(IRbspWriter* writer, AL_TBitStreamLite* bitstream, void const* param, int32_t layerId)
 {
   (void)layerId;
   AL_TSeiPrefixUDUCtx* pCtx = (AL_TSeiPrefixUDUCtx*)param;
   writer->WriteSEI_UserDataUnregistered(bitstream, pCtx->uuid, pCtx->numSlices);
 }
 
-AL_TNalUnit AL_CreateSeiPrefixUDU(AL_TSeiPrefixUDUCtx* ctx, int nut, int tempId)
+AL_TNalUnit AL_CreateSeiPrefixUDU(AL_TSeiPrefixUDUCtx* ctx, int32_t nut, int32_t layerId, int32_t tempId)
 {
-  AL_TNalUnit nal = AL_CreateNalUnit(&seiPrefixUDUWrite, ctx, nut, 0, 0, tempId);
+  AL_TNalUnit nal = AL_CreateNalUnit(&seiPrefixUDUWrite, ctx, nut, 0, layerId, tempId);
   return nal;
 }
 
-static void seiExternalWrite(IRbspWriter* writer, AL_TBitStreamLite* bitstream, void const* param, int layerId)
+static void seiExternalWrite(IRbspWriter* writer, AL_TBitStreamLite* bitstream, void const* param, int32_t layerId)
 {
   (void)writer;
   (void)layerId;
   AL_TSeiExternalCtx* ctx = (AL_TSeiExternalCtx*)param;
   uint8_t* pPayload = ctx->pPayload;
-  int iPayloadType = ctx->iPayloadType;
-  int iPayloadSize = ctx->iPayloadSize;
+  int32_t iPayloadType = ctx->iPayloadType;
+  int32_t iPayloadSize = ctx->iPayloadSize;
 
   AL_RbspEncoding_BeginSEI2(bitstream, iPayloadType, iPayloadSize);
   uint8_t* curData = AL_BitStreamLite_GetCurData(bitstream);
@@ -175,7 +175,7 @@ static void seiExternalWrite(IRbspWriter* writer, AL_TBitStreamLite* bitstream, 
   AL_RbspEncoding_CloseSEI(bitstream);
 }
 
-AL_TNalUnit AL_CreateExternalSei(AL_TSeiExternalCtx* ctx, int nut, int tempId)
+AL_TNalUnit AL_CreateExternalSei(AL_TSeiExternalCtx* ctx, int32_t nut, int32_t layerId, int32_t tempId)
 {
-  return AL_CreateNalUnit(&seiExternalWrite, ctx, nut, 0, 0, tempId);
+  return AL_CreateNalUnit(&seiExternalWrite, ctx, nut, 0, layerId, tempId);
 }

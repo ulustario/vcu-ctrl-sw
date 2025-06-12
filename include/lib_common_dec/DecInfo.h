@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 /******************************************************************************
@@ -49,7 +49,7 @@ bool AL_NeedsCropping(AL_TCropInfo const* pInfo);
    \return Returns the minimum number of output buffers required to decode
    the AVC stream in the specified dpb mode
  ***************************************************************************/
-int AL_AVC_GetMinOutputBuffersNeeded(AL_TStreamSettings const* pStreamSettings, int iStack);
+int32_t AL_AVC_GetMinOutputBuffersNeeded(AL_TStreamSettings const* pStreamSettings, int32_t iStack);
 
 /*****************************************************************************
    \brief Returns the minimum number of output buffers required to decode
@@ -60,6 +60,6 @@ int AL_AVC_GetMinOutputBuffersNeeded(AL_TStreamSettings const* pStreamSettings, 
    \return Returns the minimum number of output buffers required to decode
    the HEVC stream in the specified dpb mode
  ***************************************************************************/
-int AL_HEVC_GetMinOutputBuffersNeeded(AL_TStreamSettings const* pStreamSettings, int iStack);
+int32_t AL_HEVC_GetMinOutputBuffersNeeded(AL_TStreamSettings const* pStreamSettings, int32_t iStack);
 
 /*!@}*/

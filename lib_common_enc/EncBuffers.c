@@ -1,16 +1,11 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
-
-/******************************************************************************
-   \addtogroup lib_base
-   !@{
-   \file
- *****************************************************************************/
 
 #include "EncBuffersInternal.h"
 
 #include "lib_common/Utils.h"
 
+#include "lib_rtos/lib_rtos.h"
 #include "lib_common_enc/EncBuffers.h"
 #include "lib_common_enc/EncSize.h"
 #include "lib_common_enc/EncPicInfo.h"
@@ -55,22 +50,9 @@ uint32_t AL_GetAllocSizeEP3(void)
 }
 
 /****************************************************************************/
-static uint32_t GetChromaAllocSize(AL_EChromaMode eChromaMode, uint32_t uAllocSizeY)
-{
-  switch(eChromaMode)
-  {
-  case AL_CHROMA_MONO: return 0;
-  case AL_CHROMA_4_2_0: return uAllocSizeY / 2;
-  case AL_CHROMA_4_2_2: return uAllocSizeY;
-  case AL_CHROMA_4_4_4: return uAllocSizeY * 2;
-  default: Rtos_Assert(false);
-  }
-
-  return 0;
-}
 
 /* Will be removed in 0.9 */
-int AL_CalculatePitchValue(int iWidth, uint8_t uBitDepth, AL_EFbStorageMode eStorageMode)
+int32_t AL_CalculatePitchValue(int32_t iWidth, uint8_t uBitDepth, AL_EFbStorageMode eStorageMode)
 {
   AL_TPicFormat tPicFormat;
   Rtos_Memset(&tPicFormat, 0, sizeof(tPicFormat));
@@ -79,10 +61,11 @@ int AL_CalculatePitchValue(int iWidth, uint8_t uBitDepth, AL_EFbStorageMode eSto
   return AL_EncGetMinPitch(iWidth, &tPicFormat);
 }
 
-int AL_EncGetMinPitch(int iWidth, AL_TPicFormat const* pPicFormat)
+int32_t AL_EncGetMinPitch(int32_t iWidth, AL_TPicFormat const* pPicFormat)
 {
 
-  return ComputeRndPitch(iWidth, pPicFormat, AL_ENC_PITCH_ALIGNMENT);
+  Rtos_Assert((AL_ENC_PITCH_ALIGNMENT % HW_IP_BURST_ALIGNMENT) == 0);
+  return AL_GetLumaPixPlanePitch(iWidth, pPicFormat, AL_ENC_PITCH_ALIGNMENT);
 }
 
 /****************************************************************************/
@@ -127,21 +110,13 @@ bool AL_IsSrcMSB(AL_ESrcMode eSrcMode)
 }
 
 /****************************************************************************/
-uint32_t AL_GetAllocSizeSrc_PixPlane(AL_TPicFormat const* pPicFormat, int iPitch, int iStrideHeight, AL_EPlaneId ePlaneId)
+uint32_t AL_GetAllocSizeSrc_PixPlane(AL_TPicFormat const* pPicFormat, int32_t iPitch, int32_t iStrideHeight, AL_EPlaneId ePlaneId)
 {
-  if(!AL_Plane_Exists(pPicFormat->ePlaneMode, false, ePlaneId))
-    return 0;
-
-  int iSize = iStrideHeight * iPitch / AL_GetNumLinesInPitch(pPicFormat->eStorageMode);
-
-  if(ePlaneId == AL_PLANE_UV)
-    iSize = GetChromaAllocSize(pPicFormat->eChromaMode, iSize);
-
-  return RoundUp(iSize, HW_IP_BURST_ALIGNMENT);
+  return RoundUp(AL_GetAllocSize_Frame_PixPlane(pPicFormat, (AL_TPitch) {iPitch, iStrideHeight / AL_GetNumLinesInPitch(pPicFormat->eStorageMode) }, ePlaneId), HW_IP_BURST_ALIGNMENT);
 }
 
 /****************************************************************************/
-uint32_t AL_GetAllocSizeSrc_Y(AL_ESrcMode eSrcFmt, int iPitch, int iStrideHeight)
+uint32_t AL_GetAllocSizeSrc_Y(AL_ESrcMode eSrcFmt, int32_t iPitch, int32_t iStrideHeight)
 {
   AL_TPicFormat tPicFormat = GetDefaultPicFormat();
   tPicFormat.eChromaMode = AL_CHROMA_MONO;
@@ -154,7 +129,7 @@ uint32_t AL_GetAllocSizeSrc_Y(AL_ESrcMode eSrcFmt, int iPitch, int iStrideHeight
 }
 
 /****************************************************************************/
-uint32_t AL_GetAllocSizeSrc_UV(AL_ESrcMode eSrcFmt, int iPitch, int iStrideHeight, AL_EChromaMode eChromaMode)
+uint32_t AL_GetAllocSizeSrc_UV(AL_ESrcMode eSrcFmt, int32_t iPitch, int32_t iStrideHeight, AL_EChromaMode eChromaMode)
 {
   AL_TPicFormat tPicFormat = GetDefaultPicFormat();
   tPicFormat.eChromaMode = eChromaMode;
@@ -177,25 +152,32 @@ uint32_t AL_GetAllocSize_Src(AL_TDimension tDim, uint8_t uBitDepth, AL_EChromaMo
   tPicFormat.eStorageMode = AL_GetSrcStorageMode(eSrcFmt);
   tPicFormat.bCompressed = AL_GET_COMP_MODE(eSrcFmt);
   tPicFormat.bMSB = false;
-  int const iPitch = AL_EncGetMinPitch(tDim.iWidth, &tPicFormat);
+  int32_t const iPitch = AL_EncGetMinPitch(tDim.iWidth, &tPicFormat);
   return AL_GetAllocSizeSrc(tDim, &tPicFormat, iPitch, tDim.iHeight);
 }
 
 /****************************************************************************/
-uint32_t AL_GetAllocSizeSrc(AL_TDimension tDim, AL_TPicFormat const* pPicFormat, int iPitch, int iStrideHeight)
+inline uint32_t AL_GetAllocSizeSrc(AL_TDimension tDim, AL_TPicFormat const* pPicFormat, int32_t iPitch, int32_t iStrideHeight)
 {
-  (void)tDim;
+  return AL_GetAllocSize_Frame_Full(tDim, pPicFormat, (AL_TPitch) {iPitch, iStrideHeight }, 1);
+}
 
-  AL_EPlaneId usedPlanes[AL_MAX_BUFFER_PLANES];
-  uint32_t uSize = 0;
-  int iPlanes = AL_Plane_GetBufferPlanes(*pPicFormat, usedPlanes);
+/****************************************************************************/
+uint32_t AL_GetRecPitch(AL_TDimension tTileDim, uint32_t uBitDepth, AL_EFbStorageMode eStorageMode, uint32_t uWidth, bool bIsLuma)
+{
+  (void)eStorageMode;
+  (void)bIsLuma;
 
-  for(int iPlane = 0; iPlane < iPlanes; iPlane++)
-  {
-    uSize += AL_GetAllocSizeSrc_PixPlane(pPicFormat, iPitch, iStrideHeight, usedPlanes[iPlane]);
-  }
+  bool bIsTileAligned = false;
+  uint8_t uTileVerticalAlignmentInTiles = 1;
 
-  return uSize;
+  if(uBitDepth == 8)
+    return UnsignedRoundUp(uWidth, tTileDim.iWidth) * uTileVerticalAlignmentInTiles * tTileDim.iHeight;
+
+  if(bIsTileAligned)
+    uBitDepth = 16;
+
+  return UnsignedRoundUp(uWidth, tTileDim.iWidth) * uTileVerticalAlignmentInTiles * tTileDim.iHeight * uBitDepth / 8;
 }
 
 /****************************************************************************/
@@ -228,7 +210,6 @@ static uint32_t GetRasterFrameSize(AL_TDimension tDim, uint8_t uBitDepth, AL_ECh
 
   if(uBitDepth > 8)
   {
-    Rtos_Assert((uBitDepth <= 12) && "Support bitdepth > 12");
     uSize *= uBitDepth;
     uSizeDiv *= 8;
   }
@@ -237,25 +218,38 @@ static uint32_t GetRasterFrameSize(AL_TDimension tDim, uint8_t uBitDepth, AL_ECh
 }
 
 /****************************************************************************/
-static uint32_t GetAllocSize_Ref(AL_TDimension tRoundedDim, uint8_t uBitDepth, AL_EChromaMode eChromaMode, uint16_t uMVVRange, uint8_t uLCUSize, AL_EChEncOption eOptions)
+static uint32_t GetRecFrameSize(AL_TDimension tDim, uint8_t uBitDepth, AL_EFbStorageMode eStorageMode, AL_EChromaMode eChromaMode)
 {
-  (void)eOptions, (void)uMVVRange, (void)uLCUSize;
+  (void)eStorageMode;
+  return GetRasterFrameSize(tDim, uBitDepth, eChromaMode);
+}
+
+/****************************************************************************/
+static uint32_t GetAllocSize_Ref(AL_TDimension tRoundedDim, uint8_t uBitDepth, AL_EFbStorageMode eStorageMode, AL_EChromaMode eChromaMode, uint16_t uMVVRange, uint8_t uLCUSize, AL_EChEncOption eOptions)
+{
+  (void)eOptions, (void)uMVVRange, (void)uLCUSize, (void)eStorageMode;
   AL_TDimension tDim = tRoundedDim;
 
-  uint32_t uSize = GetRasterFrameSize(tDim, uBitDepth, eChromaMode);
+  uint32_t uSize = GetRecFrameSize(tDim, uBitDepth, eStorageMode, eChromaMode);
 
   return uSize;
 }
 
 /****************************************************************************/
-uint32_t AL_GetAllocSize_EncReference(AL_TDimension tDim, uint8_t uBitDepth, uint8_t uLCUSize, AL_EChromaMode eChromaMode, AL_EChEncOption eOptions, uint16_t uMVVRange)
+uint32_t AL_GetAllocSize_EncReference(AL_TDimension tDim, uint8_t uBitDepth, AL_EFbStorageMode eStorageMode, uint8_t uLCUSize, AL_EChromaMode eChromaMode, AL_EChEncOption eOptions, uint16_t uMVVRange)
 {
   (void)uMVVRange, (void)uLCUSize;
 
   AL_TDimension RoundedDim;
   RoundedDim.iHeight = RoundUp(tDim.iHeight, 64);
   RoundedDim.iWidth = RoundUp(tDim.iWidth, 64);
-  return GetAllocSize_Ref(RoundedDim, uBitDepth, eChromaMode, uMVVRange, uLCUSize, eOptions);
+
+  bool bIsTileAligned = false;
+
+  if(bIsTileAligned)
+    uBitDepth = RoundUp(uBitDepth, 8);
+
+  return GetAllocSize_Ref(RoundedDim, uBitDepth, eStorageMode, eChromaMode, uMVVRange, uLCUSize, eOptions);
 }
 
 /****************************************************************************/
@@ -277,8 +271,8 @@ uint32_t AL_GetAllocSize_EncCompMap(AL_TDimension tDim, uint8_t uLog2MaxCuSize, 
 uint32_t AL_GetAllocSize_MV(AL_TDimension tDim, uint8_t uLog2MaxCuSize, AL_ECodec Codec)
 {
   uint32_t uNumBlk = 0;
-  int iMul = (Codec == AL_CODEC_HEVC) ? 1 :
-             2;
+  int32_t iMul = (Codec == AL_CODEC_HEVC) ? 1 :
+                 2;
   switch(uLog2MaxCuSize)
   {
   case 4: uNumBlk = GetSquareBlkNumber(tDim, 16);
@@ -294,7 +288,7 @@ uint32_t AL_GetAllocSize_MV(AL_TDimension tDim, uint8_t uLog2MaxCuSize, AL_ECode
 }
 
 /*****************************************************************************/
-uint32_t AL_GetAllocSize_WPP(int iLCUPicHeight, int iNumSlices, uint8_t uNumCore)
+uint32_t AL_GetAllocSize_WPP(int32_t iLCUPicHeight, int32_t iNumSlices, uint8_t uNumCore)
 {
   uint32_t uNumLinesPerCmd = (((iLCUPicHeight + iNumSlices - 1) / iNumSlices) + uNumCore - 1) / uNumCore;
   uint32_t uAlignedSize = RoundUp(uNumLinesPerCmd * sizeof(uint32_t), 128) * uNumCore * iNumSlices;
@@ -304,20 +298,20 @@ uint32_t AL_GetAllocSize_WPP(int iLCUPicHeight, int iNumSlices, uint8_t uNumCore
 /*****************************************************************************/
 uint32_t AL_GetAllocSize_SliceSize(uint32_t uWidth, uint32_t uHeight, uint32_t uNumSlices, uint32_t uLog2MaxCuSize)
 {
-  int iWidthInLcu = (uWidth + ((1 << uLog2MaxCuSize) - 1)) >> uLog2MaxCuSize;
-  int iHeightInLcu = (uHeight + ((1 << uLog2MaxCuSize) - 1)) >> uLog2MaxCuSize;
+  int32_t iWidthInLcu = (uWidth + ((1 << uLog2MaxCuSize) - 1)) >> uLog2MaxCuSize;
+  int32_t iHeightInLcu = (uHeight + ((1 << uLog2MaxCuSize) - 1)) >> uLog2MaxCuSize;
   uint32_t uSize = (uint32_t)Max(iWidthInLcu * iHeightInLcu * 32, iWidthInLcu * iHeightInLcu * sizeof(uint32_t) + uNumSlices * AL_ENC_NUM_CORES * 128);
   uint32_t uAlignedSize = RoundUp(uSize, 32);
   return uAlignedSize;
 }
 
 /*****************************************************************************/
-uint32_t GetAllocSize_StreamPart(AL_EProfile eProfile, int iNumCores, int iNumSlices, bool bSliceSize, int iNumTilesPerCore)
+uint32_t GetAllocSize_StreamPart(AL_EProfile eProfile, int32_t iNumCores, int32_t iNumSlices, bool bSliceSize, int32_t iNumTilesPerCore)
 {
   (void)eProfile;
 
-  int iMaxPart = bSliceSize ? AL_MAX_ENC_SLICE : iNumSlices;
-  int iNumNal = 16;
+  int32_t iMaxPart = bSliceSize ? AL_MAX_ENC_SLICE : iNumSlices;
+  int32_t iNumNal = 16;
 
   uint32_t uStreamPartSize = ((iMaxPart * iNumCores * iNumTilesPerCore) + iNumNal) * sizeof(AL_TStreamPart);
   uStreamPartSize = RoundUp(uStreamPartSize, 128);
@@ -326,32 +320,22 @@ uint32_t GetAllocSize_StreamPart(AL_EProfile eProfile, int iNumCores, int iNumSl
 }
 
 /****************************************************************************/
-static uint32_t GetRecPitch(uint32_t uBitDepth, uint32_t uWidth)
+void AL_FillPlaneDesc_EncReference(AL_TPlaneDescription* pPlaneDesc, AL_TDimension tDim, AL_TPicFormat tPicFormat, AL_ECodec eCodec, uint8_t uLCUSize, uint16_t uMVVRange, AL_EChEncOption eOptions)
 {
-  int iTileWidth = 64;
-  int iTileHeight = 4;
-
-  if(uBitDepth == 8)
-    return UnsignedRoundUp(uWidth, iTileWidth) * iTileHeight;
-
-  return UnsignedRoundUp(uWidth, iTileWidth) * iTileHeight * uBitDepth / 8;
-}
-
-/****************************************************************************/
-void AL_FillPlaneDesc_EncReference(AL_TPlaneDescription* pPlaneDesc, AL_TDimension tDim, AL_EChromaMode eChromaMode, uint8_t uBitDepth, bool bIsAvc, uint8_t uLCUSize, uint16_t uMVVRange, AL_EChEncOption eOptions)
-{
-  (void)eChromaMode, (void)bIsAvc; // if no fbc support
+  (void)eCodec; // if no fbc support
   AL_EChEncOption eTmpOption = eOptions;
+
+  AL_TDimension tTileDim = { 64, 4 };
 
   if(AL_Plane_IsPixelPlane(pPlaneDesc->ePlaneId))
   {
-    pPlaneDesc->iPitch = GetRecPitch(uBitDepth, tDim.iWidth);
+    pPlaneDesc->iPitch = AL_GetRecPitch(tTileDim, tPicFormat.uBitDepth, tPicFormat.eStorageMode, tDim.iWidth, AL_Plane_IsLumaPlane(pPlaneDesc->ePlaneId));
     pPlaneDesc->iOffset = 0;
 
     if(pPlaneDesc->ePlaneId != AL_PLANE_Y)
     {
-      int iPlaneOrder = pPlaneDesc->ePlaneId == AL_PLANE_V ? 2 : 1;
-      pPlaneDesc->iOffset = iPlaneOrder * AL_GetAllocSize_EncReference(tDim, uBitDepth, uLCUSize, AL_CHROMA_MONO, eTmpOption, uMVVRange);
+      int32_t iPlaneOrder = pPlaneDesc->ePlaneId == AL_PLANE_V ? 2 : 1;
+      pPlaneDesc->iOffset = iPlaneOrder * AL_GetAllocSize_EncReference(tDim, tPicFormat.uBitDepth, tPicFormat.eStorageMode, uLCUSize, AL_CHROMA_MONO, eTmpOption, uMVVRange);
     }
 
     return;
@@ -359,5 +343,3 @@ void AL_FillPlaneDesc_EncReference(AL_TPlaneDescription* pPlaneDesc, AL_TDimensi
 
   Rtos_Assert(false);
 }
-
-/*!@}*/

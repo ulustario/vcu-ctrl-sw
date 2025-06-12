@@ -1,20 +1,22 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #include "SyntaxConversion.h"
 #include "lib_rtos/lib_rtos.h"
 
 /***************************************************************************/
-int AL_H273_ColourDescToColourPrimaries(AL_EColourDescription colourDesc)
+int32_t AL_H273_ColourDescToColourPrimaries(AL_EColourDescription colourDesc)
 {
   switch(colourDesc)
   {
   case AL_COLOUR_DESC_RESERVED: return 0;
   case AL_COLOUR_DESC_BT_709: return 1;
+  case AL_COLOUR_DESC_RGB: return 1;
   case AL_COLOUR_DESC_UNSPECIFIED: return 2;
   case AL_COLOUR_DESC_BT_470_NTSC: return 4;
   case AL_COLOUR_DESC_BT_601_PAL: return 5;
   case AL_COLOUR_DESC_BT_601_NTSC: return 6;
+  case AL_COLOUR_DESC_SMPTE_170M: return 6;
   case AL_COLOUR_DESC_SMPTE_240M: return 7;
   case AL_COLOUR_DESC_GENERIC_FILM: return 8;
   case AL_COLOUR_DESC_BT_2020: return 9;
@@ -28,7 +30,7 @@ int AL_H273_ColourDescToColourPrimaries(AL_EColourDescription colourDesc)
   return 2;
 }
 
-AL_EColourDescription AL_H273_ColourPrimariesToColourDesc(int iColourPrimaries)
+AL_EColourDescription AL_H273_ColourPrimariesToColourDesc(uint8_t iColourPrimaries)
 {
   switch(iColourPrimaries)
   {
@@ -50,13 +52,13 @@ AL_EColourDescription AL_H273_ColourPrimariesToColourDesc(int iColourPrimaries)
   return AL_COLOUR_DESC_UNSPECIFIED;
 }
 
-int AL_TransferCharacteristicsToVUIValue(AL_ETransferCharacteristics eTransferCharacteristics)
+int32_t AL_TransferCharacteristicsToVUIValue(AL_ETransferCharacteristics eTransferCharacteristics)
 {
   Rtos_Assert(eTransferCharacteristics != AL_TRANSFER_CHARAC_MAX_ENUM);
   return (int)eTransferCharacteristics;
 }
 
-AL_ETransferCharacteristics AL_VUIValueToTransferCharacteristics(int iTransferCharacteristics)
+AL_ETransferCharacteristics AL_VUIValueToTransferCharacteristics(uint8_t iTransferCharacteristics)
 {
   if(iTransferCharacteristics == 0 || iTransferCharacteristics == 3 ||
      iTransferCharacteristics >= AL_TRANSFER_CHARAC_MAX_ENUM)
@@ -65,13 +67,13 @@ AL_ETransferCharacteristics AL_VUIValueToTransferCharacteristics(int iTransferCh
   return (AL_ETransferCharacteristics)iTransferCharacteristics;
 }
 
-int AL_ColourMatrixCoefficientsToVUIValue(AL_EColourMatrixCoefficients eColourMatrixCoef)
+int32_t AL_ColourMatrixCoefficientsToVUIValue(AL_EColourMatrixCoefficients eColourMatrixCoef)
 {
   Rtos_Assert(eColourMatrixCoef != AL_COLOUR_MAT_COEFF_MAX_ENUM);
   return (int)eColourMatrixCoef;
 }
 
-AL_EColourMatrixCoefficients AL_VUIValueToColourMatrixCoefficients(int iColourMatrixCoef)
+AL_EColourMatrixCoefficients AL_VUIValueToColourMatrixCoefficients(uint8_t iColourMatrixCoef)
 {
   if(iColourMatrixCoef == 3 || iColourMatrixCoef >= AL_COLOUR_MAT_COEFF_MAX_ENUM)
     return AL_COLOUR_MAT_COEFF_UNSPECIFIED;

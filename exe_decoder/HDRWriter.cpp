@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #include "HDRWriter.h"
@@ -68,7 +68,7 @@ void HDRWriter::BuildMasteringDisplayColorVolume(AL_TMasteringDisplayColourVolum
 {
   auto& tDPArray = tSEIObject.AddValue("display_primaries", TJsonValue::JSON_VALUE_ARRAY);
 
-  for(int i = 0; i < 3; i++)
+  for(int32_t i = 0; i < 3; i++)
   {
     auto& tComponentArray = tDPArray.PushBackValue(TJsonValue::JSON_VALUE_ARRAY);
     tComponentArray.PushBackValue(static_cast<int>(tMDCV.display_primaries[i].x));
@@ -121,7 +121,7 @@ void HDRWriter::BuildST2094_10(AL_TDynamicMeta_ST2094_10& tST2094_10, TJsonValue
   {
     auto& tMAArray = tSEIObject.AddValue("manual_adjustments", TJsonValue::JSON_VALUE_ARRAY);
 
-    for(int i = 0; i < tST2094_10.num_manual_adjustments; i++)
+    for(int32_t i = 0; i < tST2094_10.num_manual_adjustments; i++)
     {
       auto& tMAObject = tMAArray.PushBackValue(TJsonValue::JSON_VALUE_OBJECT);
       tMAObject.AddValue("target_max_pq", tST2094_10.manual_adjustments[i].target_max_pq);
@@ -143,7 +143,7 @@ void HDRWriter::BuildST2094_40(AL_TDynamicMeta_ST2094_40& tST2094_40, TJsonValue
   {
     auto& tPWArray = tSEIObject.AddValue("processing_windows", TJsonValue::JSON_VALUE_ARRAY);
 
-    for(int i = 0; i < tST2094_40.num_windows; i++)
+    for(int32_t i = 0; i < tST2094_40.num_windows; i++)
     {
       auto& tPWObject = tPWArray.PushBackValue(TJsonValue::JSON_VALUE_OBJECT);
       BuildST2094_40ProcessingWindow(tST2094_40, i, tPWObject);
@@ -162,7 +162,7 @@ void HDRWriter::BuildST2094_40(AL_TDynamicMeta_ST2094_40& tST2094_40, TJsonValue
   BuildST2094_40PeakLuminance(tST2094_40.mastering_display_peak_luminance, tSEIObject, "mastering_display_peak_luminance");
 }
 
-void HDRWriter::BuildST2094_40ProcessingWindow(AL_TDynamicMeta_ST2094_40& tST2094_40, int iWindow, TJsonValue& tPWObject)
+void HDRWriter::BuildST2094_40ProcessingWindow(AL_TDynamicMeta_ST2094_40& tST2094_40, int32_t iWindow, TJsonValue& tPWObject)
 {
   if(iWindow != 0)
   {
@@ -200,19 +200,19 @@ void HDRWriter::BuildST2094_40ProcessingWindow(AL_TDynamicMeta_ST2094_40& tST209
 
     auto& tMSCLArray = tTransfoObject.AddValue("maxscl", TJsonValue::JSON_VALUE_ARRAY);
 
-    for(int i = 0; i < 3; i++)
+    for(int32_t i = 0; i < 3; i++)
       tMSCLArray.PushBackValue(static_cast<int>(tTransfo.maxscl[i]));
 
     tTransfoObject.AddValue("average_maxrgb", static_cast<int>(tTransfo.average_maxrgb));
 
     auto& tPercentagesArray = tTransfoObject.AddValue("distribution_maxrgb_percentages", TJsonValue::JSON_VALUE_ARRAY);
 
-    for(int i = 0; i < tTransfo.num_distribution_maxrgb_percentiles; i++)
+    for(int32_t i = 0; i < tTransfo.num_distribution_maxrgb_percentiles; i++)
       tPercentagesArray.PushBackValue(static_cast<int>(tTransfo.distribution_maxrgb_percentages[i]));
 
     auto& tPercentilesArray = tTransfoObject.AddValue("distribution_maxrgb_percentiles", TJsonValue::JSON_VALUE_ARRAY);
 
-    for(int i = 0; i < tTransfo.num_distribution_maxrgb_percentiles; i++)
+    for(int32_t i = 0; i < tTransfo.num_distribution_maxrgb_percentiles; i++)
       tPercentilesArray.PushBackValue(static_cast<int>(tTransfo.distribution_maxrgb_percentiles[i]));
 
     tTransfoObject.AddValue("fraction_bright_pixels", static_cast<int>(tTransfo.fraction_bright_pixels));
@@ -226,7 +226,7 @@ void HDRWriter::BuildST2094_40ProcessingWindow(AL_TDynamicMeta_ST2094_40& tST209
 
       auto& tBCAObject = tTMObject.AddValue("bezier_curve_anchors", TJsonValue::JSON_VALUE_ARRAY);
 
-      for(int i = 0; i < tTransfo.tone_mapping.num_bezier_curve_anchors; i++)
+      for(int32_t i = 0; i < tTransfo.tone_mapping.num_bezier_curve_anchors; i++)
         tBCAObject.PushBackValue(static_cast<int>(tTransfo.tone_mapping.bezier_curve_anchors[i]));
     }
 
@@ -241,11 +241,11 @@ void HDRWriter::BuildST2094_40PeakLuminance(AL_TDisplayPeakLuminance_ST2094_40& 
   {
     TJsonValue& tPLObject = tPLRootObject.AddValue(sKey, TJsonValue::JSON_VALUE_ARRAY);
 
-    for(int i = 0; i < tPeakLuminance.num_rows_actual_peak_luminance; i++)
+    for(int32_t i = 0; i < tPeakLuminance.num_rows_actual_peak_luminance; i++)
     {
       auto& tRow = tPLObject.PushBackValue(TJsonValue::JSON_VALUE_ARRAY);
 
-      for(int j = 0; j < tPeakLuminance.num_cols_actual_peak_luminance; j++)
+      for(int32_t j = 0; j < tPeakLuminance.num_cols_actual_peak_luminance; j++)
         tRow.PushBackValue(static_cast<int>(tPeakLuminance.actual_peak_luminance[i][j]));
     }
   }

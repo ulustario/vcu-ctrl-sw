@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #pragma once
@@ -25,13 +25,13 @@ typedef struct AL_TSkippedPicture
 {
   AL_HANDLE hBuf; /*!< Handle of the skipped picture buffer */
   uint8_t* pData; /*!< Data pointer from hBuf for storing precomputed skipped picture bitstream */
-  int iBufSize; /*!< Size in byte of hBuf */
+  int32_t iBufSize; /*!< Size in byte of hBuf */
 
-  int iNumSlices;
+  int32_t iNumSlices;
   AL_TSkippedSlice tSkippedSlice[AL_MAX_TILE_ROWS];
   uint32_t uTileSizes[AL_ENC_NUM_CORES * AL_MAX_TILE_ROWS]; /*!< Anti-emulated tile size in bytes */
 
-  int iNumBins; /*!< Number of bins used by the skipped picture */
+  int32_t iNumBins; /*!< Number of bins used by the skipped picture */
 }AL_TSkippedPicture;
 
 /*****************************************************************************/

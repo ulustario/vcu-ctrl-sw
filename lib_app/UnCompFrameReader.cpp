@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #include "lib_app/UnCompFrameReader.h"
@@ -13,14 +13,14 @@ bool UnCompFrameReader::ReadFrame(AL_TBuffer* pBuffer)
   return ReadOneFrameYuv(m_recFile, pBuffer, m_bLoopFile, m_uRndDim);
 }
 
-void UnCompFrameReader::SeekA(uint32_t uFrameIdx)
+void UnCompFrameReader::SeekAbsolute(uint32_t uFrameIdx)
 {
-  int iPictSize = GetPictureSize(m_tFileInfo);
+  std::streampos iPictSize = GetPictureSize(m_tFileInfo);
   m_recFile.seekg(iPictSize * uFrameIdx, std::ios_base::beg);
 }
 
-void UnCompFrameReader::SeekR(int iFrameDlt)
+void UnCompFrameReader::SeekRelative(int32_t iFrameIdxDelta)
 {
-  int iPictSize = GetPictureSize(m_tFileInfo);
-  m_recFile.seekg(iPictSize * iFrameDlt, std::ios_base::cur);
+  std::streampos iPictSize = GetPictureSize(m_tFileInfo);
+  m_recFile.seekg(iPictSize * iFrameIdxDelta, std::ios_base::cur);
 }

@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #include <fstream>
@@ -38,7 +38,7 @@ public:
     {
       uint8_t* pStreamData = AL_Buffer_GetData(pBuf);
 
-      for(int i = 0; i < pMeta->uNumSection; i++)
+      for(int32_t i = 0; i < pMeta->uNumSection; i++)
         m_MD5.Update(pStreamData + pMeta->pSections[i].uOffset, pMeta->pSections[i].uLength);
     }
   }

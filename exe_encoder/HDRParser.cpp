@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #include "HDRParser.h"
@@ -12,7 +12,7 @@ HDRParser::HDRParser(const string& sHDRFile) :
 {
 }
 
-bool HDRParser::ReadHDRSEIs(AL_THDRSEIs& tHDRSEIs, int iSEIsIndex)
+bool HDRParser::ReadHDRSEIs(AL_THDRSEIs& tHDRSEIs, int32_t iSEIsIndex)
 {
   if(ReadJson(sHDRFile, tHDRSEIs, iSEIsIndex))
     return true;
@@ -39,7 +39,7 @@ bool HDRParser::ReadLegacy(const std::string& sHDRFile, AL_THDRSEIs& tHDRSEIs)
 
     if(sSEIID == "MasteringDisplayColorVolume:")
     {
-      for(int i = 0; i < 3; i++)
+      for(int32_t i = 0; i < 3; i++)
         ifs >> tHDRSEIs.tMDCV.display_primaries[i].x >> tHDRSEIs.tMDCV.display_primaries[i].y;
 
       ifs >> tHDRSEIs.tMDCV.white_point.x >> tHDRSEIs.tMDCV.white_point.y;
@@ -66,7 +66,7 @@ bool HDRParser::ReadLegacy(const std::string& sHDRFile, AL_THDRSEIs& tHDRSEIs)
   return true;
 }
 
-bool HDRParser::ReadJson(const std::string& sHDRFile, AL_THDRSEIs& tHDRSEIs, int iSEIsIndex)
+bool HDRParser::ReadJson(const std::string& sHDRFile, AL_THDRSEIs& tHDRSEIs, int32_t iSEIsIndex)
 {
   CJsonReader jsonreader(sHDRFile);
   TJsonValue tJsonRoot;
@@ -123,7 +123,7 @@ bool HDRParser::ReadMasteringDisplayColorVolume(TJsonValue* pSEIObject, AL_TMast
 
   TJsonValue* pCoord = nullptr;
 
-  for(int i = 0; i < 3; i++)
+  for(int32_t i = 0; i < 3; i++)
   {
     if(!pDPObject->GetValue(i, TJsonValue::JSON_VALUE_ARRAY, pCoord) || pCoord->arrayValue.size() != 2)
       return false;
@@ -136,7 +136,7 @@ bool HDRParser::ReadMasteringDisplayColorVolume(TJsonValue* pSEIObject, AL_TMast
   tMDCV.white_point.x = pCoord->arrayValue[0].intValue;
   tMDCV.white_point.y = pCoord->arrayValue[1].intValue;
 
-  int iVal = 0;
+  int32_t iVal = 0;
 
   if(!pSEIObject->GetValue("max_display_mastering_luminance", iVal))
     return false;
@@ -151,7 +151,7 @@ bool HDRParser::ReadMasteringDisplayColorVolume(TJsonValue* pSEIObject, AL_TMast
 
 bool HDRParser::ReadContentLightLevel(TJsonValue* pSEIObject, AL_TContentLightLevel& tCLL)
 {
-  int iVal = 0;
+  int32_t iVal = 0;
 
   if(!pSEIObject->GetValue("max_content_light_level", iVal))
     return false;
@@ -166,7 +166,7 @@ bool HDRParser::ReadContentLightLevel(TJsonValue* pSEIObject, AL_TContentLightLe
 
 bool HDRParser::ReadAlternativeTransferCharacteristics(TJsonValue* pSEIObject, AL_TAlternativeTransferCharacteristics& tATC)
 {
-  int iVal = 0;
+  int32_t iVal = 0;
 
   if(!pSEIObject->GetValue("preferred_transfer_characteristics", iVal))
     return false;
@@ -177,7 +177,7 @@ bool HDRParser::ReadAlternativeTransferCharacteristics(TJsonValue* pSEIObject, A
 
 bool HDRParser::ReadST2094_10(TJsonValue* pSEIObject, AL_TDynamicMeta_ST2094_10& tST2094_10)
 {
-  int iVal = 0;
+  int32_t iVal = 0;
 
   if(!pSEIObject->GetValue("application_version", iVal))
     return false;
@@ -284,7 +284,7 @@ bool HDRParser::ReadST2094_10(TJsonValue* pSEIObject, AL_TDynamicMeta_ST2094_10&
 
 bool HDRParser::ReadST2094_40(TJsonValue* pSEIObject, AL_TDynamicMeta_ST2094_40& tST2094_40)
 {
-  int iVal = 0;
+  int32_t iVal = 0;
 
   if(!pSEIObject->GetValue("application_version", iVal))
     return false;
@@ -354,7 +354,7 @@ bool HDRParser::ReadST2094_40(TJsonValue* pSEIObject, AL_TDynamicMeta_ST2094_40&
 
 bool HDRParser::ReadST2094_40ProcessingWindow(TJsonValue* pPWObject, AL_TDynamicMeta_ST2094_40& tST2094_40, bool& bDefaultWindowParsed)
 {
-  int iVal = 0;
+  int32_t iVal = 0;
 
   TJsonValue* pWindowObject = nullptr;
   bool bDefaultWindow = !pPWObject->GetValue("window", TJsonValue::JSON_VALUE_OBJECT, pWindowObject);
@@ -427,7 +427,7 @@ bool HDRParser::ReadST2094_40ProcessingWindow(TJsonValue* pPWObject, AL_TDynamic
     if(!pTransfoObject->GetValue("maxscl", TJsonValue::JSON_VALUE_ARRAY, pArray) || pArray->arrayValue.size() != 3)
       return false;
 
-    for(int i = 0; i < 3; i++)
+    for(int32_t i = 0; i < 3; i++)
       tTransfo.maxscl[i] = pArray->arrayValue[i].intValue;
 
     if(!pTransfoObject->GetValue("average_maxrgb", iVal))
@@ -438,13 +438,13 @@ bool HDRParser::ReadST2094_40ProcessingWindow(TJsonValue* pPWObject, AL_TDynamic
       return false;
     tTransfo.num_distribution_maxrgb_percentiles = pArray->arrayValue.size();
 
-    for(int i = 0; i < tTransfo.num_distribution_maxrgb_percentiles; i++)
+    for(int32_t i = 0; i < tTransfo.num_distribution_maxrgb_percentiles; i++)
       tTransfo.distribution_maxrgb_percentages[i] = pArray->arrayValue[i].intValue;
 
     if(!pTransfoObject->GetValue("distribution_maxrgb_percentiles", TJsonValue::JSON_VALUE_ARRAY, pArray) || pArray->arrayValue.size() != tTransfo.num_distribution_maxrgb_percentiles)
       return false;
 
-    for(int i = 0; i < tTransfo.num_distribution_maxrgb_percentiles; i++)
+    for(int32_t i = 0; i < tTransfo.num_distribution_maxrgb_percentiles; i++)
       tTransfo.distribution_maxrgb_percentiles[i] = pArray->arrayValue[i].intValue;
 
     if(!pTransfoObject->GetValue("fraction_bright_pixels", iVal))
@@ -465,7 +465,7 @@ bool HDRParser::ReadST2094_40ProcessingWindow(TJsonValue* pPWObject, AL_TDynamic
         return false;
       tTransfo.tone_mapping.num_bezier_curve_anchors = pArray->arrayValue.size();
 
-      for(int i = 0; i < tTransfo.tone_mapping.num_bezier_curve_anchors; i++)
+      for(int32_t i = 0; i < tTransfo.tone_mapping.num_bezier_curve_anchors; i++)
         tTransfo.tone_mapping.bezier_curve_anchors[i] = pArray->arrayValue[i].intValue;
     }
 
@@ -488,7 +488,7 @@ bool HDRParser::ReadST2094_40PeakLuminance(TJsonValue* pPLObject, AL_TDisplayPea
 
   TJsonValue* pRow = nullptr;
 
-  for(int i = 0; i < tPeakLuminance.num_rows_actual_peak_luminance; i++)
+  for(int32_t i = 0; i < tPeakLuminance.num_rows_actual_peak_luminance; i++)
   {
     if(!pPLObject->GetValue(i, TJsonValue::JSON_VALUE_ARRAY, pRow))
       return false;
@@ -503,7 +503,7 @@ bool HDRParser::ReadST2094_40PeakLuminance(TJsonValue* pPLObject, AL_TDisplayPea
     else if(tPeakLuminance.num_cols_actual_peak_luminance != pRow->arrayValue.size())
       return false;
 
-    for(int j = 0; j < tPeakLuminance.num_cols_actual_peak_luminance; j++)
+    for(int32_t j = 0; j < tPeakLuminance.num_cols_actual_peak_luminance; j++)
       tPeakLuminance.actual_peak_luminance[i][j] = pRow->arrayValue[j].intValue;
   }
 

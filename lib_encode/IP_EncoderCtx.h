@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 /******************************************************************************
@@ -29,6 +29,7 @@ typedef struct AL_THLSInfo
 {
   uint8_t uSpsId;
   uint8_t uPpsId;
+  uint8_t uLFMode;
   bool bLFOffsetChanged;
   int8_t iLFBetaOffset;
   int8_t iLFTcOffset;
@@ -59,14 +60,14 @@ typedef struct
   bool (* shouldReleaseSource)(AL_TEncPicStatus* pPicStatus);
   void (* preprocessEp1)(AL_TEncCtx* pCtx, TBufferEP* pEP1);
   void (* configureChannel)(AL_TEncCtx* pCtx, AL_TEncChanParam* pChParam, AL_TEncSettings const* pSettings);
-  void (* generateNals)(AL_TEncCtx* pCtx, int iLayerID, bool bWriteVps);
-  void (* updateHlsAndWriteSections)(AL_TEncCtx* pCtx, AL_TEncPicStatus* pPicStatus, AL_TBuffer* pStream, int iLayerID, int iPicID);
+  void (* generateNals)(AL_TEncCtx* pCtx, int32_t iLayerID, bool bWriteVps);
+  void (* updateHlsAndWriteSections)(AL_TEncCtx* pCtx, AL_TEncPicStatus* pPicStatus, AL_TBuffer* pStream, int32_t iLayerID, int32_t iPicID);
 }HighLevelEncoder;
 
 typedef struct
 {
   AL_TEncCtx* pCtx;
-  int iLayerID;
+  int32_t iLayerID;
 }AL_TCbUserParam;
 
 typedef struct
@@ -81,8 +82,8 @@ typedef struct
   AL_TEncRequestInfo currentRequestInfo;
   TBufferEP tBufEP1;
 
-  int iCurStreamSent;
-  int iCurStreamRecv;
+  int32_t iCurStreamSent;
+  int32_t iCurStreamRecv;
   AL_TBuffer* StreamSent[AL_MAX_STREAM_BUFFER];
 
   AL_TMemDesc tMDChParam;
@@ -104,7 +105,7 @@ typedef struct
 typedef struct AL_TIDPool
 {
   AL_TFifo tFreeIDs;
-  int iCurID;
+  int32_t iCurID;
 }AL_TIDPool;
 
 typedef struct AL_TFrameInfoPool
@@ -140,12 +141,12 @@ typedef struct AL_TEncCtx
   AL_TVps vps;
   bool bEndOfStreamReceived[MAX_NUM_LAYER];
 
-  int initialCpbRemovalDelay;
-  int cpbRemovalDelay;
+  int32_t initialCpbRemovalDelay;
+  int32_t cpbRemovalDelay;
 
-  int iMaxNumRef;
+  int32_t iMaxNumRef;
 
-  int iFrameCountDone;
+  int32_t iFrameCountDone;
   AL_ERR eError;
 
   AL_TFrameInfoPool tFrameInfoPool;
@@ -161,13 +162,13 @@ typedef struct AL_TEncCtx
 
   AL_IEncScheduler* pScheduler;
 
-  int iInitialNumB;
+  int32_t iInitialNumB;
   uint16_t uInitialFrameRate;
 
   AL_TMemDesc tMDSettings;
 }AL_TEncCtx;
 
-AL_HLSInfo* AL_GetHLSInfo(AL_TEncCtx* pCtx, int iPicID);
-AL_TNalsData AL_ExtractNalsData(AL_TEncCtx* pCtx, int iLayerID, int iPicID);
+AL_HLSInfo* AL_GetHLSInfo(AL_TEncCtx* pCtx, int32_t iPicID);
+AL_TNalsData AL_ExtractNalsData(AL_TEncCtx* pCtx, int32_t iLayerID, int32_t iPicID);
 
 /*!@}*/

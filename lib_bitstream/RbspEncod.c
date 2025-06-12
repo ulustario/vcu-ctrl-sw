@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 /****************************************************************************
@@ -16,7 +16,7 @@ void AL_RbspEncoding_WriteAUD(AL_TBitStreamLite* pBS, AL_TAud const* pAud)
 {
   // 1 - Write primary_pic_type.
 
-  static int const SliceTypeToPrimaryPicType[] = { 2, 1, 0, 4, 3, 7, 1, 7, 7 };
+  static int32_t const SliceTypeToPrimaryPicType[] = { 2, 1, 0, 4, 3, 7, 1, 7, 7 };
   AL_BitStreamLite_PutU(pBS, 3, SliceTypeToPrimaryPicType[pAud->eType]);
 
   // 2 - Write rbsp_trailing_bits.
@@ -26,10 +26,10 @@ void AL_RbspEncoding_WriteAUD(AL_TBitStreamLite* pBS, AL_TAud const* pAud)
 }
 
 /******************************************************************************/
-int AL_RbspEncoding_BeginSEI(AL_TBitStreamLite* pBS, uint8_t uPayloadType)
+int32_t AL_RbspEncoding_BeginSEI(AL_TBitStreamLite* pBS, uint8_t uPayloadType)
 {
   AL_BitStreamLite_PutBits(pBS, 8, uPayloadType);
-  int bookmarkSEI = AL_BitStreamLite_GetBitsCount(pBS);
+  int32_t bookmarkSEI = AL_BitStreamLite_GetBitsCount(pBS);
   Rtos_Assert(bookmarkSEI % 8 == 0);
 
   AL_BitStreamLite_PutBits(pBS, 8, 0xFF);
@@ -48,7 +48,7 @@ static void PutUV(AL_TBitStreamLite* pBS, int32_t iValue)
   AL_BitStreamLite_PutU(pBS, 8, iValue);
 }
 
-void AL_RbspEncoding_BeginSEI2(AL_TBitStreamLite* pBS, int iPayloadType, int iPayloadSize)
+void AL_RbspEncoding_BeginSEI2(AL_TBitStreamLite* pBS, int32_t iPayloadType, int32_t iPayloadSize)
 {
   /* See 7.3.5 Supplemental enhancement information message syntax */
   PutUV(pBS, iPayloadType);
@@ -56,11 +56,11 @@ void AL_RbspEncoding_BeginSEI2(AL_TBitStreamLite* pBS, int iPayloadType, int iPa
 }
 
 /******************************************************************************/
-void AL_RbspEncoding_EndSEI(AL_TBitStreamLite* pBS, int bookmarkSEI)
+void AL_RbspEncoding_EndSEI(AL_TBitStreamLite* pBS, int32_t bookmarkSEI)
 {
   uint8_t* pSize = AL_BitStreamLite_GetData(pBS) + (bookmarkSEI / 8);
   Rtos_Assert(*pSize == 0xFF);
-  int bits = AL_BitStreamLite_GetBitsCount(pBS) - bookmarkSEI;
+  int32_t bits = AL_BitStreamLite_GetBitsCount(pBS) - bookmarkSEI;
   Rtos_Assert(bits % 8 == 0);
   *pSize = (bits / 8) - 1;
 }
@@ -76,9 +76,9 @@ void AL_RbspEncoding_CloseSEI(AL_TBitStreamLite* pBS)
 /******************************************************************************/
 void AL_RbspEncoding_WriteUserDataUnregistered(AL_TBitStreamLite* pBS, uint8_t uuid[16], int8_t numSlices)
 {
-  int const bookmark = AL_RbspEncoding_BeginSEI(pBS, 5);
+  int32_t const bookmark = AL_RbspEncoding_BeginSEI(pBS, 5);
 
-  for(int i = 0; i < 16; i++)
+  for(int32_t i = 0; i < 16; i++)
     AL_BitStreamLite_PutU(pBS, 8, uuid[i]);
 
   AL_BitStreamLite_PutU(pBS, 8, numSlices);
@@ -90,9 +90,9 @@ void AL_RbspEncoding_WriteUserDataUnregistered(AL_TBitStreamLite* pBS, uint8_t u
 /******************************************************************************/
 void AL_RbspEncoding_WriteMasteringDisplayColourVolume(AL_TBitStreamLite* pBS, AL_TMasteringDisplayColourVolume* pMDCV)
 {
-  int const bookmark = AL_RbspEncoding_BeginSEI(pBS, 137);
+  int32_t const bookmark = AL_RbspEncoding_BeginSEI(pBS, 137);
 
-  for(int c = 0; c < 3; c++)
+  for(int32_t c = 0; c < 3; c++)
   {
     AL_BitStreamLite_PutU(pBS, 16, pMDCV->display_primaries[c].x);
     AL_BitStreamLite_PutU(pBS, 16, pMDCV->display_primaries[c].y);
@@ -111,7 +111,7 @@ void AL_RbspEncoding_WriteMasteringDisplayColourVolume(AL_TBitStreamLite* pBS, A
 /******************************************************************************/
 void AL_RbspEncoding_WriteContentLightLevel(AL_TBitStreamLite* pBS, AL_TContentLightLevel* pCLL)
 {
-  int const bookmark = AL_RbspEncoding_BeginSEI(pBS, 144);
+  int32_t const bookmark = AL_RbspEncoding_BeginSEI(pBS, 144);
 
   AL_BitStreamLite_PutU(pBS, 16, pCLL->max_content_light_level);
   AL_BitStreamLite_PutU(pBS, 16, pCLL->max_pic_average_light_level);
@@ -123,7 +123,7 @@ void AL_RbspEncoding_WriteContentLightLevel(AL_TBitStreamLite* pBS, AL_TContentL
 /******************************************************************************/
 void AL_RbspEncoding_WriteAlternativeTransferCharacteristics(AL_TBitStreamLite* pBS, AL_TAlternativeTransferCharacteristics* pATC)
 {
-  int const bookmark = AL_RbspEncoding_BeginSEI(pBS, 147);
+  int32_t const bookmark = AL_RbspEncoding_BeginSEI(pBS, 147);
 
   AL_BitStreamLite_PutU(pBS, 8, AL_TransferCharacteristicsToVUIValue(pATC->preferred_transfer_characteristics));
 
@@ -134,7 +134,7 @@ void AL_RbspEncoding_WriteAlternativeTransferCharacteristics(AL_TBitStreamLite* 
 /******************************************************************************/
 void AL_RbspEncoding_WriteST2094_10(AL_TBitStreamLite* pBS, AL_TDynamicMeta_ST2094_10* pST2094_10)
 {
-  int const bookmark = AL_RbspEncoding_BeginSEI(pBS, 4);
+  int32_t const bookmark = AL_RbspEncoding_BeginSEI(pBS, 4);
 
   AL_BitStreamLite_PutU(pBS, 8, 0xB5);
   AL_BitStreamLite_PutU(pBS, 16, 0x3B);
@@ -164,7 +164,7 @@ void AL_RbspEncoding_WriteST2094_10(AL_TBitStreamLite* pBS, AL_TDynamicMeta_ST20
   AL_BitStreamLite_PutU(pBS, 4, 0);
 
   // Manual Adjustments
-  for(int i = 0; i < pST2094_10->num_manual_adjustments; i++)
+  for(int32_t i = 0; i < pST2094_10->num_manual_adjustments; i++)
   {
     AL_BitStreamLite_PutUE(pBS, 11);
     AL_BitStreamLite_PutU(pBS, 8, 2);
@@ -207,15 +207,15 @@ void WriteST2094_40_PeakLuminance(AL_TBitStreamLite* pBS, AL_TDisplayPeakLuminan
     AL_BitStreamLite_PutU(pBS, 5, pPeakLuminance->num_rows_actual_peak_luminance);
     AL_BitStreamLite_PutU(pBS, 5, pPeakLuminance->num_cols_actual_peak_luminance);
 
-    for(int i = 0; i < pPeakLuminance->num_rows_actual_peak_luminance; i++)
-      for(int j = 0; j < pPeakLuminance->num_cols_actual_peak_luminance; j++)
+    for(int32_t i = 0; i < pPeakLuminance->num_rows_actual_peak_luminance; i++)
+      for(int32_t j = 0; j < pPeakLuminance->num_cols_actual_peak_luminance; j++)
         AL_BitStreamLite_PutU(pBS, 4, pPeakLuminance->actual_peak_luminance[i][j]);
   }
 }
 
 void AL_RbspEncoding_WriteST2094_40(AL_TBitStreamLite* pBS, AL_TDynamicMeta_ST2094_40* pST2094_40)
 {
-  int const bookmark = AL_RbspEncoding_BeginSEI(pBS, 4);
+  int32_t const bookmark = AL_RbspEncoding_BeginSEI(pBS, 4);
 
   AL_BitStreamLite_PutU(pBS, 8, 0xB5);
   AL_BitStreamLite_PutU(pBS, 16, 0x3C);
@@ -226,7 +226,7 @@ void AL_RbspEncoding_WriteST2094_40(AL_TBitStreamLite* pBS, AL_TDynamicMeta_ST20
 
   AL_BitStreamLite_PutU(pBS, 2, pST2094_40->num_windows);
 
-  for(int iWin = 0; iWin < pST2094_40->num_windows - 1; iWin++)
+  for(int32_t iWin = 0; iWin < pST2094_40->num_windows - 1; iWin++)
   {
     AL_TProcessingWindow_ST2094_40* pWin = &pST2094_40->processing_windows[iWin];
     AL_BitStreamLite_PutU(pBS, 16, pWin->base_processing_window.upper_left_corner_x);
@@ -245,17 +245,17 @@ void AL_RbspEncoding_WriteST2094_40(AL_TBitStreamLite* pBS, AL_TDynamicMeta_ST20
   AL_BitStreamLite_PutU(pBS, 27, pST2094_40->targeted_system_display.maximum_luminance);
   WriteST2094_40_PeakLuminance(pBS, &pST2094_40->targeted_system_display.peak_luminance);
 
-  for(int iWin = 0; iWin < pST2094_40->num_windows; iWin++)
+  for(int32_t iWin = 0; iWin < pST2094_40->num_windows; iWin++)
   {
     AL_TProcessingWindowTransform_ST2094_40* pWinTransfo = &pST2094_40->processing_window_transforms[iWin];
 
-    for(int i = 0; i < 3; i++)
+    for(int32_t i = 0; i < 3; i++)
       AL_BitStreamLite_PutU(pBS, 17, pWinTransfo->maxscl[i]);
 
     AL_BitStreamLite_PutU(pBS, 17, pWinTransfo->average_maxrgb);
     AL_BitStreamLite_PutU(pBS, 4, pWinTransfo->num_distribution_maxrgb_percentiles);
 
-    for(int i = 0; i < pWinTransfo->num_distribution_maxrgb_percentiles; i++)
+    for(int32_t i = 0; i < pWinTransfo->num_distribution_maxrgb_percentiles; i++)
     {
       AL_BitStreamLite_PutU(pBS, 7, pWinTransfo->distribution_maxrgb_percentages[i]);
       AL_BitStreamLite_PutU(pBS, 17, pWinTransfo->distribution_maxrgb_percentiles[i]);
@@ -266,7 +266,7 @@ void AL_RbspEncoding_WriteST2094_40(AL_TBitStreamLite* pBS, AL_TDynamicMeta_ST20
 
   WriteST2094_40_PeakLuminance(pBS, &pST2094_40->mastering_display_peak_luminance);
 
-  for(int iWin = 0; iWin < pST2094_40->num_windows; iWin++)
+  for(int32_t iWin = 0; iWin < pST2094_40->num_windows; iWin++)
   {
     AL_TProcessingWindowTransform_ST2094_40* pWinTransfo = &pST2094_40->processing_window_transforms[iWin];
 
@@ -279,7 +279,7 @@ void AL_RbspEncoding_WriteST2094_40(AL_TBitStreamLite* pBS, AL_TDynamicMeta_ST20
       AL_BitStreamLite_PutU(pBS, 12, pToneMapping->knee_point_y);
       AL_BitStreamLite_PutU(pBS, 4, pToneMapping->num_bezier_curve_anchors);
 
-      for(int i = 0; i < pToneMapping->num_bezier_curve_anchors; i++)
+      for(int32_t i = 0; i < pToneMapping->num_bezier_curve_anchors; i++)
         AL_BitStreamLite_PutU(pBS, 10, pToneMapping->bezier_curve_anchors[i]);
     }
 

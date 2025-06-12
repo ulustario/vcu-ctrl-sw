@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #include "Encoder.h"
@@ -109,7 +109,7 @@ static bool AL_Encoder_GetInfo_Host(AL_HEncoder hEnc, AL_TEncoderInfo* pEncInfo)
 }
 
 /****************************************************************************/
-static void AL_Encoder_NotifySceneChange_Host(AL_HEncoder hEnc, int iAhead)
+static void AL_Encoder_NotifySceneChange_Host(AL_HEncoder hEnc, int32_t iAhead)
 {
   AL_TEncoder* pEnc = (AL_TEncoder*)hEnc;
   AL_Common_Encoder_NotifySceneChange(pEnc->pCtx, iAhead);
@@ -164,7 +164,7 @@ static bool AL_Encoder_Process_Host(AL_HEncoder hEnc, AL_TBuffer* pFrame, AL_TBu
 }
 
 /****************************************************************************/
-static int AL_Encoder_AddSei_Host(AL_HEncoder hEnc, AL_TBuffer* pStream, bool isPrefix, int iPayloadType, uint8_t* pPayload, int iPayloadSize, int iTempId)
+static int32_t AL_Encoder_AddSei_Host(AL_HEncoder hEnc, AL_TBuffer* pStream, bool isPrefix, int32_t iPayloadType, uint8_t* pPayload, int32_t iPayloadSize, int32_t iTempId)
 {
   AL_TEncoder* pEnc = (AL_TEncoder*)hEnc;
   return AL_Common_Encoder_AddSei(pEnc->pCtx, pStream, isPrefix, iPayloadType, pPayload, iPayloadSize, iTempId);
@@ -203,6 +203,8 @@ static bool AL_Encoder_SetMaxPictureSizePerFrameType_Host(AL_HEncoder hEnc, uint
 /****************************************************************************/
 
 /****************************************************************************/
+
+/****************************************************************************/
 static bool AL_Encoder_RestartGop_Host(AL_HEncoder hEnc)
 {
   AL_TEncoder* pEnc = (AL_TEncoder*)hEnc;
@@ -219,7 +221,7 @@ static bool AL_Encoder_RestartGopRecoveryPoint_Host(AL_HEncoder hEnc)
 }
 
 /****************************************************************************/
-static bool AL_Encoder_SetGopLength_Host(AL_HEncoder hEnc, int iGopLength)
+static bool AL_Encoder_SetGopLength_Host(AL_HEncoder hEnc, int32_t iGopLength)
 {
   AL_TEncoder* pEnc = (AL_TEncoder*)hEnc;
   bool bStatus = AL_Common_Encoder_SetGopLength(pEnc->pCtx, iGopLength);
@@ -228,28 +230,28 @@ static bool AL_Encoder_SetGopLength_Host(AL_HEncoder hEnc, int iGopLength)
 }
 
 /****************************************************************************/
-static bool AL_Encoder_SetGopNumB_Host(AL_HEncoder hEnc, int iNumB)
+static bool AL_Encoder_SetGopNumB_Host(AL_HEncoder hEnc, int32_t iNumB)
 {
   AL_TEncoder* pEnc = (AL_TEncoder*)hEnc;
   return AL_Common_Encoder_SetGopNumB(pEnc->pCtx, iNumB);
 }
 
 /****************************************************************************/
-static bool AL_Encoder_SetFreqIDR_Host(AL_HEncoder hEnc, int iFreqIDR)
+static bool AL_Encoder_SetFreqIDR_Host(AL_HEncoder hEnc, int32_t iFreqIDR)
 {
   AL_TEncoder* pEnc = (AL_TEncoder*)hEnc;
   return AL_Common_Encoder_SetFreqIDR(pEnc->pCtx, iFreqIDR);
 }
 
 /****************************************************************************/
-static bool AL_Encoder_SetBitRate_Host(AL_HEncoder hEnc, int iBitRate)
+static bool AL_Encoder_SetBitRate_Host(AL_HEncoder hEnc, int32_t iBitRate)
 {
   AL_TEncoder* pEnc = (AL_TEncoder*)hEnc;
   return AL_Common_Encoder_SetBitRate(pEnc->pCtx, iBitRate, 0);
 }
 
 /****************************************************************************/
-static bool AL_Encoder_SetMaxBitRate_Host(AL_HEncoder hEnc, int iTargetBitRate, int iMaxBitRate)
+static bool AL_Encoder_SetMaxBitRate_Host(AL_HEncoder hEnc, int32_t iTargetBitRate, int32_t iMaxBitRate)
 {
   AL_TEncoder* pEnc = (AL_TEncoder*)hEnc;
   return AL_Common_Encoder_SetMaxBitRate(pEnc->pCtx, iTargetBitRate, iMaxBitRate, 0);
@@ -293,17 +295,17 @@ static bool AL_Encoder_SetQPBoundsPerFrameType_Host(AL_HEncoder hEnc, int16_t iM
 }
 
 /****************************************************************************/
-static bool AL_Encoder_SetQPIPDelta_Host(AL_HEncoder hEnc, int16_t uIPDelta)
+static bool AL_Encoder_SetQPIPDelta_Host(AL_HEncoder hEnc, int16_t iIPDelta)
 {
   AL_TEncoder* pEnc = (AL_TEncoder*)hEnc;
-  return AL_Common_Encoder_SetQPIPDelta(pEnc->pCtx, uIPDelta);
+  return AL_Common_Encoder_SetQPIPDelta(pEnc->pCtx, iIPDelta);
 }
 
 /****************************************************************************/
-static bool AL_Encoder_SetQPPBDelta_Host(AL_HEncoder hEnc, int16_t uPBDelta)
+static bool AL_Encoder_SetQPPBDelta_Host(AL_HEncoder hEnc, int16_t iPBDelta)
 {
   AL_TEncoder* pEnc = (AL_TEncoder*)hEnc;
-  return AL_Common_Encoder_SetQPPBDelta(pEnc->pCtx, uPBDelta);
+  return AL_Common_Encoder_SetQPPBDelta(pEnc->pCtx, iPBDelta);
 }
 
 /****************************************************************************/
@@ -311,6 +313,13 @@ static bool AL_Encoder_SetInputResolution_Host(AL_HEncoder hEnc, AL_TDimension t
 {
   AL_TEncoder* pEnc = (AL_TEncoder*)hEnc;
   return AL_Common_Encoder_SetInputResolution(pEnc->pCtx, tDim);
+}
+
+/****************************************************************************/
+static bool AL_Encoder_SetLoopFilterMode_Host(AL_HEncoder hEnc, uint8_t uMode)
+{
+  AL_TEncoder* pEnc = (AL_TEncoder*)hEnc;
+  return AL_Common_Encoder_SetLoopFilterMode(pEnc->pCtx, uMode);
 }
 
 /****************************************************************************/
@@ -387,6 +396,7 @@ static AL_IEncArchVtable vtable =
   .EncoderSetQPIPDelta = AL_Encoder_SetQPIPDelta_Host,
   .EncoderSetQPPBDelta = AL_Encoder_SetQPPBDelta_Host,
   .EncoderSetInputResolution = AL_Encoder_SetInputResolution_Host,
+  .EncoderSetLoopFilterMode = AL_Encoder_SetLoopFilterMode_Host,
   .EncoderSetLoopFilterBetaOffset = AL_Encoder_SetLoopFilterBetaOffset_Host,
   .EncoderSetLoopFilterTcOffset = AL_Encoder_SetLoopFilterTcOffset_Host,
   .EncoderSetQPChromaOffsets = AL_Encoder_SetQPChromaOffsets_Host,

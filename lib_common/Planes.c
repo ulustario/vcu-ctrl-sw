@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #include "lib_common/Planes.h"
@@ -10,20 +10,25 @@ bool AL_Plane_IsPixelPlane(AL_EPlaneId ePlaneId)
   return ePlaneId < (int)AL_PLANE_MAP_Y;
 }
 
+bool AL_Plane_IsLumaPlane(AL_EPlaneId ePlaneId)
+{
+  return ePlaneId == AL_PLANE_MAP_Y || ePlaneId == AL_PLANE_YUV || ePlaneId == AL_PLANE_MAP_Y;
+}
+
 bool AL_Plane_IsMapPlane(AL_EPlaneId ePlaneId)
 {
   return ePlaneId != AL_PLANE_MAX_ENUM && !AL_Plane_IsPixelPlane(ePlaneId);
 }
 
-static void AddPlane(AL_EPlaneId usedPlanes[AL_MAX_BUFFER_PLANES], int* iNbPlanes, AL_EPlaneId ePlaneType)
+static void AddPlane(AL_EPlaneId usedPlanes[AL_MAX_BUFFER_PLANES], int32_t* iNbPlanes, AL_EPlaneId ePlaneType)
 {
   usedPlanes[*iNbPlanes] = ePlaneType;
   (*iNbPlanes)++;
 }
 
-int AL_Plane_GetBufferPixelPlanes(AL_TPicFormat tPicFormat, AL_EPlaneId usedPlanes[AL_MAX_BUFFER_PLANES])
+int32_t AL_Plane_GetBufferPixelPlanes(AL_TPicFormat tPicFormat, AL_EPlaneId usedPlanes[AL_MAX_BUFFER_PLANES])
 {
-  int iNbPlanes = 0;
+  int32_t iNbPlanes = 0;
 
   if(AL_PLANE_MODE_INTERLEAVED == tPicFormat.ePlaneMode && AL_CHROMA_MONO != tPicFormat.eChromaMode)
   {
@@ -44,7 +49,7 @@ int AL_Plane_GetBufferPixelPlanes(AL_TPicFormat tPicFormat, AL_EPlaneId usedPlan
   return iNbPlanes;
 }
 
-static void AddBufferMapPlanes(AL_TPicFormat tPicFormat, AL_EPlaneId usedPlanes[AL_MAX_BUFFER_PLANES], int* pNbPlanes)
+static void AddBufferMapPlanes(AL_TPicFormat tPicFormat, AL_EPlaneId usedPlanes[AL_MAX_BUFFER_PLANES], int32_t* pNbPlanes)
 {
   AddPlane(usedPlanes, pNbPlanes, AL_PLANE_MAP_Y);
 
@@ -60,19 +65,19 @@ static void AddBufferMapPlanes(AL_TPicFormat tPicFormat, AL_EPlaneId usedPlanes[
   }
 }
 
-int AL_Plane_GetBufferMapPlanes(AL_TPicFormat tPicFormat, AL_EPlaneId usedPlanes[AL_MAX_BUFFER_PLANES])
+int32_t AL_Plane_GetBufferMapPlanes(AL_TPicFormat tPicFormat, AL_EPlaneId usedPlanes[AL_MAX_BUFFER_PLANES])
 {
-  int iNbPlanes = 0;
+  int32_t iNbPlanes = 0;
   AddBufferMapPlanes(tPicFormat, usedPlanes, &iNbPlanes);
   return iNbPlanes;
 }
 
-int AL_Plane_GetBufferPlanes(AL_TPicFormat tPicFormat, AL_EPlaneId usedPlanes[AL_MAX_BUFFER_PLANES])
+int32_t AL_Plane_GetBufferPlanes(AL_TPicFormat tPicFormat, AL_EPlaneId usedPlanes[AL_MAX_BUFFER_PLANES])
 {
   if(AL_PLANE_MODE_MAX_ENUM == tPicFormat.ePlaneMode)
     tPicFormat.ePlaneMode = GetInternalBufPlaneMode(tPicFormat.eChromaMode);
 
-  int iNbPlanes = AL_Plane_GetBufferPixelPlanes(tPicFormat, usedPlanes);
+  int32_t iNbPlanes = AL_Plane_GetBufferPixelPlanes(tPicFormat, usedPlanes);
 
   if(tPicFormat.bCompressed)
     AddBufferMapPlanes(tPicFormat, usedPlanes, &iNbPlanes);

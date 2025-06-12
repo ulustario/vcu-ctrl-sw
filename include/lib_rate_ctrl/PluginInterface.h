@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 /******************************************************************************
@@ -36,8 +36,8 @@ typedef struct
   int16_t iInitialQP; /*!< Quality parameter of the first frame (in the absence of more information) */
   int16_t iMinQP[AL_MAX_FRAME_TYPE]; /*!< Minimum QP that can be used by the rate control implementation */
   int16_t iMaxQP[AL_MAX_FRAME_TYPE]; /*!< Maximum QP that can be used by the rate control implementation */
-  int16_t uIPDelta; /*!< QP Delta that should be applied between I and P frames */
-  int16_t uPBDelta; /*!< QP Delta that should be applied between P and B frames */
+  int16_t iIPDelta; /*!< QP Delta that should be applied between I and P frames */
+  int16_t iPBDelta; /*!< QP Delta that should be applied between P and B frames */
   uint32_t eOptions; /*!< Options bitfield. \see AL_ERateCtrlOption for the available flags*/
 }Plugin_RCParam;
 
@@ -84,7 +84,7 @@ typedef struct
    \param[in] iWidth Frame width in pixel
    \param[in] iHeight Frame height in pixel
 *****************************************************************************/
-  void (* setStreamInfo)(void* pHandle, int iWidth, int iHeight);
+  void (* setStreamInfo)(void* pHandle, int32_t iWidth, int32_t iHeight);
 
 /*****************************************************************************
    \brief Second initialization step: Initialize the RateControl object with Bitstream constraint.
@@ -111,7 +111,7 @@ typedef struct
    pFillOrSkip > 0 case of overflow, add "iFillerOrSkip" filler data in bytes.
    pFillOrSkip = -1  case of underflow, re-encode the current picture as skipped.
 *****************************************************************************/
-  void (* checkCompliance)(void* pHandle, Plugin_Statistics* pStatus, int iPictureSize, bool bCheckSkip, int* pFillOrSkip);
+  void (* checkCompliance)(void* pHandle, Plugin_Statistics* pStatus, int32_t iPictureSize, bool bCheckSkip, int32_t* pFillOrSkip);
 
 /*****************************************************************************
    \brief Updates the decoder buffer level with the encoded picture results.
@@ -145,7 +145,7 @@ typedef struct
    \param[in] bSkipped Specifies if the current picture has been skipped or not
    \param[in] iFillerSize Size of the filler bytes region
 *****************************************************************************/
-  void (* update)(void* pHandle, Plugin_PictureInfo const* pPicInfo, Plugin_Statistics const* pStatus, int iPictureSize, bool bSkipped, int iFillerSize);
+  void (* update)(void* pHandle, Plugin_PictureInfo const* pPicInfo, Plugin_Statistics const* pStatus, int32_t iPictureSize, bool bSkipped, int32_t iFillerSize);
 
 /*****************************************************************************
    \brief Returns the QP (Quality Parameter) that will be used by the hardware to encode the current picture
@@ -161,7 +161,7 @@ typedef struct
    \param[in] pHandle Pointer to the plugin rate control context
    \param[out] pDelay Pointer which receives the current CPB removal delay with 90kHz resolution
 *****************************************************************************/
-  void (* getRemovalDelay)(void* pHandle, int* pDelay);
+  void (* getRemovalDelay)(void* pHandle, int32_t* pDelay);
 
 /*****************************************************************************
    \brief Destroy the plugin rate control context pointed to by the interface pointer

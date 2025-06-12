@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #pragma once
@@ -11,6 +11,7 @@ extern "C"
 {
 #include "lib_common/PicFormat.h"
 #include "lib_common/BufferAPI.h"
+#include "lib_rtos/types.h"
 }
 
 class FrameReader
@@ -18,24 +19,24 @@ class FrameReader
 protected:
   std::ifstream& m_recFile;
   bool m_bLoopFile;
-  int m_uTotalFrameCnt;
+  int32_t m_uTotalFrameCount;
 
   FrameReader(std::ifstream& iRecFile, bool bLoopFrames) :
     m_recFile(iRecFile),
     m_bLoopFile(bLoopFrames),
-    m_uTotalFrameCnt(0) {};
+    m_uTotalFrameCount(0) {};
 
 public:
-  inline int GetTotalFrameCnt() const { return m_uTotalFrameCnt; }
+  inline int32_t GetTotalFrameCnt() const { return m_uTotalFrameCount; }
 
   virtual bool ReadFrame(AL_TBuffer* pFrameBuffer) = 0;
 
-  virtual void SeekA(uint32_t uFrameIdx) = 0; // seek to Absolution position from the beginning
-  virtual void SeekR(int iFrameDlt) = 0;      // seek to Relative position from the current position (both direction allowed)
+  virtual void SeekAbsolute(uint32_t uFrameIdx) = 0;
+  virtual void SeekRelative(int32_t iFrameIdxDelta) = 0;
 
-  int GotoNextPicture(int iFileFrameRate, int iEncFrameRate, int iFilePictCount, int iEncPictCount);
+  int32_t GotoNextPicture(int32_t iFileFrameRate, int32_t iEncFrameRate, int32_t iFilePictCount, int32_t iEncPictCount);
 
-  int GetFileSize();
+  size_t GetFileSize();
 
   virtual ~FrameReader() = default;
 };

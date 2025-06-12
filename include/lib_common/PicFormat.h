@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 /******************************************************************************
@@ -93,8 +93,12 @@ typedef enum AL_EChromaMode
   AL_CHROMA_4_2_0 = 1, /*!< 4:2:0 chroma sampling */
   AL_CHROMA_4_2_2 = 2, /*!< 4:2:2 chroma sampling */
   AL_CHROMA_4_4_4 = 3, /*!< 4:4:4 chroma sampling */
+  AL_CHROMA_4_2_2_HORIZONTAL = 4, /*!< 4:2:2 chroma sampling but vertical (internal, used for 4:2:2 with rotation)*/
   AL_CHROMA_MAX_ENUM, /* sentinel */
 }AL_EChromaMode;
+
+#define FB_TILE_32x4 1 << 0
+#define FB_TILE_64x4 1 << 1
 
 /*****************************************************************************
    \brief Frame buffer storage mode. It describes the scan order of the
@@ -102,9 +106,10 @@ typedef enum AL_EChromaMode
 *****************************************************************************/
 typedef enum AL_EFbStorageMode
 {
-  AL_FB_RASTER,     /*!< Samples are stored in raster scan order */
-  AL_FB_TILE_32x4,  /*!< Samples are stored going raster inside 4x4 blocks, themselves inside 32x4 tiles */
-  AL_FB_TILE_64x4,  /*!< Samples are stored going raster inside 4x4 blocks, themselves inside 64x4 tiles */
+  AL_FB_RASTER = 0,     /*!< Samples are stored in raster scan order */
+  AL_FB_TILE_32x4 = 1,  /*!< Samples are stored going raster inside 4x4 blocks, themselves inside 32x4 tiles */
+  AL_FB_TILE_64x4 = 2,  /*!< Samples are stored going raster inside 4x4 blocks, themselves inside 64x4 tiles */
+
   AL_FB_MAX_ENUM, /* sentinel */
 }AL_EFbStorageMode;
 
@@ -211,13 +216,13 @@ AL_EPlaneMode GetInternalBufPlaneMode(AL_EChromaMode eChromaMode);
 AL_ESamplePackMode GetInternalBufSamplePackMode(AL_EFbStorageMode eFbStorageMode, uint8_t uBitDepth);
 
 /****************************************************************************/
-int GetTileWidth(AL_EFbStorageMode eMode, uint8_t uBitDepth);
+int32_t GetTileWidth(AL_EFbStorageMode eMode, uint8_t uBitDepth);
 
 /****************************************************************************/
-int GetTileHeight(AL_EFbStorageMode eMode);
+int32_t GetTileHeight(AL_EFbStorageMode eMode);
 
 /****************************************************************************/
-int GetTileSize(AL_EFbStorageMode eMode, uint8_t uBitDepth);
+int32_t GetTileSize(AL_EFbStorageMode eMode, uint8_t uBitDepth);
 
 /****************************************************************************/
 bool IsRgbComponentOrder(AL_EComponentOrder eComponentOrder);
@@ -227,5 +232,32 @@ AL_TPicFormat GetDefaultPicFormat(void);
 
 /*****************************************************************************/
 bool IsTile(AL_EFbStorageMode eStorageMode);
+
+/****************************************************************************/
+bool Is10bPacked(AL_ESamplePackMode eSamplePackMode);
+
+/****************************************************************************/
+char const* AL_ChromaModeToString(AL_EChromaMode eChromaMode);
+
+/****************************************************************************/
+char const* AL_AlphaModeToString(AL_EAlphaMode eAlphaMode);
+
+/****************************************************************************/
+char const* AL_FbStorageModeToString(AL_EFbStorageMode eStorageMode);
+
+/****************************************************************************/
+char const* AL_PlaneModeToString(AL_EPlaneMode ePlaneMode);
+
+/****************************************************************************/
+char const* AL_ComponentOrderToString(AL_EComponentOrder eComponentOrder);
+
+/****************************************************************************/
+char const* AL_SamplePackModeToString(AL_ESamplePackMode eSamplePackMode);
+
+/****************************************************************************/
+char const* AL_CompressedToString(bool bIsCompressed);
+
+/****************************************************************************/
+char const* AL_MsbToString(bool bIsMSB);
 
 /*!@}*/

@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 /******************************************************************************
@@ -16,18 +16,20 @@
 typedef enum AL_EColourDescription
 {
   AL_COLOUR_DESC_RESERVED,
-  AL_COLOUR_DESC_UNSPECIFIED,
-  AL_COLOUR_DESC_BT_470_NTSC,
-  AL_COLOUR_DESC_BT_601_NTSC,
-  AL_COLOUR_DESC_BT_601_PAL,
-  AL_COLOUR_DESC_BT_709,
-  AL_COLOUR_DESC_BT_2020,
-  AL_COLOUR_DESC_SMPTE_240M,
-  AL_COLOUR_DESC_SMPTE_ST_428,
-  AL_COLOUR_DESC_SMPTE_RP_431,
-  AL_COLOUR_DESC_SMPTE_EG_432,
-  AL_COLOUR_DESC_EBU_3213,
-  AL_COLOUR_DESC_GENERIC_FILM,
+  AL_COLOUR_DESC_UNSPECIFIED,  /*!< Unspecified */
+  AL_COLOUR_DESC_BT_470_NTSC,  /*!< BT.470 System M (historical) */
+  AL_COLOUR_DESC_BT_601_NTSC,  /*!< BT.601 */
+  AL_COLOUR_DESC_BT_601_PAL,   /*!< BT.470 System B, G (historical) */
+  AL_COLOUR_DESC_BT_709,       /*!< BT.709 */
+  AL_COLOUR_DESC_BT_2020,      /*!< BT.2020, BT.2100 */
+  AL_COLOUR_DESC_SMPTE_170M,   /*!< SMPTE 170 */
+  AL_COLOUR_DESC_SMPTE_240M,   /*!< SMPTE 240 */
+  AL_COLOUR_DESC_SMPTE_ST_428, /*!< SMPTE 428 (CIE 1921 XYZ) */
+  AL_COLOUR_DESC_SMPTE_RP_431, /*!< SMPTE RP 431-2 */
+  AL_COLOUR_DESC_SMPTE_EG_432, /*!< SMPTE EG 432-1 */
+  AL_COLOUR_DESC_EBU_3213,     /*!< EBU Tech. 3213-E */
+  AL_COLOUR_DESC_GENERIC_FILM, /*!< Generic film (color filters using illuminant C) */
+  AL_COLOUR_DESC_RGB,          /*!< sRGB (IEC 61966-2-1) */
   AL_COLOUR_DESC_MAX_ENUM,
 }AL_EColourDescription;
 
@@ -36,23 +38,24 @@ typedef enum AL_EColourDescription
 ****************************************/
 typedef enum AL_ETransferCharacteristics
 {
-  AL_TRANSFER_CHARAC_BT_709 = 1,
-  AL_TRANSFER_CHARAC_UNSPECIFIED = 2,
-  AL_TRANSFER_CHARAC_BT_470_SYSTEM_M = 4,
-  AL_TRANSFER_CHARAC_BT_470_SYSTEM_B = 5,
-  AL_TRANSFER_CHARAC_BT_601 = 6,
-  AL_TRANSFER_CHARAC_SMPTE_240M = 7,
-  AL_TRANSFER_CHARAC_LINEAR = 8,
-  AL_TRANSFER_CHARAC_LOG = 9,
-  AL_TRANSFER_CHARAC_LOG_EXTENDED = 10,
-  AL_TRANSFER_CHARAC_IEC_61966_2_4 = 11,
-  AL_TRANSFER_CHARAC_BT_1361 = 12,
-  AL_TRANSFER_CHARAC_IEC_61966_2_1 = 13,
-  AL_TRANSFER_CHARAC_BT_2020_10B = 14,
-  AL_TRANSFER_CHARAC_BT_2020_12B = 15,
-  AL_TRANSFER_CHARAC_BT_2100_PQ = 16,
-  AL_TRANSFER_CHARAC_SMPTE_428 = 17,
-  AL_TRANSFER_CHARAC_BT_2100_HLG = 18,
+  AL_TRANSFER_CHARAC_RESERVED = 0,        /*!< For future use */
+  AL_TRANSFER_CHARAC_BT_709 = 1,          /*!< BT.709 */
+  AL_TRANSFER_CHARAC_UNSPECIFIED = 2,     /*!< Unspecified */
+  AL_TRANSFER_CHARAC_BT_470_SYSTEM_M = 4, /*!< BT.470 System M (historical)  */
+  AL_TRANSFER_CHARAC_BT_470_SYSTEM_B = 5, /*!< BT.470 System B, G (historical) */
+  AL_TRANSFER_CHARAC_BT_601 = 6,          /*!< BT.601 */
+  AL_TRANSFER_CHARAC_SMPTE_240M = 7,      /*!< SMPTE 240 M  */
+  AL_TRANSFER_CHARAC_LINEAR = 8,          /*!< Linear */
+  AL_TRANSFER_CHARAC_LOG = 9,             /*!< Logarithmic (100 : 1 range) */
+  AL_TRANSFER_CHARAC_LOG_EXTENDED = 10,   /*!< Logarithmic (100 * Sqrt(10) : 1 range) */
+  AL_TRANSFER_CHARAC_IEC_61966_2_4 = 11,  /*!< IEC 61966-2-4 */
+  AL_TRANSFER_CHARAC_BT_1361 = 12,        /*!< BT.1361 */
+  AL_TRANSFER_CHARAC_IEC_61966_2_1 = 13,  /*!< sRGB or sYCC */
+  AL_TRANSFER_CHARAC_BT_2020_10B = 14,    /*!< BT.2020 10-bit systems */
+  AL_TRANSFER_CHARAC_BT_2020_12B = 15,    /*!< BT.2020 12-bit systems */
+  AL_TRANSFER_CHARAC_BT_2100_PQ = 16,     /*!< SMPTE ST 2084, ITU BT.2100 PQ */
+  AL_TRANSFER_CHARAC_SMPTE_428 = 17,      /*!< SMPTE ST 428 */
+  AL_TRANSFER_CHARAC_BT_2100_HLG = 18,    /*!< BT.2100 HLG, ARIB STD-B67 */
   AL_TRANSFER_CHARAC_MAX_ENUM,
 }AL_ETransferCharacteristics;
 
@@ -61,20 +64,20 @@ typedef enum AL_ETransferCharacteristics
 ***********************************************************************************/
 typedef enum AL_EColourMatrixCoefficients
 {
-  AL_COLOUR_MAT_COEFF_GBR = 0,
-  AL_COLOUR_MAT_COEFF_BT_709 = 1,
-  AL_COLOUR_MAT_COEFF_UNSPECIFIED = 2,
-  AL_COLOUR_MAT_COEFF_USFCC_CFR = 4,
-  AL_COLOUR_MAT_COEFF_BT_601_625 = 5,
-  AL_COLOUR_MAT_COEFF_BT_601_525 = 6,
-  AL_COLOUR_MAT_COEFF_BT_SMPTE_240M = 7,
-  AL_COLOUR_MAT_COEFF_BT_YCGCO = 8,
-  AL_COLOUR_MAT_COEFF_BT_2100_YCBCR = 9,
-  AL_COLOUR_MAT_COEFF_BT_2020_CLS = 10,
-  AL_COLOUR_MAT_COEFF_SMPTE_2085 = 11,
-  AL_COLOUR_MAT_COEFF_CHROMA_DERIVED_NCLS = 12,
-  AL_COLOUR_MAT_COEFF_CHROMA_DERIVED_CLS = 13,
-  AL_COLOUR_MAT_COEFF_BT_2100_ICTCP = 14,
+  AL_COLOUR_MAT_COEFF_GBR = 0,                  /*!< Identity matrix */
+  AL_COLOUR_MAT_COEFF_BT_709 = 1,               /*!< BT.709 */
+  AL_COLOUR_MAT_COEFF_UNSPECIFIED = 2,          /*!< Unspecified */
+  AL_COLOUR_MAT_COEFF_USFCC_CFR = 4,            /*!< US FCC 73.628 */
+  AL_COLOUR_MAT_COEFF_BT_601_625 = 5,           /*!< BT.470 System B, G (historical) */
+  AL_COLOUR_MAT_COEFF_BT_601_525 = 6,           /*!< BT.601 */
+  AL_COLOUR_MAT_COEFF_BT_SMPTE_240M = 7,        /*!< SMPTE 240 M */
+  AL_COLOUR_MAT_COEFF_BT_YCGCO = 8,             /*!< YCgCo */
+  AL_COLOUR_MAT_COEFF_BT_2100_YCBCR = 9,        /*!< BT.2020 non-constant luminance, BT.2100 YCbCr */
+  AL_COLOUR_MAT_COEFF_BT_2020_CLS = 10,         /*!< BT.2020 constant luminance */
+  AL_COLOUR_MAT_COEFF_SMPTE_2085 = 11,          /*!< SMPTE ST 2085 YDzDx */
+  AL_COLOUR_MAT_COEFF_CHROMA_DERIVED_NCLS = 12, /*!< Chromaticity-derived non-constant luminance */
+  AL_COLOUR_MAT_COEFF_CHROMA_DERIVED_CLS = 13,  /*!< Chromaticity-derived constant luminance */
+  AL_COLOUR_MAT_COEFF_BT_2100_ICTCP = 14,       /*!< BT.2100 ICtCp */
   AL_COLOUR_MAT_COEFF_MAX_ENUM,
 }AL_EColourMatrixCoefficients;
 

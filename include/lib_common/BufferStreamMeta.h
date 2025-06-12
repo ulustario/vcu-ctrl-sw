@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 /******************************************************************************
@@ -46,7 +46,7 @@ AL_TStreamMetaData* AL_StreamMetaData_Clone(AL_TStreamMetaData* pMeta);
    \param[in] eFlags stream section bitfield (see SECTION_xxxxx_FLAG)
    \return return the id given to the added section, AL_INVALID_STREAMSECTION_ID if the section couldn't be added
 *****************************************************************************/
-int AL_StreamMetaData_AddSection(AL_TStreamMetaData* pMetaData, uint32_t uOffset, uint32_t uLength, AL_ESectionFlags eFlags);
+int32_t AL_StreamMetaData_AddSection(AL_TStreamMetaData* pMetaData, uint32_t uOffset, uint32_t uLength, AL_ESectionFlags eFlags);
 
 /*****************************************************************************
    \brief Change the information of a previously added section
@@ -79,7 +79,7 @@ void AL_StreamMetaData_ClearAllSections(AL_TStreamMetaData* pMetaData);
    \param[in] uLength length of the section data in the stream
    \return returns the section id, AL_INVALID_STREAMSECTION_ID on failure
 *****************************************************************************/
-int AL_StreamMetaData_AddSeiSection(AL_TStreamMetaData* pMetaData, bool isPrefix, uint32_t uOffset, uint32_t uLength);
+int32_t AL_StreamMetaData_AddSeiSection(AL_TStreamMetaData* pMetaData, bool isPrefix, uint32_t uOffset, uint32_t uLength);
 
 /*****************************************************************************
    \brief Get an unused part in the stream buffer
@@ -95,6 +95,6 @@ uint32_t AL_StreamMetaData_GetUnusedStreamPart(AL_TStreamMetaData* pMetaData);
    \param[in] uFlag Section's flag
    \return returns the section id, -1 on failure
 *****************************************************************************/
-int AL_StreamMetaData_GetLastSectionOfFlag(AL_TStreamMetaData* pMetaData, uint32_t uFlag);
+int32_t AL_StreamMetaData_GetLastSectionOfFlag(AL_TStreamMetaData* pMetaData, uint32_t uFlag);
 
 /*!@}*/

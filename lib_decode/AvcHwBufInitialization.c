@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #include "AvcHwBufInitialization.h"
@@ -21,7 +21,7 @@ static void AL_AVC_FillWeightedPredCoeff(AL_VADDR pDataWP, AL_TAvcSliceHdr const
 
   AL_TWPCoeff const* pWpCoeff = &pSlice->pred_weight_table.tWpCoeff[uL0L1];
 
-  for(int i = 0; i < uNumRefIdx; ++i)
+  for(int32_t i = 0; i < uNumRefIdx; ++i)
   {
     pWP[0] = ((pWpCoeff->luma_offset[i] & 0x3FF)) |
              ((pWpCoeff->chroma_offset[i][0] & 0x3FF) << 10) |

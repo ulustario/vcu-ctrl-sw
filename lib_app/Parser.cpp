@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #include "lib_app/Parser.h"
@@ -52,9 +52,9 @@ std::string parseString(std::deque<Token>& tokens)
   return acc.str();
 }
 
-int parseEnum(std::deque<Token>& tokens, std::map<std::string, EnumDescription<int>> const& availableEnums)
+int32_t parseEnum(std::deque<Token>& tokens, std::map<std::string, EnumDescription<int>> const& availableEnums)
 {
-  int value {};
+  int32_t value {};
   bool lastIsOr = false;
   bool lastIsIdent = false;
 
@@ -92,7 +92,7 @@ int parseEnum(std::deque<Token>& tokens, std::map<std::string, EnumDescription<i
   return value;
 }
 
-int parseBoolEnum(std::deque<Token>& tokens, std::map<std::string, EnumDescription<int>> boolEnums)
+int32_t parseBoolEnum(std::deque<Token>& tokens, std::map<std::string, EnumDescription<int>> boolEnums)
 {
   /* support values 0 or 1 for boolean value */
   Token& token = tokens[0];

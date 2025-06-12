@@ -25,7 +25,7 @@
 
 struct BuildInfoDisplay
 {
-  BuildInfoDisplay(char const* scmRevision, char const* scmBranch, char const* configureCmdline, char const* compilationFlags, int deliveryBuildNumber = 0, char const* deliveryScmRevision = "unknown", char const* deliveryDate = "unknown") : scmRevision{scmRevision}, scmBranch{scmBranch}, configureCmdline{configureCmdline}, compilationFlags{compilationFlags}, deliveryBuildNumber{deliveryBuildNumber}, deliveryScmRevision{deliveryScmRevision}, deliveryDate{deliveryDate}
+  BuildInfoDisplay(char const* scmRevision, char const* scmBranch, char const* configureCmdline, char const* compilationFlags, int32_t deliveryBuildNumber = 0, char const* deliveryScmRevision = "unknown", char const* deliveryDate = "unknown") : scmRevision{scmRevision}, scmBranch{scmBranch}, configureCmdline{configureCmdline}, compilationFlags{compilationFlags}, deliveryBuildNumber{deliveryBuildNumber}, deliveryScmRevision{deliveryScmRevision}, deliveryDate{deliveryDate}
   {
   }
 
@@ -83,7 +83,7 @@ struct BuildInfoDisplay
   char const* scmBranch;
   char const* configureCmdline;
   char const* compilationFlags;
-  int deliveryBuildNumber;
+  int32_t deliveryBuildNumber;
   char const* deliveryScmRevision;
   char const* deliveryDate;
   char const* librefRevision;
@@ -91,7 +91,7 @@ struct BuildInfoDisplay
   std::function<void(void)> displayFeatures {};
 };
 
-static inline void DisplayVersionInfo(char const* company, char const* productName, int versionMajor, int versionMinor, int versionPatch, char const* copyright, char const* comments)
+static inline void DisplayVersionInfo(char const* company, char const* productName, int32_t versionMajor, int32_t versionMinor, int32_t versionPatch, char const* copyright, char const* comments)
 {
   LogVerbose("%s - %s v%d.%d.%d - %s\n", company,
              productName,

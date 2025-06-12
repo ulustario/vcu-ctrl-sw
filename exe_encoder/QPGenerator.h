@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 /****************************************************************************
@@ -8,6 +8,7 @@
 extern "C"
 {
 #include "lib_common/Error.h"
+#include "lib_common/BufferAPI.h"
 #include "lib_common_enc/Settings.h"
 }
 #include <string>
@@ -65,11 +66,11 @@ static inline bool AL_HasQpTable(AL_EGenerateQpMode eMode)
    \param[in]  sQPTablesFolder In case QP are loaded from files, path to the folder
                containing the QP table files
    \param[in]  iFrameID   Frame identifier
-   \param[out] pQPTable       Pointer to the buffer that receives the QP Table
+   \param[out] pQpBuf     Pointer to the buffer that receives the QP Table
    \note iMinQp <= iMaxQP
    \return 0 on success, 1 if file is not found, 2 if there is an error in the file
 *****************************************************************************/
-AL_ERR GenerateQPBuffer(AL_EGenerateQpMode eMode, int16_t iSliceQP, int16_t iMinQP, int16_t iMaxQP, int16_t iLCUPicWidth, int16_t iLCUPicHeight, AL_EProfile eProf, uint8_t uLogMaxCuSize, int iQPTableDepth, const std::string& sQPTablesFolder, int iFrameID, uint8_t* pQPTable);
+AL_ERR GenerateQPBuffer(AL_EGenerateQpMode eMode, int16_t iSliceQP, int16_t iMinQP, int16_t iMaxQP, int16_t iLCUPicWidth, int16_t iLCUPicHeight, AL_EProfile eProf, uint8_t uLogMaxCuSize, int32_t iQPTableDepth, const std::string& sQPTablesFolder, int32_t iFrameID, AL_TBuffer* pQpBuf);
 
 /*****************************************************************************
    \brief Fill QP part of the buffer pointed to by pQP with a QP for each
@@ -86,4 +87,4 @@ AL_ERR GenerateQPBuffer(AL_EGenerateQpMode eMode, int16_t iSliceQP, int16_t iMin
    \param[out] pQPs       Pointer to the buffer that receives the computed QPs
    \return true on success, false on error
 *****************************************************************************/
-AL_ERR GenerateROIBuffer(AL_TRoiMngrCtx* pRoiCtx, std::string const& sRoiFileName, int16_t iLCUPicWidth, int16_t iLCUPicHeight, AL_EProfile eProf, uint8_t uLogMaxCuSize, int iQPTableDepth, int iFrameID, uint8_t* pQPs);
+AL_ERR GenerateROIBuffer(AL_TRoiMngrCtx* pRoiCtx, std::string const& sRoiFileName, int16_t iLCUPicWidth, int16_t iLCUPicHeight, AL_EProfile eProf, uint8_t uLogMaxCuSize, int32_t iQPTableDepth, int32_t iFrameID, uint8_t* pQPs);

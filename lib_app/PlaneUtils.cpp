@@ -1,24 +1,24 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #include "lib_app/PlaneUtils.h"
 
-std::vector<AL_TPlaneDescription> getPlaneDescription(TFourCC tFourCC, int iPitch, int iPitchMap, size_t sizes[], int& iTotalOffset)
+std::vector<AL_TPlaneDescription> getPlaneDescription(TFourCC tFourCC, int32_t iPitch, int32_t iPitchMap, size_t sizes[], int& iTotalOffset)
 {
   std::vector<AL_TPlaneDescription> outputPlaneDescription;
   AL_EPlaneId usedPlanes[AL_MAX_BUFFER_PLANES];
   AL_TPicFormat tPicFormat;
   AL_GetPicFormat(tFourCC, &tPicFormat);
 
-  int iNbPlanes = AL_Plane_GetBufferPlanes(tPicFormat, usedPlanes);
-  int offset = 0;
+  int32_t iNbPlanes = AL_Plane_GetBufferPlanes(tPicFormat, usedPlanes);
+  int32_t offset = 0;
 
-  for(int iPlane = 0; iPlane < iNbPlanes; iPlane++)
+  for(int32_t iPlane = 0; iPlane < iNbPlanes; iPlane++)
   {
     AL_EPlaneId ePlaneId = usedPlanes[iPlane];
 
-    int planeIdx = 0;
-    int pitch = iPitch;
+    int32_t planeIdx = 0;
+    int32_t pitch = iPitch;
     switch(ePlaneId)
     {
     case AL_PLANE_U:

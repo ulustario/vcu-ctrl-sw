@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #include "lib_rtos/lib_rtos.h"
@@ -23,7 +23,7 @@ AL_TPixMapMetaData* AL_PixMapMetaData_Clone(AL_TPixMapMetaData* pMeta)
 
   pClone->tDim = pMeta->tDim;
 
-  for(int iPlane = 0; iPlane < AL_PLANE_MAX_ENUM; iPlane++)
+  for(int32_t iPlane = 0; iPlane < AL_PLANE_MAX_ENUM; iPlane++)
     pClone->tPlanes[iPlane] = pMeta->tPlanes[iPlane];
 
   return pClone;
@@ -63,7 +63,7 @@ AL_TPixMapMetaData* AL_PixMapMetaData_CreateEmpty(TFourCC tFourCC)
 
   AL_TPlane tEmptyPlane = { -1, 0, 0 };
 
-  for(int iPlane = 0; iPlane < AL_PLANE_MAX_ENUM; iPlane++)
+  for(int32_t iPlane = 0; iPlane < AL_PLANE_MAX_ENUM; iPlane++)
     pMeta->tPlanes[iPlane] = tEmptyPlane;
 
   pMeta->tFourCC = tFourCC;
@@ -90,36 +90,36 @@ AL_TPixMapMetaData* AL_PixMapMetaData_Create(AL_TDimension tDim, AL_TPlane tYPla
   return pMeta;
 }
 
-int AL_PixMapMetaData_GetOffset(AL_TPixMapMetaData* pMeta, AL_EPlaneId ePlaneId)
+int32_t AL_PixMapMetaData_GetOffset(AL_TPixMapMetaData* pMeta, AL_EPlaneId ePlaneId)
 {
   return pMeta->tPlanes[ePlaneId].iOffset;
 }
 
-int AL_PixMapMetaData_GetOffsetY(AL_TPixMapMetaData* pMeta)
+int32_t AL_PixMapMetaData_GetOffsetY(AL_TPixMapMetaData* pMeta)
 {
   return AL_PixMapMetaData_GetOffset(pMeta, AL_PLANE_Y);
 }
 
-int AL_PixMapMetaData_GetOffsetUV(AL_TPixMapMetaData* pMeta)
+int32_t AL_PixMapMetaData_GetOffsetUV(AL_TPixMapMetaData* pMeta)
 {
   return AL_PixMapMetaData_GetOffset(pMeta, AL_PLANE_UV);
 }
 
-int AL_PixMapMetaData_GetLumaSize(AL_TPixMapMetaData* pMeta)
+int32_t AL_PixMapMetaData_GetLumaSize(AL_TPixMapMetaData* pMeta)
 {
   if(AL_IsTiled(pMeta->tFourCC))
     return pMeta->tPlanes[AL_PLANE_Y].iPitch * pMeta->tDim.iHeight / 4;
   return pMeta->tPlanes[AL_PLANE_Y].iPitch * pMeta->tDim.iHeight;
 }
 
-int AL_PixMapMetaData_GetChromaSize(AL_TPixMapMetaData* pMeta)
+int32_t AL_PixMapMetaData_GetChromaSize(AL_TPixMapMetaData* pMeta)
 {
   AL_EChromaMode eCMode = AL_GetChromaMode(pMeta->tFourCC);
 
   if(eCMode == AL_CHROMA_MONO)
     return 0;
 
-  int const iHeightC = AL_GetChromaHeight(pMeta->tFourCC, pMeta->tDim.iHeight);
+  int32_t const iHeightC = AL_GetChromaHeight(pMeta->tFourCC, pMeta->tDim.iHeight);
 
   if(AL_IsTiled(pMeta->tFourCC))
     return pMeta->tPlanes[AL_PLANE_UV].iPitch * iHeightC / 4;

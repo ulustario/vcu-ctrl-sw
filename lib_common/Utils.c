@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 /******************************************************************************
@@ -10,7 +10,7 @@
 #include "Utils.h"
 
 /***************************************************************************/
-static int const tab_ceil_log2[] =
+static int32_t const tab_ceil_log2[] =
 {
 /*  0.. 7 */
   0, 0, 1, 2, 2, 3, 3, 3,
@@ -23,14 +23,14 @@ static int const tab_ceil_log2[] =
 };
 
 /***************************************************************************/
-int ceil_log2(int n)
+int32_t ceil_log2(int32_t n)
 {
   Rtos_Assert(n >= 0);
 
   if(n < 32)
     return tab_ceil_log2[n];
 
-  int v = 0;
+  int32_t v = 0;
 
   n--;
 
@@ -45,9 +45,9 @@ int ceil_log2(int n)
 }
 
 /***************************************************************************/
-int floor_log2(int n)
+int32_t floor_log2(int32_t n)
 {
-  int s = -1;
+  int32_t s = -1;
 
   while(n != 0)
   {
@@ -59,7 +59,7 @@ int floor_log2(int n)
 }
 
 /****************************************************************************/
-int GetBlkNumber(AL_TDimension tDim, uint32_t uBlkWidth, uint32_t uBlkHeight)
+int32_t GetBlkNumber(AL_TDimension tDim, uint32_t uBlkWidth, uint32_t uBlkHeight)
 {
   return DivideRoundUp(tDim.iWidth, uBlkWidth) * DivideRoundUp(tDim.iHeight, uBlkHeight);
 }
@@ -86,11 +86,11 @@ AL_HANDLE AlignedAlloc(AL_TAllocator* pAllocator, const char* pBufName, uint32_t
 }
 
 /****************************************************************************/
-int16_t MaxInArray(const int16_t tab[], int arraySize)
+int16_t MaxInArray(const int16_t tab[], int32_t arraySize)
 {
   int16_t max = 0;
 
-  for(int i = 0; i < arraySize; i++)
+  for(int32_t i = 0; i < arraySize; i++)
   {
     max = Max(tab[i], max);
   }
@@ -99,11 +99,11 @@ int16_t MaxInArray(const int16_t tab[], int arraySize)
 }
 
 /****************************************************************************/
-int16_t MinInArray(const int16_t tab[], int arraySize)
+int16_t MinInArray(const int16_t tab[], int32_t arraySize)
 {
   int16_t min = 0;
 
-  for(int i = 0; i < arraySize; i++)
+  for(int32_t i = 0; i < arraySize; i++)
   {
     min = Min(tab[i], min);
   }

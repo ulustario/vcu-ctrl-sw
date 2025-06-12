@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #include "lib_common/BufferHandleMeta.h"
@@ -44,7 +44,7 @@ static AL_TMetaData* clone(AL_TMetaData* pMeta)
   return (AL_TMetaData*)AL_HandleMetaData_Clone((AL_THandleMetaData*)pMeta);
 }
 
-static AL_TInternalHandleMetaData* allocInternal(int iMaxHandles, int iHandleSize)
+static AL_TInternalHandleMetaData* allocInternal(int32_t iMaxHandles, int32_t iHandleSize)
 {
   AL_TInternalHandleMetaData* pInternal = (AL_TInternalHandleMetaData*)Rtos_Malloc(sizeof(*pInternal));
 
@@ -75,7 +75,7 @@ static AL_TInternalHandleMetaData* allocInternal(int iMaxHandles, int iHandleSiz
   return pInternal;
 }
 
-AL_THandleMetaData* AL_HandleMetaData_Create(int iMaxHandles, int iHandleSize)
+AL_THandleMetaData* AL_HandleMetaData_Create(int32_t iMaxHandles, int32_t iHandleSize)
 {
   AL_THandleMetaData* pMeta = (AL_THandleMetaData*)Rtos_Malloc(sizeof(*pMeta));
 
@@ -96,7 +96,7 @@ AL_THandleMetaData* AL_HandleMetaData_Create(int iMaxHandles, int iHandleSize)
   return pMeta;
 }
 
-static AL_HANDLE getHandlePtr(AL_THandleMetaData const* pMeta, int iNumHandle)
+static AL_HANDLE getHandlePtr(AL_THandleMetaData const* pMeta, int32_t iNumHandle)
 {
   Rtos_GetMutex(pMeta->pInternal->mutex);
   AL_HANDLE pHandle = (AL_HANDLE)(((uintptr_t)pMeta->pInternal->pHandles) + (iNumHandle * pMeta->pInternal->handleSizeInBytes));
@@ -127,15 +127,15 @@ void AL_HandleMetaData_ResetHandles(AL_THandleMetaData* pMeta)
   Rtos_ReleaseMutex(pMeta->pInternal->mutex);
 }
 
-AL_HANDLE AL_HandleMetaData_GetHandle(AL_THandleMetaData const* pMeta, int iNumHandle)
+AL_HANDLE AL_HandleMetaData_GetHandle(AL_THandleMetaData const* pMeta, int32_t iNumHandle)
 {
   return getHandlePtr(pMeta, iNumHandle);
 }
 
-int AL_HandleMetaData_GetNumHandles(AL_THandleMetaData const* pMeta)
+int32_t AL_HandleMetaData_GetNumHandles(AL_THandleMetaData const* pMeta)
 {
   Rtos_GetMutex(pMeta->pInternal->mutex);
-  int numHandles = pMeta->pInternal->numHandles;
+  int32_t numHandles = pMeta->pInternal->numHandles;
   Rtos_ReleaseMutex(pMeta->pInternal->mutex);
   return numHandles;
 }

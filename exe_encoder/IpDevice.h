@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #pragma once
@@ -24,11 +24,11 @@ struct CIpDeviceParam
   AL_EDeviceType eDeviceType;
   AL_ESchedulerType eSchedulerType;
   ConfigFile* pCfgFile;
-  bool bTrackDma = false;
+  AL_ETrackDmaMode eTrackDmaMode = AL_ETrackDmaMode::AL_TRACK_DMA_MODE_NONE;
 };
 
 /*****************************************************************************/
-static int constexpr NUM_SRC_SYNC_CHANNEL = 4;
+static int32_t constexpr NUM_SRC_SYNC_CHANNEL = 4;
 
 class CIpDevice
 {
@@ -46,7 +46,7 @@ public:
 
 private:
   AL_IEncScheduler* m_pScheduler = nullptr;
-  AL_TAllocator* m_pAllocator = nullptr;
+  std::shared_ptr<AL_TAllocator> m_pAllocator = nullptr;
   AL_ITimer* m_pTimer = nullptr;
 
   void ConfigureMcu(CIpDeviceParam& param);
@@ -59,7 +59,7 @@ inline AL_IEncScheduler* CIpDevice::GetScheduler(void)
 
 inline AL_TAllocator* CIpDevice::GetAllocator(void)
 {
-  return m_pAllocator;
+  return m_pAllocator.get();
 }
 
 inline AL_ITimer* CIpDevice::GetTimer(void)

@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 /******************************************************************************
@@ -12,6 +12,11 @@
 
 #define AL_MAX_NUM_REF 16
 #define AL_MAX_NUM_B_PICT 30
+static int32_t const AL_MAX_WP_DENOM = 7;
+static int32_t const AL_MIN_WP_LUMA_PARAM = -128;
+static int32_t const AL_MAX_WP_LUMA_PARAM = 127;
+static int32_t const AL_MIN_WP_CHROMA_DELTA_WEIGHT = -128;
+static int32_t const AL_MAX_WP_CHROMA_DELTA_WEIGHT = 127;
 
 /*****************************************************************************
    \brief Maximum number of frame type i.e. (I, P, B)

@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 /******************************************************************************
@@ -13,12 +13,13 @@
 
 #include "lib_common/SliceConsts.h"
 #include "lib_common/Nuts.h"
-#include "lib_common/SliceHeader.h"
 #include "lib_common/Utils.h"
 
 #include "lib_common_dec/DecBuffersInternal.h"
 #include "lib_common_dec/DecPicParam.h"
 #include "lib_common_dec/DecDpbMode.h"
+
+#include "lib_common/AvcHeaders.h"
 
 #define MAX_BUF_HELD_BY_NEXT_COMPONENT MAX_REF /*!< e.g. display / encoder / .. */
 #define PIC_ID_POOL_SIZE MAX_REF
@@ -44,9 +45,9 @@ typedef enum
 *****************************************************************************/
 typedef struct
 {
-  void (* pfnIncrementFrmBuf)(void* pUserParam, int iFrameID); /*!< Callback Callback Function to signal that a Frame Buffer is used by the DPB */
-  void (* pfnDecrementFrmBuf)(void* pUserParam, int iFrameID); /*!< Callback Callback Function to signal that a frame buffer is no more used by the DPB */
-  void (* pfnOutputFrmBuf)(void* pUserParam, int iFrameID); /*!< Callback Function to signal that a frame buffer need to be displayed */
+  void (* pfnIncrementFrmBuf)(void* pUserParam, int32_t iFrameID); /*!< Callback Callback Function to signal that a Frame Buffer is used by the DPB */
+  void (* pfnDecrementFrmBuf)(void* pUserParam, int32_t iFrameID); /*!< Callback Callback Function to signal that a frame buffer is no more used by the DPB */
+  void (* pfnOutputFrmBuf)(void* pUserParam, int32_t iFrameID); /*!< Callback Function to signal that a frame buffer need to be displayed */
 
   void (* pfnIncrementMvBuf)(void* pUserParam, uint8_t MvID); /*!< Callback Callback Function to signal that a Motion_vector buffer is used by the DPB */
   void (* pfnDecrementMvBuf)(void* pUserParam, uint8_t MvID); /*!< Callback Callback Function to signal that a Motion_vector buffer is no more used by the DPB */
@@ -134,19 +135,19 @@ typedef struct
   uint8_t uFrmWaiting;
   uint8_t uMvWaiting;
 
-  int pDeletedFrmIDLst[FRM_BUF_POOL_SIZE];
-  int pDeletedMvIDLst[MAX_DPB_SIZE];
+  int32_t pDeletedFrmIDLst[FRM_BUF_POOL_SIZE];
+  int32_t pDeletedMvIDLst[MAX_DPB_SIZE];
 
-  int iDeletedFrmLstHead;
-  int iDeletedFrmLstTail;
+  int32_t iDeletedFrmLstHead;
+  int32_t iDeletedFrmLstTail;
 
-  int iDeletedMvLstHead;
-  int iDeletedMvLstTail;
+  int32_t iDeletedMvLstHead;
+  int32_t iDeletedMvLstTail;
 
-  int iNumDeletedPic;
+  int32_t iNumDeletedPic;
 
   /* dpb members */
-  int iLastDisplayedPOC;
+  int32_t iLastDisplayedPOC;
   uint8_t uNumOutputPic;
   bool bNewSeq;
 
@@ -336,7 +337,7 @@ void AL_Dpb_Insert(AL_TDpb* pDpb, int32_t iFramePOC, AL_EPicStruct ePicStruct, i
    \param[in] pDpb   Pointer to a DPB context object
    \param[in] iFrmID FrmID of the decoded frame
 *****************************************************************************/
-void AL_Dpb_EndDecoding(AL_TDpb* pDpb, int iFrmID);
+void AL_Dpb_EndDecoding(AL_TDpb* pDpb, int32_t iFrmID);
 
 /*****************************************************************************
    \brief Calculate the pic_num of each reference picture
@@ -351,7 +352,7 @@ void AL_Dpb_PictNumberProcess(AL_TDpb* pDpb, AL_TAvcSliceHdr const* pSlice);
    \param[in] pSlice        Current slice header
    \param[in]  iCurFramePOC POC of the current picture
 *****************************************************************************/
-void AL_Dpb_MarkingProcess(AL_TDpb* pDpb, AL_TAvcSliceHdr const* pSlice, int iCurFramePOC);
+void AL_Dpb_MarkingProcess(AL_TDpb* pDpb, AL_TAvcSliceHdr const* pSlice, int32_t iCurFramePOC);
 
 /*****************************************************************************
    \brief Initializes the reference list for a P slice
@@ -368,7 +369,7 @@ void AL_Dpb_InitPSlice_RefList(AL_TDpb const* pDpb, AL_EPicStruct eCurrPicStruct
    \param[in]  eCurrPicStruct Picture structure of the current frame
    \param[out] pRefList       Pointer on the reference picture list object
 *****************************************************************************/
-void AL_Dpb_InitBSlice_RefList(AL_TDpb const* pDpb, int iCurFramePOC, AL_EPicStruct eCurrPicStruct, TBufferListRef* pRefList);
+void AL_Dpb_InitBSlice_RefList(AL_TDpb const* pDpb, int32_t iCurFramePOC, AL_EPicStruct eCurrPicStruct, TBufferListRef* pRefList);
 
 /*****************************************************************************
    \brief Modifies the reference picture list on short term reference pictures
@@ -381,7 +382,7 @@ void AL_Dpb_InitBSlice_RefList(AL_TDpb const* pDpb, int iCurFramePOC, AL_EPicStr
    \param[in]     pPicNumPred Pic Num of the processed picture without wrapping
    \param[in,out] pListRef    Pointer on the reference picture list object
 *****************************************************************************/
-void AL_Dpb_ModifShortTerm(AL_TDpb const* pDpb, AL_TAvcSliceHdr const* pSlice, int iPicNumIdc, uint8_t uOffset, int iL0L1, uint8_t* pRefIdx, int* pPicNumPred, TBufferListRef* pListRef);
+void AL_Dpb_ModifShortTerm(AL_TDpb const* pDpb, AL_TAvcSliceHdr const* pSlice, int32_t iPicNumIdc, uint8_t uOffset, int32_t iL0L1, uint8_t* pRefIdx, int32_t* pPicNumPred, TBufferListRef* pListRef);
 
 /*****************************************************************************
    \brief Modifies the reference picture list on long term reference pictures
@@ -392,7 +393,7 @@ void AL_Dpb_ModifShortTerm(AL_TDpb const* pDpb, AL_TAvcSliceHdr const* pSlice, i
    \param[in,out] pRefIdx     reference index of the current modified picture
    \param[in,out] pListRef    Pointer on the reference picture list object
 *****************************************************************************/
-void AL_Dpb_ModifLongTerm(AL_TDpb const* pDpb, AL_TAvcSliceHdr const* pSlice, uint8_t uOffset, int iL0L1, uint8_t* pRefIdx, TBufferListRef* pListRef);
+void AL_Dpb_ModifLongTerm(AL_TDpb const* pDpb, AL_TAvcSliceHdr const* pSlice, uint8_t uOffset, int32_t iL0L1, uint8_t* pRefIdx, TBufferListRef* pListRef);
 
 /*****************************************************************************
    \brief Retrieves the number of really existing reference pictures
@@ -432,9 +433,10 @@ uint8_t AL_Dpb_ConvertPicIDToNodeID(AL_TDpb const* pDpb, uint8_t uPicID);
    \param[in]  pListRef      Reference list
    \param[out] pPocList      Poc list output buffer
    \param[out] pLongTermList Reference picture marking status output buffer
+   \param[out] pAvailableRefList Reference picture availability status output buffer
    \param[out] pSubpicList   Reference picture subpics flags output buffer
 *****************************************************************************/
-void AL_Dpb_FillList(AL_TDpb const* pDpb, int32_t* pPocList, uint32_t* pLongTermList, uint32_t* pSubpicList);
+void AL_Dpb_FillList(AL_TDpb const* pDpb, int32_t* pPocList, uint16_t* pLongTermList, uint16_t* pAvailableRefList, uint32_t* pSubpicList);
 
 /*****************************************************************************
    \brief Searches the picture with the given poc_lsb in the dpb with the corresponding marking flag
@@ -529,7 +531,7 @@ uint8_t AL_Dpb_GetFrmID_FromNode(AL_TDpb const* pDpb, uint8_t uNode);
    \param[in]     uNode        Picture identifier in the DPB Node
    \param[in]     iCurFramePOC Picture order count of the current picture
 *****************************************************************************/
-void AL_Dpb_IncrementPicLatency(AL_TDpb* pDpb, uint8_t uNode, int iCurFramePOC);
+void AL_Dpb_IncrementPicLatency(AL_TDpb* pDpb, uint8_t uNode, int32_t iCurFramePOC);
 
 /*****************************************************************************
    \brief Decrement the latency of a specific pcture

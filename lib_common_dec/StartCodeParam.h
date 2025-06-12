@@ -1,11 +1,6 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
-/******************************************************************************
-   \addtogroup lib_base
-   !@{
-   \file
- *****************************************************************************/
 #pragma once
 
 #include "lib_rtos/types.h"
@@ -47,8 +42,8 @@ typedef struct AL_TStartCode
 {
   uint32_t uPosition;  /* Position of the detected NAL in the circular buffer*/
   uint8_t uNUT;       /* Nal Unit Type of the corresponding NAL */
-  uint8_t TemporalID; /* Temporal ID of the detected NAL*/
-  uint16_t Reserved;
+  uint8_t uTemporalID; /* Temporal ID of the detected NAL*/
+  uint16_t uReserved;
 }AL_TStartCode;
 
 typedef struct AL_TNal
@@ -65,5 +60,3 @@ typedef struct AL_TSCStatus
   uint16_t uNumSC;    /* number of Start Code found */
   uint32_t uNumBytes; /* number of bytes parsed */
 }AL_TScStatus;
-
-/*!@}*/

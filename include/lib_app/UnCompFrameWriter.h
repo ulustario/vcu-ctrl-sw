@@ -1,15 +1,9 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #pragma once
 
 #include "BaseFrameWriter.h"
-
-extern "C"
-{
-#include "lib_common/FourCC.h"
-#include "lib_common/BufferAPI.h"
-}
 
 /****************************************************************************/
 struct UnCompFrameWriter final : IFrameWriter, BaseFrameWriter

@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 /******************************************************************************
@@ -22,7 +22,7 @@
    determining the initialisation table used in initialisation
    process for context variables
 *****************************************************************************/
-extern bool AL_AVC_GenerateSkippedPicture(AL_TSkippedPicture* pSkipPict, int32_t iNumMBs, bool bCabac, int iCabacInitIdc);
+extern bool AL_AVC_GenerateSkippedPicture(AL_TSkippedPicture* pSkipPict, int32_t iNumMBs, bool bCabac, int32_t iCabacInitIdc);
 
 /****************************************************************************/
 

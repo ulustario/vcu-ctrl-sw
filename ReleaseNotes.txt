@@ -925,13 +925,13 @@
     -- Performances when logs are disabled
     -- Minors bug and typos fixes and types
 
-2024-11-01 (v1.0.83)
+YYYY-MM-DD (v1.0.??)
 --------------------
   Added Features:
     --
 
   API:
-    -- Version of the API is now 0.46.0
+    -- Version of the API is now 0.45.0
     -- Move all lib_conv_yuv into lib_app
       - Remove duplicated files
       - Several files renames

@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 /******************************************************************************
@@ -9,9 +9,10 @@
 #pragma once
 
 #include "lib_common/ScalingList.h"
-#include "lib_common/SliceHeader.h"
 #include "lib_parsing/I_PictMngr.h"
 #include "lib_decode/I_DecoderCtx.h"
+#include "lib_common/AvcHeaders.h"
+#include "lib_common/HevcHeaders.h"
 
 /*****************************************************************************
    \brief The AL_LaunchDecoding function launch a frame decoding request to the Hardware IP
@@ -34,9 +35,9 @@ void AL_LaunchSliceDecoding(AL_TDecCtx* pCtx, bool bIsLastAUNal, bool hasPreviou
    \param[in]  bStartsNewCVS     True if the next frame starts a new CVS, false otherwise
    \param[in]  tDim              Picture dimension (width, height) in pixel unit
    \param[in]  eChromaMode       Picture chroma mode
-   \param[in]  pPP               Pointer to the current picture parameters
+   \param[in]  pPicParam               Pointer to the current picture parameters
 *****************************************************************************/
-bool AL_InitFrameBuffers(AL_TDecCtx* pCtx, AL_TDecBuffers* pBufs, bool bStartsNewCVS, AL_TDimension tDim, AL_EChromaMode eDecodedChromaMode, AL_TDecPicParam* pPP);
+bool AL_InitFrameBuffers(AL_TDecCtx* pCtx, AL_TDecBuffers* pBufs, bool bStartsNewCVS, AL_TDimension tDim, AL_EChromaMode eDecodedChromaMode, AL_TDecPicParam* pPicParam);
 
 /*****************************************************************************
    \brief The AL_CancelFrameBuffers function reverts the frame buffers initialization done by AL_InitFrameBuffers in case of late error detection
@@ -47,45 +48,48 @@ void AL_CancelFrameBuffers(AL_TDecCtx* pCtx);
 /*****************************************************************************
    \brief The AL_SetConcealParameters sets the conceal ID buffer and it's availability flag
    \param[in]  pCtx              Pointer to a decoder context object
-   \param[out] pSP               Pointer to the current slice parameters
+   \param[out] pSliceParam               Pointer to the current slice parameters
 *****************************************************************************/
-void AL_SetConcealParameters(AL_TDecCtx* pCtx, AL_TDecSliceParam* pSP);
+void AL_SetConcealParameters(AL_TDecCtx* pCtx, AL_TDecSliceParam* pSliceParam);
 
 /*****************************************************************************
    \brief The AL_TerminatePreviousCommand flush one decoding command by computing parameters relative to next slice
    \param[in]  pCtx              Pointer to a decoder context object
-   \param[in]  pPP               Pointer to the current picture parameters
-   \param[in]  pSP               Pointer to the current slice parameters
+   \param[in]  pPicParam               Pointer to the current picture parameters
+   \param[in]  pSliceParam               Pointer to the current slice parameters
    \param[in]  pBufs             Pointer to the current picture buffers
    \param[in]  bIsLastVclNalInAU Specifies if this is the last NAL of the current access unit
    \param[in]  bNextIsDependent  Specifies if the next slice segment is a dependent or non-dependent slice
 *****************************************************************************/
-void AL_TerminatePreviousCommand(AL_TDecCtx* pCtx, AL_TDecPicParam const* pPP, AL_TDecSliceParam* pSP, AL_TDecBuffers* pBufs, bool bIsLastVclNalInAU, bool bNextIsDependent);
+void AL_TerminatePreviousCommand(AL_TDecCtx* pCtx, AL_TDecPicParam const* pPicParam, AL_TDecSliceParam* pSliceParam, AL_TDecBuffers* pBufs, bool bIsLastVclNalInAU, bool bNextIsDependent);
 
 /*****************************************************************************
    \brief The AL_AVC_PrepareCommand function prepares the buffers for the hardware decoding process
    \param[in]  pCtx              Pointer to a decoder context object
    \param[in]  pSCL              Pointer to a scaling list object
-   \param[in]  pPP               Pointer to the current picture parameters
+   \param[in]  pPicParam               Pointer to the current picture parameters
    \param[in]  pBufs             Pointer to the current picture buffers
-   \param[in]  pSP               Pointer to the current slice parameters
+   \param[in]  pSliceParam               Pointer to the current slice parameters
    \param[in]  pSlice            Pointer to the current slice header
    \param[in]  bIsLastVclNalInAU Specifies if this is the last NAL of the current access unit
    \param[in]  bIsValid          Specifies if the current NAL has been correctly decoded
 *****************************************************************************/
-void AL_AVC_PrepareCommand(AL_TDecCtx* pCtx, AL_TScl* pSCL, AL_TDecPicParam* pPP, AL_TDecBuffers* pBufs, AL_TDecSliceParam* pSP, AL_TAvcSliceHdr* pSlice, bool bIsLastVclNalInAU, bool bIsValid);
+void AL_AVC_PrepareCommand(AL_TDecCtx* pCtx, AL_TScl* pSCL, AL_TDecPicParam* pPicParam, AL_TDecBuffers* pBufs, AL_TDecSliceParam* pSliceParam, AL_TAvcSliceHdr* pSlice, bool bIsLastVclNalInAU, bool bIsValid);
 
 /*****************************************************************************
    \brief The AL_HEVC_PrepareCommand function prepares the buffers for the hardware decoding process
    \param[in]  pCtx              Pointer to a decoder context object
    \param[in]  pSCL              Pointer to a scaling list object
-   \param[in]  pPP               Pointer to the current picture parameters
+   \param[in]  pPicParam               Pointer to the current picture parameters
    \param[in]  pBufs             Pointer to the current picture buffers
-   \param[in]  pSP               Pointer to the current slice parameters
+   \param[in]  pSliceParam               Pointer to the current slice parameters
    \param[in]  pSlice            Pointer to the current slice header
    \param[in]  bIsLastVclNalInAU Specifies if this is the last NAL of the current access unit
    \param[in]  bIsValid          Specifies if the current NAL has been correctly decoded
 *****************************************************************************/
-void AL_HEVC_PrepareCommand(AL_TDecCtx* pCtx, AL_TScl* pSCL, AL_TDecPicParam* pPP, AL_TDecBuffers* pBufs, AL_TDecSliceParam* pSP, AL_THevcSliceHdr* pSlice, bool bIsLastVclNalInAU, bool bIsValid);
+void AL_HEVC_PrepareCommand(AL_TDecCtx* pCtx, AL_TScl* pSCL, AL_TDecPicParam* pPicParam, AL_TDecBuffers* pBufs, AL_TDecSliceParam* pSliceParam, AL_THevcSliceHdr* pSlice, bool bIsLastVclNalInAU, bool bIsValid);
+
+void AL_SaveNalStreamBlk1(AL_TDecCtx* pCtx, AL_TDecSliceParam* pSliceParam);
+void AL_TerminateCurrentCommand(AL_TDecCtx* pCtx, AL_TDecPicParam const* pPicParam, AL_TDecSliceParam* pSliceParam);
 
 /*!@}*/

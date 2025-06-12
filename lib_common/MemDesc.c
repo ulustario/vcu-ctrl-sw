@@ -1,11 +1,6 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
-/******************************************************************************
-   \addtogroup lib_base
-   !@{
-   \file
- *****************************************************************************/
 #include "lib_common/MemDesc.h"
 
 /****************************************************************************/
@@ -60,6 +55,3 @@ bool AL_MemDesc_Free(AL_TMemDesc* pMD)
   else
     return false;
 }
-
-/*****************************************************************************/
-/*!@}*/

@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #pragma once
@@ -9,7 +9,7 @@
 /*****************************************************************************
    \brief Buffer with encoder parameters content
 *****************************************************************************/
-typedef struct t_BufferEP
+typedef struct TBufferEP
 {
   AL_TMemDesc tMD; /*!< Memory descriptor associated to the buffer */
   uint32_t uFlags;  /*!< Specifies which tables are present in the buffer */

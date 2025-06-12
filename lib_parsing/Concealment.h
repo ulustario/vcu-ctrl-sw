@@ -1,18 +1,17 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #pragma once
 
 #include "lib_rtos/types.h"
-#include "lib_common_dec/ParseResult.h"
 
-typedef struct t_Conceal
+typedef struct AL_TConceal
 {
   bool bHasPPS;
   bool bValidFrame;
-  int iLastPPSId;
-  int iActivePPS;
-  int iFirstLCU;
+  int32_t iLastPPSId;
+  int32_t iActivePPS;
+  int32_t iFirstLCU;
   bool bSkipRemainingNals;
 }AL_TConceal;
 

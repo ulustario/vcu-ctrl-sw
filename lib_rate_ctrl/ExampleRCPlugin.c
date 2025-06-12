@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #include "lib_rate_ctrl/PluginInterface.h"
@@ -27,8 +27,8 @@ struct RCExampleCtx
   Plugin_RCParam rcParam;
   Plugin_GopParam gopParam;
   AL_VADDR pDmaCtx;
-  int iWidth;
-  int iHeight;
+  int32_t iWidth;
+  int32_t iHeight;
 
   uint32_t tail;
   uint32_t capacity;
@@ -40,7 +40,7 @@ static void intXToString(uint32_t n, char* string, uint32_t size)
   for(uint32_t j = 0; j < size; ++j)
     string[j] = '0';
 
-  int i = size - 1;
+  int32_t i = size - 1;
 
   while(n > 0)
   {
@@ -67,7 +67,7 @@ static void int32ToString(uint32_t n, char* string)
   intXToString(n, string, 8);
 }
 
-static void rcPlugin_setStreamInfo(void* pHandle, int iWidth, int iHeight)
+static void rcPlugin_setStreamInfo(void* pHandle, int32_t iWidth, int32_t iHeight)
 {
   struct RCExampleCtx* pCtx = (struct RCExampleCtx*)pHandle;
   pCtx->iWidth = iWidth;
@@ -83,7 +83,7 @@ static void rcPlugin_setRateControlParameters(void* pHandle, Plugin_RCParam cons
   pCtx->gopParam = *pGopParam;
 }
 
-static void rcPlugin_checkCompliance(void* pHandle, Plugin_Statistics* pStats, int iPictureSize, bool bCheckSkip, int* pFillOrSkip)
+static void rcPlugin_checkCompliance(void* pHandle, Plugin_Statistics* pStats, int32_t iPictureSize, bool bCheckSkip, int32_t* pFillOrSkip)
 {
   (void)pStats, (void)iPictureSize, (void)bCheckSkip;
   struct RCExampleCtx* pCtx = (struct RCExampleCtx*)pHandle;
@@ -92,7 +92,7 @@ static void rcPlugin_checkCompliance(void* pHandle, Plugin_Statistics* pStats, i
   *pFillOrSkip = 0;
 }
 
-static void rcPlugin_update(void* pHandle, Plugin_PictureInfo const* pPicInfo, Plugin_Statistics const* pStatus, int iPictureSize, bool bSkipped, int iFillerSize)
+static void rcPlugin_update(void* pHandle, Plugin_PictureInfo const* pPicInfo, Plugin_Statistics const* pStatus, int32_t iPictureSize, bool bSkipped, int32_t iFillerSize)
 {
   (void)pPicInfo, (void)pStatus, (void)iPictureSize, (void)bSkipped, (void)iFillerSize;
   struct RCExampleCtx* pCtx = (struct RCExampleCtx*)pHandle;
@@ -123,7 +123,7 @@ static void rcPlugin_choosePictureQP(void* pHandle, Plugin_PictureInfo const* pP
   pCtx->pMcu->trace(msg, sizeof(msg));
 }
 
-static void rcPlugin_getRemovalDelay(void* pHandle, int* pDelay)
+static void rcPlugin_getRemovalDelay(void* pHandle, int32_t* pDelay)
 {
   struct RCExampleCtx* pCtx = (struct RCExampleCtx*)pHandle;
   pCtx->pMcu->trace("getremovaldelay", 20);

@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #pragma once
@@ -6,7 +6,9 @@
 #include "lib_common/BufferCircMeta.h"
 #include "lib_common/BufCommon.h"
 #include "lib_common/BufConst.h"
+#include "lib_common/Planes.h"
 #include "lib_common/MemDesc.h"
+#include "lib_rtos/lib_rtos.h"
 
 /*****************************************************************************
    \brief Generic Buffer
@@ -51,4 +53,10 @@ static inline void CircBuffer_Init(AL_TCircBuffer* pBuf)
   pBuf->iAvailSize = 0;
 }
 
-int32_t ComputeRndPitch(int32_t iWidth, AL_TPicFormat const* pPicFormat, int iAlignment);
+typedef AL_TDimension AL_TPitch;
+
+uint32_t AL_GetAllocSize_Frame_Full(AL_TDimension tDim, AL_TPicFormat const* pPicFormat, AL_TPitch tPitchDim, int32_t iRoundVal);
+
+uint32_t AL_GetAllocSize_Frame_PixPlane(AL_TPicFormat const* pPicFormat, AL_TPitch tPitchDim, AL_EPlaneId ePlaneId);
+
+void AL_CleanupMemory(void* pDst, size_t uSize);

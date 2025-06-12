@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #pragma once
@@ -10,7 +10,7 @@ struct AL_TInternalHandleMetaData
 {
   AL_HANDLE pHandles;
   AL_MUTEX mutex;
-  int numHandles;
-  int handleSizeInBytes;
-  int maxHandles;
+  int32_t numHandles;
+  int32_t handleSizeInBytes;
+  int32_t maxHandles;
 };

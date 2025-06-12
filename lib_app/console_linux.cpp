@@ -1,15 +1,20 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #include "lib_app/console.h"
 
+extern "C" {
+#include "lib_rtos/utils.h"
+}
+
 #include <unistd.h>
 #include <cstdio>
+#include <cstdint>
 
 static bool bUseColor = true;
 static bool isAuto = true;
 
-static int translateColor(EConColor col)
+static int32_t translateColor(EConColor col)
 {
   switch(col)
   {

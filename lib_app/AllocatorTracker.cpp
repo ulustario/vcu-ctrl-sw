@@ -1,93 +1,84 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 extern "C"
 {
 #include "lib_common/Allocator.h"
+#include "lib_common/AllocatorTracker.h"
+#include "lib_rtos/types.h"
 }
 #include <iostream>
 #include <iomanip>
 #include <string>
 #include <map>
-#include <vector>
 
 using namespace std;
 
-constexpr int summaryMode = 0;
-constexpr int detailedMode = 1;
+typedef map<size_t, uint16_t> FrequenciesPerSizes;
 
 struct AllocatorTracker
 {
   AL_TAllocatorVTable const* vtable;
   AL_TAllocator* realAllocator;
-  map<string, vector<size_t>> allocs;
-  uint64_t size = 0;
-  int mode = summaryMode;
+  map<string, FrequenciesPerSizes> allocsPerName;
+  uint64_t uTotalSize = 0;
+  AL_ETrackDmaMode eTrackDmaMode = AL_ETrackDmaMode::AL_TRACK_DMA_MODE_NONE;
 };
 
-static int bytes_to_megabytes(uint64_t bytes)
+static inline int32_t bytes_to_megabytes(AL_64U bytes)
 {
-  return bytes / (1024 * 1024);
+  return bytes >> 20;
+}
+
+static void dma_usage(AllocatorTracker const* tracker)
+{
+  cout << endl << "DMA USAGE:" << endl;
+  cout << "Total Dma Used : " << tracker->uTotalSize << " bytes, " << bytes_to_megabytes(tracker->uTotalSize) << "MB" << endl;
+
+  for(auto const& alloc : tracker->allocsPerName)
+  {
+    auto const& name = alloc.first;
+    auto const& frequenciesPerSizes = alloc.second;
+    AL_64U uCurrentNameTotalSize = 0;
+
+    cout << setfill(' ') << "-> " << setw(24) << left << name;
+
+    for(auto const& freqSize : frequenciesPerSizes)
+    {
+      auto const size = freqSize.first;
+      auto const freq = freqSize.second;
+      cout << freq << " * " << size << ", ";
+      uCurrentNameTotalSize += freq * (size_t)size;
+    }
+
+    cout << "(total: ~" << bytes_to_megabytes(uCurrentNameTotalSize) << "MB" << ")" << endl;
+  }
+
+  cout.flush();
 }
 
 static void destroy(AL_TAllocator* handle)
 {
   auto self = (AllocatorTracker*)handle;
   AL_Allocator_Destroy(self->realAllocator);
-  cout << "total dma used : " << self->size << " bytes, " << bytes_to_megabytes(self->size) << "MB" << endl;
 
-  if(self->mode == detailedMode)
+  if((self->eTrackDmaMode == AL_ETrackDmaMode::AL_TRACK_DMA_MODE_LIVE) || (self->eTrackDmaMode == AL_ETrackDmaMode::AL_TRACK_DMA_MODE_SUMMARY))
   {
-    for(auto& alloc : self->allocs)
-    {
-      auto const sizes = alloc.second;
-      auto const firstSize = sizes.at(0);
-      uint64_t totalSize = 0;
-
-      /* buffer with the same name should have the same size */
-      if(alloc.first != "unknown")
-      {
-        for(auto const& size : sizes)
-        {
-          if(size != firstSize)
-            return;
-        }
-      }
-
-      cout << setfill(' ') << setw(24) << left << alloc.first;
-      size_t curSize = 0;
-      auto numElem = 0;
-
-      for(auto const& size : sizes)
-      {
-        if(curSize != size)
-        {
-          if(numElem != 0)
-            cout << numElem << " * " << curSize << ", ";
-
-          curSize = size;
-          numElem = 0;
-        }
-
-        ++numElem;
-        totalSize += size;
-      }
-
-      if(numElem != 0)
-        cout << numElem << " * " << curSize << " ";
-
-      cout << "(total: ~" << bytes_to_megabytes(totalSize) << "MB" << ")" << endl;
-    }
+    dma_usage(self);
   }
-
   delete self;
 }
 
 static AL_HANDLE allocNamed(AL_TAllocator* handle, size_t size, char const* name)
 {
   auto self = (AllocatorTracker*)handle;
-  self->size += size;
-  self->allocs[string(name)].push_back(size);
+  self->uTotalSize += size;
+  self->allocsPerName[string(name)][size]++;
+
+  if(self->eTrackDmaMode == AL_ETrackDmaMode::AL_TRACK_DMA_MODE_LIVE)
+  {
+    dma_usage(self);
+  }
   return AL_Allocator_Alloc(self->realAllocator, size);
 }
 
@@ -138,11 +129,24 @@ AL_TAllocatorVTable constexpr trackerVtable =
   syncForDevice,
 };
 
-AL_TAllocator* createAllocatorTracker(AL_TAllocator* pAllocator)
+AL_TAllocator* createAllocatorTracker(AL_TAllocator* pAllocator, AL_ETrackDmaMode eTrackDmaMode)
 {
-  auto tracker = new AllocatorTracker;
-  tracker->vtable = &trackerVtable;
-  tracker->realAllocator = pAllocator;
-  tracker->mode = detailedMode;
-  return (AL_TAllocator*)tracker;
+  switch(eTrackDmaMode)
+  {
+  case AL_ETrackDmaMode::AL_TRACK_DMA_MODE_NONE:
+  default:
+  {
+    return pAllocator;
+    break;
+  }
+  case AL_ETrackDmaMode::AL_TRACK_DMA_MODE_LIVE:
+  case AL_ETrackDmaMode::AL_TRACK_DMA_MODE_SUMMARY:
+  {
+    auto tracker = new AllocatorTracker;
+    tracker->vtable = &trackerVtable;
+    tracker->realAllocator = pAllocator;
+    tracker->eTrackDmaMode = eTrackDmaMode;
+    return (AL_TAllocator*)tracker;
+  }
+  }
 }

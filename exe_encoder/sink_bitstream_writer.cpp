@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #include "sink_bitstream_writer.h"
@@ -12,7 +12,7 @@ extern "C"
 }
 using namespace std;
 
-void WriteContainerHeader(ofstream& fp, AL_TEncSettings const& Settings, AL_TYUVFileInfo const& FileInfo, int numFrames);
+void WriteContainerHeader(ofstream& fp, AL_TEncSettings const& Settings, AL_TYUVFileInfo const& FileInfo, int32_t numFrames);
 
 struct BitstreamWriter : IFrameSink
 {
@@ -48,10 +48,10 @@ struct BitstreamWriter : IFrameSink
     LogInfo("Achieved bitrate = %.4f Kbps\n", (float)bitrate);
   }
 
-  int m_frameCount = 0;
+  int32_t m_frameCount = 0;
   ofstream m_file;
   streampos hdr_pos;
-  int m_iFrameSize = 0;
+  int32_t m_iFrameSize = 0;
   ConfigFile const cfg;
 };
 

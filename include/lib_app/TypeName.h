@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #pragma once
@@ -29,8 +29,8 @@ std::string type_name(void)
   type_names[std::type_index(typeid(int32_t))] += "int32_t,";
   type_names[std::type_index(typeid(uint32_t))] += "uint32_t,";
 
-  type_names[std::type_index(typeid(int64_t))] += "int64_t";
-  type_names[std::type_index(typeid(uint64_t))] += "uint64_t";
+  type_names[std::type_index(typeid(AL_64S))] += "AL_64S";
+  type_names[std::type_index(typeid(AL_64U))] += "AL_64U";
 
   type_names[std::type_index(typeid(float))] += "float";
   type_names[std::type_index(typeid(double))] += "double";

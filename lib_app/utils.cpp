@@ -1,8 +1,9 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #include <fstream>
 #include <stdexcept>
+#include <sstream>
 #include <cstdlib>
 #include <cstdarg>
 #include <mutex>
@@ -10,7 +11,7 @@
 
 using namespace std;
 
-int g_Verbosity = 10;
+int32_t g_Verbosity = 10;
 static std::mutex s_LogMutex;
 
 static void Message(EConColor Color, const char* sMsg, va_list args)
@@ -128,4 +129,14 @@ void OpenOutput(std::ofstream& fp, std::string const& filename, bool binary)
 
   if(!fp.is_open())
     throw std::runtime_error("Can't open file for writing: '" + filename + "'");
+}
+
+const std::string VersionToStr(uint32_t const& version)
+{
+  std::stringstream ss;
+  ss << std::to_string((uint8_t)(version >> 20)) << ".";
+  ss << std::to_string((uint8_t)(version >> 12)) << ".";
+  ss << std::to_string((uint8_t)(version));
+
+  return ss.str();
 }

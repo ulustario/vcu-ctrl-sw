@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 /******************************************************************************
@@ -7,9 +7,8 @@
    \file
  *****************************************************************************/
 
-#include <stdio.h>
-
 #include "lib_rtos/lib_rtos.h"
+#include "lib_rtos/utils.h"
 #include "lib_common_enc/Settings.h"
 #include "lib_common/ChannelResources.h"
 #include "lib_common/Utils.h"
@@ -19,20 +18,19 @@
 #include "lib_common_enc/ParamConstraints.h"
 #include "lib_common_enc/DPBConstraints.h"
 #include "lib_common_enc/EncChanParamInternal.h"
-#include "lib_common/SEI.h"
 #include "lib_common/ScalingList.h"
-#include "lib_common/HardwareConfig.h"
+#include "lib_common_enc/EncHardwareConfig.h"
 #include "lib_common/AvcLevelsLimit.h"
 #include "lib_common/HevcLevelsLimit.h"
 
-static int const HEVC_MAX_CTB_SIZE = 5; // 32x32
-static int const HEVC_MIN_CTB_SIZE = 5; // 32x32
+static int32_t const HEVC_MAX_CTB_SIZE = 5; // 32x32
+static int32_t const HEVC_MIN_CTB_SIZE = 5; // 32x32
 
-static int const AVC_MAX_CU_SIZE = 4; // 16x16
-static int const MIN_CU_SIZE = AL_MIN_SUPPORTED_LCU_SIZE; // 8x8
-static int const LOG2_MIN_QP_TABLE_SIZE = 4; // 16x16
+static int32_t const AVC_MAX_CU_SIZE = 4; // 16x16
+static int32_t const MIN_CU_SIZE = AL_MIN_SUPPORTED_LCU_SIZE; // 8x8
+static int32_t const LOG2_MIN_QP_TABLE_SIZE = 4; // 16x16
 
-static int LAMBDA_FACTORS[] = { 51, 90, 151, 151, 151, 151 }; // I, P, B(temporal id low to high)
+static int32_t LAMBDA_FACTORS[] = { 51, 90, 151, 151, 151, 151 }; // I, P, B(temporal id low to high)
 /***************************************************************************/
 static bool AL_sSettings_CheckProfile(AL_EProfile eProfile)
 {
@@ -98,7 +96,7 @@ static bool AL_sSettings_CheckLevel(AL_EProfile eProfile, uint8_t uLevel)
 }
 
 /****************************************************************************/
-static int AL_sSettings_GetCpbVclFactor(AL_EProfile eProfile)
+static int32_t AL_sSettings_GetCpbVclFactor(AL_EProfile eProfile)
 {
   switch(eProfile)
   {
@@ -143,7 +141,7 @@ static int AL_sSettings_GetCpbVclFactor(AL_EProfile eProfile)
 }
 
 /****************************************************************************/
-static int AL_sSettings_GetHbrFactor(AL_EProfile eProfile)
+static int32_t AL_sSettings_GetHbrFactor(AL_EProfile eProfile)
 {
   Rtos_Assert(AL_IS_HEVC(eProfile));
 
@@ -156,7 +154,7 @@ static int AL_sSettings_GetHbrFactor(AL_EProfile eProfile)
 /****************************************************************************/
 static uint32_t AL_sSettings_GetMaxCPBSize(AL_TEncChanParam const* pChParam)
 {
-  int iCpbVclFactor = AL_sSettings_GetCpbVclFactor(pChParam->eProfile);
+  int32_t iCpbVclFactor = AL_sSettings_GetCpbVclFactor(pChParam->eProfile);
   uint32_t uCpbSize = 0;
   switch(AL_GET_CODEC(pChParam->eProfile))
   {
@@ -171,6 +169,35 @@ static uint32_t AL_sSettings_GetMaxCPBSize(AL_TEncChanParam const* pChParam)
 }
 
 /*****************************************************************************
+   \brief Pic the higher level according to the AVC specification
+   \param[in]  a an AVC level to compare to b
+   \param[in]  b an AVC level to compare to a
+   \return The higher level between a and b
+*****************************************************************************/
+static inline int32_t AVC_Level_Max(int32_t a, int32_t b)
+{
+  // Level 9 (aka 1b) is a higher level than 10 (aka 1)
+  if((a == 9) && (b == 10))
+    return 9;
+
+  if((a == 10) && (b == 9))
+    return 9;
+  return Max(a, b);
+}
+
+static inline bool AL_sSettings_IsMinAvcLevel(uint8_t a, uint8_t b)
+{
+  // Level 9 (aka 1b) is a higher level than 10 (aka 1)
+  if((a == 10) && (b == 9))
+    return true;
+
+  if((a == 9) && (b == 10))
+    return false;
+
+  return a < b;
+}
+
+/*****************************************************************************
    \brief Retrieves the minimum level required by the AVC specification
    according to resolution, profile, framerate and bitrate
    \param[in] pSettings pointer to encoder Settings structure
@@ -180,17 +207,19 @@ static uint8_t AL_sSettings_GetMinLevelAVC(AL_TEncChanParam const* pChParam)
 {
   uint8_t uLevel;
 
-  int iMaxMB = ((pChParam->uEncWidth + 15) >> 4) * ((pChParam->uEncHeight + 15) >> 4);
-  int iBrVclFactor = AL_sSettings_GetCpbVclFactor(pChParam->eProfile);
-  int iMaxBR = (pChParam->tRCParam.uMaxBitRate + (iBrVclFactor - 1)) / iBrVclFactor;
-  int iDPBSize = AL_DPBConstraint_GetMaxDPBSize(pChParam) * iMaxMB;
+  int32_t iMbCountPerPic = ((pChParam->uEncWidth + 15) >> 4) * ((pChParam->uEncHeight + 15) >> 4);
+  int32_t iMbCountPerFrame = iMbCountPerPic;
+  int32_t iBrVclFactor = AL_sSettings_GetCpbVclFactor(pChParam->eProfile);
+  int32_t iMaxBR = (pChParam->tRCParam.uMaxBitRate + (iBrVclFactor - 1)) / iBrVclFactor;
+  int32_t iMaxRefFrames = AL_DPBConstraint_GetMaxDPBSize(pChParam);
+  int32_t iDPBSize = iMaxRefFrames * iMbCountPerFrame;
 
-  uLevel = AL_AVC_GetLevelFromFrameSize(iMaxMB);
+  uLevel = AL_AVC_GetLevelFromFrameSize(iMbCountPerFrame);
 
-  iMaxMB *= pChParam->tRCParam.uFrameRate;
-  uLevel = Max(AL_AVC_GetLevelFromMBRate(iMaxMB), uLevel);
-  uLevel = Max(AL_AVC_GetLevelFromBitrate(iMaxBR), uLevel);
-  uLevel = Max(AL_AVC_GetLevelFromDPBSize(iDPBSize), uLevel);
+  int32_t iMbCountPerSecond = iMbCountPerFrame * pChParam->tRCParam.uFrameRate;
+  uLevel = AVC_Level_Max(AL_AVC_GetLevelFromMBRate(iMbCountPerSecond), uLevel);
+  uLevel = AVC_Level_Max(AL_AVC_GetLevelFromBitrate(iMaxBR), uLevel);
+  uLevel = AVC_Level_Max(AL_AVC_GetLevelFromDPBSize(iDPBSize), uLevel);
 
   return uLevel;
 }
@@ -205,12 +234,12 @@ static uint8_t AL_sSettings_GetMinLevelHEVC(AL_TEncChanParam const* pChParam)
 {
   uint32_t uMaxSample = pChParam->uEncWidth * pChParam->uEncHeight;
 
-  int iCpbVclFactor = AL_sSettings_GetCpbVclFactor(pChParam->eProfile);
-  int iHbrFactor = AL_sSettings_GetHbrFactor(pChParam->eProfile);
-  int iBrVclFactor = iCpbVclFactor * iHbrFactor;
+  int32_t iCpbVclFactor = AL_sSettings_GetCpbVclFactor(pChParam->eProfile);
+  int32_t iHbrFactor = AL_sSettings_GetHbrFactor(pChParam->eProfile);
+  int32_t iBrVclFactor = iCpbVclFactor * iHbrFactor;
   uint32_t uBitRate = (pChParam->tRCParam.uMaxBitRate + (iBrVclFactor - 1)) / iBrVclFactor;
   uint8_t uRequiredDPBSize = AL_DPBConstraint_GetMaxDPBSize(pChParam);
-  int iTileCols = pChParam->uNumCore;
+  int32_t iTileCols = pChParam->uNumCore;
 
   uint8_t uLevel = AL_HEVC_GetLevelFromFrameSize(uMaxSample);
 
@@ -226,7 +255,7 @@ static uint8_t AL_sSettings_GetMinLevelHEVC(AL_TEncChanParam const* pChParam)
 /*****************************************************************************
    \brief Retrieves the minimum level required by the HEVC specification
    according to resolution, profile, framerate and bitrate
-   \param[in] pSettings pointer to encoder Settings structure
+   \param[in] pChParam pointer to channel parameters
    \return The minimum level needed to conform with the H264 specification
 *****************************************************************************/
 static uint8_t AL_sSettings_GetMinLevel(AL_TEncChanParam const* pChParam)
@@ -237,6 +266,20 @@ static uint8_t AL_sSettings_GetMinLevel(AL_TEncChanParam const* pChParam)
   case AL_CODEC_HEVC: return AL_sSettings_GetMinLevelHEVC(pChParam);
   default: return -1;
   }
+}
+
+/*****************************************************************************
+   \brief Check if current level islower than the provided one
+   \param[in] pChParam pointer to channel parameters
+   \param[in] uNewLevel Level to compare too
+   \return true if the current level is lower than the provided one, false otherwise
+*****************************************************************************/
+static bool AL_sSettings_IsCurrentLevelLower(AL_TEncChanParam const* pChParam, uint8_t uNewLevel)
+{
+
+  if(AL_GET_CODEC(pChParam->eProfile) == AL_CODEC_AVC)
+    return AL_sSettings_IsMinAvcLevel(pChParam->uLevel, uNewLevel);
+  return pChParam->uLevel < uNewLevel;
 }
 
 /****************************************************************************/
@@ -328,9 +371,9 @@ static void XAVC_CheckCoherency(AL_TEncSettings* pSettings)
 {
   pSettings->bEnableAUD = true;
   pSettings->eEnableFillerData = AL_FILLER_DISABLE;
-  pSettings->uEnableSEI |= AL_SEI_PT;
-  pSettings->uEnableSEI |= AL_SEI_BP;
-  pSettings->uEnableSEI |= AL_SEI_RP;
+  pSettings->eEnableSEI |= AL_SEI_PT;
+  pSettings->eEnableSEI |= AL_SEI_BP;
+  pSettings->eEnableSEI |= AL_SEI_RP;
   AL_TEncChanParam* pChannel = &pSettings->tChParam[0];
   pChannel->eEncTools &= (~AL_OPT_LF_X_TILE);
   pChannel->eEncTools &= (~AL_OPT_LF_X_SLICE);
@@ -351,10 +394,10 @@ static void XAVC_CheckCoherency(AL_TEncSettings* pSettings)
     AL_TRCParam* pRateControl = &pChannel->tRCParam;
     pRateControl->eRCMode = AL_RC_VBR;
 
-    const int pCycles32x32Counts[] = ENCODER_CYCLES_FOR_BLK_32X32;
+    const int32_t pCycles32x32Counts[] = ENCODER_CYCLES_FOR_BLK_32X32;
     AL_CoreConstraint constraint;
     AL_CoreConstraint_Init(&constraint, ENCODER_CORE_FREQUENCY, ENCODER_CORE_FREQUENCY_MARGIN, pCycles32x32Counts, 0, AL_ENC_CORE_MAX_WIDTH, 1);
-    int iNumCore = AL_CoreConstraint_GetExpectedNumberOfCores(&constraint, pChannel->uEncWidth, pChannel->uEncHeight, AL_GET_CHROMA_MODE(pChannel->ePicFormat), pRateControl->uFrameRate * 1000, pRateControl->uClkRatio);
+    int32_t iNumCore = AL_CoreConstraint_GetExpectedNumberOfCores(&constraint, pChannel->uEncWidth, pChannel->uEncHeight, AL_GET_CHROMA_MODE(pChannel->ePicFormat), pRateControl->uFrameRate * 1000, pRateControl->uClkRatio);
 
     if(iNumCore > 1)
     {
@@ -390,7 +433,7 @@ static void XAVC_CheckCoherency(AL_TEncSettings* pSettings)
     return;
   }
 
-  int iSliceFactors = (pChannel->uLevel <= 42) ? 1 : 2;
+  int32_t iSliceFactors = (pChannel->uLevel <= 42) ? 1 : 2;
 
   if((pChannel->uNumSlices != (4 * iSliceFactors)) && (pChannel->uNumSlices != (6 * iSliceFactors)))
     pChannel->uNumSlices = 4 * iSliceFactors;
@@ -401,11 +444,11 @@ static void XAVC_CheckCoherency(AL_TEncSettings* pSettings)
     pChannel->uSrcBitDepth = 10;
   }
 
-  int const iMaxTimeBetween2ConsecutiveIDRInSeconds = 5;
+  int32_t const iMaxTimeBetween2ConsecutiveIDRInSeconds = 5;
   AL_TRCParam* pRateControl = &pChannel->tRCParam;
-  int iFramesPerMaxTime = iMaxTimeBetween2ConsecutiveIDRInSeconds * ((pRateControl->uFrameRate * pRateControl->uClkRatio) / 1001);
+  int32_t iFramesPerMaxTime = iMaxTimeBetween2ConsecutiveIDRInSeconds * ((pRateControl->uFrameRate * pRateControl->uClkRatio) / 1001);
   AL_TGopParam* pGop = &pChannel->tGopParam;
-  int iGopPerMaxTime = iFramesPerMaxTime / pGop->uGopLength;
+  int32_t iGopPerMaxTime = iFramesPerMaxTime / pGop->uGopLength;
   pGop->uFreqIDR = Min(iGopPerMaxTime * pGop->uGopLength, pGop->uFreqIDR);
   pGop->uFreqIDR = Min(pGop->uGopLength, pGop->uFreqIDR);
 }
@@ -435,7 +478,7 @@ void AL_Settings_SetDefaultRCParam(AL_TRCParam* pRCParam)
   pRCParam->uMaxBitRate = 4000000;
   pRCParam->iInitialQP = -1;
 
-  for(int i = 0; i < ARRAY_SIZE(pRCParam->iMaxQP); i++)
+  for(int32_t i = 0; i < ARRAY_SIZE(pRCParam->iMaxQP); i++)
   {
     pRCParam->iMinQP[i] = -1;
     pRCParam->iMaxQP[i] = -1;
@@ -445,17 +488,17 @@ void AL_Settings_SetDefaultRCParam(AL_TRCParam* pRCParam)
   pRCParam->uClkRatio = 1000;
   pRCParam->uInitialRemDelay = 135000; // 1.5 s
   pRCParam->uCPBSize = 270000; // 3.0 s
-  pRCParam->uIPDelta = -1;
-  pRCParam->uPBDelta = -1;
+  pRCParam->iIPDelta = -1;
+  pRCParam->iPBDelta = -1;
   pRCParam->uMaxPelVal = 255;
   pRCParam->uMaxPSNR = 4200;
   pRCParam->eOptions = AL_RC_OPT_NONE;
 
   pRCParam->bUseGoldenRef = true;
-  pRCParam->uGoldenRefFrequency = 10;
-  pRCParam->uPGoldenDelta = 2;
+  pRCParam->iGoldenRefFrequency = 10;
+  pRCParam->iPGoldenDelta = 2;
 
-  for(int i = 0; i < ARRAY_SIZE(pRCParam->pMaxPictureSize); i++)
+  for(int32_t i = 0; i < ARRAY_SIZE(pRCParam->pMaxPictureSize); i++)
     pRCParam->pMaxPictureSize[i] = 0;
 
   pRCParam->uMaxConsecSkip = UINT32_MAX;
@@ -464,7 +507,7 @@ void AL_Settings_SetDefaultRCParam(AL_TRCParam* pRCParam)
 /***************************************************************************/
 #define AL_DEFAULT_PROFILE AL_PROFILE_HEVC_MAIN
 
-static int const iBetaOffsetAuto = -1;
+static int32_t const iBetaOffsetAuto = -1;
 
 /***************************************************************************/
 void AL_Settings_SetDefaults(AL_TEncSettings* pSettings)
@@ -473,6 +516,29 @@ void AL_Settings_SetDefaults(AL_TEncSettings* pSettings)
   Rtos_Memset(pSettings, 0, sizeof(*pSettings));
 
   AL_TEncChanParam* pChan = &pSettings->tChParam[0];
+
+  AL_Settings_SetDefaultChannelParam(pChan);
+
+  pSettings->eEnableSEI = AL_SEI_NONE;
+  pSettings->bEnableAUD = true;
+  pSettings->eEnableFillerData = AL_FILLER_ENC;
+  pSettings->eAspectRatio = AL_ASPECT_RATIO_AUTO;
+  pSettings->tColorConfig.eColourDescription = AL_COLOUR_DESC_UNSPECIFIED;
+  pSettings->tColorConfig.eTransferCharacteristics = AL_TRANSFER_CHARAC_UNSPECIFIED;
+  pSettings->tColorConfig.eColourMatrixCoeffs = AL_COLOUR_MAT_COEFF_UNSPECIFIED;
+
+  pSettings->eQpCtrlMode = AL_QP_CTRL_NONE;
+  pSettings->eQpTableMode = AL_QP_TABLE_NONE;
+
+  pSettings->eScalingList = AL_SCL_MAX_ENUM;
+  pSettings->bForceLoad = true;
+  pSettings->NumLayer = 1;
+  pSettings->NumView = 1;
+
+}
+
+void AL_Settings_SetDefaultChannelParam(AL_TEncChanParam* pChan)
+{
   pChan->Direct8x8Infer = true;
   pChan->StrongIntraSmooth = true;
 
@@ -486,17 +552,15 @@ void AL_Settings_SetDefaults(AL_TEncSettings* pSettings)
   AL_TGopParam* pGop = &pChan->tGopParam;
   pGop->eMode = AL_GOP_MODE_DEFAULT;
   pGop->uFreqIDR = UINT32_MAX;
+  pGop->eGdrMode = AL_GDR_OFF;
   pGop->uFreqRP = UINT32_MAX;
+  pGop->iGdrDuration = 0;
   pGop->uGopLength = 30;
 
-  int iAdjust = 1;
-
   for(int8_t i = 0; i < 4; ++i)
-    pGop->tempDQP[i] = (i + 1) * iAdjust;
+    pGop->tempDQP[i] = (i + 1);
 
   pGop->bWriteAvcHdrSvcExt = true;
-
-  pGop->eGdrMode = AL_GDR_OFF;
 
   AL_Settings_SetDefaultRCParam(&pChan->tRCParam);
 
@@ -510,24 +574,9 @@ void AL_Settings_SetDefaults(AL_TEncSettings* pSettings)
 
   pChan->uNumSlices = 1;
 
-  pSettings->uEnableSEI = AL_SEI_NONE;
-  pSettings->bEnableAUD = true;
-  pSettings->eEnableFillerData = AL_FILLER_ENC;
-  pSettings->eAspectRatio = AL_ASPECT_RATIO_AUTO;
-  pSettings->tColorConfig.eColourDescription = AL_COLOUR_DESC_UNSPECIFIED;
-  pSettings->tColorConfig.eTransferCharacteristics = AL_TRANSFER_CHARAC_UNSPECIFIED;
-  pSettings->tColorConfig.eColourMatrixCoeffs = AL_COLOUR_MAT_COEFF_UNSPECIFIED;
-
-  pSettings->eQpCtrlMode = AL_QP_CTRL_NONE;
-  pSettings->eQpTableMode = AL_QP_TABLE_NONE;
-
   pChan->eLdaCtrlMode = AL_AUTO_LDA;
   Rtos_Assert(sizeof(pChan->LdaFactors) == sizeof(LAMBDA_FACTORS));
   Rtos_Memcpy(pChan->LdaFactors, LAMBDA_FACTORS, sizeof(LAMBDA_FACTORS));
-
-  pSettings->eScalingList = AL_SCL_MAX_ENUM;
-
-  pSettings->bForceLoad = true;
 
   for(uint8_t uInterFrameType = 0; uInterFrameType < AL_MAX_INTER_FRAME_TYPE; uInterFrameType++)
   {
@@ -542,11 +591,11 @@ void AL_Settings_SetDefaults(AL_TEncSettings* pSettings)
   pChan->uMaxTransfoDepthIntra = 1;
   pChan->uMaxTransfoDepthInter = 1;
 
-  pSettings->NumLayer = 1;
-  pSettings->NumView = 1;
   pChan->eEntropyMode = AL_MODE_CABAC;
 
   pChan->eSrcMode = AL_SRC_RASTER;
+
+  pChan->eRecStorageMode = AL_FB_TILE_64x4;
 
   pChan->eVideoMode = AL_VM_PROGRESSIVE;
 
@@ -561,27 +610,27 @@ void AL_Settings_SetDefaults(AL_TEncSettings* pSettings)
 }
 
 /***************************************************************************/
-#define MSG(msg) { if(pOut) fprintf(pOut, msg "\r\n"); }
+#define MSG(msg) { if(pOut) FPRINTF(pOut, msg "\r\n"); }
 #define MSG_WARNING(msg) MSG("[WARNING]: " msg)
 #define MSG_ERROR(msg) MSG("[ERROR]: " msg)
 
-#define MSGF(msg, ...) { if(pOut) fprintf(pOut, msg "\r\n", __VA_ARGS__); }
+#define MSGF(msg, ...) { if(pOut) FPRINTF(pOut, msg "\r\n", __VA_ARGS__); }
 #define MSGF_WARNING(msg, ...) MSGF("[WARNING]: " msg, __VA_ARGS__)
 #define MSGF_ERROR(msg, ...) MSGF("[ERROR]: " msg, __VA_ARGS__)
 
 void AL_Settings_SetDefaultParam(AL_TEncSettings* pSettings)
 {
 
-  int iMinQP, iMaxQP;
+  int32_t iMinQP, iMaxQP;
   AL_ParamConstraints_GetQPBounds(AL_GET_CODEC(pSettings->tChParam[0].eProfile), &iMinQP, &iMaxQP);
 
-  for(int i = 0; i < ARRAY_SIZE(pSettings->tChParam[0].tRCParam.iMinQP); i++)
+  for(int32_t i = 0; i < ARRAY_SIZE(pSettings->tChParam[0].tRCParam.iMinQP); i++)
   {
     if(pSettings->tChParam[0].tRCParam.iMinQP[i] == -1)
       pSettings->tChParam[0].tRCParam.iMinQP[i] = iMinQP;
   }
 
-  for(int i = 0; i < ARRAY_SIZE(pSettings->tChParam[0].tRCParam.iMaxQP); i++)
+  for(int32_t i = 0; i < ARRAY_SIZE(pSettings->tChParam[0].tRCParam.iMaxQP); i++)
   {
     if(pSettings->tChParam[0].tRCParam.iMaxQP[i] == -1)
       pSettings->tChParam[0].tRCParam.iMaxQP[i] = iMaxQP;
@@ -596,10 +645,10 @@ void AL_Settings_SetDefaultParam(AL_TEncSettings* pSettings)
 }
 
 /***************************************************************************/
-int AL_Settings_CheckValidity(AL_TEncSettings* pSettings, AL_TEncChanParam* pChParam, FILE* pOut)
+int32_t AL_Settings_CheckValidity(AL_TEncSettings* pSettings, AL_TEncChanParam* pChParam, FILE* pOut)
 {
   (void)pSettings;
-  int err = 0;
+  int32_t err = 0;
 
   if(!AL_sSettings_CheckProfile(pChParam->eProfile))
   {
@@ -627,6 +676,12 @@ int AL_Settings_CheckValidity(AL_TEncSettings* pSettings, AL_TEncChanParam* pChP
     }
   }
 
+  if(!(pChParam->eRecStorageMode & FB_TILE_64x4))
+  {
+    ++err;
+    MSG_ERROR("The reconstructed format needs to have a tile 64x4 storage mode. Other types of storage mode are not supported");
+  }
+
   bool bSrcCompressionEnabled = pChParam->eSrcMode == AL_SRC_COMP_32x4 || pChParam->eSrcMode == AL_SRC_COMP_64x4;
 
   if(bSrcCompressionEnabled)
@@ -642,8 +697,8 @@ int AL_Settings_CheckValidity(AL_TEncSettings* pSettings, AL_TEncChanParam* pChP
 
   if(pChParam->bEnableSrcCrop)
   {
-    int HStep = AL_GET_BITDEPTH(pChParam->ePicFormat) == 10 ? (HW_IP_BURST_ALIGNMENT * 3) / 4 : HW_IP_BURST_ALIGNMENT; // In 10-bit there are 3 samples every 4 bytes
-    int VStep = 1; // should be 2 in 4:2:0 but customer requires it to be 1 in any case !
+    int32_t HStep = AL_GET_BITDEPTH(pChParam->ePicFormat) == 10 ? (HW_IP_BURST_ALIGNMENT * 3) / 4 : HW_IP_BURST_ALIGNMENT; // In 10-bit there are 3 samples every 4 bytes
+    int32_t VStep = 1; // should be 2 in 4:2:0 but customer requires it to be 1 in any case !
 
     if((pChParam->uSrcCropPosX % HStep) || (pChParam->uSrcCropPosY % VStep))
     {
@@ -694,35 +749,12 @@ int AL_Settings_CheckValidity(AL_TEncSettings* pSettings, AL_TEncChanParam* pChP
     MSG_ERROR("Invalid parameter: Log2MaxCuSize");
   }
 
-  uint16_t uNumTile = pChParam->uNumCore != NUMCORE_AUTO ? pChParam->uNumCore : 1;
+  err += AL_ParamConstraints_CheckNumCore(pChParam);
 
-  if(pChParam->uNumCore != NUMCORE_AUTO)
+  if(AL_IS_HEVC(pChParam->eProfile) && pSettings->tChParam[0].uCabacInitIdc > 1)
   {
-    AL_NumCoreDiagnostic diagnostic;
-
-    if(!AL_Constraint_NumTileIsSane(AL_GET_CODEC(pChParam->eProfile), pChParam->uEncWidth, uNumTile, pChParam->uLog2MaxCuSize, &diagnostic))
-    {
-      ++err;
-      MSGF_ERROR("Invalid Number of Tile. The width should at least be %d CTB per tile. With the specified number of tile, it is %d CTB per tile. (Multi core alignment constraint might be the reason of this error if the CTB are equal)", diagnostic.requiredWidthInCtbPerCore, diagnostic.actualWidthInCtbPerCore);
-    }
-  }
-
-  if(pChParam->uNumCore != NUMCORE_AUTO)
-  {
-
-    if(AL_IS_HEVC(pChParam->eProfile) && pSettings->tChParam[0].uCabacInitIdc > 1)
-    {
-      ++err;
-      MSG_ERROR("Invalid parameter: CabacInit");
-    }
-
-    int MinCoreWidth = 256;
-
-    if(AL_IS_HEVC(pChParam->eProfile) && (pChParam->uEncWidth < MinCoreWidth * pChParam->uNumCore))
-    {
-      ++err;
-      MSG_ERROR("Invalid parameter: NumCore. The width should at least be 256 pixels per core for HEVC conformance");
-    }
+    ++err;
+    MSG_ERROR("Invalid parameter: CabacInit");
   }
 
   if(AL_IS_AVC(pChParam->eProfile) && pSettings->tChParam[0].uCabacInitIdc > 2)
@@ -730,7 +762,7 @@ int AL_Settings_CheckValidity(AL_TEncSettings* pSettings, AL_TEncChanParam* pChP
     ++err;
     MSG_ERROR("Invalid parameter: CabacInit");
   }
-  int const iCTBSize = (1 << pChParam->uLog2MaxCuSize);
+  int32_t const iCTBSize = (1 << pChParam->uLog2MaxCuSize);
 
   if(pChParam->uEncHeight <= iCTBSize)
   {
@@ -738,10 +770,10 @@ int AL_Settings_CheckValidity(AL_TEncSettings* pSettings, AL_TEncChanParam* pChP
     MSG_ERROR("Invalid parameter: Height. The encoded height should at least be 2 CTB");
   }
 
-  int iMinQP, iMaxQP;
+  int32_t iMinQP, iMaxQP;
   AL_ParamConstraints_GetQPBounds(AL_GET_CODEC(pChParam->eProfile), &iMinQP, &iMaxQP);
 
-  for(int i = 0; i < ARRAY_SIZE(pChParam->tRCParam.iMaxQP); i++)
+  for(int32_t i = 0; i < ARRAY_SIZE(pChParam->tRCParam.iMaxQP); i++)
   {
     if(pChParam->tRCParam.iMaxQP[i] < pChParam->tRCParam.iMinQP[i])
     {
@@ -807,9 +839,13 @@ int AL_Settings_CheckValidity(AL_TEncSettings* pSettings, AL_TEncChanParam* pChP
     }
   }
 
-  int iMaxSlices = (pChParam->uEncHeight + iCTBSize - 1) / iCTBSize;
+  int32_t iMaxSlices = (pChParam->uEncHeight + iCTBSize - 1) / iCTBSize;
 
-  if((pChParam->uNumSlices < 1) || (pChParam->uNumSlices > iMaxSlices) || (pChParam->uNumSlices > AL_MAX_ENC_SLICE) || ((pChParam->bSubframeLatency) && (pChParam->uNumSlices > AL_MAX_SLICES_SUBFRAME)))
+  bool bLowLatHasInvalidParams = false;
+
+  bLowLatHasInvalidParams = ((pChParam->bSubframeLatency) && (pChParam->uNumSlices > AL_MAX_SLICES_SUBFRAME));
+
+  if((pChParam->uNumSlices < 1) || (pChParam->uNumSlices > iMaxSlices) || (pChParam->uNumSlices > AL_MAX_ENC_SLICE) || bLowLatHasInvalidParams)
   {
     ++err;
     MSG_ERROR("Invalid parameter: NumSlices");
@@ -854,7 +890,7 @@ int AL_Settings_CheckValidity(AL_TEncSettings* pSettings, AL_TEncChanParam* pChP
     MSG_ERROR("In AV1 or VP9 Profile, resolution must be multiple of 8!");
   }
 
-  int iNumB = pChParam->tGopParam.uNumB;
+  int32_t iNumB = pChParam->tGopParam.uNumB;
 
   if((pChParam->tGopParam.eMode & AL_GOP_FLAG_PYRAMIDAL) && iNumB != 3 && iNumB != 5 && iNumB != 7 && iNumB != 15)
   {
@@ -873,7 +909,7 @@ int AL_Settings_CheckValidity(AL_TEncSettings* pSettings, AL_TEncChanParam* pChP
   {
     if(pChParam->tRCParam.iInitialQP >= 0)
     {
-      int iQP = pChParam->tRCParam.iInitialQP + pChParam->iCrSliceQpOffset;
+      int32_t iQP = pChParam->tRCParam.iInitialQP + pChParam->iCrSliceQpOffset;
 
       if(((pSettings->eQpCtrlMode == AL_QP_CTRL_NONE) && (pSettings->eQpTableMode == AL_QP_TABLE_NONE)) && (0 > iQP || iQP > 51))
       {
@@ -950,8 +986,8 @@ int AL_Settings_CheckValidity(AL_TEncSettings* pSettings, AL_TEncChanParam* pChP
     MSG_ERROR("Shouldn't have FirstPassSceneChangeDetection enabled without LookAhead");
   }
 
-  int iCropMaskX = (eChromaMode == AL_CHROMA_4_2_0 || eChromaMode == AL_CHROMA_4_2_2) ? 1 : 0;
-  int iCropMaskY = (eChromaMode == AL_CHROMA_4_2_0) ? 1 : 0;
+  int32_t iCropMaskX = (eChromaMode == AL_CHROMA_4_2_0 || eChromaMode == AL_CHROMA_4_2_2) ? 1 : 0;
+  int32_t iCropMaskY = (eChromaMode == AL_CHROMA_4_2_0) ? 1 : 0;
 
   if((pChParam->uOutputCropPosX & iCropMaskX) || (pChParam->uOutputCropWidth & iCropMaskX)
      || (pChParam->uOutputCropPosY & iCropMaskY) || (pChParam->uOutputCropHeight & iCropMaskY))
@@ -960,8 +996,8 @@ int AL_Settings_CheckValidity(AL_TEncSettings* pSettings, AL_TEncChanParam* pChP
     MSG_ERROR("Invalid Output crop parameter for this chroma subsampling mode");
   }
 
-  int iCropWidth = pChParam->uOutputCropWidth ? pChParam->uOutputCropWidth : pChParam->uEncWidth;
-  int iCropHeight = pChParam->uOutputCropHeight ? pChParam->uOutputCropHeight : pChParam->uEncHeight;
+  int32_t iCropWidth = pChParam->uOutputCropWidth ? pChParam->uOutputCropWidth : pChParam->uEncWidth;
+  int32_t iCropHeight = pChParam->uOutputCropHeight ? pChParam->uOutputCropHeight : pChParam->uEncHeight;
 
   if(pChParam->uOutputCropPosX + iCropWidth > pChParam->uEncWidth
      || pChParam->uOutputCropPosY + iCropHeight > pChParam->uEncHeight)
@@ -989,7 +1025,7 @@ int AL_Settings_CheckValidity(AL_TEncSettings* pSettings, AL_TEncChanParam* pChP
 }
 
 /***************************************************************************/
-bool checkBitDepthCoherency(int iBitDepth, AL_EProfile eProfile)
+bool checkBitDepthCoherency(int32_t iBitDepth, AL_EProfile eProfile)
 {
   switch(iBitDepth)
   {
@@ -1018,7 +1054,7 @@ bool checkChromaCoherency(AL_EChromaMode eChroma, AL_EProfile eProfile)
 }
 
 /***************************************************************************/
-bool checkProfileCoherency(int iBitDepth, AL_EChromaMode eChroma, AL_EProfile eProfile)
+bool checkProfileCoherency(int32_t iBitDepth, AL_EChromaMode eChroma, AL_EProfile eProfile)
 {
 
   if(!checkBitDepthCoherency(iBitDepth, eProfile))
@@ -1028,7 +1064,7 @@ bool checkProfileCoherency(int iBitDepth, AL_EChromaMode eChroma, AL_EProfile eP
 }
 
 /***************************************************************************/
-AL_EProfile getHevcMinimumProfile(int iBitDepth, AL_EChromaMode eChroma)
+AL_EProfile getHevcMinimumProfile(int32_t iBitDepth, AL_EChromaMode eChroma)
 {
   switch(iBitDepth)
   {
@@ -1077,7 +1113,7 @@ AL_EProfile getHevcMinimumProfile(int iBitDepth, AL_EChromaMode eChroma)
 }
 
 /***************************************************************************/
-AL_EProfile getAvcMinimumProfile(int iBitDepth, AL_EChromaMode eChroma)
+AL_EProfile getAvcMinimumProfile(int32_t iBitDepth, AL_EChromaMode eChroma)
 {
   switch(iBitDepth)
   {
@@ -1118,7 +1154,7 @@ AL_EProfile getAvcMinimumProfile(int iBitDepth, AL_EChromaMode eChroma)
   return AL_PROFILE_AVC;
 }
 
-static AL_EProfile getMinimumProfile(AL_ECodec eCodec, int iBitDepth, AL_EChromaMode eChromaMode)
+static AL_EProfile getMinimumProfile(AL_ECodec eCodec, int32_t iBitDepth, AL_EChromaMode eChromaMode)
 {
   (void)iBitDepth;
   (void)eChromaMode;
@@ -1134,7 +1170,7 @@ static AL_EProfile getMinimumProfile(AL_ECodec eCodec, int iBitDepth, AL_EChroma
 }
 
 /****************************************************************************/
-static void AL_sCheckRange16b(int16_t* pRange, int* pNumIncoherency, const int16_t iMinVal, const int16_t iMaxVal, char const* pRangeName, FILE* pOut)
+static void AL_sCheckRange16b(int16_t* pRange, int32_t* pNumIncoherency, const int16_t iMinVal, const int16_t iMaxVal, char const* pRangeName, FILE* pOut)
 {
   if((*pRange >= 0) && (iMinVal > *pRange || *pRange > iMaxVal))
   {
@@ -1145,7 +1181,7 @@ static void AL_sCheckRange16b(int16_t* pRange, int* pNumIncoherency, const int16
 }
 
 /***************************************************************************/
-static void CorrectBitRateParams(AL_TEncChanParam* pChParam, TFourCC tFourCC, int iBitDepth, int* numIncoherency, FILE* pOut)
+static void CorrectBitRateParams(AL_TEncChanParam* pChParam, TFourCC tFourCC, int32_t iBitDepth, int32_t* numIncoherency, FILE* pOut)
 {
   if(AL_IS_CBR(pChParam->tRCParam.eRCMode))
   {
@@ -1185,13 +1221,13 @@ static void CorrectBitRateParams(AL_TEncChanParam* pChParam, TFourCC tFourCC, in
 }
 
 /***************************************************************************/
-int AL_Settings_CheckCoherency(AL_TEncSettings* pSettings, AL_TEncChanParam* pChParam, TFourCC tFourCC, FILE* pOut)
+int32_t AL_Settings_CheckCoherency(AL_TEncSettings* pSettings, AL_TEncChanParam* pChParam, TFourCC tFourCC, FILE* pOut)
 {
   Rtos_Assert(pSettings);
 
-  int numIncoherency = 0;
+  int32_t numIncoherency = 0;
 
-  int iBitDepth = AL_GET_BITDEPTH(pChParam->ePicFormat);
+  int32_t iBitDepth = AL_GET_BITDEPTH(pChParam->ePicFormat);
 
   if(AL_GetBitDepth(tFourCC) < iBitDepth)
     ++numIncoherency;
@@ -1230,9 +1266,9 @@ int AL_Settings_CheckCoherency(AL_TEncSettings* pSettings, AL_TEncChanParam* pCh
     if(AL_IS_HEVC(pChParam->eProfile))
       bCheckSEI = true;
 
-    if(bCheckSEI && (pSettings->uEnableSEI & AL_SEI_RP) == 0)
+    if(bCheckSEI && (pSettings->eEnableSEI & AL_SEI_RP) == 0)
     {
-      pSettings->uEnableSEI |= AL_SEI_RP;
+      pSettings->eEnableSEI |= AL_SEI_RP;
       MSG_WARNING("Force Recovery Point SEI in GDR");
     }
 
@@ -1245,14 +1281,36 @@ int AL_Settings_CheckCoherency(AL_TEncSettings* pSettings, AL_TEncChanParam* pCh
       }
     }
 
-    int iLimit = (pChParam->tGopParam.eGdrMode == AL_GDR_VERTICAL) ? pChParam->uEncWidth : pChParam->uEncHeight;
-    int iLcuSize = 1 << pChParam->uLog2MaxCuSize;
-    int iNbLcu = (iLimit + iLcuSize - 1) / iLcuSize;
-
-    if((int)pChParam->tGopParam.uFreqRP < iNbLcu)
+    if(pChParam->tGopParam.uFreqIDR < 1)
     {
-      pChParam->tGopParam.uFreqRP = iNbLcu;
-      MSG_WARNING("Frequency of recovery point must be at least equal to the number of LCU line/column");
+      MSG_WARNING("Gop.FreqIDR is less than 1 with GDR activated. Setting Gop.FreqIDR to UINT8_MAX");
+    }
+    switch(Sign(pChParam->tGopParam.iGdrDuration))
+    {
+    case 1:
+
+      if(!(pChParam->tGopParam.iGdrDuration <= (int32_t)pChParam->tGopParam.uFreqRP))
+      {
+        MSG_WARNING("GDR refresh duration must be less or equal to period of recovery point. GDR refresh duration was adapted.");
+        pChParam->tGopParam.iGdrDuration = (int32_t)pChParam->tGopParam.uFreqRP;
+      }
+      break;
+    case 0:
+    {
+      int32_t iLimit = (pChParam->tGopParam.eGdrMode == AL_GDR_VERTICAL) ? pChParam->uEncWidth : pChParam->uEncHeight;
+      int32_t iLcuSize = 1 << pChParam->uLog2MaxCuSize;
+      int32_t iNbLcu = (iLimit + iLcuSize - 1) / iLcuSize;
+
+      if((int)pChParam->tGopParam.uFreqRP < iNbLcu)
+      {
+        pChParam->tGopParam.uFreqRP = iNbLcu;
+        MSG_WARNING("Frequency of recovery point must be at least equal to the number of LCU line/column");
+      }
+    }
+    break;
+    case -1:
+      MSG_ERROR("GDR duration can't be strictly negative");
+      return -1;
     }
   }
 
@@ -1318,7 +1376,6 @@ int AL_Settings_CheckCoherency(AL_TEncSettings* pSettings, AL_TEncChanParam* pCh
       ++numIncoherency;
       pChParam->uCuQPDeltaDepth = 1;
     }
-
   }
   else
   {
@@ -1338,11 +1395,11 @@ int AL_Settings_CheckCoherency(AL_TEncSettings* pSettings, AL_TEncChanParam* pCh
   {
     int16_t iDefaultDelta = AL_IS_ITU_CODEC(AL_GET_CODEC(pChParam->eProfile)) ? 0 : 1;
 
-    if((pChParam->tRCParam.uPBDelta >= iDefaultDelta) ^ (pChParam->tRCParam.uIPDelta >= iDefaultDelta))
+    if((pChParam->tRCParam.iPBDelta >= iDefaultDelta) ^ (pChParam->tRCParam.iIPDelta >= iDefaultDelta))
     {
       MSG_WARNING("Both or none of PBDelta and IPDelta parameters must be set at the same time. They will be adjusted.");
-      pChParam->tRCParam.uPBDelta = -1;
-      pChParam->tRCParam.uIPDelta = -1;
+      pChParam->tRCParam.iPBDelta = -1;
+      pChParam->tRCParam.iIPDelta = -1;
     }
   }
 
@@ -1484,8 +1541,8 @@ int AL_Settings_CheckCoherency(AL_TEncSettings* pSettings, AL_TEncChanParam* pCh
     ++numIncoherency;
   }
 
-  int const MAX_LOW_DELAY_B_GOP_LENGTH = 4;
-  int const MIN_LOW_DELAY_B_GOP_LENGTH = 1;
+  int32_t const MAX_LOW_DELAY_B_GOP_LENGTH = 4;
+  int32_t const MIN_LOW_DELAY_B_GOP_LENGTH = 1;
 
   if(pChParam->tRCParam.bUseGoldenRef && (pChParam->tGopParam.uNumB > 0 || pChParam->tRCParam.eRCMode != AL_RC_CONST_QP))
     pChParam->tRCParam.bUseGoldenRef = false;
@@ -1500,7 +1557,7 @@ int AL_Settings_CheckCoherency(AL_TEncSettings* pSettings, AL_TEncChanParam* pCh
 
   if((pChParam->tGopParam.eMode & AL_GOP_FLAG_PYRAMIDAL) && (pChParam->tGopParam.uGopLength % (pChParam->tGopParam.uNumB + 1)) != 0)
   {
-    int iRound = pChParam->tGopParam.uNumB + 1;
+    int32_t iRound = pChParam->tGopParam.uNumB + 1;
     pChParam->tGopParam.uGopLength = ((pChParam->tGopParam.uGopLength + iRound - 1) / iRound) * iRound;
     MSG_WARNING("The specified Gop.Length value in pyramidal gop mode is not reachable, value will be adjusted");
     ++numIncoherency;
@@ -1510,7 +1567,7 @@ int AL_Settings_CheckCoherency(AL_TEncSettings* pSettings, AL_TEncChanParam* pCh
   {
     if(AL_IS_HEVC(pChParam->eProfile))
     {
-      int iQP = pChParam->tRCParam.iInitialQP + pChParam->iCrPicQpOffset + pChParam->iCrSliceQpOffset;
+      int32_t iQP = pChParam->tRCParam.iInitialQP + pChParam->iCrPicQpOffset + pChParam->iCrSliceQpOffset;
 
       if(iQP - 3 < 0 || iQP + 3 > 51)
       {
@@ -1529,7 +1586,7 @@ int AL_Settings_CheckCoherency(AL_TEncSettings* pSettings, AL_TEncChanParam* pCh
     }
     else if(AL_IS_AVC(pChParam->eProfile))
     {
-      int iQP = pChParam->tRCParam.iInitialQP + pChParam->iCrPicQpOffset;
+      int32_t iQP = pChParam->tRCParam.iInitialQP + pChParam->iCrPicQpOffset;
 
       if(iQP - 3 < 0 || iQP + 3 > 51)
       {
@@ -1584,7 +1641,7 @@ int AL_Settings_CheckCoherency(AL_TEncSettings* pSettings, AL_TEncChanParam* pCh
       return -1;
     }
 
-    if(pChParam->uLevel < uMinLevel)
+    if(AL_sSettings_IsCurrentLevelLower(pChParam, uMinLevel))
     {
       if(!AL_sSettings_CheckLevel(pChParam->eProfile, uMinLevel))
       {
@@ -1593,7 +1650,7 @@ int AL_Settings_CheckCoherency(AL_TEncSettings* pSettings, AL_TEncChanParam* pCh
       }
       else
       {
-        MSG_WARNING("The specified Level is too low and will be adjusted");
+        MSG_WARNING("The specified level is too low and will be adjusted");
         ++numIncoherency;
       }
       pChParam->uLevel = uMinLevel;
@@ -1630,13 +1687,17 @@ int AL_Settings_CheckCoherency(AL_TEncSettings* pSettings, AL_TEncChanParam* pCh
 
   if(AL_IS_HEVC(pChParam->eProfile))
   {
-    int iNumCore = pChParam->uNumCore;
+    int32_t iNumCore = pChParam->uNumCore;
     AL_CoreConstraint constraint;
-    const int pCycles32x32Counts[] = ENCODER_CYCLES_FOR_BLK_32X32;
+    const int32_t pCycles32x32Counts[] = ENCODER_CYCLES_FOR_BLK_32X32;
     AL_CoreConstraint_Init(&constraint, ENCODER_CORE_FREQUENCY, ENCODER_CORE_FREQUENCY_MARGIN, pCycles32x32Counts, 0, AL_ENC_CORE_MAX_WIDTH, 1);
 
     if(iNumCore == NUMCORE_AUTO)
+    {
       iNumCore = AL_CoreConstraint_GetExpectedNumberOfCores(&constraint, pChParam->uEncWidth, pChParam->uEncHeight, AL_GET_CHROMA_MODE(pChParam->ePicFormat), pChParam->tRCParam.uFrameRate * 1000, pChParam->tRCParam.uClkRatio);
+
+      numIncoherency += AL_ParamConstraints_CheckNumCore(pChParam);
+    }
 
     bool bHasTile = iNumCore > 1;
 
@@ -1653,7 +1714,7 @@ int AL_Settings_CheckCoherency(AL_TEncSettings* pSettings, AL_TEncChanParam* pCh
 
   if(AL_IS_INTERLACED(pChParam->eVideoMode))
   {
-    pSettings->uEnableSEI |= AL_SEI_PT;
+    pSettings->eEnableSEI |= AL_SEI_PT;
 
   }
 

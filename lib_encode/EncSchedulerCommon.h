@@ -1,10 +1,11 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #pragma once
 
 #include "lib_common/FourCC.h"
 #include "lib_common/Planes.h"
+#include "lib_common/Profiles.h"
 #include "lib_rtos/types.h"
 #include "lib_common_enc/EncChanParam.h"
 #include "lib_common_enc/EncRecBuffer.h"
@@ -14,9 +15,9 @@ typedef struct
   AL_TPicFormat tRecPicFormat;
   TFourCC RecFourCC;
   AL_TPlaneDescription tPlanesDesc[AL_MAX_BUFFER_PLANES];
-  int iNbPlanes;
+  int32_t iNbPlanes;
   uint32_t uRecPicSize;
-  bool bIsAvc;
+  AL_ECodec eCodec;
 }AL_TCommonChannelInfo;
 
 void SetChannelInfo(AL_TCommonChannelInfo* pChanInfo, const AL_TEncChanParam* pChParam);

@@ -1,13 +1,11 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #pragma once
 
-#include "lib_common/PPS.h"
-#include "lib_common/SPS.h"
+#include "lib_common/AvcHeaders.h"
 #include "lib_common_dec/RbspParser.h"
-#include "Concealment.h"
-#include "common_syntax.h"
+#include "lib_common_dec/ParseResult.h"
 #include "Aup.h"
 
 #include "lib_common_dec/DecCallbacks.h" // for AL_CB_ParsedSEI

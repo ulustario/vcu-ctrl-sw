@@ -1,11 +1,5 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
-
-/******************************************************************************
-   \addtogroup lib_base
-   !@{
-   \file
- *****************************************************************************/
 
 #include "lib_common/PicFormat.h"
 #include "lib_common_dec/DecBuffersInternal.h"
@@ -13,93 +7,65 @@
 #include "lib_common/BufferPixMapMeta.h"
 
 /*****************************************************************************/
-int32_t RndPitch(int32_t iWidth, AL_TPicFormat const* pPicFormat)
+int32_t AL_DecGetLumaPixPlanePitch(int32_t iWidth, AL_TPicFormat const* pPicFormat)
 {
-  int const iBurstAlignment = pPicFormat->eStorageMode == AL_FB_RASTER ? AL_DEC_PITCH_ALIGNMENT : HW_IP_BURST_ALIGNMENT;
-  int const iRndWidth = RoundUp(iWidth, 64);
-  return ComputeRndPitch(iRndWidth, pPicFormat, iBurstAlignment);
+  int32_t const iBurstAlignment = pPicFormat->eStorageMode == AL_FB_RASTER ? AL_DEC_PITCH_ALIGNMENT : HW_IP_BURST_ALIGNMENT;
+  int32_t const iRndWidth = RoundUp(iWidth, 64);
+  Rtos_Assert((iBurstAlignment % HW_IP_BURST_ALIGNMENT) == 0);
+  return AL_GetLumaPixPlanePitch(iRndWidth, pPicFormat, iBurstAlignment);
 }
 
 /******************************************************************************/
-int32_t RndHeight(int32_t iHeight, AL_TPicFormat const* pPicFormat)
+int32_t AL_DecGetPixPlaneHeight(int32_t iHeight, AL_TPicFormat const* pPicFormat)
 {
   // Height alignment required by customers to the LCU size
-  int const iLcuAlignment = 64;
+  int32_t const iLcuAlignment = 64;
   return RoundUp(iHeight, iLcuAlignment) / AL_GetNumLinesInPitch(pPicFormat->eStorageMode);
 }
 
 /****************************************************************************/
-int AL_GetAllocSize_HevcCompData(AL_TDimension tDim, AL_EChromaMode eChromaMode)
+int32_t AL_GetAllocSize_HevcCompData(AL_TDimension tDim, AL_EChromaMode eChromaMode)
 {
-  int iBlk16x16 = GetSquareBlkNumber(tDim, 64) * 16;
+  int32_t iBlk16x16 = GetSquareBlkNumber(tDim, 64) * 16;
   return HEVC_LCU_CMP_SIZE[eChromaMode] * iBlk16x16;
 }
 
 /****************************************************************************/
-int AL_GetAllocSize_AvcCompData(AL_TDimension tDim, AL_EChromaMode eChromaMode)
+int32_t AL_GetAllocSize_AvcCompData(AL_TDimension tDim, AL_EChromaMode eChromaMode)
 {
-  int iBlk16x16 = GetSquareBlkNumber(tDim, 16);
+  int32_t iBlk16x16 = GetSquareBlkNumber(tDim, 16);
   return AVC_LCU_CMP_SIZE[eChromaMode] * iBlk16x16;
 }
 
 /****************************************************************************/
-int AL_GetAllocSize_DecCompMap(AL_TDimension tDim)
+int32_t AL_GetAllocSize_DecCompMap(AL_TDimension tDim)
 {
-  int iBlk16x16 = GetSquareBlkNumber(tDim, 16);
+  int32_t iBlk16x16 = GetSquareBlkNumber(tDim, 16);
   return SIZE_LCU_INFO * iBlk16x16;
 }
 
 /*****************************************************************************/
-int AL_GetAllocSize_HevcMV(AL_TDimension tDim)
+int32_t AL_GetAllocSize_HevcMV(AL_TDimension tDim)
 {
-  int iNumBlk = GetSquareBlkNumber(tDim, 64) * 16;
+  int32_t iNumBlk = GetSquareBlkNumber(tDim, 64) * 16;
   return 4 * iNumBlk * sizeof(int32_t);
 }
 
 /*****************************************************************************/
-int AL_GetAllocSize_AvcMV(AL_TDimension tDim)
+int32_t AL_GetAllocSize_AvcMV(AL_TDimension tDim)
 {
-  int iNumBlk = GetSquareBlkNumber(tDim, 16);
+  int32_t iNumBlk = GetSquareBlkNumber(tDim, 16);
   return 16 * iNumBlk * sizeof(int32_t);
 }
 
-/****************************************************************************/
-static int GetChromaAllocSize(AL_EChromaMode eChromaMode, int iAllocSizeY)
+/*****************************************************************************/
+inline int32_t AL_DecGetAllocSize_Frame_PixPlane(AL_TPicFormat const* pPicFormat, AL_TDimension tDim, int32_t iPitch, AL_EPlaneId ePlaneId)
 {
-  switch(eChromaMode)
-  {
-  case AL_CHROMA_MONO:
-    return 0;
-  case AL_CHROMA_4_2_0:
-    return iAllocSizeY >> 1;
-  case AL_CHROMA_4_2_2:
-    return iAllocSizeY;
-  case AL_CHROMA_4_4_4:
-    return iAllocSizeY << 1;
-  default:
-    Rtos_Assert(false);
-    break;
-  }
-
-  return 0;
+  return AL_GetAllocSize_Frame_PixPlane(pPicFormat, (AL_TPitch) {iPitch, AL_DecGetPixPlaneHeight(tDim.iHeight, pPicFormat) }, ePlaneId);
 }
 
 /*****************************************************************************/
-int AL_DecGetAllocSize_Frame_PixPlane(AL_TPicFormat const* pPicFormat, AL_TDimension tDim, int iPitch, AL_EPlaneId ePlaneId)
-{
-  if(!AL_Plane_Exists(pPicFormat->ePlaneMode, false, ePlaneId))
-    return 0;
-
-  int iSize = iPitch * RndHeight(tDim.iHeight, pPicFormat);
-
-  if(ePlaneId == AL_PLANE_UV)
-    iSize = GetChromaAllocSize(pPicFormat->eChromaMode, iSize);
-
-  return iSize;
-}
-
-/*****************************************************************************/
-int AL_DecGetAllocSize_Frame_Y(AL_EFbStorageMode eFbStorage, AL_TDimension tDim, int iPitch)
+int32_t AL_DecGetAllocSize_Frame_Y(AL_EFbStorageMode eFbStorage, AL_TDimension tDim, int32_t iPitch)
 {
   AL_TPicFormat tPicFormat = GetDefaultPicFormat();
   tPicFormat.eChromaMode = AL_CHROMA_MONO;
@@ -111,7 +77,7 @@ int AL_DecGetAllocSize_Frame_Y(AL_EFbStorageMode eFbStorage, AL_TDimension tDim,
 }
 
 /*****************************************************************************/
-int AL_DecGetAllocSize_Frame_UV(AL_EFbStorageMode eFbStorage, AL_TDimension tDim, int iPitch, AL_EChromaMode eChromaMode)
+int32_t AL_DecGetAllocSize_Frame_UV(AL_EFbStorageMode eFbStorage, AL_TDimension tDim, int32_t iPitch, AL_EChromaMode eChromaMode)
 {
   AL_TPicFormat tPicFormat = GetDefaultPicFormat();
   tPicFormat.eChromaMode = eChromaMode;
@@ -126,7 +92,7 @@ int AL_DecGetAllocSize_Frame_UV(AL_EFbStorageMode eFbStorage, AL_TDimension tDim
 uint32_t AL_GetRefListOffsets(TRefListOffsets* pOffsets, AL_ECodec eCodec, AL_TPicFormat tPicFormat, uint8_t uAddrSizeInBytes)
 {
   AL_EPlaneId usedPlanes[AL_MAX_BUFFER_PLANES];
-  const int iNbPixPlanes = Max(2, AL_Plane_GetBufferPixelPlanes(tPicFormat, usedPlanes));
+  const int32_t iNbPixPlanes = Max(2, AL_Plane_GetBufferPixelPlanes(tPicFormat, usedPlanes));
   TRefListOffsets tOffsets;
   (void)eCodec;
 
@@ -148,23 +114,13 @@ uint32_t AL_GetRefListOffsets(TRefListOffsets* pOffsets, AL_ECodec eCodec, AL_TP
 }
 
 /*****************************************************************************/
-int AL_DecGetAllocSize_Frame(AL_TDimension tDim, int iPitch, AL_TPicFormat tPicFormat)
+inline int32_t AL_DecGetAllocSize_Frame(AL_TDimension tDim, int32_t iPitch, AL_TPicFormat tPicFormat)
 {
-  uint32_t uSize = 0;
-
-  AL_EPlaneId usedPlanes[AL_MAX_BUFFER_PLANES];
-  int iNbPlanes = AL_Plane_GetBufferPlanes(tPicFormat, usedPlanes);
-
-  for(int iPlane = 0; iPlane < iNbPlanes; iPlane++)
-  {
-    uSize += AL_DecGetAllocSize_Frame_PixPlane(&tPicFormat, tDim, iPitch, usedPlanes[iPlane]);
-  }
-
-  return uSize;
+  return AL_GetAllocSize_Frame_Full(tDim, &tPicFormat, (AL_TPitch) {iPitch, AL_DecGetPixPlaneHeight(tDim.iHeight, &tPicFormat) }, 64);
 }
 
 /*****************************************************************************/
-int AL_GetAllocSize_Frame(AL_TDimension tDim, AL_EChromaMode eChromaMode, uint8_t uBitDepth, bool bFbCompression, AL_EFbStorageMode eFbStorageMode)
+int32_t AL_GetAllocSize_Frame(AL_TDimension tDim, AL_EChromaMode eChromaMode, uint8_t uBitDepth, bool bFbCompression, AL_EFbStorageMode eFbStorageMode)
 {
   AL_TPicFormat tPicFormat = GetDefaultPicFormat();
   tPicFormat.eChromaMode = eChromaMode;
@@ -173,12 +129,12 @@ int AL_GetAllocSize_Frame(AL_TDimension tDim, AL_EChromaMode eChromaMode, uint8_
   tPicFormat.eStorageMode = eFbStorageMode;
   tPicFormat.bCompressed = bFbCompression;
   tPicFormat.eSamplePackMode = GetInternalBufSamplePackMode(eFbStorageMode, uBitDepth);
-  int iPitch = RndPitch(tDim.iWidth, &tPicFormat);
+  int32_t iPitch = AL_DecGetLumaPixPlanePitch(tDim.iWidth, &tPicFormat);
   return AL_DecGetAllocSize_Frame(tDim, iPitch, tPicFormat);
 }
 
 /*****************************************************************************/
-AL_TMetaData* AL_CreateRecBufMetaData(AL_TDimension tDim, int iMinPitch, TFourCC tFourCC)
+AL_TMetaData* AL_CreateRecBufMetaData(AL_TDimension tDim, int32_t iMinPitch, TFourCC tFourCC)
 {
   AL_TPixMapMetaData* pSrcMeta = AL_PixMapMetaData_CreateEmpty(tFourCC);
   pSrcMeta->tDim = tDim;
@@ -194,14 +150,14 @@ AL_TMetaData* AL_CreateRecBufMetaData(AL_TDimension tDim, int iMinPitch, TFourCC
     return NULL;
   }
 
-  int iOffset = 0;
+  int32_t iOffset = 0;
 
   AL_EPlaneId usedPlanes[AL_MAX_BUFFER_PLANES];
-  int iNbPlanes = AL_Plane_GetBufferPixelPlanes(tPicFormat, usedPlanes);
+  int32_t iNbPlanes = AL_Plane_GetBufferPixelPlanes(tPicFormat, usedPlanes);
 
-  for(int iPlane = 0; iPlane < iNbPlanes; iPlane++)
+  for(int32_t iPlane = 0; iPlane < iNbPlanes; iPlane++)
   {
-    int iPitch = usedPlanes[iPlane] == AL_PLANE_Y ? iMinPitch : AL_GetChromaPitch(tFourCC, iMinPitch);
+    int32_t iPitch = usedPlanes[iPlane] == AL_PLANE_Y ? iMinPitch : AL_GetChromaPitch(tFourCC, iMinPitch);
     AL_PixMapMetaData_AddPlane(pSrcMeta, (AL_TPlane) {0, iOffset, iPitch }, usedPlanes[iPlane]);
 
     if(usedPlanes[iPlane] == AL_PLANE_U)
@@ -213,4 +169,3 @@ AL_TMetaData* AL_CreateRecBufMetaData(AL_TDimension tDim, int iMinPitch, TFourCC
   return (AL_TMetaData*)pSrcMeta;
 }
 
-/*!@}*/

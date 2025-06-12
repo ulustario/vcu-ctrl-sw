@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 /******************************************************************************
@@ -8,10 +8,10 @@
  *****************************************************************************/
 #pragma once
 
-#include "lib_common/HwScalingList.h"
+#include "HwScalingList.h"
 
 /****************************************************************************/
-static const int AL_FAST_AVC_ENC_SCL_ORDER_8x8[64] = // scaling list when 8 samples / cyles in transquant
+static const int32_t AL_FAST_AVC_ENC_SCL_ORDER_8x8[64] = // scaling list when 8 samples / cycles in transquant
 {
   0, 1, 2, 3,
   8, 9, 10, 11,
@@ -32,7 +32,7 @@ static const int AL_FAST_AVC_ENC_SCL_ORDER_8x8[64] = // scaling list when 8 samp
 };
 
 /****************************************************************************/
-static const int AL_SLOW_AVC_ENC_SCL_ORDER_8x8[64] = // scaling list when 4 samples / cyles in transquant
+static const int32_t AL_SLOW_AVC_ENC_SCL_ORDER_8x8[64] = // scaling list when 4 samples / cycles in transquant
 {
   0, 1, 2, 3,
   4, 5, 6, 7,
@@ -53,7 +53,7 @@ static const int AL_SLOW_AVC_ENC_SCL_ORDER_8x8[64] = // scaling list when 4 samp
 };
 
 /****************************************************************************/
-static const int AL_FAST_HEVC_ENC_SCL_ORDER_8x8[64] = // scaling list when 8 samples / cyles in transquant
+static const int32_t AL_FAST_ENC_HEVC_SCL_ORDER_8x8[64] = // scaling list when 8 samples / cycles in transquant
 {
   0, 8, 16, 24,
   1, 9, 17, 25,
@@ -74,7 +74,7 @@ static const int AL_FAST_HEVC_ENC_SCL_ORDER_8x8[64] = // scaling list when 8 sam
 };
 
 /****************************************************************************/
-static const int AL_SLOW_HEVC_ENC_SCL_ORDER_8x8[64] = // scaling list when 4 samples / cyles in transquant
+static const int32_t AL_SLOW_ENC_HEVC_SCL_ORDER_8x8[64] = // scaling list when 4 samples / cycles in transquant
 {
   0, 8, 16, 24,
   32, 40, 48, 56,
@@ -95,7 +95,7 @@ static const int AL_SLOW_HEVC_ENC_SCL_ORDER_8x8[64] = // scaling list when 4 sam
 };
 
 /****************************************************************************/
-static const int AL_HEVC_ENC_SCL_ORDER_4x4[16] =
+static const int32_t AL_ENC_HEVC_SCL_ORDER_4x4[16] =
 {
   0, 4, 8, 12,
   1, 5, 9, 13,
@@ -104,7 +104,7 @@ static const int AL_HEVC_ENC_SCL_ORDER_4x4[16] =
 };
 
 /****************************************************************************/
-static const int AL_AVC_ENC_SCL_ORDER_4x4[16] =
+static const int32_t AL_AVC_ENC_SCL_ORDER_4x4[16] =
 {
   0, 1, 2, 3,
   4, 5, 6, 7,

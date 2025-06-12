@@ -1,20 +1,13 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
-/******************************************************************************
-   \addtogroup lib_base
-   !@{
-   \file
- *****************************************************************************/
-
-#include "common_syntax_elements.h"
 #include "HwScalingList.h"
 
 /******************************************************************************/
 #define  X16_DIV(n, d) ((((n) << 4) + ((d) >> 1)) / (d))
 
 // quantification scale for HEVC
-static const int g_quantScales[6] =
+static const int32_t g_quantScales[6] =
 {
   419430, 372827, 328965, 294337, 262144, 233016
 };  // 2^24 / level_scale[iQPRem]
@@ -22,7 +15,7 @@ static const int g_quantScales[6] =
 /******************************************************************************/
 
 #define  X16_DIV(n, d) ((((n) << 4) + ((d) >> 1)) / (d))
-static void AL_AVC_sGenFwdLvl4x4(uint8_t const* pMtx, int iQpRem, AL_TLevels4x4* pFwd)
+static void AL_AVC_sGenFwdLvl4x4(uint8_t const* pMtx, int32_t iQpRem, AL_TLevels4x4* pFwd)
 {
   static const uint16_t quant_coef4[6][16] =
   {
@@ -34,14 +27,14 @@ static void AL_AVC_sGenFwdLvl4x4(uint8_t const* pMtx, int iQpRem, AL_TLevels4x4*
     { 7282, 4559, 7282, 4559, 4559, 2893, 4559, 2893, 7282, 4559, 7282, 4559, 4559, 2893, 4559, 2893 }
   };
 
-  for(int i = 0; i < 16; i++)
+  for(int32_t i = 0; i < 16; i++)
   {
     (*pFwd)[i] = X16_DIV(quant_coef4[iQpRem][i], pMtx[i]);
   }
 }
 
 /******************************************************************************/
-static void AL_AVC_sGenFwdLvl8x8(uint8_t const* pMtx, int iQpRem, AL_TLevels8x8* pFwd)
+static void AL_AVC_sGenFwdLvl8x8(uint8_t const* pMtx, int32_t iQpRem, AL_TLevels8x8* pFwd)
 {
   static const uint16_t quant_coef8[6][64] =
   {
@@ -107,7 +100,7 @@ static void AL_AVC_sGenFwdLvl8x8(uint8_t const* pMtx, int iQpRem, AL_TLevels8x8*
     }
   };
 
-  for(int i = 0; i < 64; i++)
+  for(int32_t i = 0; i < 64; i++)
   {
     (*pFwd)[i] = X16_DIV(quant_coef8[iQpRem][i], pMtx[i]);
   }
@@ -116,7 +109,7 @@ static void AL_AVC_sGenFwdLvl8x8(uint8_t const* pMtx, int iQpRem, AL_TLevels8x8*
 /******************************************************************************/
 void AL_AVC_GenerateHwScalingList(AL_TSCLParam const* pSclLst, uint8_t chroma_format_idc, AL_THwScalingList(*pHwSclLst)[2][6])
 {
-  for(int iQpRem = 0; iQpRem < 6; iQpRem++)
+  for(int32_t iQpRem = 0; iQpRem < 6; iQpRem++)
   {
     // 4x4
     AL_AVC_sGenFwdLvl4x4(pSclLst->ScalingList[0][(3 * AL_SL_INTRA)], iQpRem, &(*pHwSclLst)[0][iQpRem].t4x4Y);
@@ -141,7 +134,7 @@ void AL_AVC_GenerateHwScalingList(AL_TSCLParam const* pSclLst, uint8_t chroma_fo
 }
 
 /******************************************************************************/
-static void AL_HEVC_sGenFwdDC(AL_TSCLParam const* pSclLst, int iQpRem, int iDir, AL_TLevelsDC* pFwd)
+static void AL_HEVC_sGenFwdDC(AL_TSCLParam const* pSclLst, int32_t iQpRem, int32_t iDir, AL_TLevelsDC* pFwd)
 {
   (*pFwd)[0] = g_quantScales[iQpRem] / pSclLst->scaling_list_dc_coeff[0][(3 * iDir)];
   (*pFwd)[1] = g_quantScales[iQpRem] / pSclLst->scaling_list_dc_coeff[0][(3 * iDir) + 1];
@@ -150,23 +143,23 @@ static void AL_HEVC_sGenFwdDC(AL_TSCLParam const* pSclLst, int iQpRem, int iDir,
 }
 
 /******************************************************************************/
-static void AL_HEVC_sGenFwdLvl4x4(uint8_t const* pMtx, int iQpRem, AL_TLevels4x4* pFwd)
+static void AL_HEVC_sGenFwdLvl4x4(uint8_t const* pMtx, int32_t iQpRem, AL_TLevels4x4* pFwd)
 {
-  for(int i = 0; i < 16; i++)
+  for(int32_t i = 0; i < 16; i++)
     (*pFwd)[i] = g_quantScales[iQpRem] / pMtx[i];
 }
 
 /******************************************************************************/
-static void AL_HEVC_sGenFwdLvl8x8(uint8_t const* pMtx, int iQpRem, AL_TLevels8x8* pFwd)
+static void AL_HEVC_sGenFwdLvl8x8(uint8_t const* pMtx, int32_t iQpRem, AL_TLevels8x8* pFwd)
 {
-  for(int i = 0; i < 64; i++)
+  for(int32_t i = 0; i < 64; i++)
     (*pFwd)[i] = g_quantScales[iQpRem] / pMtx[i];
 }
 
 /******************************************************************************/
 void AL_HEVC_GenerateHwScalingList(AL_TSCLParam const* pSclLst, AL_THwScalingList(*pHwSclLst)[2][6])
 {
-  for(int iQpRem = 0; iQpRem < 6; iQpRem++)
+  for(int32_t iQpRem = 0; iQpRem < 6; iQpRem++)
   {
     // Intra
     AL_HEVC_sGenFwdLvl8x8(pSclLst->ScalingList[3][(3 * AL_SL_INTRA)], iQpRem, &(*pHwSclLst)[0][iQpRem].t32x32);
@@ -198,5 +191,3 @@ void AL_HEVC_GenerateHwScalingList(AL_TSCLParam const* pSclLst, AL_THwScalingLis
   }
 }
 
-/******************************************************************************/
-/*!@}*/

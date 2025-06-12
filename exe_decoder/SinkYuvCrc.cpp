@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #include "SinkYuvCrc.h"
@@ -16,17 +16,17 @@ extern "C"
 using namespace std;
 
 #define POLYNOM_CRC 0x04c11db7
-static unsigned int crc32_table[1024];
+static uint32_t crc32_table[1024];
 static bool bInitCRC;
 
 /******************************************************************************/
-static void init_crc32(int bitdepth)
+static void init_crc32(int32_t bitdepth)
 {
-  for(int i = 0; i < (1 << bitdepth); i++)
+  for(int32_t i = 0; i < (1 << bitdepth); i++)
   {
-    unsigned int crc_precalc = i << (32 - bitdepth);
+    uint32_t crc_precalc = i << (32 - bitdepth);
 
-    for(int j = 0; j < bitdepth; j++)
+    for(int32_t j = 0; j < bitdepth; j++)
       crc_precalc = (crc_precalc & 0x80000000) ? (crc_precalc << 1) ^ POLYNOM_CRC : (crc_precalc << 1);
 
     crc32_table[i] = crc_precalc;
@@ -35,7 +35,7 @@ static void init_crc32(int bitdepth)
 
 /******************************************************************************/
 template<typename T>
-void CRC32(int iBdIn, int iBdOut, uint32_t& crc, T* pBuffer)
+void CRC32(int32_t iBdIn, int32_t iBdOut, uint32_t& crc, T* pBuffer)
 {
   if(!bInitCRC)
   {
@@ -43,28 +43,28 @@ void CRC32(int iBdIn, int iBdOut, uint32_t& crc, T* pBuffer)
     bInitCRC = true;
   }
 
-  int iPix;
+  int32_t iPix;
 
   if(iBdIn < iBdOut)
     iPix = *pBuffer << (iBdOut - iBdIn);
   else
     iPix = *pBuffer >> (iBdIn - iBdOut);
 
-  int mask = (1 << iBdOut) - 1;
+  int32_t mask = (1 << iBdOut) - 1;
   crc = (crc << iBdOut) ^ crc32_table[((crc >> (32 - iBdOut)) ^ iPix) & mask];
 }
 
 template<typename T>
-uint32_t ComputePlaneCRC(AL_TBuffer* pYUV, AL_EPlaneId ePlane, AL_TDimension tDim, int iBdIn, int iBdOut)
+uint32_t ComputePlaneCRC(AL_TBuffer* pYUV, AL_EPlaneId ePlane, AL_TDimension tDim, int32_t iBdIn, int32_t iBdOut)
 {
   uint32_t crc = UINT32_MAX;
 
   T* pPlane = (T*)AL_PixMapBuffer_GetPlaneAddress(pYUV, ePlane);
-  int iPitch = AL_PixMapBuffer_GetPlanePitch(pYUV, ePlane) / sizeof(T);
+  int32_t iPitch = AL_PixMapBuffer_GetPlanePitch(pYUV, ePlane) / sizeof(T);
 
-  for(int i = 0; i < tDim.iHeight; i++)
+  for(int32_t i = 0; i < tDim.iHeight; i++)
   {
-    for(int j = 0; j < tDim.iWidth; j++)
+    for(int32_t j = 0; j < tDim.iWidth; j++)
       CRC32(iBdOut, iBdIn, crc, pPlane++);
 
     pPlane += iPitch - tDim.iWidth;
@@ -91,8 +91,8 @@ public:
     uint32_t crc_cb = UINT32_MAX;
     uint32_t crc_cr = UINT32_MAX;
     AL_TDisplayInfoMetaData* pMeta = reinterpret_cast<AL_TDisplayInfoMetaData*>(AL_Buffer_GetMetaData(pYUV, AL_META_TYPE_DISPLAY_INFO));
-    int iBdInY = pMeta->uStreamBitDepthY;
-    int iBdInC = pMeta->uStreamBitDepthC;
+    int32_t iBdInY = pMeta->uStreamBitDepthY;
+    int32_t iBdInC = pMeta->uStreamBitDepthC;
 
     AL_TDimension tDim = AL_PixMapBuffer_GetDimension(pYUV);
 

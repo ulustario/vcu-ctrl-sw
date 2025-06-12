@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #include "lib_decode/I_DecScheduler.h"
@@ -28,7 +28,7 @@ typedef struct
 static void AL_WakeUp(AL_WaitQueue* pQueue)
 {
   pthread_mutex_lock(&pQueue->Lock);
-  int const ret = pthread_cond_broadcast(&pQueue->Cond);
+  int32_t const ret = pthread_cond_broadcast(&pQueue->Cond);
   (void)ret;
   Rtos_Assert(ret == 0);
   pthread_mutex_unlock(&pQueue->Lock);
@@ -58,18 +58,18 @@ static void AL_WaitQueue_Deinit(AL_WaitQueue* pQueue)
 
 typedef struct
 {
-  int fd;
+  int32_t fd;
   AL_THREAD thread;
   bool bBeingDestroyed;
   AL_TDriver* driver;
   AL_TDecScheduler_CB_EndParsing endParsingCB;
   AL_TDecScheduler_CB_EndDecoding endDecodingCB;
-  int iChannelID; // for debug purposes
+  int32_t iChannelID; // for debug purposes
 }Channel;
 
 typedef struct
 {
-  int fd;
+  int32_t fd;
   AL_TDecScheduler_CB_EndStartCode endStartCodeCB;
   bool bEnded;
   AL_TDriver* driver;
@@ -92,7 +92,7 @@ typedef struct
 {
   AL_THREAD thread;
   AL_EventQueue queue;
-  int fd;
+  int32_t fd;
 }StartCodeChannel;
 
 typedef struct
@@ -169,7 +169,7 @@ static void processStatusMsg(Channel const* channel, struct al5_params const* ms
   {
     uint32_t uFrameID;
     uint32_t uParsingID;
-    int iOffset = sizeof(DEC_1);
+    int32_t iOffset = sizeof(DEC_1);
     Rtos_Assert(msg->size >= iOffset + sizeof(uFrameID) + sizeof(uParsingID));
     Rtos_Memcpy(&uFrameID, (uint8_t*)msg->opaque + iOffset, sizeof(uFrameID));
     Rtos_Memcpy(&uParsingID, (uint8_t*)msg->opaque + iOffset + sizeof(uFrameID), sizeof(uParsingID));
@@ -184,7 +184,7 @@ static void processStatusMsg(Channel const* channel, struct al5_params const* ms
   if(msg->opaque[0] == DEC_2)
   {
     AL_TDecPicStatus status;
-    int iOffset = sizeof(DEC_2);
+    int32_t iOffset = sizeof(DEC_2);
     Rtos_Assert(msg->size >= iOffset + sizeof(status));
     Rtos_Memcpy(&status, (uint8_t*)msg->opaque + iOffset, sizeof(status));
 
@@ -609,7 +609,7 @@ static void API_DecodeOneSlice(AL_IDecScheduler* pScheduler, AL_HANDLE hChannel,
 
 static void GetSchedulerCoreInfo(AL_TDecSchedulerMicroblaze const* pThis, AL_TIDecSchedulerCore* pCore)
 {
-  int const fd = AL_Driver_Open(pThis->driver, pThis->deviceFile);
+  int32_t const fd = AL_Driver_Open(pThis->driver, pThis->deviceFile);
 
   if(fd < 0)
   {
@@ -642,7 +642,7 @@ static void GetSchedulerCoreInfo(AL_TDecSchedulerMicroblaze const* pThis, AL_TID
 /******************************************************************************/
 static void GetSchedulerVersion(AL_TDecSchedulerMicroblaze const* pThis, AL_TIDecSchedulerVersion* pVersion)
 {
-  int const fd = AL_Driver_Open(pThis->driver, pThis->deviceFile);
+  int32_t const fd = AL_Driver_Open(pThis->driver, pThis->deviceFile);
 
   if(fd < 0)
   {
@@ -706,6 +706,19 @@ static void API_Set(AL_IDecScheduler* pScheduler, AL_EIDecSchedulerInfo info, vo
   return;
 }
 
+/******************************************************************************/
+static void API_InternalSet(AL_IDecScheduler* pScheduler, AL_EIDecSchedulerInternalInfo eInfo, void const* pParam)
+{
+  (void)pScheduler;
+  (void)pParam;
+  switch(eInfo)
+  {
+  case AL_IDECSCHEDULERINTERNAL_MAX_ENUM:
+  default:
+    return;
+  }
+}
+
 static const AL_IDecSchedulerVtable DecSchedulerMcuVtable =
 {
   API_Destroy,
@@ -718,6 +731,7 @@ static const AL_IDecSchedulerVtable DecSchedulerMcuVtable =
   API_DecodeOneSlice,
   API_Get,
   API_Set,
+  API_InternalSet,
 };
 
 /* Initialisation cannot be handled by control software with mcu.

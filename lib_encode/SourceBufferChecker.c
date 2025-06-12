@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #include "SourceBufferChecker.h"
@@ -62,7 +62,7 @@ static bool CheckMetaData(AL_TSrcBufferChecker* pCtx, AL_TBuffer* pBuf)
   return bValidFormat;
 }
 
-static uint32_t GetSrcPlaneSize(AL_TDimension tDim, AL_EChromaMode eChromaMode, AL_ESrcMode eSrcFmt, int iPitchY, int iStrideHeight, AL_EPlaneId ePlaneId)
+static uint32_t GetSrcPlaneSize(AL_TDimension tDim, AL_EChromaMode eChromaMode, AL_ESrcMode eSrcFmt, int32_t iPitchY, int32_t iStrideHeight, AL_EPlaneId ePlaneId)
 {
   (void)tDim;
   AL_TPicFormat tPicFormat = AL_EncGetSrcPicFormat(eChromaMode, 8, eSrcFmt);
@@ -88,28 +88,28 @@ static bool CheckPlanes(AL_TSrcBufferChecker* pCtx, AL_TBuffer* pBuf)
 
   AL_EPlaneId ePlaneId = AL_PLANE_Y;
 
-  const int iMinPitch = AL_EncGetMinPitch(tDim.iWidth, &tPicFormat);
-  int const iMinStrideHeight = RoundUp(tDim.iHeight, 8);
+  const int32_t iMinPitch = AL_EncGetMinPitch(tDim.iWidth, &tPicFormat);
+  int32_t const iMinStrideHeight = RoundUp(tDim.iHeight, 8);
 
-  int const iPitchY = AL_PixMapBuffer_GetPlanePitch(pBuf, ePlaneId);
+  int32_t const iPitchY = AL_PixMapBuffer_GetPlanePitch(pBuf, ePlaneId);
 
   if(iPitchY < iMinPitch || (iPitchY % HW_IP_BURST_ALIGNMENT != 0))
     return false;
 
   uint32_t uChunkSizes[AL_BUFFER_MAX_CHUNK] = { 0 };
   AL_EPlaneId usedPlanes[AL_MAX_BUFFER_PLANES];
-  int const iNbPlanes = AL_Plane_GetBufferPixelPlanes(tPicFormat, usedPlanes);
+  int32_t const iNbPlanes = AL_Plane_GetBufferPixelPlanes(tPicFormat, usedPlanes);
 
-  for(int iPlane = 0; iPlane < iNbPlanes; iPlane++)
+  for(int32_t iPlane = 0; iPlane < iNbPlanes; iPlane++)
   {
     AL_EPlaneId ePlaneId = usedPlanes[iPlane];
 
-    int iChunkIdx = AL_PixMapBuffer_GetPlaneChunkIdx(pBuf, ePlaneId);
+    int32_t iChunkIdx = AL_PixMapBuffer_GetPlaneChunkIdx(pBuf, ePlaneId);
     Rtos_Assert(iChunkIdx != AL_BUFFER_BAD_CHUNK);
 
     if(AL_Plane_IsPixelPlane(ePlaneId) && ePlaneId != AL_PLANE_Y && ePlaneId != AL_PLANE_YUV)
     {
-      int const iPitch = AL_PixMapBuffer_GetPlanePitch(pBuf, ePlaneId);
+      int32_t const iPitch = AL_PixMapBuffer_GetPlanePitch(pBuf, ePlaneId);
 
       if(iPitch != AL_GetChromaPitch(tFourCC, iPitchY))
         return false;
@@ -118,7 +118,7 @@ static bool CheckPlanes(AL_TSrcBufferChecker* pCtx, AL_TBuffer* pBuf)
     uChunkSizes[iChunkIdx] += GetSrcPlaneSize(tDim, tPicFormat.eChromaMode, pCtx->srcMode, iPitchY, iMinStrideHeight, ePlaneId);
   }
 
-  for(int i = 0; i < AL_BUFFER_MAX_CHUNK; i++)
+  for(int32_t i = 0; i < AL_BUFFER_MAX_CHUNK; i++)
   {
     if(uChunkSizes[i] != 0 && (AL_Buffer_GetSizeChunk(pBuf, i) < uChunkSizes[i]))
       return false;

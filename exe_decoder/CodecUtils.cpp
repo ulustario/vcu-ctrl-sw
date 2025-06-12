@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #include <cstdlib>
@@ -13,7 +13,7 @@
 #include "lib_app/BuildInfo.h"
 
 /******************************************************************************/
-void DisplayFrameStatus(int iFrameNum)
+void DisplayFrameStatus(int32_t iFrameNum)
 {
 #if VERBOSE_MODE
   LogVerbose("\n\n> % 3d", iFrameNum);

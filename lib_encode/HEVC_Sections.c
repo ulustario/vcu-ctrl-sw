@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #include "HEVC_Sections.h"
@@ -33,12 +33,14 @@ AL_TNuts CreateHevcNuts(void)
   return nuts;
 }
 
-void HEVC_GenerateSections(AL_TEncCtx* pCtx, AL_TBuffer* pStream, AL_TEncPicStatus const* pPicStatus, int iLayerID, int iPicID, bool bMustWritePPS, bool bMustWriteAUD)
+void HEVC_GenerateSections(AL_TEncCtx* pCtx, AL_TBuffer* pStream, AL_TEncPicStatus const* pPicStatus, int32_t iLayerID, int32_t iPicID, bool bMustWritePPS, bool bMustWriteAUD)
 {
   AL_TNuts nuts = CreateHevcNuts();
   AL_TNalsData nalsData = AL_ExtractNalsData(pCtx, iLayerID, iPicID);
   nalsData.bMustWritePPS = bMustWritePPS;
   nalsData.bMustWriteAud = bMustWriteAUD;
   AL_TEncChanParam const* pChannel = &pCtx->pSettings->tChParam[0];
-  GenerateSections(AL_GetHevcRbspWriter(), nuts, &nalsData, pStream, pPicStatus, iLayerID, pChannel->uNumSlices, pChannel->bSubframeLatency, false);
+  bool bSubframeLatency = false;
+  bSubframeLatency = pChannel->bSubframeLatency;
+  GenerateSections(AL_GetHevcRbspWriter(), nuts, &nalsData, pStream, pPicStatus, iLayerID, pChannel->uNumSlices, bSubframeLatency, false);
 }

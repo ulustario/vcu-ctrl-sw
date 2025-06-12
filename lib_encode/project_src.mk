@@ -8,6 +8,8 @@ LIB_ENCODE_SRC+=\
 	lib_encode/lib_encoder.c\
 	lib_encode/SourceBufferChecker.c\
 	lib_encode/LoadLda.c\
+	lib_encode/HwScalingList.c\
+	lib_encode/EncHwScalingList.c\
 
 
 ifneq ($(ENABLE_ENC_AVC),0)

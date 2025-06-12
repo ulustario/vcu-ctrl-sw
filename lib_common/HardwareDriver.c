@@ -1,11 +1,11 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #include <errno.h>
 #include "lib_rtos/lib_rtos.h"
 #include "lib_common/IDriver.h"
 
-static int Open(AL_TDriver* driver, const char* device)
+static int32_t Open(AL_TDriver* driver, const char* device)
 {
   (void)driver;
   void* drv = Rtos_DriverOpen(device);
@@ -15,13 +15,13 @@ static int Open(AL_TDriver* driver, const char* device)
   return (int)(uintptr_t)drv;
 }
 
-static void Close(AL_TDriver* driver, int fd)
+static void Close(AL_TDriver* driver, int32_t fd)
 {
   (void)driver;
   Rtos_DriverClose((void*)(intptr_t)fd);
 }
 
-static AL_EDriverError ErrnoToDriverError(int err)
+static AL_EDriverError ErrnoToDriverError(int32_t err)
 {
   if(err == ENOMEM)
     return DRIVER_ERROR_NO_MEMORY;
@@ -32,13 +32,13 @@ static AL_EDriverError ErrnoToDriverError(int err)
   return DRIVER_ERROR_UNKNOWN;
 }
 
-static AL_EDriverError PostMessage(AL_TDriver* driver, int fd, long unsigned int messageId, void* data, bool isBlocking)
+static AL_EDriverError PostMessage(AL_TDriver* driver, int32_t fd, uint32_t messageId, void* data, bool isBlocking)
 {
   (void)driver;
 
   while(true)
   {
-    int iRet;
+    int32_t iRet;
 
     if(messageId != AL_POLL_MSG)
       iRet = Rtos_DriverIoctl((void*)(intptr_t)fd, messageId, data);
@@ -51,7 +51,7 @@ static AL_EDriverError PostMessage(AL_TDriver* driver, int fd, long unsigned int
         return DRIVER_TIMEOUT;
     }
 
-    int errdrv = errno;
+    int32_t errdrv = errno;
 
     if(iRet < 0)
     {

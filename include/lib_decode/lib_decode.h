@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 /******************************************************************************
@@ -127,7 +127,7 @@ void AL_Decoder_Destroy(AL_HDecoder hDec);
 
 /****************************************************************************/
 /* internal. Used for traces */
-void AL_Decoder_SetParam(AL_HDecoder hDec, const char* sPrefix, int iFrmID, int iNumFrm, bool bShouldPrintFrameDelimiter);
+void AL_Decoder_SetParam(AL_HDecoder hDec, const char* sPrefix, int32_t iFrmID, int32_t iNumFrm, bool bShouldPrintFrameDelimiter);
 
 /*****************************************************************************
    \brief Pushes a buffer to the decoder queue. It will be decoded when possible
@@ -174,7 +174,7 @@ AL_ECodec AL_Decoder_GetCodec(AL_HDecoder hDec);
    \param[in] hDec Handle to a decoder object.
    \return return the maximum bidepth allowed byu the current stream profile
 *****************************************************************************/
-int AL_Decoder_GetMaxBD(AL_HDecoder hDec);
+int32_t AL_Decoder_GetMaxBD(AL_HDecoder hDec);
 
 /*****************************************************************************
    \brief Retrieves the last decoder error state

@@ -6,13 +6,18 @@ OUR_LDFLAGS:=
 CROSS_COMPILE?=
 CXX:=$(CROSS_COMPILE)g++
 CC:=$(CROSS_COMPILE)gcc
+
+# Same as: ar/nm/ranlib --plugin=<liblto_plugin.so>
+ARCHIVER_TOOL?=gcc-
+AR:=$(CROSS_COMPILE)$(ARCHIVER_TOOL)ar
+NM:=$(CROSS_COMPILE)$(ARCHIVER_TOOL)nm
+RANLIB:=$(CROSS_COMPILE)$(ARCHIVER_TOOL)ranlib
+
+
 AS:=$(CROSS_COMPILE)as
-AR:=$(CROSS_COMPILE)gcc-ar
-NM:=$(CROSS_COMPILE)gcc-nm
 LD:=$(CROSS_COMPILE)ld
 OBJDUMP:=$(CROSS_COMPILE)objdump
 OBJCOPY:=$(CROSS_COMPILE)objcopy
-RANLIB:=$(CROSS_COMPILE)gcc-ranlib
 STRIP:=$(CROSS_COMPILE)strip
 SIZE:=$(CROSS_COMPILE)size
 
@@ -68,23 +73,25 @@ include codec_defs.mk
 -include lib_ip_ctrl/project.mk
 -include lib_log/project.mk
 
+# For now running tests from make needs to be manually enabled
+ENABLE_SH_TESTS?=0
 
 BUILD_LIB_A2P=0
 
 ifneq ($(BUILD_LIB_A2P), 0)
-  -include lib_a2p_standalone/project.mk
+  -include lib_a2p/project.mk
 endif
 
 
 BUILD_LIB_BITSTREAM=0
-ifneq ($(ENABLE_ENCODER),0)
+ifneq ($(ENABLE_EXE_ENCODER),0)
   BUILD_LIB_BITSTREAM=1
 endif
 ifneq ($(BUILD_LIB_BITSTREAM),0)
   -include lib_bitstream/project.mk
 endif
 
-ifneq ($(ENABLE_ENCODER),0)
+ifneq ($(ENABLE_EXE_ENCODER),0)
   -include lib_common_enc/project.mk
   -include lib_buf_mngt/project.mk
   -include lib_rate_ctrl/project.mk
@@ -94,12 +101,13 @@ endif
 
 
 BUILD_LIB_COM_DEC=0
-ifneq ($(ENABLE_DECODER),0)
+ifneq ($(ENABLE_EXE_DECODER),0)
   BUILD_LIB_COM_DEC=1
 endif
 ifneq ($(BUILD_LIB_COM_DEC),0)
   -include lib_common_dec/project.mk
 endif
+
 
 ifneq ($(ENABLE_CLIENT_FLAG),0)
 -include lib_ref_customer/project.mk
@@ -109,6 +117,12 @@ ref_target = $(LIB_REFENC_A) \
             $(LIB_REFENC_DLL) \
             $(LIB_REFDEC_A) \
             $(LIB_REFDEC_DLL) \
+            $(LIB_REF_LCEVC_ENC_QUANT_A) \
+            $(LIB_REF_LCEVC_ENC_QUANT_DLL) \
+            $(LIB_REF_LCEVC_ENC_A) \
+            $(LIB_REF_LCEVC_ENC_DLL) \
+            $(LIB_REF_LCEVC_DEC_A) \
+            $(LIB_REF_LCEVC_DEC_DLL) \
             $(LIB_REFALLOC_A) \
             $(LIB_REFALLOC_DLL) \
             $(LIB_REFFBC_A) \
@@ -126,7 +140,7 @@ $(ref_target): .submake ;
 	ENABLE_64BIT=$(ENABLE_64BIT) \
 	CROSS_COMPILE=$(CROSS_COMPILE) \
   CFLAGS_BASE="$(CFLAGS)" \
-  LDFLAGS="$(LDFLAGS)" \
+  LDFLAGS_BASE="$(LDFLAGS)" \
 	BIN=$(BIN_REF)
 else
 -include ref.mk
@@ -134,7 +148,7 @@ endif
 
 -include lib_app/project.mk #lib_common and lib_log dependency
 
-ifneq ($(ENABLE_DECODER),0)
+ifneq ($(ENABLE_EXE_DECODER),0)
   # AL_Decoder
   -include lib_parsing/project.mk
 
@@ -145,7 +159,8 @@ endif
 
 
 
-ifneq ($(ENABLE_ENCODER),0)
+
+ifneq ($(ENABLE_EXE_ENCODER),0)
   # AL_Encoder
   -include exe_encoder/project.mk
 endif
@@ -157,7 +172,9 @@ endif
 
 
 
-ifneq ($(ENABLE_ENCODER),0)
+
+
+ifneq ($(ENABLE_EXE_ENCODER),0)
 ifneq ($(ENABLE_SYNC_IP),0)
 ifeq ($(findstring linux,$(TARGET)),linux)
   -include exe_sync_ip/project.mk

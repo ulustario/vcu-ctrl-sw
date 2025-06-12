@@ -1,11 +1,6 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
-/******************************************************************************
-   \addtogroup lib_base
-   !@{
-   \file
- *****************************************************************************/
 #pragma once
 
 #include "lib_common_enc/EncChanParam.h"
@@ -41,6 +36,12 @@ static const uint32_t AL_PICT_INFO_NOT_SHOWABLE = 0x80000000; /*!< The picture i
 #define AL_IS_GOLDREF(PicInfo) ((PicInfo).uFlags & AL_PICT_INFO_IS_GOLDREF)
 #define AL_IS_SHOWABLE(PicInfo) (!((PicInfo).uFlags & AL_PICT_INFO_NOT_SHOWABLE))
 
+typedef struct
+{
+  uint16_t uGdrPos; /*!< Gradual Refresh position */
+  AL_EGdrMode eGdrMode; /*!< Gradual Refresh Mode */
+}AL_TPicInfoGdr;
+
 /*****************************************************************************
    \brief Picture information
 *****************************************************************************/
@@ -75,16 +76,15 @@ typedef struct AL_TPictureInfo
   uint8_t uRefPicSetIdx;
   int8_t iGopMngrQpOffset;
   int32_t iRecoveryCnt;
+  int32_t iRefAQp;
+  int32_t iRefBQp;
 
   bool bForceQp;
   int16_t iQpSet;
   bool bRateCtrlQpOffset;
   int8_t iRateCtrlQpOffset;
 
-  uint16_t uGdrPos; /*!< Gradual Refresh position */
-  AL_EGdrMode eGdrMode; /*!< Gradual Refresh Mode */
-
   AL_TLookAheadParam tLAParam;
-}AL_TPictureInfo;
 
-/*!@}*/
+  AL_TPicInfoGdr tGdrInfos;
+}AL_TPictureInfo;

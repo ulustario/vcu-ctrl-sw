@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #include <algorithm>
@@ -8,12 +8,16 @@
 #include "exe_decoder/CodecUtils.h"
 #include "lib_app/CommandLineParser.h"
 #include "lib_app/CommonCmdParser.h"
+#include "lib_common/PicFormat.h"
 
 extern "C"
 {
+#include "lib_common/AllocatorTracker.h"
 #include "lib_common/RoundUp.h"
 #include "lib_common/BufCommon.h"
 }
+
+using namespace std;
 
 /******************************************************************************/
 static void Usage(CommandLineParser const& opt, char* ExeName)
@@ -48,7 +52,7 @@ Config::Config(void)
 static EDecErrorLevel ParseExitOn(const string& toParse)
 {
   string toParseLower = toParse;
-  std::for_each(toParseLower.begin(), toParseLower.end(), [](char& c) { c = ::tolower(c); });
+  for_each(toParseLower.begin(), toParseLower.end(), [](char& c) { c = ::tolower(c); });
 
   if(toParseLower == "w" || toParseLower == "warning")
     return DEC_WARNING;
@@ -79,7 +83,7 @@ static TFourCC ParseFourCCFormat(const string& sOutputFormat)
 }
 
 /******************************************************************************/
-static int ParseOutputBD(string& sOutputBitDepth)
+static int32_t ParseOutputBD(string& sOutputBitDepth)
 {
   if(sOutputBitDepth == string("first"))
     return OUTPUT_BD_FIRST;
@@ -89,7 +93,7 @@ static int ParseOutputBD(string& sOutputBitDepth)
     return OUTPUT_BD_STREAM;
   else
   {
-    int iBitDepth;
+    int32_t iBitDepth;
     stringstream ss(sOutputBitDepth);
     ss >> iBitDepth;
 
@@ -193,7 +197,7 @@ static void ParsePreAllocArgs(AL_TStreamSettings* settings, AL_ECodec codec, str
 
   if(ss.peek() >= '0' && ss.peek() <= '9')
   {
-    int iProfileIdc;
+    int32_t iProfileIdc;
     ss >> iProfileIdc;
     settings->eProfile = AL_MAKE_PROFILE(codec, iProfileIdc, 0);
   }
@@ -283,8 +287,8 @@ static void ProcessOutputArgs(Config& config, const string& sRasterOut)
 }
 
 /******************************************************************************/
-template<int Offset>
-static int IntWithOffset(const string& word)
+template<int32_t Offset>
+static int32_t IntWithOffset(const string& word)
 {
   return atoi(word.c_str()) + Offset;
 }
@@ -310,9 +314,9 @@ static TCouple CoupleWithSeparator(const string& str)
 }
 
 /******************************************************************************/
-static std::string toStringPathsSet(std::set<std::string> paths)
+static string toStringPathsSet(set<string> paths)
 {
-  std::string out;
+  string out;
 
   for(auto path : paths)
   {
@@ -325,18 +329,18 @@ static std::string toStringPathsSet(std::set<std::string> paths)
 }
 
 /******************************************************************************/
-Config ParseCommandLine(int argc, char* argv[])
+Config ParseCommandLine(int32_t argc, char* argv[])
 {
   Config config {};
 
-  int fps = 0;
+  int32_t fps = 0;
   bool version = false;
   bool helpJson = false;
 
   string sRasterOut;
   string sOutputBitDepth = "";
   string sOutputFormat = "";
-  std::set<std::string> const sDecDefaultDevicePath(DECODER_DEVICES);
+  set<string> const sDecDefaultDevicePath(DECODER_DEVICES);
 
   SetDefaultDecOutputSettings(&config.tUserOutputSettings);
 
@@ -388,8 +392,7 @@ Config ParseCommandLine(int argc, char* argv[])
   opt.addFlag("--split-input", &config.tDecSettings.eInputMode,
               "Send stream by decoding unit",
               AL_DEC_SPLIT_INPUT);
-  opt.addString("--split-from-sizes", &config.sSplitSizesFile, "Send stream by decoding unit");
-  opt.addString("--sei-file", &config.seiFile, "File in which the SEI decoded by the decoder will be dumped");
+  opt.addString("--split-from-sizes", &config.sSplitSizesFile, "Split stream according to frame sizes specified in file. One frame size by line. Requires preallocation.");
   opt.addString("--sei-file", &config.seiFile, "File in which the SEI decoded by the decoder will be dumped");
 
   opt.addString("--hdr-file", &config.hdrFile, "Parse and dump HDR data in the specified file");
@@ -423,16 +426,16 @@ Config ParseCommandLine(int argc, char* argv[])
   opt.addOption("--first-frame-to-trace,--t,-t", [&](string)
   {
     config.iTraceIdx = opt.popInt();
-    config.iTraceNumber = std::max(1, config.iTraceNumber);
+    config.iTraceNumber = max(1, config.iTraceNumber);
   }, "First frame to trace (optional)", "number");
 
   opt.addOption("--frame-to-trace-count,--num,-num", [&](string)
   {
     config.iTraceNumber = opt.popInt();
-    config.iTraceIdx = std::max(0, config.iTraceIdx);
+    config.iTraceIdx = max(0, config.iTraceIdx);
   }, "Number of frames to trace", "number");
 
-  opt.addFlag("--use-early-callback", &config.tDecSettings.bUseEarlyCallback, "Low latency phase 2. Call end decoding at decoding launch. This only makes sense with special support for hardware synchronization");
+  opt.addFlag("--use-early-callback", &config.tDecSettings.bUseEarlyCallback, "Low latency phase 2. Call end decoding at decoding launch. This only makes sense with special support for hardware synchronization. Requires --lowlat. ");
   opt.addInt("--core,-core", &config.tDecSettings.uNumCore, "Number of decoder cores");
   opt.addFlag("--non-realtime", &config.tDecSettings.bNonRealtime, "Specifies that the channel is a non-realtime channel");
   opt.addInt("--ddrwidth,-ddrwidth", &config.tDecSettings.uDDRWidth, "Width of DDR requests (16, 32, 64) (default: 32)");
@@ -440,7 +443,7 @@ Config ParseCommandLine(int argc, char* argv[])
 
   opt.addOption("--device", [&](string) {
     config.sDecDevicePath.insert(opt.popWord());
-  }, std::string(std::string("Path of the driver device(s) file(s) used to talk with the IP. Default(s) are: ") + toStringPathsSet(sDecDefaultDevicePath)));
+  }, string(string("Path of the driver device(s) file(s) used to talk with the IP. Default(s) are: ") + toStringPathsSet(sDecDefaultDevicePath)));
   opt.addFlag("--select-device-with-lowest-available-resources", &config.bSelectDeviceWithLowestAvailableResources, "Select the device with the lowest available resources. This flag is not applicable without multiple devices. It should be use with caution!");
 
   opt.addFlag("--noyuv,-noyuv", &config.bEnableYUVOutput,
@@ -536,7 +539,7 @@ Config ParseCommandLine(int argc, char* argv[])
       /* For pre-allocation, we must use 8x8 (HEVC) or MB (AVC) rounded dimensions, like the SPS. */
       /* Actually, round up to the LCU so we're able to support resolution changes with the same LCU sizes. */
       /* And because we don't know the codec here, always use 64 as MB/LCU size. */
-      int iAlignValue = 8;
+      int32_t iAlignValue = 8;
 
       if(config.tDecSettings.eCodec == AL_CODEC_AVC)
         iAlignValue = 16;
@@ -548,10 +551,10 @@ Config ParseCommandLine(int argc, char* argv[])
     }
 
     if(config.tDecSettings.eInputMode == AL_DEC_SPLIT_INPUT && !config.bUsePreAlloc)
-      throw std::runtime_error(" --split-input requires preallocation");
+      throw runtime_error(" --split-input requires preallocation");
 
     if((config.tDecSettings.tOutputPosition.iX || config.tDecSettings.tOutputPosition.iY) && !config.bUsePreAlloc)
-      throw std::runtime_error(" --output-position requires preallocation");
+      throw runtime_error(" --output-position requires preallocation");
   }
 
   if(config.sIn.empty())

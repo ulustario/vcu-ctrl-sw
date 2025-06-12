@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #include "DecoderFeeder.h"
@@ -9,8 +9,8 @@
 void AL_Default_Decoder_WaitFrameSent(AL_HDecoder hDec, uint32_t uStreamOffset);
 
 extern UNIT_ERROR AL_Decoder_TryDecodeOneUnit(AL_HDecoder hDec, AL_TBuffer* pBufStream);
-extern int AL_Decoder_GetDecodedStrOffset(AL_HANDLE hDec);
-extern int AL_Decoder_SkipParsedUnits(AL_HANDLE hDec);
+extern int32_t AL_Decoder_GetDecodedStrOffset(AL_HANDLE hDec);
+extern int32_t AL_Decoder_SkipParsedUnits(AL_HANDLE hDec);
 extern void AL_Decoder_FlushInput(AL_HDecoder hDec);
 extern void AL_Decoder_InternalFlush(AL_HDecoder hDec);
 
@@ -68,7 +68,7 @@ static bool Slave_Process(DecoderFeederSlave* slave, AL_TBuffer* startCodeStream
   // Decode
   UNIT_ERROR const eErr = AL_Decoder_TryDecodeOneUnit(hDec, startCodeStreamView);
 
-  if(eErr == ERR_UNIT_INVALID_CHANNEL || eErr == ERR_UNIT_DYNAMIC_ALLOC)
+  if(eErr == ERR_UNIT_INVALID_CHANNEL || eErr == ERR_UNIT_DYNAMIC_ALLOC || eErr == ERR_UNIT_FAILED)
     return false;
 
   if(eErr == SUCCESS_ACCESS_UNIT || eErr == SUCCESS_NAL_UNIT)

@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 /******************************************************************************
@@ -24,13 +24,17 @@ static const AL_TBufInfo EP2_BUF_QP_CTRL =
 {
   1, 48, 0
 }; // only 20 bytes used
+static const AL_TBufInfo EP2_BUF_QP_TABLE =
+{
+  0, 0, 48
+}; // not fixed size, includes SEG_CTRL and QP_BY_MB
 static const AL_TBufInfo EP2_BUF_SEG_CTRL =
 {
   2, AL_QPTABLE_SEGMENTS_SIZE, 48
 };
 static const AL_TBufInfo EP2_BUF_QP_BY_MB =
 {
-  4, 0, 48 + AL_QPTABLE_SEGMENTS_SIZE
+  4, 0, 64
 }; // no fixed size
 
 /*****************************************************************************
@@ -55,7 +59,7 @@ uint32_t AL_GetAllocSize_Src(AL_TDimension tDim, uint8_t uBitDepth, AL_EChromaMo
    customize offset between luma and chroma.
    \return maximum size (in bytes) needed for the YUV frame buffer
 *****************************************************************************/
-uint32_t AL_GetAllocSizeSrc(AL_TDimension tDim, AL_TPicFormat const* pPicFormat, int iPitch, int iStrideHeight);
+uint32_t AL_GetAllocSizeSrc(AL_TDimension tDim, AL_TPicFormat const* pPicFormat, int32_t iPitch, int32_t iStrideHeight);
 
 /*****************************************************************************
    \brief Retrieves the size of one pixel component of a YUV frame buffer
@@ -65,7 +69,7 @@ uint32_t AL_GetAllocSizeSrc(AL_TDimension tDim, AL_TPicFormat const* pPicFormat,
    \param[in] ePlaneId The pixel plane type. Must not be a map plane.
    \return maximum size (in bytes) needed for the component
 *****************************************************************************/
-uint32_t AL_GetAllocSizeSrc_PixPlane(AL_TPicFormat const* pPicFormat, int iPitch, int iStrideHeight, AL_EPlaneId ePlaneId);
+uint32_t AL_GetAllocSizeSrc_PixPlane(AL_TPicFormat const* pPicFormat, int32_t iPitch, int32_t iStrideHeight, AL_EPlaneId ePlaneId);
 
 /*****************************************************************************
    \brief Retrieves the minimal pitch value supported by the ip depending
@@ -74,7 +78,7 @@ uint32_t AL_GetAllocSizeSrc_PixPlane(AL_TPicFormat const* pPicFormat, int iPitch
    \param[in] pPicFormat Picture format of the frame
    \return pitch value in bytes
 *****************************************************************************/
-int AL_EncGetMinPitch(int iWidth, AL_TPicFormat const* pPicFormat);
+int32_t AL_EncGetMinPitch(int32_t iWidth, AL_TPicFormat const* pPicFormat);
 
 /*****************************************************************************
    \brief Retrieves the Source frame buffer storage mode depending on Source mode
@@ -105,11 +109,11 @@ bool AL_IsSrcInterleaved(AL_ESrcMode eSrcMode);
 bool AL_IsSrcMSB(AL_ESrcMode eSrcMode);
 
 AL_DEPRECATED("Renamed as AL_EncGetMinPitch, Will be removed in 0.9")
-int AL_CalculatePitchValue(int iWidth, uint8_t uBitDepth, AL_EFbStorageMode eStorageMode);
+int32_t AL_CalculatePitchValue(int32_t iWidth, uint8_t uBitDepth, AL_EFbStorageMode eStorageMode);
 
 AL_DEPRECATED("Use AL_GetAllocSizeSrc_PixPlane.")
-uint32_t AL_GetAllocSizeSrc_Y(AL_ESrcMode eSrcFmt, int iPitch, int iStrideHeight);
+uint32_t AL_GetAllocSizeSrc_Y(AL_ESrcMode eSrcFmt, int32_t iPitch, int32_t iStrideHeight);
 AL_DEPRECATED("Use AL_GetAllocSizeSrc_PixPlane.")
-uint32_t AL_GetAllocSizeSrc_UV(AL_ESrcMode eSrcFmt, int iPitch, int iStrideHeight, AL_EChromaMode eChromaMode);
+uint32_t AL_GetAllocSizeSrc_UV(AL_ESrcMode eSrcFmt, int32_t iPitch, int32_t iStrideHeight, AL_EChromaMode eChromaMode);
 
 /*!@}*/

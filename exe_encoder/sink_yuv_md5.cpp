@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #include <fstream>
@@ -58,9 +58,9 @@ public:
       pBuf = m_convYUV.get();
     }
 
-    int iChunkCnt = AL_Buffer_GetChunkCount(pBuf);
+    int32_t iChunkCnt = AL_Buffer_GetChunkCount(pBuf);
 
-    for(int i = 0; i < iChunkCnt; i++)
+    for(int32_t i = 0; i < iChunkCnt; i++)
       m_MD5.Update(AL_Buffer_GetDataChunk(pBuf, i), AL_Buffer_GetSizeChunk(pBuf, i));
   }
 

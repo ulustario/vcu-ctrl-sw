@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #include "CfgParser.h"
@@ -23,6 +23,7 @@
 #include <vector>
 #include <type_traits>
 #include <cmath>
+#include <cctype>
 
 extern "C"
 {
@@ -74,16 +75,9 @@ static TFourCC GetFourCCValue(const string& sVal)
   return (TFourCC)uFourCC;
 }
 
-static int GetBlkSizeInv(int iBlkSizePow2)
+static int32_t GetBlkSizeInv(int32_t iBlkSizePow2)
 {
   return 1 << iBlkSizePow2;
-}
-
-static string FourCCToString(TFourCC tFourCC)
-{
-  stringstream ss;
-  ss << static_cast<char>(tFourCC & 0xFF) << static_cast<char>((tFourCC & 0xFF00) >> 8) << static_cast<char>((tFourCC & 0xFF0000) >> 16) << static_cast<char>((tFourCC & 0xFF000000) >> 24);
-  return ss.str();
 }
 
 static map<string, EnumDescription<int>> const getOutputFourCCs(void)
@@ -146,10 +140,10 @@ static map<string, EnumDescription<int>> const getInputFourCCs(void)
   return fourCCs;
 }
 
-static int constexpr CODEC_MAX_CTB_SIZE = 5; // 32x32
-static int constexpr CODEC_MIN_CTB_SIZE = 5; // 32x32
+static int32_t constexpr CODEC_MAX_CTB_SIZE = 5; // 32x32
+static int32_t constexpr CODEC_MIN_CTB_SIZE = 5; // 32x32
 
-static int constexpr AVC_MAX_CU_SIZE = 4; // 16x16
+static int32_t constexpr AVC_MAX_CU_SIZE = 4; // 16x16
 
 vector<ArithInfo<int>> heightInfo {
   {
@@ -195,7 +189,7 @@ static void populateInputSection(ConfigParser& parser, ConfigFile& cfg)
     if(!hasOnlyOneIdentifier(tokens))
       throw std::runtime_error("Failed to parse FOURCC value.");
     cfg.MainInput.FileInfo.FourCC = GetFourCCValue(tokens[0].text);
-  }, [&]() { return FourCCToString(cfg.MainInput.FileInfo.FourCC); }, "Specifies the YUV input format.", { ParameterType::String }, { toCallbackInfo(getInputFourCCs()) });
+  }, [&]() { return std::string(AL_FourCCToString(cfg.MainInput.FileInfo.FourCC).cFourcc); }, "Specifies the YUV input format.", { ParameterType::String }, { toCallbackInfo(getInputFourCCs()) });
   parser.addNote(curSection, "Format", "For more info, visit: https://www.fourcc.org.");
   parser.addNote(curSection, "Format", "Most of the YUV test sequences available on the internet use either I420, I0AL, I422 or I2AL format. there is no conversion from 4:2:0 to 4:2:2 nor from 4:2:2 to 4:2:0. The subsampling of the YUV input file format shall match the ChromaMode");
   parser.addSeeAlso(curSection, "Format", { Section::Settings, "ChromaMode" });
@@ -259,6 +253,7 @@ static void populateInputSection(ConfigParser& parser, ConfigFile& cfg)
     { filterCodecs({ Codec::Hevc, Codec::Vp9, Codec::Av1, Codec::Vvc }), 128, 4096 - 128 },
     { isOnlyCodec(Codec::Jpeg), 2, 16384 - 2 },
   });
+
 }
 
 static void populateOutputSection(ConfigParser& parser, ConfigFile& cfg)
@@ -273,7 +268,7 @@ static void populateOutputSection(ConfigParser& parser, ConfigFile& cfg)
     if(!hasOnlyOneIdentifier(tokens))
       throw std::runtime_error("Failed to parse FOURCC value.");
     cfg.RecFourCC = GetFourCCValue(tokens[0].text);
-  }, [&]() { return FourCCToString(cfg.MainInput.FileInfo.FourCC); }, "Specifies Reconstructed YUV output format.", { ParameterType::String }, { toCallbackInfo(getOutputFourCCs()) });
+  }, [&]() { return std::string(AL_FourCCToString(cfg.MainInput.FileInfo.FourCC).cFourcc); }, "Specifies Reconstructed YUV output format.", { ParameterType::String }, { toCallbackInfo(getOutputFourCCs()) });
   parser.addNote(curSection, "Format", "If unset, the [OUTPUT]Format is equals to [INPUT]Format");
 
   parser.addArith(curSection, "CropPosX", cfg.Settings.tChParam[0].uOutputCropPosX, "Abscissa of the first pixel for output Crop. This crop information will be added to the stream header and will be applied by the decoder", {
@@ -300,7 +295,7 @@ static void populateOutputSection(ConfigParser& parser, ConfigFile& cfg)
   });
 }
 
-static void SetFpsAndClkRatio(int value, uint16_t& iFps, uint16_t& iClkRatio)
+static void SetFpsAndClkRatio(int32_t value, uint16_t& iFps, uint16_t& iClkRatio)
 {
   iFps = value / 1000;
   iClkRatio = 1000;
@@ -356,8 +351,6 @@ static void populateRCParam(Section curSection, ConfigParser& parser, AL_TRCPara
   autoEnum["AUTO"] = { -1, "The Parameter is determined by the software to be the best fit of the HDR", aomituCodecs() };
   map<string, EnumDescription<int>> sliceQPEnum;
   sliceQPEnum["AUTO"] = { -1, "The Slice Quantization Parameter is determined by the software to be the best fit of the HDR", aomituCodecs() };
-#if !AL_ENABLE_LA_MV_ONLY
-#endif
   vector<ArithInfo<int>> qpArithInfo {
     {
       filterCodecs({ Codec::Hevc, Codec::Avc }), 0, 51
@@ -374,15 +367,15 @@ static void populateRCParam(Section curSection, ConfigParser& parser, AL_TRCPara
   // parser.addArithOrEnum(curSection, "MaxQP", RCParam.iMaxQP, autoEnum, "Maximum QP value allowed", qpArithInfo);
   parser.addCustom(curSection, "MaxQP", [autoEnum, &RCParam](std::deque<Token>& tokens)
   {
-    int val;
-    int minMaxQPSize = (int)(sizeof(RCParam.iMaxQP) / sizeof(RCParam.iMaxQP[0]));
+    int32_t val;
+    int32_t minMaxQPSize = (int)(sizeof(RCParam.iMaxQP) / sizeof(RCParam.iMaxQP[0]));
 
     if(hasOnlyOneIdentifier(tokens))
       val = parseEnum(tokens, autoEnum);
     else
       val = parseArithmetic<int>(tokens);
 
-    for(int i = 0; i < minMaxQPSize; i++)
+    for(int32_t i = 0; i < minMaxQPSize; i++)
     {
       RCParam.iMaxQP[i] = val;
     }
@@ -396,15 +389,15 @@ static void populateRCParam(Section curSection, ConfigParser& parser, AL_TRCPara
   // parser.addArithOrEnum(curSection, "MinQP", RCParam.iMinQP, autoEnum, "Minimum QP value allowed. This parameter is especially useful when using VBR rate control. In VBR, the value AUTO can be used to let the encoder select the MinQP according to SliceQP", qpArithInfo);
   parser.addCustom(curSection, "MinQP", [autoEnum, &RCParam](std::deque<Token>& tokens)
   {
-    int val;
-    int minMaxQPSize = (int)(sizeof(RCParam.iMaxQP) / sizeof(RCParam.iMaxQP[0]));
+    int32_t val;
+    int32_t minMaxQPSize = (int)(sizeof(RCParam.iMaxQP) / sizeof(RCParam.iMaxQP[0]));
 
     if(hasOnlyOneIdentifier(tokens))
       val = parseEnum(tokens, autoEnum);
     else
       val = parseArithmetic<int>(tokens);
 
-    for(int i = 0; i < minMaxQPSize; i++)
+    for(int32_t i = 0; i < minMaxQPSize; i++)
     {
       RCParam.iMinQP[i] = val;
     }
@@ -433,7 +426,7 @@ static void populateRCParam(Section curSection, ConfigParser& parser, AL_TRCPara
   parser.addNote(curSection, "CPBSize", "Not used when RateCtrlMode = CONST_QP. The max value depends on multiple parameters configuration. Therefore, it can be different from the value written above.");
   parser.addNote(curSection, "CPBSize", "If you're not using a configuration file, uCPBSize must be multiplied by 90000");
   parser.addSeeAlso(curSection, "CPBSize", { curSection, "RateCtrlMode" });
-  parser.addArithOrEnum(curSection, "IPDelta", RCParam.uIPDelta, autoEnum, "IPDelta corresponds to the value we add to the QP of the frame I in order to have the QP of the frame P", {
+  parser.addArithOrEnum(curSection, "IPDelta", RCParam.iIPDelta, autoEnum, "IPDelta corresponds to the value we add to the QP of the frame I in order to have the QP of the frame P", {
     { filterCodecs({ Codec::Avc, Codec::Hevc }), 0, 51 },
     { isOnlyCodec(Codec::Vvc), 0, 63 },
     { filterCodecs({ Codec::Vp9, Codec::Av1 }), 1, 255 },
@@ -441,7 +434,7 @@ static void populateRCParam(Section curSection, ConfigParser& parser, AL_TRCPara
   parser.addNote(curSection, "IPDelta", "For example, if QP(I Frames) = 14; QP(P Frames) = 17. It means IPDelta = 3 => QP(P Frames) = QP(I Frames) + 3 = 17");
   parser.addNote(curSection, "IPDelta", "If IPDelta is configured, PBDelta parameter must be configured too.");
   parser.addSeeAlso(curSection, "IPDelta", { curSection, "PBDelta" });
-  parser.addArithOrEnum(curSection, "PBDelta", RCParam.uPBDelta, autoEnum, "PBDelta corresponds to the value we add to the QP of the frame P in order to have the QP of the frame B", {
+  parser.addArithOrEnum(curSection, "PBDelta", RCParam.iPBDelta, autoEnum, "PBDelta corresponds to the value we add to the QP of the frame P in order to have the QP of the frame B", {
     { filterCodecs({ Codec::Avc, Codec::Hevc }), 0, 51 },
     { isOnlyCodec(Codec::Vvc), 0, 63 },
     { filterCodecs({ Codec::Vp9, Codec::Av1 }), 1, 255 },
@@ -468,7 +461,7 @@ static void populateRCParam(Section curSection, ConfigParser& parser, AL_TRCPara
   };
   parser.addCustom(curSection, "MaxPictureSizeInBits", [MaxPictureSizeEnums, &RCParam](std::deque<Token>& tokens)
   {
-    int size = 0;
+    int32_t size = 0;
 
     if(hasOnlyOneIdentifier(tokens))
       size = parseEnum(tokens, MaxPictureSizeEnums);
@@ -486,7 +479,7 @@ static void populateRCParam(Section curSection, ConfigParser& parser, AL_TRCPara
   parser.addArithOrEnum(curSection, "MaxPictureSizeInBits.B", RCParam.pMaxPictureSize[AL_SLICE_B], MaxPictureSizeEnums, "Specifies a coarse size (in bits) for B-frame that shouldn't be exceeded", MaxPictureAriths);
   parser.addCustom(curSection, "MaxPictureSize", [MaxPictureSizeEnums, &RCParam](std::deque<Token>& tokens)
   {
-    int size = 0;
+    int32_t size = 0;
 
     if(hasOnlyOneIdentifier(tokens))
       size = parseEnum(tokens, MaxPictureSizeEnums);
@@ -499,21 +492,21 @@ static void populateRCParam(Section curSection, ConfigParser& parser, AL_TRCPara
   {
     return "";
   }, "Specifies a coarse picture size in Kbits that shouldn't be exceeded. Available Values: <Arithmetic expression> or DISABLE to not constrain the picture size", { ParameterType::String, ParameterType::ArithExpr }, mergeCallbackInfo(toCallbackInfo(MaxPictureAriths), toCallbackInfo(MaxPictureSizeEnums)));
-  parser.addArithFuncOrEnum<remove_reference<decltype(RCParam.pMaxPictureSize[AL_SLICE_I])>::type, uint32_t>(curSection, "MaxPictureSize.I", RCParam.pMaxPictureSize[AL_SLICE_I], [](int size)
+  parser.addArithFuncOrEnum<remove_reference<decltype(RCParam.pMaxPictureSize[AL_SLICE_I])>::type, uint32_t>(curSection, "MaxPictureSize.I", RCParam.pMaxPictureSize[AL_SLICE_I], [](int32_t size)
   {
     return (remove_reference<decltype(RCParam.pMaxPictureSize[AL_SLICE_I])>::type)size * 1000;
   }, [](remove_reference<decltype(RCParam.pMaxPictureSize[AL_SLICE_I])>::type size)
   {
     return (uint32_t)size / 1000;
   }, MaxPictureSizeEnums, "Specifies a coarse size (in Kbits) for I-frame that shouldn't be exceeded", MaxPictureAriths);
-  parser.addArithFuncOrEnum<remove_reference<decltype(RCParam.pMaxPictureSize[AL_SLICE_P])>::type, uint32_t>(curSection, "MaxPictureSize.P", RCParam.pMaxPictureSize[AL_SLICE_P], [](int size)
+  parser.addArithFuncOrEnum<remove_reference<decltype(RCParam.pMaxPictureSize[AL_SLICE_P])>::type, uint32_t>(curSection, "MaxPictureSize.P", RCParam.pMaxPictureSize[AL_SLICE_P], [](int32_t size)
   {
     return (remove_reference<decltype(RCParam.pMaxPictureSize[AL_SLICE_P])>::type)size * 1000;
   }, [](remove_reference<decltype(RCParam.pMaxPictureSize[AL_SLICE_P])>::type size)
   {
     return (uint32_t)size / 1000;
   }, MaxPictureSizeEnums, "Specifies a coarse size (in Kbits) for P-frame that shouldn't be exceeded", MaxPictureAriths);
-  parser.addArithFuncOrEnum<remove_reference<decltype(RCParam.pMaxPictureSize[AL_SLICE_B])>::type, uint32_t>(curSection, "MaxPictureSize.B", RCParam.pMaxPictureSize[AL_SLICE_B], [](int size)
+  parser.addArithFuncOrEnum<remove_reference<decltype(RCParam.pMaxPictureSize[AL_SLICE_B])>::type, uint32_t>(curSection, "MaxPictureSize.B", RCParam.pMaxPictureSize[AL_SLICE_B], [](int32_t size)
   {
     return (remove_reference<decltype(RCParam.pMaxPictureSize[AL_SLICE_B])>::type)size * 1000;
   }, [](remove_reference<decltype(RCParam.pMaxPictureSize[AL_SLICE_B])>::type size)
@@ -554,7 +547,7 @@ static void populateGopSection(ConfigParser& parser, ConfigFile& cfg)
   parser.addArith(curSection, "Gop.Length", GopParam.uGopLength, gopLengthDef.c_str(), {
     { aomituCodecs(), 0, 1000 }
   });
-  parser.addNote(curSection, "Gop.Length", "When [GOP]GopCtrlMode is PYRAMIDAL_GOP, the [GOP]Gop.Length shall be set to a value matching the following equation: (N x ([GOP]Gop.NumB +1) + 1) with N >= 1");
+  parser.addNote(curSection, "Gop.Length", "When [GOP]GopCtrlMode is PYRAMIDAL_GOP, the [GOP]Gop.Length shall be set to a value matching the following equation: `Gop.Length = N x (Gop.NumB + 1)` with N >= 1)");
   parser.addNote(curSection, "Gop.Length", "When [GOP]GopCtrlMode is LOW_DELAY_B, the [GOP]Gop.Length is used to determine the second reference for the B-pictures. Gop.Length shall be in range 1 to 4.");
   map<string, EnumDescription<int>> freqIdrEnums;
   freqIdrEnums["DISABLE"] = { -1, "Disable IDR insertion", ituCodecs() };
@@ -587,22 +580,32 @@ static void populateGopSection(ConfigParser& parser, ConfigFile& cfg)
     { ituCodecs(), -51, 51 },
     { aomCodecs(), -128, 127 },
   });
-  parser.addBool(curSection, "Gop.WriteAVCHeaderSVC", GopParam.bWriteAvcHdrSvcExt, "AVC Scalable Video Coding extension (Annex G) defines the standard of AVC scalability and the syntax of the NAL unit header for this extension :  nal_unit_header_svc_extension. When temporal scalability is used to encode a stream, this parameter specifies if this header is written (default mode) or not.", isOnlyCodec(Codec::Avc));
+  parser.addBool(curSection, "Gop.WriteAVCHeaderSVC", GopParam.bWriteAvcHdrSvcExt, "AVC Scalable Video Coding extension (Annex G) defines the standard of AVC scalability and the syntax of the NAL unit header for this extension: nal_unit_header_svc_extension. When temporal scalability is used to encode a stream, this parameter specifies if this header is written (default mode) or not.", isOnlyCodec(Codec::Avc));
   parser.addNote(curSection, "Gop.WriteAVCHeaderSVC", "Temporal Scalability is also used with the Pyramidal Gop.");
   parser.addSeeAlso(curSection, "Gop.WriteAVCHeaderSVC", { Section::Gop, "GopCtrlMode" });
   map<string, EnumDescription<int>> gdrModes;
-  gdrModes["GDR_HORIZONTAL"] = { AL_GDR_HORIZONTAL, "Gradual Decoding Refresh using a horizontal bar moving from top to bottom", aomituCodecs() };
+  gdrModes["GDR_HORIZONTAL"] = { AL_GDR_HORIZONTAL, "Gradual Decoding Refresh using a horizontal intra bar moving from top to bottom", aomituCodecs() };
   gdrModes["GDR_VERTICAL"] =
   {
-    AL_GDR_VERTICAL, "Gradual Decoding Refresh using a vertical bar moving from left to right", filterCodecs({ Codec::Avc
-                                                                                                             })
+    AL_GDR_VERTICAL, "Gradual Decoding Refresh using a vertical intra bar moving from left to right", filterCodecs({ Codec::Avc
+                                                                                                                   })
   };
   gdrModes["DISABLE"] = { AL_GDR_OFF, "Disable Gradual Decoding Refresh", aomituCodecs() };
   gdrModes["GDR_OFF"] = { AL_GDR_OFF, "Disable Gradual Decoding Refresh", aomituCodecs() };
-  parser.addEnum(curSection, "Gop.GdrMode", GopParam.eGdrMode, gdrModes, "When GopCtrlMode is LOW_DELAY_{P,B}, this parameter specifies whether a Gradual Decoder Refresh scheme should be used or not");
-  parser.addArith(curSection, "Gop.FreqRP", GopParam.uFreqRP, "Specifies the minimum number of frames between two recovery points.", {
+  parser.addEnum(curSection, "Gop.GdrMode", GopParam.eGdrMode, gdrModes, "When GopCtrlMode is LOW_DELAY_{P,B}, this parameter allows to enable Gradual "
+                 "Decoder Refresh scheme. This scheme uses a moving vertical or horizontal intra-encoded line to refresh the bitstream, instead of using standard "
+                 "full-intra frames. Goal is to smooth the bandwidth peaks in the bitstream.");
+  parser.addNote(curSection, "Gop.GdrMode", "When using GDR, you must specify the refresh frequency using Gop.FreqRP setting.");
+  parser.addNote(curSection, "Gop.GdrMode", "Depending on the codec, GDR might not be compatible with loop-filtering.");
+  parser.addNote(curSection, "Gop.GdrMode", "Depending on the codec, using GDR can add Recovering Point SEIs in the bitstream.");
+  parser.addSeeAlso(curSection, "Gop.GdrMode", { curSection, "GopCtrlMode" });
+  parser.addSeeAlso(curSection, "Gop.GdrMode", { curSection, "Gop.FreqRP" });
+  parser.addSeeAlso(curSection, "Gop.GdrMode", { Section::Settings, "EnableSEI" });
+  parser.addSeeAlso(curSection, "Gop.GdrMode", { Section::Settings, "LoopFilter" });
+  parser.addArith(curSection, "Gop.FreqRP", GopParam.uFreqRP, "Specifies the minimum number of frames between two recovery points. Must be used with GDR, where it defines how many frames we have between two intra-line sweep starts.", {
     { ituCodecs(), 0, UINT32_MAX }
   });
+  parser.addSeeAlso(curSection, "Gop.FreqRP", { curSection, "Gop.GdrMode" });
 }
 
 static void populateProfileAndLevel(ConfigParser& parser, ConfigFile& cfg, Section& curSection)
@@ -761,7 +764,7 @@ static void populateOptionalNUTOptions(ConfigParser& parser, ConfigFile& cfg, Se
   seis["SEI_ST2094_10"] = { AL_SEI_ST2094_10, "ST2094-10 SEI", ituCodecs() };
   seis["SEI_ST2094_40"] = { AL_SEI_ST2094_40, "ST2094-40 SEI", ituCodecs() };
   seis["SEI_ALL"] = { (int)AL_SEI_ALL, "means SEI_PT | SEI_BP | SEI_RP", ituCodecs() };
-  parser.addEnum(curSection, "EnableSEI", cfg.Settings.uEnableSEI, seis, "Determines which Supplemental Enhancement Information are sent with the stream");
+  parser.addEnum(curSection, "EnableSEI", cfg.Settings.eEnableSEI, seis, "Determines which Supplemental Enhancement Information are sent with the stream");
   parser.addBool(curSection, "EnableAUD", cfg.Settings.bEnableAUD, "Determines if Access Unit Delimiter are added to the stream or not", ituCodecs());
   map<string, EnumDescription<int>> fillerEnums;
   fillerEnums["DISABLE"] = { AL_FILLER_DISABLE, "Disable Filler data", aomituCodecs() };
@@ -774,10 +777,10 @@ static void populateOptionalNUTOptions(ConfigParser& parser, ConfigFile& cfg, Se
 static void populateScalingListOptions(ConfigParser& parser, ConfigFile& cfg, Temporary& temp, Section& curSection)
 {
   map<string, EnumDescription<int>> scalingmodes;
-  scalingmodes["FLAT"] = { AL_SCL_FLAT, "Scaling list flat: all matrices coefficients are set to 16", ituCodecs() };
+  scalingmodes["FLAT"] = { AL_SCL_FLAT, "All matrices coefficients are set to 16", ituCodecs() };
   scalingmodes["DEFAULT"] = { AL_SCL_DEFAULT, "Default value", ituCodecs() };
 
-  scalingmodes["CUSTOM"] = { AL_SCL_CUSTOM, "Custom: a file defining the coefficient of the quantization matrices shall be provided with FileScalingList", ituCodecs() };
+  scalingmodes["CUSTOM"] = { AL_SCL_CUSTOM, "A file defining the coefficient of the quantization matrices shall be provided with FileScalingList", ituCodecs() };
   parser.addEnum(curSection, "ScalingList", cfg.Settings.eScalingList, scalingmodes, "Specifies the scaling list mode");
   parser.addSeeAlso(curSection, "ScalingList", { curSection, "FileScalingList" });
 
@@ -879,7 +882,7 @@ static void populateSettingsSection(ConfigParser& parser, ConfigFile& cfg, Tempo
   parser.addNote(curSection, "NumSlices", "The maximum value is determined according to the maximum picture height and the minimum LCU size. The maximum value may no be reachable as the number of slices are also dependent to the level conformance and multicore encoding for instance.");
   map<string, EnumDescription<int>> sliceSizeEnums;
   sliceSizeEnums["DISABLE"] = { 0, "Disable Slice size", ituCodecs() };
-  parser.addArithFuncOrEnum<decltype(cfg.Settings.tChParam[0].uSliceSize), int>(curSection, "SliceSize", cfg.Settings.tChParam[0].uSliceSize, [](int sliceSize)
+  parser.addArithFuncOrEnum<decltype(cfg.Settings.tChParam[0].uSliceSize), int>(curSection, "SliceSize", cfg.Settings.tChParam[0].uSliceSize, [](int32_t sliceSize)
   {
     return (decltype(cfg.Settings.tChParam[0].uSliceSize))sliceSize * 95 / 100;
   }, [](decltype(cfg.Settings.tChParam[0].uSliceSize) sliceSize)
@@ -1042,14 +1045,14 @@ static void populateRunSection(ConfigParser& parser, ConfigFile& cfg)
 
   parser.addBool(curSection, "Loop", cfg.RunInfo.bLoop, "Specifies if it should loop back to the beginning of YUV input stream when it reaches the end of the file", allCodecs());
   map<string, EnumDescription<int>> maxPicts;
-  maxPicts["ALL"] = { INT_MAX, "Encode all frames, to reach the end of the YUV input stream", allCodecs() };
+  maxPicts["ALL"] = { INT32_MAX, "Encode all frames, to reach the end of the YUV input stream", allCodecs() };
   parser.addArithOrEnum(curSection, "MaxPicture", cfg.RunInfo.iMaxPict, maxPicts, "Number of frame to encode", {
-    { allCodecs(), 1, INT_MAX },
+    { allCodecs(), 1, INT32_MAX },
   });
   parser.addNote(curSection, "MaxPicture", "ALL should not be used with Loop = TRUE, otherwise the encoder will never end");
   parser.addSeeAlso(curSection, "MaxPicture", { curSection, "Loop" });
   parser.addArith(curSection, "FirstPicture", cfg.RunInfo.iFirstPict, "Specifies the first frame to encode", {
-    { allCodecs(), 0, INT_MAX },
+    { allCodecs(), 0, INT32_MAX },
   });
   parser.addNote(curSection, "FirstPicture", "Allowed values: integer value between 0 and the number of pictures in the input YUV file.");
   parser.addArith(curSection, "ScnChgLookAhead", cfg.RunInfo.iScnChgLookAhead, "When CmdFile is used with defined Scene change position, this parameter specifies how many frame in advance, the notification should be send to the encoder.", {
@@ -1061,15 +1064,26 @@ static void populateRunSection(ConfigParser& parser, ConfigFile& cfg)
   map<string, EnumDescription<int>> inputSleepEnums;
   inputSleepEnums["DISABLE"] = { 0, "No delay between frame processing.", allCodecs() };
   parser.addArithOrEnum(curSection, "InputSleep", cfg.RunInfo.uInputSleepInMilliseconds, inputSleepEnums, "Adds the specified interval (in milliseconds) between frame processing", {
-    { allCodecs(), 0, INT_MAX },
+    { allCodecs(), 0, INT32_MAX },
   });
   parser.addPath(curSection, "BitrateFile", cfg.RunInfo.bitrateFile, "The generated stream size for each picture and bitrate information will be written to this file", aomituCodecs());
   parser.addArith(curSection, "ForceStreamBufSize", cfg.iForceStreamBufSize, "Force the Output bitstreram Size (in bytes)", {
-    { allCodecs(), 0, INT_MAX },
+    { allCodecs(), 0, INT32_MAX },
   });
 
   map<string, EnumDescription<int>> rateCtrlStatModes;
-  rateCtrlStatModes["STATS"] = { AL_RATECTRL_STAT_MODE_DEFAULT, "Basic Rate Control Statistics. For each frame NumBytes, MinQP, MaxQP, NumSkip and NumIntra values are printed to rate_ctrl_stats.txt file.", aomituCodecs() };
+  rateCtrlStatModes["STATS"] = { AL_RATECTRL_STAT_MODE_DEFAULT, "Basic Rate Control Statistics. For each frame NumBytes, MinQP, MaxQP, NumSkip, NumIntra,", aomituCodecs() };
+  rateCtrlStatModes["STATS"].description += " NumMV0";
+  rateCtrlStatModes["STATS"].description += ":NumMV1";
+  rateCtrlStatModes["STATS"].description += " : number of block XxX that have a motion vector on L0";
+  rateCtrlStatModes["STATS"].description += ":L1";
+  rateCtrlStatModes["STATS"].description += " ( ";
+  rateCtrlStatModes["STATS"].description += " AVC:8x8";
+  rateCtrlStatModes["STATS"].description += " HEVC:16x16";
+  rateCtrlStatModes["STATS"].description += " ).";
+
+  rateCtrlStatModes["STATS"].description += " Values are printed to rate_ctrl_stats.txt file.";
+
   rateCtrlStatModes["MOTION_VECTORS"] = { AL_RATECTRL_STAT_MODE_MV, "Append used Motion Vectors to the stream buffers. For each frame motion vectors are written to motion_vectors.bin file.", aomituCodecs() };
   parser.addEnum(curSection, "RateCtrlStats", cfg.RunInfo.rateCtrlStat, rateCtrlStatModes, "Selects the rate control statistics to embbed with stream buffers.");
   parser.addSeeAlso(curSection, "RateCtrlStats", { curSection, "RateCtrlStats.Path" });
@@ -1322,40 +1336,70 @@ static bool IsScalingListModeAllowed(AL_EProfile eProfile, AL_EPicFormat ePicFor
   return (eMode <= SL_8x8_Y_INTRA) || (eMode == SL_8x8_Y_INTER);
 }
 
-static bool ParseMatrice(std::ifstream& SLFile, string& sLine, int& iLine, AL_TEncSettings& Settings, ESLMode Mode)
+static bool ParseMatriceLine(string& sLine, uint8_t iNumCoefW, uint8_t* pMatrixLine)
 {
-  int iNumCoefW = (Mode < SL_8x8_Y_INTRA) ? 4 : 8;
-  int iNumCoefH = (Mode == SL_DC) ? 1 : iNumCoefW;
-  static constexpr int MAX_LUMA_DC_COEFF = 50;
+  stringstream ss(sLine);
 
-  int iSizeID = (Mode < SL_8x8_Y_INTRA) ? 0 : (Mode < SL_16x16_Y_INTRA) ? 1 : (Mode < SL_32x32_Y_INTRA) ? 2 : 3;
-  int iMatrixID = (Mode < SL_32x32_Y_INTRA) ? Mode % 6 : (Mode == SL_32x32_Y_INTRA) ? 0 : 3;
+  for(uint8_t i = 0; i < iNumCoefW; ++i)
+  {
+    string sVal;
+    ss >> sVal;
 
-  uint8_t* pMatrix = (Mode == SL_DC) ? Settings.DcCoeff : Settings.ScalingList[iSizeID][iMatrixID];
+    if(!sVal.empty() && isdigit(sVal[0]))
+    {
+      uint8_t iVal = std::stoi(sVal);
 
-  for(int i = 0; i < iNumCoefH; ++i)
+      if(iVal == 0)
+        return false;
+
+      if(pMatrixLine)
+        pMatrixLine[i] = iVal;
+    }
+    else
+      return false;
+  }
+
+  return true;
+}
+
+static bool SkipMatrice(std::ifstream& SLFile, string& sLine, int& iLine, ESLMode Mode)
+{
+  uint8_t iNumCoefW = (Mode < SL_8x8_Y_INTRA) ? 4 : 8;
+  uint8_t iNumCoefH = (Mode == SL_DC) ? 1 : ((Mode < SL_8x8_Y_INTRA) ? 4 : 8);
+
+  for(uint8_t i = 0; i < iNumCoefH; i++)
   {
     getline(SLFile, sLine);
     ++iLine;
 
-    stringstream ss(sLine);
+    if(SLFile.eof())
+      return false;
 
-    for(int j = 0; j < iNumCoefW; ++j)
-    {
-      string sVal;
-      ss >> sVal;
+    if(!ParseMatriceLine(sLine, iNumCoefW, NULL))
+      return false;
+  }
 
-      if(!sVal.empty() && isdigit(sVal[0]))
-      {
-        int iVal = std::stoi(sVal);
+  return true;
+}
 
-        if(iVal == 0)
-          return false;
-        pMatrix[j + i * iNumCoefH] = iVal;
-      }
-      else
-        return false;
-    }
+static bool ParseMatrice(std::ifstream& SLFile, string& sLine, int& iLine, AL_TEncSettings& Settings, ESLMode Mode)
+{
+  uint8_t iNumCoefW = (Mode < SL_8x8_Y_INTRA) ? 4 : 8;
+  uint8_t iNumCoefH = (Mode == SL_DC) ? 1 : iNumCoefW;
+  static constexpr uint8_t MAX_LUMA_DC_COEFF = 50;
+
+  uint8_t iSizeID = (Mode < SL_8x8_Y_INTRA) ? 0 : (Mode < SL_16x16_Y_INTRA) ? 1 : (Mode < SL_32x32_Y_INTRA) ? 2 : 3;
+  uint8_t iMatrixID = (Mode < SL_32x32_Y_INTRA) ? Mode % 6 : (Mode == SL_32x32_Y_INTRA) ? 0 : 3;
+
+  uint8_t* pMatrix = (Mode == SL_DC) ? Settings.DcCoeff : Settings.ScalingList[iSizeID][iMatrixID];
+
+  for(uint8_t i = 0; i < iNumCoefH; ++i)
+  {
+    getline(SLFile, sLine);
+    ++iLine;
+
+    if(!ParseMatriceLine(sLine, iNumCoefW, &pMatrix[i * iNumCoefH]))
+      return false;
   }
 
   if(Mode == SL_8x8_Y_INTRA || Mode == SL_8x8_Y_INTER || Mode == SL_4x4_Y_INTER || Mode == SL_4x4_Y_INTRA)
@@ -1378,8 +1422,7 @@ static bool ParseScalingListFile(const string& sSLFileName, AL_TEncSettings& Set
     return false;
   }
   ESLMode eMode;
-
-  int iLine = 0;
+  int32_t iLine = 0;
 
   ::memset(Settings.SclFlag, 0, sizeof(Settings.SclFlag));
   Settings.DcCoeffFlag = 0;
@@ -1405,10 +1448,23 @@ static bool ParseScalingListFile(const string& sSLFileName, AL_TEncSettings& Set
     }
     else if(sLine[0] == '[') // Mode select
     {
-      if(!ParseScalingListMode(sLine, eMode) || !IsScalingListModeAllowed(Settings.tChParam[0].eProfile, Settings.tChParam[0].ePicFormat, eMode))
+      if(!ParseScalingListMode(sLine, eMode))
       {
         warnstream << iLine << " => Invalid command line in Scaling list file, using Default" << endl;
         return false;
+      }
+
+      if(!IsScalingListModeAllowed(Settings.tChParam[0].eProfile, Settings.tChParam[0].ePicFormat, eMode))
+      {
+        warnstream << iLine << " => Scaling List mode is nor supported, skipping it" << endl;
+
+        if(!SkipMatrice(SLFile, sLine, iLine, eMode))
+        {
+          warnstream << iLine << " => Invalid Matrice in Scaling list file, using Default" << endl;
+          return false;
+        }
+
+        continue;
       }
 
       if(eMode < SL_ERR)
@@ -1447,9 +1503,10 @@ static void PostParsingChecks(AL_TEncSettings& Settings)
      && (GopParam.uNumB > 0))
     throw std::runtime_error("Unsupported Gop.NumB value in this gop mode");
 
-  if(!(GopParam.eMode & AL_GOP_FLAG_LOW_DELAY)
+  if(!(GopParam.eMode & AL_GOP_FLAG_LOW_DELAY
+       )
      && GopParam.eGdrMode != AL_GDR_OFF)
-    throw std::runtime_error("GDR mode is not supported if the gop mode is not low delay");
+    throw std::runtime_error("GDR mode is not supported only in mode low delay or hierarchical P");
 
   if((GopParam.eGdrMode != AL_GDR_OFF) && (GopParam.uFreqRP == 0))
     throw std::runtime_error("Gop.FreqRP must be set for GDR mode");

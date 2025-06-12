@@ -1,19 +1,19 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #pragma once
 #include <cassert>
 #include "lib_app/timing.h"
 #include "lib_app/Sink.h"
+#include "lib_app/convert.h"
 #include "QPGenerator.h"
 #include "EncCmdMngr.h"
 #include "CommandsSender.h"
+#include "sink_ratectrl_meta.h"
+
 #include "HDRParser.h"
 
 #include "TwoPassMngr.h"
-
-#include "lib_app/convert.h"
-#include "lib_app/SinkRateCtrlMeta.h"
 
 #include <string>
 #include <memory>
@@ -46,18 +46,18 @@ static std::string PictTypeToString(AL_ESliceType type)
   return m.at(type);
 }
 
-static AL_ERR PreprocessQP(uint8_t* pQPs, AL_EGenerateQpMode eMode, const AL_TEncChanParam& tChParam, const std::string& sQPTablesFolder, int iFrameCountSent)
+static AL_ERR PreprocessQP(AL_TBuffer* pQpBuf, AL_EGenerateQpMode eMode, const AL_TEncChanParam& tChParam, const std::string& sQPTablesFolder, int32_t iFrameCountSent)
 {
   auto iQPTableDepth = 0;
 
-  int minMaxQPSize = (int)(sizeof(tChParam.tRCParam.iMaxQP) / sizeof(tChParam.tRCParam.iMaxQP[0]));
+  int32_t minMaxQPSize = (int)(sizeof(tChParam.tRCParam.iMaxQP) / sizeof(tChParam.tRCParam.iMaxQP[0]));
 
   return GenerateQPBuffer(eMode, tChParam.tRCParam.iInitialQP,
                           *std::max_element(tChParam.tRCParam.iMinQP, tChParam.tRCParam.iMinQP + minMaxQPSize),
                           *std::min_element(tChParam.tRCParam.iMaxQP, tChParam.tRCParam.iMaxQP + minMaxQPSize),
                           AL_GetWidthInLCU(tChParam), AL_GetHeightInLCU(tChParam),
                           tChParam.eProfile, tChParam.uLog2MaxCuSize, iQPTableDepth, sQPTablesFolder,
-                          iFrameCountSent, pQPs + EP2_BUF_SEG_CTRL.Offset);
+                          iFrameCountSent, pQpBuf);
 }
 
 class QPBuffers
@@ -87,12 +87,12 @@ public:
 
   }
 
-  void AddBufPool(QPLayerInfo& qpLayerInfo, int iLayerID)
+  void AddBufPool(QPLayerInfo& qpLayerInfo, int32_t iLayerID)
   {
     initLayer(qpLayerInfo, iLayerID);
   }
 
-  AL_TBuffer* getBuffer(int frameNum)
+  AL_TBuffer* getBuffer(int32_t frameNum)
   {
     return getBufferP(frameNum, 0);
   }
@@ -105,26 +105,14 @@ public:
   }
 
 private:
-  void initLayer(QPLayerInfo& qpLayerInfo, int iLayerID)
+  void initLayer(QPLayerInfo& qpLayerInfo, int32_t iLayerID)
   {
-    // set QpBuf memory to 0 for traces
-    std::vector<AL_TBuffer*> qpBufs;
-
-    while(auto curQp = qpLayerInfo.bufPool->GetBuffer(AL_EBufMode::AL_BUF_MODE_NONBLOCK))
-    {
-      qpBufs.push_back(curQp);
-      AL_Buffer_MemSet(curQp, 0);
-    }
-
-    for(auto qpBuf : qpBufs)
-      AL_Buffer_Unref(qpBuf);
-
     mQPLayerInfos[iLayerID] = qpLayerInfo;
     auto& tChParam = pSettings->tChParam[iLayerID];
     mQPLayerRoiCtxs[iLayerID] = AL_RoiMngr_Create(tChParam.uEncWidth, tChParam.uEncHeight, tChParam.eProfile, tChParam.uLog2MaxCuSize, AL_ROI_QUALITY_MEDIUM, AL_ROI_QUALITY_ORDER);
   }
 
-  AL_TBuffer* getBufferP(int frameNum, int iLayerID)
+  AL_TBuffer* getBufferP(int32_t frameNum, int32_t iLayerID)
   {
     if(!isExternQpTable || mQPLayerInfos.find(iLayerID) == mQPLayerInfos.end())
       return nullptr;
@@ -148,7 +136,7 @@ private:
                                          tLayerChParam.eProfile, tLayerChParam.uLog2MaxCuSize, iQPTableDepth,
                                          frameNum, AL_Buffer_GetData(pQpBuf) + EP2_BUF_QP_BY_MB.Offset);
 
-      if(bRetROI != AL_SUCCESS)
+      if(!AL_IS_SUCCESS_CODE(bRetROI))
       {
         releaseBuffer(pQpBuf);
         switch(bRetROI)
@@ -163,7 +151,7 @@ private:
     }
     else
     {
-      AL_ERR bRetQP = PreprocessQP(AL_Buffer_GetData(pQpBuf), mode, tLayerChParam, layerInfo.sQPTablesFolder, frameNum);
+      AL_ERR bRetQP = PreprocessQP(pQpBuf, mode, tLayerChParam, layerInfo.sQPTablesFolder, frameNum);
 
       auto releaseQPBuf = [&](std::string sErrorMsg, bool bThrow)
                           {
@@ -231,7 +219,8 @@ struct EncoderSink : IFrameSink
 
   explicit EncoderSink(ConfigFile const& cfg, AL_IEncScheduler* pScheduler, AL_TAllocator* pAllocator) :
     CmdFile(cfg.sCmdFileName, false),
-    EncCmd(CmdFile.fp, cfg.RunInfo.iScnChgLookAhead, cfg.Settings.tChParam[0].tGopParam.uFreqLT), m_cfg(cfg),
+    EncCmd(CmdFile.fp, cfg.RunInfo.iScnChgLookAhead, cfg.Settings.tChParam[0].tGopParam.uFreqLT),
+    m_cfg(cfg),
     twoPassMngr(cfg.sTwoPassFileName, cfg.Settings.TwoPass, cfg.Settings.bEnableFirstPassSceneChangeDetection, cfg.Settings.tChParam[0].tGopParam.uGopLength,
                 cfg.Settings.tChParam[0].tRCParam.uCPBSize / 90, cfg.Settings.tChParam[0].tRCParam.uInitialRemDelay / 90, cfg.MainInput.FileInfo.FrameRate),
     pAllocator{pAllocator},
@@ -251,13 +240,13 @@ struct EncoderSink : IFrameSink
 
     commandsSender.reset(new CommandsSender(hEnc));
 
-    for(int i = 0; i < MAX_NUM_REC_OUTPUT; ++i)
+    for(int32_t i = 0; i < MAX_NUM_REC_OUTPUT; ++i)
       RecOutput[i].reset(new NullFrameSink);
 
-    for(int i = 0; i < MAX_NUM_BITSTREAM_OUTPUT; i++)
+    for(int32_t i = 0; i < MAX_NUM_BITSTREAM_OUTPUT; i++)
       BitstreamOutput[i].reset(new NullFrameSink);
 
-    for(int i = 0; i < MAX_NUM_LAYER; i++)
+    for(int32_t i = 0; i < MAX_NUM_LAYER; i++)
       m_input_picCount[i] = 0;
 
     m_pictureType = cfg.RunInfo.printPictureType ? AL_SLICE_MAX_ENUM : -1;
@@ -272,7 +261,7 @@ struct EncoderSink : IFrameSink
 
   }
 
-  void ReadHDR(int iHDRIdx)
+  void ReadHDR(int32_t iHDRIdx)
   {
     AL_THDRSEIs tHDRSEIs;
 
@@ -290,7 +279,7 @@ struct EncoderSink : IFrameSink
     AL_Encoder_Destroy(hEnc);
   }
 
-  void AddQpBufPool(QPBuffers::QPLayerInfo qpInf, int iLayerID)
+  void AddQpBufPool(QPBuffers::QPLayerInfo qpInf, int32_t iLayerID)
   {
     qpBuffers.AddBufPool(qpInf, iLayerID);
   }
@@ -304,7 +293,7 @@ struct EncoderSink : IFrameSink
     commandsSender->Reset();
     EncCmd.Process(commandsSender.get(), m_input_picCount[0]);
 
-    int iIdx;
+    int32_t iIdx;
 
     if(commandsSender->HasInputChanged(iIdx))
       m_InputChanged(iIdx, 0);
@@ -356,9 +345,9 @@ struct EncoderSink : IFrameSink
   bool shouldAddDummySei = false;
 
 private:
-  int iPendingStreamCnt;
-  int m_input_picCount[MAX_NUM_LAYER] {};
-  int m_pictureType = -1;
+  int32_t iPendingStreamCnt;
+  int32_t m_input_picCount[MAX_NUM_LAYER] {};
+  int32_t m_pictureType = -1;
   uint64_t m_StartTime = 0;
   uint64_t m_EndTime = 0;
   safe_ifstream CmdFile;
@@ -415,9 +404,9 @@ private:
       return;
   }
 
-  void AddSei(AL_TBuffer* pStream, bool isPrefix, int payloadType, uint8_t* payload, int payloadSize, int tempId)
+  void AddSei(AL_TBuffer* pStream, bool isPrefix, int32_t payloadType, uint8_t* payload, int32_t payloadSize, int32_t tempId)
   {
-    int seiSection = AL_Encoder_AddSei(hEnc, pStream, isPrefix, payloadType, payload, payloadSize, tempId);
+    int32_t seiSection = AL_Encoder_AddSei(hEnc, pStream, isPrefix, payloadType, payload, payloadSize, tempId);
 
     if(seiSection < 0)
       LogWarning("Failed to add dummy SEI (id:%d) \n", seiSection);
@@ -438,10 +427,10 @@ private:
 
     if(pStream && shouldAddDummySei)
     {
-      constexpr int payloadSize = 8 * 10;
+      constexpr int32_t payloadSize = 8 * 10;
       uint8_t payload[payloadSize];
 
-      for(int i = 0; i < payloadSize; ++i)
+      for(int32_t i = 0; i < payloadSize; ++i)
         payload[i] = i;
 
       AL_TStreamMetaData* pStreamMeta = (AL_TStreamMetaData*)AL_Buffer_GetMetaData(pStream, AL_META_TYPE_STREAM);
@@ -453,7 +442,7 @@ private:
       iPendingStreamCnt--;
     else
     {
-      int iStreamId = 0;
+      int32_t iStreamId = 0;
 
       if(m_pictureType != -1)
       {
@@ -516,7 +505,9 @@ private:
   void processOutput(AL_TBuffer* pStream)
   {
     AL_ERR eErr;
-    eErr = PreprocessOutput(pStream);
+    {
+      eErr = PreprocessOutput(pStream);
+    }
 
     if(AL_IS_ERROR_CODE(eErr))
     {
@@ -542,7 +533,7 @@ private:
     while(AL_Encoder_GetRecPicture(hEnc, &RecPic))
     {
       auto buf = RecPic.pBuf;
-      int iRecId = 0;
+      int32_t iRecId = 0;
 
       if(buf)
       {

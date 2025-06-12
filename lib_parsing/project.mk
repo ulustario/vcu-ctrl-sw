@@ -1,5 +1,4 @@
 LIB_PARSING_SRC:=\
-	lib_parsing/common_syntax.c\
 	lib_parsing/DPB.c\
 	lib_parsing/I_PictMngr.c\
 	lib_parsing/Concealment.c\

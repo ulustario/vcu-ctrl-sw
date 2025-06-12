@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #if __linux__
@@ -8,7 +8,7 @@
 
 #include "lib_rtos/types.h"
 
-static void write(struct al5_params* msg, void* data, int size)
+static void write(struct al5_params* msg, void* data, int32_t size)
 {
   memcpy(msg->opaque + (msg->size / 4), data, size);
   msg->size += ((size + 3) / 4) * 4;
@@ -52,6 +52,9 @@ static void setPicParam(struct al5_params* msg, AL_TEncInfo* encInfo, AL_TEncReq
 
   if(reqInfo->eReqOptions & AL_OPT_SET_INPUT_RESOLUTION)
     write(msg, &reqInfo->dynResParams, sizeof(reqInfo->dynResParams));
+
+  if(reqInfo->eReqOptions & AL_OPT_SET_LF_MODE)
+    write(msg, &reqInfo->smartParams.uLFMode, sizeof(reqInfo->smartParams.uLFMode));
 
   if(reqInfo->eReqOptions & AL_OPT_SET_LF_OFFSETS)
   {

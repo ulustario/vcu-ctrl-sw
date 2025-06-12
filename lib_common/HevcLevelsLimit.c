@@ -1,11 +1,11 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #include "HevcLevelsLimit.h"
 #include "Utils.h"
 
 /****************************************************************************/
-bool AL_HEVC_CheckLevel(int level)
+bool AL_HEVC_CheckLevel(int32_t level)
 {
   return (level == 10)
          || ((level >= 20) && (level <= 21))
@@ -17,7 +17,7 @@ bool AL_HEVC_CheckLevel(int level)
 }
 
 /****************************************************************************/
-uint32_t AL_HEVC_GetMaxNumberOfSlices(int level)
+uint32_t AL_HEVC_GetMaxNumberOfSlices(int32_t level)
 {
   switch(level)
   {
@@ -43,7 +43,7 @@ uint32_t AL_HEVC_GetMaxNumberOfSlices(int level)
 }
 
 /*****************************************************************************/
-uint32_t AL_HEVC_GetMaxTileColumns(int level)
+uint32_t AL_HEVC_GetMaxTileColumns(int32_t level)
 {
   switch(level)
   {
@@ -69,7 +69,7 @@ uint32_t AL_HEVC_GetMaxTileColumns(int level)
 }
 
 /*****************************************************************************/
-uint32_t AL_HEVC_GetMaxTileRows(int level)
+uint32_t AL_HEVC_GetMaxTileRows(int32_t level)
 {
   switch(level)
   {
@@ -95,7 +95,7 @@ uint32_t AL_HEVC_GetMaxTileRows(int level)
 }
 
 /****************************************************************************/
-uint32_t AL_HEVC_GetMaxCPBSize(int level, int tier)
+uint32_t AL_HEVC_GetMaxCPBSize(int32_t level, int32_t tier)
 {
   if(tier == 1)
   {
@@ -148,7 +148,7 @@ uint32_t AL_HEVC_GetMaxCPBSize(int level, int tier)
 }
 
 /******************************************************************************/
-static int getMaxLumaPS(int iLevel)
+static int32_t getMaxLumaPS(int32_t iLevel)
 {
   switch(iLevel)
   {
@@ -174,7 +174,7 @@ static int getMaxLumaPS(int iLevel)
 }
 
 /******************************************************************************/
-uint32_t AL_HEVC_GetMaxDPBSize(int iLevel, int iWidth, int iHeight, bool bIsIntraProfile, bool bIsStillProfile, bool bDecodeIntraOnly)
+uint32_t AL_HEVC_GetMaxDPBSize(int32_t iLevel, int32_t iWidth, int32_t iHeight, bool bIsIntraProfile, bool bIsStillProfile, bool bDecodeIntraOnly)
 {
   if(bIsStillProfile)
     return 1;
@@ -182,9 +182,9 @@ uint32_t AL_HEVC_GetMaxDPBSize(int iLevel, int iWidth, int iHeight, bool bIsIntr
   if(bIsIntraProfile || bDecodeIntraOnly)
     return 2;
 
-  int iMaxLumaPS = getMaxLumaPS(iLevel);
+  int32_t iMaxLumaPS = getMaxLumaPS(iLevel);
 
-  int const iPictSizeY = iWidth * iHeight;
+  int32_t const iPictSizeY = iWidth * iHeight;
 
   if(iPictSizeY <= (iMaxLumaPS / 4))
     return 16;
@@ -289,19 +289,19 @@ const AL_TLevelLimit HEVC_MAX_TILE_COLS[] =
 #define NUM_LIMIT(array) (sizeof(array) / sizeof(AL_TLevelLimit))
 
 /*************************************************************************/
-uint8_t AL_HEVC_GetLevelFromFrameSize(int numPix)
+uint8_t AL_HEVC_GetLevelFromFrameSize(int32_t numPix)
 {
   return AL_GetRequiredLevel(numPix, AL_HEVC_MAX_PIX_PER_FRAME, NUM_LIMIT(AL_HEVC_MAX_PIX_PER_FRAME));
 }
 
 /*************************************************************************/
-uint8_t AL_HEVC_GetLevelFromPixRate(int pixRate)
+uint8_t AL_HEVC_GetLevelFromPixRate(int32_t pixRate)
 {
   return AL_GetRequiredLevel(pixRate, HEVC_MAX_PIX_RATE, NUM_LIMIT(HEVC_MAX_PIX_RATE));
 }
 
 /*************************************************************************/
-uint8_t AL_HEVC_GetLevelFromBitrate(int bitrate, int tier)
+uint8_t AL_HEVC_GetLevelFromBitrate(int32_t bitrate, int32_t tier)
 {
   if(tier)
     return AL_GetRequiredLevel(bitrate, HEVC_MAX_VIDEO_BITRATE_HIGH, NUM_LIMIT(HEVC_MAX_VIDEO_BITRATE_HIGH));
@@ -310,13 +310,13 @@ uint8_t AL_HEVC_GetLevelFromBitrate(int bitrate, int tier)
 }
 
 /****************************************************************************/
-uint8_t AL_HEVC_GetLevelFromTileCols(int tileCols)
+uint8_t AL_HEVC_GetLevelFromTileCols(int32_t tileCols)
 {
   return AL_GetRequiredLevel(tileCols, HEVC_MAX_TILE_COLS, NUM_LIMIT(HEVC_MAX_TILE_COLS));
 }
 
 /****************************************************************************/
-static uint8_t AL_HEVC_GetMaxDpbPicBuf(int maxPixRate, int numPixPerFrame)
+static uint8_t AL_HEVC_GetMaxDpbPicBuf(int32_t maxPixRate, int32_t numPixPerFrame)
 {
   // Values computed from HEVC Annex A - with maxDpbPicBuf = 6
   if(numPixPerFrame <= (maxPixRate >> 2))
@@ -330,7 +330,7 @@ static uint8_t AL_HEVC_GetMaxDpbPicBuf(int maxPixRate, int numPixPerFrame)
 }
 
 /****************************************************************************/
-uint8_t AL_HEVC_GetLevelFromDPBSize(int dpbSize, int pixRate)
+uint8_t AL_HEVC_GetLevelFromDPBSize(int32_t dpbSize, int32_t pixRate)
 {
   for(size_t i = 0; i < NUM_LIMIT(AL_HEVC_MAX_PIX_PER_FRAME); i++)
   {

@@ -1,25 +1,29 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #include "lib_app/FrameReader.h"
+#include "lib_app/FileUtils.h"
 
-#include <fstream>
-
-int FrameReader::GetFileSize(void)
+extern "C"
 {
-  auto position = m_recFile.tellg();
-  m_recFile.seekg(0, std::ios_base::end);
-  auto size = m_recFile.tellg();
-  m_recFile.seekg(position);
-  return size;
+#include "lib_rtos/types.h"
 }
 
-int FrameReader::GotoNextPicture(int iFileFrameRate, int iEncFrameRate, int iEncPictCount, int iFilePictCount)
+size_t FrameReader::GetFileSize(void)
 {
-  const int iMove = ((iEncPictCount * iFileFrameRate) / iEncFrameRate) - iFilePictCount;
+  size_t zSize;
+
+  if(!::GetFileSize(m_recFile, zSize))
+    throw std::runtime_error("Invalid YUV file");
+  return zSize;
+}
+
+int32_t FrameReader::GotoNextPicture(int32_t iFileFrameRate, int32_t iEncFrameRate, int32_t iEncPictCount, int32_t iFilePictCount)
+{
+  const int32_t iMove = ((iEncPictCount * iFileFrameRate) / iEncFrameRate) - iFilePictCount;
 
   if(iMove)
-    this->SeekR(iMove);
+    this->SeekRelative(iMove);
 
   return iMove;
 }

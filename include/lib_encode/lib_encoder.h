@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 /******************************************************************************
@@ -64,7 +64,7 @@ typedef AL_HANDLE AL_HEncoder;
 *****************************************************************************/
 typedef struct AL_CB_EndEncoding
 {
-  void (* func)(void* pUserParam, AL_TBuffer* pStream, AL_TBuffer const* pSrc, int iLayerID);
+  void (* func)(void* pUserParam, AL_TBuffer* pStream, AL_TBuffer const* pSrc, int32_t iLayerID);
   void* userParam;
 }AL_CB_EndEncoding;
 
@@ -140,7 +140,7 @@ bool AL_Encoder_GetInfo(AL_HEncoder hEnc, AL_TEncoderInfo* pEncInfo);
    \param[in] iAhead Number of frame until the scene change will happen.
    Allowed range is [0..31]
 *****************************************************************************/
-void AL_Encoder_NotifySceneChange(AL_HEncoder hEnc, int iAhead);
+void AL_Encoder_NotifySceneChange(AL_HEncoder hEnc, int32_t iAhead);
 /* allegro-doc-end: notify_scenechange */
 
 /* allegro-doc-start: notify_islongterm */
@@ -229,7 +229,7 @@ bool AL_Encoder_Process(AL_HEncoder hEnc, AL_TBuffer* pFrame, AL_TBuffer* pQpTab
    \param[in] iTempId Temporal id of the raw data payload
    \return returns the section id
 *****************************************************************************/
-int AL_Encoder_AddSei(AL_HEncoder hEnc, AL_TBuffer* pStream, bool isPrefix, int iPayloadType, uint8_t* pPayload, int iPayloadSize, int iTempId);
+int32_t AL_Encoder_AddSei(AL_HEncoder hEnc, AL_TBuffer* pStream, bool isPrefix, int32_t iPayloadType, uint8_t* pPayload, int32_t iPayloadSize, int32_t iTempId);
 
 /*****************************************************************************
    \brief Return an error code when an error has occurred during encoding,
@@ -274,7 +274,7 @@ bool AL_Encoder_SetMaxPictureSizePerFrameType(AL_HEncoder hEnc, uint32_t uMaxPic
 
 /* allegro-doc-start: smartfeature_setsao */
 /*****************************************************************************
-   \brief Requests the encoder to enable or disable SAO for futur frames.
+   \brief Requests the encoder to enable or disable SAO for future frames.
    \param[in] hEnc Handle to an encoder object
    \param[in] bSAOEnabled Enable or disable the use of SAO
    \return true on success, false on error : call AL_Encoder_GetLastError to
@@ -316,7 +316,7 @@ bool AL_Encoder_RestartGopRecoveryPoint(AL_HEncoder hEnc);
    \return true on success, false on error : call AL_Encoder_GetLastError to
    retrieve the error code
 *****************************************************************************/
-bool AL_Encoder_SetGopLength(AL_HEncoder hEnc, int iGopLength);
+bool AL_Encoder_SetGopLength(AL_HEncoder hEnc, int32_t iGopLength);
 /* allegro-doc-end: smartfeature_setgoplength */
 
 /* allegro-doc-start: smartfeature_setgopnumb */
@@ -328,7 +328,7 @@ bool AL_Encoder_SetGopLength(AL_HEncoder hEnc, int iGopLength);
    \return true on success, false on error : call AL_Encoder_GetLastError to
    retrieve the error code
 *****************************************************************************/
-bool AL_Encoder_SetGopNumB(AL_HEncoder hEnc, int iNumB);
+bool AL_Encoder_SetGopNumB(AL_HEncoder hEnc, int32_t iNumB);
 /* allegro-doc-end: smartfeature_setgopnumb */
 
 /* allegro-doc-start: smartfeature_setfreqidr */
@@ -343,7 +343,7 @@ bool AL_Encoder_SetGopNumB(AL_HEncoder hEnc, int iNumB);
    \return true on success, false on error : call AL_Encoder_GetLastError to
    retrieve the error code
 *****************************************************************************/
-bool AL_Encoder_SetFreqIDR(AL_HEncoder hEnc, int iFreqIDR);
+bool AL_Encoder_SetFreqIDR(AL_HEncoder hEnc, int32_t iFreqIDR);
 /* allegro-doc-end: smartfeature_setfreqidr */
 
 /* allegro-doc-start: smartfeature_setbitrate */
@@ -354,7 +354,7 @@ bool AL_Encoder_SetFreqIDR(AL_HEncoder hEnc, int iFreqIDR);
    \return true on success, false on error : call AL_Encoder_GetLastError to
    retrieve the error code
 *****************************************************************************/
-bool AL_Encoder_SetBitRate(AL_HEncoder hEnc, int iBitRate);
+bool AL_Encoder_SetBitRate(AL_HEncoder hEnc, int32_t iBitRate);
 /* allegro-doc-end: smartfeature_setbitrate */
 
 /* allegro-doc-start: smartfeature_setmaxbitrate */
@@ -366,7 +366,7 @@ bool AL_Encoder_SetBitRate(AL_HEncoder hEnc, int iBitRate);
    \return true on success, false on error : call AL_Encoder_GetLastError to
    retrieve the error code
 *****************************************************************************/
-bool AL_Encoder_SetMaxBitRate(AL_HEncoder hEnc, int iTargetBitRate, int iMaxBitRate);
+bool AL_Encoder_SetMaxBitRate(AL_HEncoder hEnc, int32_t iTargetBitRate, int32_t iMaxBitRate);
 /* allegro-doc-end: smartfeature_setmaxbitrate */
 
 /* allegro-doc-start: smartfeature_setframerate */
@@ -434,22 +434,22 @@ bool AL_Encoder_SetQPBoundsPerFrameType(AL_HEncoder hEnc, int16_t iMinQP, int16_
 /*****************************************************************************
    \brief Changes the QP delta between I frames and P frames
    \param[in] hEnc Handle to an encoder object
-   \param[in] uIPDelta The new QP IP delta
+   \param[in] iIPDelta The new QP IP delta
    \return true on success, false on error : call AL_Encoder_GetLastError to
    retrieve the error code
 *****************************************************************************/
-bool AL_Encoder_SetQPIPDelta(AL_HEncoder hEnc, int16_t uIPDelta);
+bool AL_Encoder_SetQPIPDelta(AL_HEncoder hEnc, int16_t iIPDelta);
 /* allegro-doc-end: smartfeature_setqpidelta */
 
 /* allegro-doc-start: smartfeature_setqpbdelta */
 /*****************************************************************************
    \brief Changes the QP delta between P frames and B frames
    \param[in] hEnc Handle to an encoder object
-   \param[in] uPBDelta The new QP PB delta
+   \param[in] iPBDelta The new QP PB delta
    \return true on success, false on error : call AL_Encoder_GetLastError to
    retrieve the error code
 *****************************************************************************/
-bool AL_Encoder_SetQPPBDelta(AL_HEncoder hEnc, int16_t uPBDelta);
+bool AL_Encoder_SetQPPBDelta(AL_HEncoder hEnc, int16_t iPBDelta);
 /* allegro-doc-end: smartfeature_setqpbdelta */
 
 /* allegro-doc-start: smartfeature_setinputresolution */
@@ -463,6 +463,20 @@ bool AL_Encoder_SetQPPBDelta(AL_HEncoder hEnc, int16_t uPBDelta);
 *****************************************************************************/
 bool AL_Encoder_SetInputResolution(AL_HEncoder hEnc, AL_TDimension tDim);
 /* allegro-doc-end: smartfeature_setinputresolution */
+
+/* allegro-doc-start: smartfeature_setloopfiltermode */
+/*****************************************************************************
+   \brief Changes the loop filter Mode
+   \param[in] hEnc Handle to an encoder object
+   \param[in] uMode The new loop filter Mode,
+   0: loop filter disabled
+   1: loop filter enabled only inside slice/tile
+   3: loop filter enabled inside slice/tile + cross slice boundaries
+   \return true on success, false on error : call AL_Encoder_GetLastError to
+   retrieve the error code
+*****************************************************************************/
+bool AL_Encoder_SetLoopFilterMode(AL_HEncoder hEnc, uint8_t uMode);
+/* allegro-doc-end: smartfeature_setloopfiltermode */
 
 /* allegro-doc-start: smartfeature_setloopfilterbetaoffset */
 /*****************************************************************************

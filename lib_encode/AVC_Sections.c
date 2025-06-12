@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #include "AVC_Sections.h"
@@ -35,11 +35,11 @@ AL_TNuts CreateAvcNuts(void)
   return nuts;
 }
 
-static int getSectionSize(AL_TStreamMetaData* pMetaData, AL_ESectionFlags eFlags)
+static int32_t getSectionSize(AL_TStreamMetaData* pMetaData, AL_ESectionFlags eFlags)
 {
-  int iSize = 0;
+  int32_t iSize = 0;
 
-  for(int iSection = 0; iSection < pMetaData->uNumSection; iSection++)
+  for(int32_t iSection = 0; iSection < pMetaData->uNumSection; iSection++)
   {
     AL_TStreamSection* pSection = &pMetaData->pSections[iSection];
 
@@ -52,43 +52,43 @@ static int getSectionSize(AL_TStreamMetaData* pMetaData, AL_ESectionFlags eFlags
 
 static void padConfig(AL_TBuffer* pStream)
 {
-  int const iChunk = 512;
+  int32_t const iChunk = 512;
   AL_TStreamMetaData* pMetaData = (AL_TStreamMetaData*)AL_Buffer_GetMetaData(pStream, AL_META_TYPE_STREAM);
-  int iConfigSize = getSectionSize(pMetaData, AL_SECTION_CONFIG_FLAG);
+  int32_t iConfigSize = getSectionSize(pMetaData, AL_SECTION_CONFIG_FLAG);
 
   if(iConfigSize >= iChunk)
     return;
 
-  int iLastConfigSection = AL_StreamMetaData_GetLastSectionOfFlag(pMetaData, AL_SECTION_CONFIG_FLAG);
+  int32_t iLastConfigSection = AL_StreamMetaData_GetLastSectionOfFlag(pMetaData, AL_SECTION_CONFIG_FLAG);
 
   if(iLastConfigSection < 0)
     return;
 
   AL_TStreamSection* pLastConfigSection = &pMetaData->pSections[iLastConfigSection];
-  int iPaddingSize = iChunk - iConfigSize;
+  int32_t iPaddingSize = iChunk - iConfigSize;
   Rtos_Memset(AL_Buffer_GetData(pStream) + pLastConfigSection->uOffset + pLastConfigSection->uLength, 0x00, iPaddingSize);
   pLastConfigSection->uLength += iPaddingSize;
 }
 
 static void padSeiPrefix(AL_TBuffer* pStream, AL_TEncChanParam const* pChannel)
 {
-  int const iChunk = 512;
-  int const iSeiMandatorySize = (pChannel->uEncHeight <= 720) ? iChunk * 10 : iChunk * 18;
+  int32_t const iChunk = 512;
+  int32_t const iSeiMandatorySize = (pChannel->uEncHeight <= 720) ? iChunk * 10 : iChunk * 18;
   Rtos_Assert(iSeiMandatorySize <= AL_ENC_MAX_SEI_SIZE);
 
   AL_TStreamMetaData* pMetaData = (AL_TStreamMetaData*)AL_Buffer_GetMetaData(pStream, AL_META_TYPE_STREAM);
-  int iSeiSize = getSectionSize(pMetaData, AL_SECTION_SEI_PREFIX_FLAG);
+  int32_t iSeiSize = getSectionSize(pMetaData, AL_SECTION_SEI_PREFIX_FLAG);
 
   if(iSeiSize >= iSeiMandatorySize)
     return;
 
-  int iPaddingSize = iSeiMandatorySize - iSeiSize;
+  int32_t iPaddingSize = iSeiMandatorySize - iSeiSize;
 
-  int iLastSeiSection = AL_StreamMetaData_GetLastSectionOfFlag(pMetaData, AL_SECTION_SEI_PREFIX_FLAG);
+  int32_t iLastSeiSection = AL_StreamMetaData_GetLastSectionOfFlag(pMetaData, AL_SECTION_SEI_PREFIX_FLAG);
 
   if(iLastSeiSection < 0)
   {
-    int iOffset = AL_ENC_MAX_CONFIG_HEADER_SIZE + 1;
+    int32_t iOffset = AL_ENC_MAX_CONFIG_HEADER_SIZE + 1;
     Rtos_Memset(AL_Buffer_GetData(pStream) + iOffset, 0x00, iPaddingSize);
     AL_StreamMetaData_AddSeiSection(pMetaData, true, iOffset, iPaddingSize);
     return;
@@ -99,30 +99,30 @@ static void padSeiPrefix(AL_TBuffer* pStream, AL_TEncChanParam const* pChannel)
   pLastSeiSection->uLength += iPaddingSize;
 }
 
-static void padCodedSliceData(int iCodedSliceSize, AL_TBuffer* pStream, AL_TEncChanParam const* pChannel)
+static void padCodedSliceData(int32_t iCodedSliceSize, AL_TBuffer* pStream, AL_TEncChanParam const* pChannel)
 {
   AL_TStreamMetaData* pStreamMetaData = (AL_TStreamMetaData*)AL_Buffer_GetMetaData(pStream, AL_META_TYPE_STREAM);
-  int iTotalSize = 0;
+  int32_t iTotalSize = 0;
 
-  for(int iSection = 0; iSection < pStreamMetaData->uNumSection; iSection++)
+  for(int32_t iSection = 0; iSection < pStreamMetaData->uNumSection; iSection++)
     iTotalSize += pStreamMetaData->pSections[iSection].uLength;
 
-  int const iChunk = 512;
-  int const iSeiMandatorySize = (pChannel->uEncHeight <= 720) ? iChunk * 10 : iChunk * 18;
-  int const iConfigMandatorySize = 512;
-  int iPadding = (iCodedSliceSize + iSeiMandatorySize + iConfigMandatorySize) - iTotalSize;
+  int32_t const iChunk = 512;
+  int32_t const iSeiMandatorySize = (pChannel->uEncHeight <= 720) ? iChunk * 10 : iChunk * 18;
+  int32_t const iConfigMandatorySize = 512;
+  int32_t iPadding = (iCodedSliceSize + iSeiMandatorySize + iConfigMandatorySize) - iTotalSize;
 
   if(iPadding > 0)
   {
-    int iLastDataSection = AL_StreamMetaData_GetLastSectionOfFlag(pStreamMetaData, AL_SECTION_END_FRAME_FLAG) - 1;
-    int iOffset = pStreamMetaData->pSections[iLastDataSection].uOffset + pStreamMetaData->pSections[iLastDataSection].uLength + 1;
+    int32_t iLastDataSection = AL_StreamMetaData_GetLastSectionOfFlag(pStreamMetaData, AL_SECTION_END_FRAME_FLAG) - 1;
+    int32_t iOffset = pStreamMetaData->pSections[iLastDataSection].uOffset + pStreamMetaData->pSections[iLastDataSection].uLength + 1;
     Rtos_Assert((size_t)iOffset + iPadding < AL_Buffer_GetSize(pStream));
     Rtos_Memset(AL_Buffer_GetData(pStream) + iOffset, 0x00, iPadding);
     pStreamMetaData->pSections[iLastDataSection].uLength += iPadding;
   }
 }
 
-void AVC_GenerateSections(AL_TEncCtx* pCtx, AL_TBuffer* pStream, AL_TEncPicStatus const* pPicStatus, int iPicID, bool bMustWritePPS, bool bMustWriteAUD)
+void AVC_GenerateSections(AL_TEncCtx* pCtx, AL_TBuffer* pStream, AL_TEncPicStatus const* pPicStatus, int32_t iPicID, bool bMustWritePPS, bool bMustWriteAUD)
 {
   AL_TNuts nuts = CreateAvcNuts();
   AL_TNalsData nalsData = AL_ExtractNalsData(pCtx, 0, iPicID);
@@ -133,7 +133,11 @@ void AVC_GenerateSections(AL_TEncCtx* pCtx, AL_TBuffer* pStream, AL_TEncPicStatu
 
   if(AL_IS_XAVC(pChannel->eProfile) && !AL_IS_INTRA_PROFILE(pChannel->eProfile))
     bForceSEIRecoveryPointOnIDR = true;
-  GenerateSections(AL_GetAvcRbspWriter(), nuts, &nalsData, pStream, pPicStatus, 0, pChannel->uNumSlices, pChannel->bSubframeLatency, bForceSEIRecoveryPointOnIDR);
+
+  bool bSubframeLatency = false;
+  bSubframeLatency = pChannel->bSubframeLatency;
+
+  GenerateSections(AL_GetAvcRbspWriter(), nuts, &nalsData, pStream, pPicStatus, 0, pChannel->uNumSlices, bSubframeLatency, bForceSEIRecoveryPointOnIDR);
 
   if(AL_IS_XAVC_CBG(pChannel->eProfile) && AL_IS_INTRA_PROFILE(pChannel->eProfile))
   {

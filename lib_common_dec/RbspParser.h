@@ -1,16 +1,11 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
-/******************************************************************************
-   \addtogroup lib_base
-   !@{
-   \file
- *****************************************************************************/
 #pragma once
 
 #include "lib_common/BufCommonInternal.h"
 
-#define ANTI_EMUL_GRANULARITY 32
+static int8_t const ANTI_EMUL_GRANULARITY = 32;
 
 /*****************************************************************************
    \brief Mimics structure to represent the exp colomb syntax elements NAL parser
@@ -33,7 +28,7 @@ typedef struct AL_TRbspParser
   int32_t iBufInSize;
   int32_t iBufInOffset;
   int32_t iBufInAvailSize;
-  bool bHasSC;
+  bool bHasStartCodes;
 }AL_TRbspParser;
 
 /*****************************************************************************
@@ -41,10 +36,10 @@ typedef struct AL_TRbspParser
    \param[in]  pStream       Pointer to the circular stream buffer
    \param[in]  pNoAEBuffer   Pointer to the buffer with the no antiemulated bits of the NAL unit
    \param[in]  iNoAESize     Size of the no anti emulated buffer
-   \param[in]  bHasSC        Flag which specifies with the stream has start code delimiters
+   \param[in]  bHasStartCodes        Flag which specifies with the stream has start code delimiters
    \param[out] pRP           Pointer to the rbsp parser structure that will be initialized
 *****************************************************************************/
-void InitRbspParser(AL_TCircBuffer const* pStream, uint8_t* pNoAESizeBuffer, int32_t iNoAESize, bool bHasSC, AL_TRbspParser* pRP);
+void InitRbspParser(AL_TCircBuffer const* pStream, uint8_t* pNoAESizeBuffer, int32_t iNoAESize, bool bHasStartCodes, AL_TRbspParser* pRP);
 
 /*****************************************************************************
    \brief The get_avail_size function returns the number of bit still
@@ -175,11 +170,10 @@ uint32_t ue(AL_TRbspParser* pRP);
 /*****************************************************************************
    \brief Reads an signed exp-golomb value from bit buffer and returns its value.
 *****************************************************************************/
-int se(AL_TRbspParser* pRP);
+int32_t se(AL_TRbspParser* pRP);
 
 /*****************************************************************************
    \brief get the raw data at current offset
 *****************************************************************************/
 uint8_t* get_raw_data(AL_TRbspParser* pRP);
 
-/*!@}*/

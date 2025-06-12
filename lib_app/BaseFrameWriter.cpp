@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #include "lib_app/BaseFrameWriter.h"
@@ -7,6 +7,8 @@
 extern "C"
 {
 #include "lib_common/PixMapBuffer.h"
+#include "lib_common/BufCommon.h"
+#include "lib_common/FbcMapSize.h"
 }
 
 #include <iostream>
@@ -23,7 +25,7 @@ const std::string BaseFrameWriter::ErrorMessagePitch = "U and V plane pitches mu
 void BaseFrameWriter::FactorsCalculus(void)
 {
   if(m_tPicFormat.ePlaneMode == AL_PLANE_MODE_INTERLEAVED)
-    m_iNbBytesPerPix = (m_tPicFormat.uBitDepth == 8 || (m_tPicFormat.uBitDepth == 10 && m_tPicFormat.eSamplePackMode == AL_SAMPLE_PACK_MODE_PACKED)) ? sizeof(uint32_t) : sizeof(uint64_t);
+    m_iNbBytesPerPix = (m_tPicFormat.uBitDepth == 8 || (m_tPicFormat.uBitDepth == 10 && m_tPicFormat.eSamplePackMode == AL_SAMPLE_PACK_MODE_PACKED)) ? sizeof(uint32_t) : sizeof(AL_64U);
   else
     m_iNbBytesPerPix = m_tPicFormat.uBitDepth > 8 ? sizeof(uint16_t) : sizeof(uint8_t);
 
@@ -36,22 +38,21 @@ void BaseFrameWriter::DimInTileCalculus(void)
 {
   static const uint32_t MIN_HEIGHT_ROUNDING = 8;
 
-  int iTileWidth = GetTileWidth(m_tPicFormat.eStorageMode, m_tPicFormat.uBitDepth);
-  int iTileHeight = GetTileHeight(m_tPicFormat.eStorageMode);
+  int32_t iTileHeight = GetTileHeight(m_tPicFormat.eStorageMode);
 
   FactorsCalculus();
 
-  {
-    m_uPitchYFile = AL_RoundUpAndMul(m_tPicDim.iWidth, iTileWidth, iTileHeight) * m_tPicFormat.uBitDepth >> 3;
-  }
+  m_uPitchYFile = AL_GetLumaPixPlanePitch(m_tPicDim.iWidth, &m_tPicFormat, HW_IP_BURST_ALIGNMENT);
 
   m_uPitchCFile = m_uPitchYFile;
+
   m_uHeightInTileYFile = AL_RoundUpAndDivide(m_tPicDim.iHeight, std::max(uint32_t(iTileHeight), MIN_HEIGHT_ROUNDING), iTileHeight);
   switch(m_tPicFormat.ePlaneMode)
   {
   case AL_PLANE_MODE_SEMIPLANAR:
   case AL_PLANE_MODE_PLANAR:
-    m_uHeightInTileCFile = AL_RoundUp(m_uHeightInTileYFile, m_iChromaVertScale) / m_iChromaVertScale;
+    m_uHeightInTileCFile = AL_RoundUpAndDivide(m_tPicDim.iHeight, std::max(uint32_t(iTileHeight), MIN_HEIGHT_ROUNDING), iTileHeight);
+    m_uHeightInTileCFile = AL_RoundUp(m_uHeightInTileCFile, m_iChromaVertScale) / m_iChromaVertScale;
     break;
 
   default:
@@ -66,7 +67,7 @@ void BaseFrameWriter::WritePix(const uint8_t* pPix, uint32_t iPitchInPix, uint16
 {
   CheckNotNull(pPix);
 
-  for(int r = 0; r < uHeightInTile; ++r)
+  for(int32_t r = 0; r < uHeightInTile; ++r)
   {
     WriteBuffer(m_recFile, pPix, uPitchFile);
     pPix += iPitchInPix;

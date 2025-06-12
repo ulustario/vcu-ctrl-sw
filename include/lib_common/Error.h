@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 /******************************************************************************
@@ -107,6 +107,12 @@ typedef enum AL_ERR
   AL_ERR_REQUEST_INVALID_MAX_HEIGHT = AL_DEF_ERROR(32),
   /*! HW capacity is exceeded */
   AL_ERR_CHAN_CREATION_HW_CAPACITY_EXCEEDED = AL_DEF_ERROR(33),
+  AL_ERR_CORRUPTED_STREAM = AL_DEF_ERROR(38),
+  AL_ERR_CORRUPTED_QUANTIZATION_MATRIX = AL_DEF_ERROR(39),
+  AL_ERR_BUFFER_TOO_SMALL = AL_DEF_ERROR(40),
+  AL_ERR_ALIGNMENT = AL_DEF_ERROR(41),
+
+  AL_ERR_UNKNOWN,
 }AL_ERR;
 
 static inline bool AL_IS_ERROR_CODE(AL_ERR eErrorCode)

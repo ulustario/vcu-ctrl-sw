@@ -1,13 +1,14 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
+#include "lib_common/Profiles.h"
 #include "AvcLevelsLimit.h"
 #include "Utils.h"
 #include "LevelLimit.h"
 #include "BufConst.h"
 
 /****************************************************************************/
-bool AL_AVC_CheckLevel(int level)
+bool AL_AVC_CheckLevel(int32_t level)
 {
   return (level == 9)
          || ((level >= 10) && (level <= 13))
@@ -19,7 +20,7 @@ bool AL_AVC_CheckLevel(int level)
 }
 
 /****************************************************************************/
-static uint32_t AL_AVC_GetMaxMBperSec(int level)
+static uint32_t AL_AVC_GetMaxMBperSec(int32_t level)
 {
   switch(level)
   {
@@ -48,7 +49,7 @@ static uint32_t AL_AVC_GetMaxMBperSec(int level)
 }
 
 /****************************************************************************/
-static uint32_t AL_AVC_GetSliceRate(int level)
+static uint32_t AL_AVC_GetSliceRate(int32_t level)
 {
   switch(level)
   {
@@ -83,7 +84,7 @@ uint32_t AL_AVC_GetSpecificationMaxNumberOfSlices(void)
 }
 
 /****************************************************************************/
-uint32_t AL_AVC_GetMaxNumberOfSlices(AL_EProfile profile, int level, int numUnitInTicks, int timeScale, int numMbsInPic)
+uint32_t AL_AVC_GetMaxNumberOfSlices(AL_EProfile profile, int32_t level, int32_t numUnitInTicks, int32_t timeScale, int32_t numMbsInPic)
 {
 
   uint32_t maxMBPS = AL_AVC_GetMaxMBperSec(level);
@@ -107,7 +108,7 @@ uint32_t AL_AVC_GetMaxNumberOfSlices(AL_EProfile profile, int level, int numUnit
 }
 
 /****************************************************************************/
-uint32_t AL_AVC_GetMaxCPBSize(int level)
+uint32_t AL_AVC_GetMaxCPBSize(int32_t level)
 {
   switch(level)
   {
@@ -136,7 +137,7 @@ uint32_t AL_AVC_GetMaxCPBSize(int level)
 }
 
 /******************************************************************************/
-static int getMaxDpbMBs(int iLevel)
+static int32_t getMaxDpbMBs(int32_t iLevel)
 {
   switch(iLevel)
   {
@@ -165,7 +166,7 @@ static int getMaxDpbMBs(int iLevel)
 }
 
 /******************************************************************************/
-uint32_t AL_AVC_GetMaxDPBSize(int iLevel, int iWidth, int iHeight, int iSpsMaxRef, bool bIntraProfile, bool bDecodeIntraOnly)
+uint32_t AL_AVC_GetMaxDPBSize(int32_t iLevel, int32_t iWidth, int32_t iHeight, int32_t iSpsMaxRef, bool bIntraProfile, bool bDecodeIntraOnly)
 {
   Rtos_Assert(iWidth);
   Rtos_Assert(iHeight);
@@ -173,13 +174,22 @@ uint32_t AL_AVC_GetMaxDPBSize(int iLevel, int iWidth, int iHeight, int iSpsMaxRe
   if(bIntraProfile || bDecodeIntraOnly)
     return 2;
 
-  int iMaxDpbMbs = getMaxDpbMBs(iLevel);
-  int const iNumMbs = ((iWidth / 16) * (iHeight / 16));
+  int32_t iMaxDpbMbs = getMaxDpbMBs(iLevel);
+  int32_t const iNumMbs = ((iWidth / 16) * (iHeight / 16));
   return UnsignedMax(Clip3(iMaxDpbMbs / iNumMbs, 2, MAX_REF), iSpsMaxRef);
 }
 
 /******************************************************************************/
-uint16_t AL_AVC_GetMaxMotionVectorHeight(int iLevel)
+uint16_t AL_AVC_GetMaxMotionVectorWidth(int32_t iLevel)
+{
+  if(iLevel < 60)
+    return 2048;
+
+  return 8192;
+}
+
+/******************************************************************************/
+uint16_t AL_AVC_GetMaxMotionVectorHeight(int32_t iLevel)
 {
   if(iLevel < 11)
     return 64;
@@ -275,26 +285,25 @@ const AL_TLevelLimit AVC_MAX_VIDEO_DPB_SIZE[] =
 #define NUM_LIMIT(array) (sizeof(array) / sizeof(AL_TLevelLimit))
 
 /*************************************************************************/
-uint8_t AL_AVC_GetLevelFromFrameSize(int numMbPerFrame)
+uint8_t AL_AVC_GetLevelFromFrameSize(int32_t numMbPerFrame)
 {
   return AL_GetRequiredLevel(numMbPerFrame, AVC_MAX_FRAME_MB, NUM_LIMIT(AVC_MAX_FRAME_MB));
 }
 
 /*************************************************************************/
-uint8_t AL_AVC_GetLevelFromMBRate(int mbRate)
+uint8_t AL_AVC_GetLevelFromMBRate(int32_t mbRate)
 {
   return AL_GetRequiredLevel(mbRate, AVC_MAX_MB_RATE, NUM_LIMIT(AVC_MAX_MB_RATE));
 }
 
 /*************************************************************************/
-uint8_t AL_AVC_GetLevelFromBitrate(int bitrate)
+uint8_t AL_AVC_GetLevelFromBitrate(int32_t bitrate)
 {
   return AL_GetRequiredLevel(bitrate, AVC_MAX_VIDEO_BITRATE, NUM_LIMIT(AVC_MAX_VIDEO_BITRATE));
 }
 
 /*************************************************************************/
-uint8_t AL_AVC_GetLevelFromDPBSize(int dpbSize)
+uint8_t AL_AVC_GetLevelFromDPBSize(int32_t dpbSize)
 {
   return AL_GetRequiredLevel(dpbSize, AVC_MAX_VIDEO_DPB_SIZE, NUM_LIMIT(AVC_MAX_VIDEO_DPB_SIZE));
 }
-

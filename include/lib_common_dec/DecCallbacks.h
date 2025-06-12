@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #pragma once
@@ -18,7 +18,7 @@
 *****************************************************************************/
 typedef struct AL_CB_EndParsing
 {
-  void (* func)(AL_TBuffer* pParsedFrame, void* pUserParam, int iParsingID);
+  void (* func)(AL_TBuffer* pParsedFrame, void* pUserParam, int32_t iParsingID);
   void* userParam;
 }AL_CB_EndParsing;
 
@@ -66,7 +66,7 @@ typedef struct AL_CB_Display
 *****************************************************************************/
 typedef struct AL_CB_ResolutionFound
 {
-  AL_ERR (* func)(int BufferNumber, AL_TStreamSettings const* pSettings, AL_TCropInfo const* pCropInfo, void* pUserParam);
+  AL_ERR (* func)(int32_t BufferNumber, AL_TStreamSettings const* pSettings, AL_TCropInfo const* pCropInfo, void* pUserParam);
   void* userParam;
 }AL_CB_ResolutionFound;
 
@@ -85,7 +85,7 @@ typedef struct AL_CB_ResolutionFound
 *****************************************************************************/
 typedef struct AL_CB_ParsedSei
 {
-  void (* func)(bool bIsPrefix, int iPayloadType, uint8_t* pPayload, int iPayloadSize, void* pUserParam);
+  void (* func)(bool bIsPrefix, int32_t iPayloadType, uint8_t* pPayload, int32_t iPayloadSize, void* pUserParam);
   void* userParam;
 }AL_CB_ParsedSei;
 

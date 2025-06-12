@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #pragma once
@@ -17,13 +17,13 @@ extern "C"
 }
 
 /*****************************************************************************/
-unsigned int ReadNextFrame(std::ifstream& File);
+uint32_t ReadNextFrame(std::ifstream& File);
 
 /*****************************************************************************/
-unsigned int ReadNextFrameMV(std::ifstream& File, int& iX, int& iY);
+uint32_t ReadNextFrameMV(std::ifstream& File, int& iX, int& iY);
 
 /*****************************************************************************/
-void DisplayFrameStatus(int iFrameNum);
+void DisplayFrameStatus(int32_t iFrameNum);
 
 /*****************************************************************************/
 
@@ -45,12 +45,12 @@ protected:
 };
 
 /*****************************************************************************/
-int WriteStream(std::ofstream& File, AL_TBuffer* pStream, const AL_TEncSettings* pSettings, std::streampos& iHdrPos, int& iFrameSize);
+int32_t WriteStream(std::ofstream& File, AL_TBuffer* pStream, const AL_TEncSettings* pSettings, std::streampos& iHdrPos, int& iFrameSize);
 
 /*****************************************************************************/
 struct ImageSize
 {
-  int size; // in bytes
+  int32_t size; // in bytes
   bool finished;
 };
 

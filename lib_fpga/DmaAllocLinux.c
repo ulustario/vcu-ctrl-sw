@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #include <sys/ioctl.h>
@@ -35,7 +35,7 @@ struct LinuxDmaCtx
 {
   AL_TLinuxDmaAllocator base;
   char deviceFile[MAX_DEVICE_FILE_NAME];
-  int fd;
+  int32_t fd;
 };
 
 /******************************************************************************/
@@ -62,7 +62,7 @@ static bool LinuxDma_Free(AL_TAllocator* pAllocator, AL_HANDLE hBuf)
   return bRet;
 }
 
-static AL_VADDR LinuxDma_Map(int fd, size_t zSize, size_t offset)
+static AL_VADDR LinuxDma_Map(int32_t fd, size_t zSize, size_t offset)
 {
   AL_VADDR vaddr = (AL_VADDR)mmap(0, zSize, PROT_READ | PROT_WRITE, MAP_SHARED, fd, offset);
 
@@ -119,7 +119,7 @@ static AL_TAllocator* create(const char* deviceFile, void const* vtable)
 
   pCtx->base.vtable = (AL_TDmaAllocLinuxVTable const*)vtable;
 
-  int deviceFileSize = strlen(deviceFile);
+  int32_t deviceFileSize = strlen(deviceFile);
 
   if(deviceFileSize > (MAX_DEVICE_FILE_NAME - 1))
     goto fail_open;
@@ -202,7 +202,7 @@ static unsigned long Ceil256B(unsigned long value)
   return value + 0x100 - (value % 0x100);
 }
 
-int isAligned256B(AL_PADDR addr)
+int32_t isAligned256B(AL_PADDR addr)
 {
   return addr % 0x100 == 0;
 }
@@ -248,7 +248,7 @@ static AL_HANDLE LinuxDma_Alloc_256B_Aligned(AL_TAllocator* pAllocator, size_t z
 }
 
 /******************************************************************************/
-static int LinuxDma_GetFd(AL_TLinuxDmaAllocator* pAllocator, AL_HANDLE hBuf)
+static int32_t LinuxDma_GetFd(AL_TLinuxDmaAllocator* pAllocator, AL_HANDLE hBuf)
 {
   (void)pAllocator;
   struct DmaBuffer* pDmaBuffer = (struct DmaBuffer*)hBuf;
@@ -256,7 +256,7 @@ static int LinuxDma_GetFd(AL_TLinuxDmaAllocator* pAllocator, AL_HANDLE hBuf)
   return pDmaBuffer->info.fd;
 }
 
-static size_t LinuxDma_GetDmabufSize(int fd)
+static size_t LinuxDma_GetDmabufSize(int32_t fd)
 {
   off_t off = lseek(fd, 0, SEEK_END);
 
@@ -275,7 +275,7 @@ static size_t LinuxDma_GetDmabufSize(int fd)
   return zSize;
 }
 
-static AL_HANDLE LinuxDma_ImportFromFd(AL_TLinuxDmaAllocator* pAllocator, int fd)
+static AL_HANDLE LinuxDma_ImportFromFd(AL_TLinuxDmaAllocator* pAllocator, int32_t fd)
 {
   struct DmaBuffer* pDmaBuffer = (struct DmaBuffer*)calloc(1, sizeof(*pDmaBuffer));
 

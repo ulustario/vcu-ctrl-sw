@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #include "sink_bitrate.h"
@@ -23,7 +23,7 @@ struct BitrateWriter : IFrameSink
     m_file << "]" << std::endl;
   }
 
-  float calculateBitrate(int numBits, int numFrame)
+  float calculateBitrate(int32_t numBits, int32_t numFrame)
   {
     auto const durationInSeconds = numFrame / framerate * 1000;
     /* bitrate in Kbps */
@@ -32,7 +32,7 @@ struct BitrateWriter : IFrameSink
 
   float calculateWindowBitrate(void)
   {
-    int totalBits = 0;
+    int32_t totalBits = 0;
 
     for(auto& numBits : window)
     {
@@ -52,7 +52,7 @@ struct BitrateWriter : IFrameSink
       if(it->finished)
       {
         ++numFrame;
-        int numBits = it->size * 8;
+        int32_t numBits = it->size * 8;
 
         window.push_back(numBits);
 
@@ -85,9 +85,9 @@ struct BitrateWriter : IFrameSink
   size_t windowSize = 30;
   std::deque<int> window {};
   std::deque<ImageSize> imageSizes {};
-  int numFrame = 0;
+  int32_t numFrame = 0;
   float framerate;
-  int totalBits = 0;
+  int32_t totalBits = 0;
   std::ofstream m_file;
 };
 

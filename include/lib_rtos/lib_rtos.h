@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 /******************************************************************************
@@ -28,7 +28,7 @@ typedef void* AL_THREAD;
 /****************************************************************************/
 /* Assert */
 /****************************************************************************/
-void Rtos_AssertWithMessage(bool bCondition, char const* sMsg, char const* sFile, int iLine);
+void Rtos_AssertWithMessage(bool bCondition, char const* sMsg, char const* sFile, int32_t iLine);
 
 #if !defined(NDEBUG)
 #define Rtos_Assert(bCondition) \
@@ -49,8 +49,8 @@ void Rtos_Free(void* pMem);
 
 void* Rtos_Memcpy(void* pDst, void const* pSrc, size_t zSize);
 void* Rtos_Memmove(void* pDst, void const* pSrc, size_t zSize);
-void* Rtos_Memset(void* pDst, int iVal, size_t zSize);
-int Rtos_Memcmp(void const* pBuf1, void const* pBuf2, size_t zSize);
+void* Rtos_Memset(void* pDst, int32_t iVal, size_t zSize);
+int32_t Rtos_Memcmp(void const* pBuf1, void const* pBuf2, size_t zSize);
 
 #define AL_LOG_CRITICAL 0
 #define AL_LOG_ERROR 1
@@ -89,7 +89,7 @@ bool Rtos_ReleaseMutex(AL_MUTEX Mutex);
 /****************************************************************************/
 /*  Semaphore */
 /****************************************************************************/
-AL_SEMAPHORE Rtos_CreateSemaphore(int iInitialCount);
+AL_SEMAPHORE Rtos_CreateSemaphore(int32_t iInitialCount);
 void Rtos_DeleteSemaphore(AL_SEMAPHORE Semaphore);
 bool Rtos_GetSemaphore(AL_SEMAPHORE Semaphore, uint32_t Wait);
 bool Rtos_ReleaseSemaphore(AL_SEMAPHORE Semaphore);
@@ -115,7 +115,7 @@ void Rtos_DeleteThread(AL_THREAD Thread);
 /****************************************************************************/
 void* Rtos_DriverOpen(char const* name);
 void Rtos_DriverClose(void* drv);
-int Rtos_DriverIoctl(void* drv, unsigned long int req, void* data);
+int32_t Rtos_DriverIoctl(void* drv, unsigned long int req, void* data);
 
 #define AL_POLLIN 0x001   /* There is data to read.  */
 #define AL_POLLPRI 0x002   /* There is urgent data to read.  */
@@ -132,10 +132,10 @@ typedef struct Rtos_PollCtx
 {
   unsigned long events;
   unsigned long revents;
-  int timeout;
+  int32_t timeout;
 }Rtos_PollCtx;
 
-int Rtos_DriverPoll(void* drv, Rtos_PollCtx* ctx);
+int32_t Rtos_DriverPoll(void* drv, Rtos_PollCtx* ctx);
 
 /****************************************************************************/
 /*  Atomics */

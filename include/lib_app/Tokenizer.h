@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #pragma once
@@ -53,17 +53,17 @@ struct Tokenizer
 
 private:
   std::pair<int, int> getPosition();
-  Token& tokenizeIdentifier(Token& token, int startPos);
-  Token& tokenizeHexToken(Token& token, int startPos);
-  Token& tokenizeNumberToken(Token& token, int startPos);
-  char getChar(int pos);
+  Token& tokenizeIdentifier(Token& token, int32_t startPos);
+  Token& tokenizeHexToken(Token& token, int32_t startPos);
+  Token& tokenizeNumberToken(Token& token, int32_t startPos);
+  char getChar(int32_t pos);
   char getNextChar();
 
   std::string toParse;
-  int line = 1;
+  int32_t line = 1;
   std::ostream* logger;
-  int columnStartPos = 0;
-  int curPos = 0;
+  int32_t columnStartPos = 0;
+  int32_t curPos = 0;
 };
 
 static inline std::string toString(TokenType type)

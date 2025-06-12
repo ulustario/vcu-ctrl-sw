@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 /******************************************************************************
@@ -16,8 +16,8 @@
 typedef struct AL_TBitStreamLite
 {
   uint8_t* pData; /*!< Pointer to an array of bytes used as bitstream */
-  int iBitCount; /*!< Bits already written */
-  int iMaxBits;
+  int32_t iBitCount; /*!< Bits already written */
+  int32_t iMaxBits;
   bool isOverflow;
 }AL_TBitStreamLite;
 
@@ -26,7 +26,7 @@ typedef struct AL_TBitStreamLite
    \param[in] pBS Pointer to a TBitStreamLite object
    \param[in] pBuf Pointer to the buffer that the Bitstream object shall use
  *************************************************************************/
-void AL_BitStreamLite_Init(AL_TBitStreamLite* pBS, uint8_t* pBuf, int iMaxSize);
+void AL_BitStreamLite_Init(AL_TBitStreamLite* pBS, uint8_t* pBuf, int32_t iMaxSize);
 
 /*****************************************************************************
    \brief Destructor
@@ -63,7 +63,7 @@ void AL_BitStreamLite_PutBits(AL_TBitStreamLite* pBS, uint8_t iNumBits, uint32_t
  *************************************************************************/
 void AL_BitStreamLite_AlignWithBits(AL_TBitStreamLite* pBS, uint8_t iBit);
 
-void AL_BitStreamLite_SkipBits(AL_TBitStreamLite* pBS, int numBits);
+void AL_BitStreamLite_SkipBits(AL_TBitStreamLite* pBS, int32_t numBits);
 
 /*****************************************************************************
    \brief This function is used to terminate an SEI Message, as specified in
@@ -82,7 +82,7 @@ void AL_BitStreamLite_EndOfSEIPayload(AL_TBitStreamLite* pBS);
    \param[in] iNumBits Number of bits used to encode uValue
    \param[in] uValue Value to put in the bitstream
  *************************************************************************/
-void AL_BitStreamLite_PutU(AL_TBitStreamLite* pBS, int iNumBits, uint32_t uValue);
+void AL_BitStreamLite_PutU(AL_TBitStreamLite* pBS, int32_t iNumBits, uint32_t uValue);
 
 /*****************************************************************************
    \brief Puts signed integer to the BitStream using the specified number of
@@ -91,7 +91,7 @@ void AL_BitStreamLite_PutU(AL_TBitStreamLite* pBS, int iNumBits, uint32_t uValue
    \param[in] iNumBits Number of bits used to encode uValue
    \param[in] uValue Value to put in the bitstream
  *************************************************************************/
-void AL_BitStreamLite_PutI(AL_TBitStreamLite* pBS, int iNumBits, int32_t iValue);
+void AL_BitStreamLite_PutI(AL_TBitStreamLite* pBS, int32_t iNumBits, int32_t iValue);
 
 /*****************************************************************************
    \brief Puts unsigned integer Exp-Golomb-coded in the BitStream
@@ -123,7 +123,7 @@ uint8_t* AL_BitStreamLite_GetCurData(AL_TBitStreamLite* pBS);
    \brief Returns the current numbers of bits in the bitstream
    \param[in] pBS Pointer to a TBitStreamLite object
  *************************************************************************/
-int AL_BitStreamLite_GetBitsCount(AL_TBitStreamLite* pBS);
+int32_t AL_BitStreamLite_GetBitsCount(AL_TBitStreamLite* pBS);
 
 /****************************************************************************/
 

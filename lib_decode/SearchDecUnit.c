@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #include "SearchDecUnit.h"
@@ -7,6 +7,63 @@
 #include "lib_common/AvcUtils.h"
 #include "lib_common/HevcUtils.h"
 #include "lib_rtos/lib_rtos.h"
+
+/*****************************************************************************/
+void AL_SearchDecUnit_Init(AL_TDecUnitSearchCtx* pCtx, AL_ECodec eCodec, AL_EDecUnit eDecUnit, AL_TNal* pNals, int32_t iMaxNal)
+{
+  pCtx->eCodec = eCodec;
+  pCtx->bSubFrameUnit = (eDecUnit == AL_VCL_NAL_UNIT);
+
+  pCtx->pNals = pNals;
+  pCtx->iMaxNal = iMaxNal;
+
+  pCtx->bEOS = false;
+
+  AL_SearchDecUnit_SetStream(pCtx, NULL, 0);
+  AL_SearchDecUnit_ResetNals(pCtx);
+}
+
+/*****************************************************************************/
+void AL_SearchDecUnit_SetStream(AL_TDecUnitSearchCtx* pCtx, uint8_t const* pStream, uint32_t uSize)
+{
+  pCtx->pStream = pStream;
+  pCtx->uStreamBufSize = uSize;
+}
+
+/*****************************************************************************/
+int32_t AL_SearchDecUnit_GetCurrentNalCount(AL_TDecUnitSearchCtx const* pCtx)
+{
+  return pCtx->iNalCount;
+}
+
+/*****************************************************************************/
+uint32_t AL_SearchDecUnit_GetFreeNalCount(AL_TDecUnitSearchCtx const* pCtx)
+{
+  return pCtx->iMaxNal - pCtx->iNalCount;
+}
+
+/*****************************************************************************/
+void AL_SearchDecUnit_AddNals(AL_TDecUnitSearchCtx* pCtx, AL_TStartCode const* pNalSC, int32_t iNumNalSC, uint32_t uLastByte, bool bEOS)
+{
+  AL_TNal* dst = pCtx->pNals;
+
+  if(pCtx->iNalCount && iNumNalSC)
+    dst[pCtx->iNalCount - 1].uSize = DeltaPosition(dst[pCtx->iNalCount - 1].tStartCode.uPosition, pNalSC[0].uPosition, pCtx->uStreamBufSize);
+
+  for(int32_t i = 0; i < iNumNalSC; i++)
+  {
+    dst[pCtx->iNalCount].tStartCode = pNalSC[i];
+
+    if(i + 1 == iNumNalSC)
+      dst[pCtx->iNalCount].uSize = DeltaPosition(pNalSC[i].uPosition, uLastByte, pCtx->uStreamBufSize);
+    else
+      dst[pCtx->iNalCount].uSize = DeltaPosition(pNalSC[i].uPosition, pNalSC[i + 1].uPosition, pCtx->uStreamBufSize);
+
+    pCtx->iNalCount++;
+  }
+
+  pCtx->bEOS = bEOS;
+}
 
 /*****************************************************************************/
 static bool isAud(AL_ECodec eCodec, AL_ENut eNut)
@@ -84,10 +141,10 @@ static bool isPrefixSei(AL_ECodec eCodec, AL_ENut eNut)
 }
 
 /*****************************************************************************/
-static bool checkSeiUUID(uint8_t const* pBufs, AL_TNal const* pNal, AL_ECodec eCodec, int iTotalSize)
+static bool checkSeiUUID(uint8_t const* pBufs, AL_TNal const* pNal, AL_ECodec eCodec, int32_t iTotalSize)
 {
   (void)eCodec;
-  int iTotalUUIDSize = 26;
+  int32_t iTotalUUIDSize = 26;
 
   if(eCodec == AL_CODEC_AVC)
     iTotalUUIDSize = 25;
@@ -95,15 +152,15 @@ static bool checkSeiUUID(uint8_t const* pBufs, AL_TNal const* pNal, AL_ECodec eC
   if((int)pNal->uSize != iTotalUUIDSize)
     return false;
 
-  int iStart = 7;
+  int32_t iStart = 7;
 
   if(eCodec == AL_CODEC_AVC)
     iStart = 6;
-  int const iSize = sizeof(SEI_PREFIX_USER_DATA_UNREGISTERED_UUID) / sizeof(*SEI_PREFIX_USER_DATA_UNREGISTERED_UUID);
+  int32_t const iSize = sizeof(SEI_PREFIX_USER_DATA_UNREGISTERED_UUID) / sizeof(*SEI_PREFIX_USER_DATA_UNREGISTERED_UUID);
 
-  for(int i = 0; i < iSize; i++)
+  for(int32_t i = 0; i < iSize; i++)
   {
-    int iPosition = (pNal->tStartCode.uPosition + iStart + i) % iTotalSize;
+    int32_t iPosition = (pNal->tStartCode.uPosition + iStart + i) % iTotalSize;
 
     if(SEI_PREFIX_USER_DATA_UNREGISTERED_UUID[i] != pBufs[iPosition])
       return false;
@@ -113,66 +170,27 @@ static bool checkSeiUUID(uint8_t const* pBufs, AL_TNal const* pNal, AL_ECodec eC
 }
 
 /*****************************************************************************/
-static int getNumSliceInSei(uint8_t* pBufs, AL_TNal* pNal, AL_ECodec eCodec, int iTotalSize)
+static int32_t getNumSliceInSei(uint8_t const* pBufs, AL_TNal* pNal, AL_ECodec eCodec, int32_t iTotalSize)
 {
   (void)eCodec;
   Rtos_Assert(checkSeiUUID(pBufs, pNal, eCodec, iTotalSize));
-  int iStart = 7;
+  int32_t iStart = 7;
 
   if(eCodec == AL_CODEC_AVC)
     iStart = 6;
-  int const iSize = sizeof(SEI_PREFIX_USER_DATA_UNREGISTERED_UUID) / sizeof(*SEI_PREFIX_USER_DATA_UNREGISTERED_UUID);
-  int iPosition = (pNal->tStartCode.uPosition + iStart + iSize) % iTotalSize;
+  int32_t const iSize = sizeof(SEI_PREFIX_USER_DATA_UNREGISTERED_UUID) / sizeof(*SEI_PREFIX_USER_DATA_UNREGISTERED_UUID);
+  int32_t iPosition = (pNal->tStartCode.uPosition + iStart + iSize) % iTotalSize;
   return pBufs[iPosition];
 }
 
 /*****************************************************************************/
-void AL_SearchDecUnit_Init(AL_TDecUnitSearchCtx* pCtx, AL_ECodec eCodec, AL_EDecUnit eDecUnit, AL_TNal* pNals, int iMaxNal)
-{
-  pCtx->eCodec = eCodec;
-  pCtx->bSubFrameUnit = (eDecUnit == AL_VCL_NAL_UNIT);
-
-  pCtx->pNals = pNals;
-  pCtx->iMaxNal = iMaxNal;
-
-  pCtx->pStream = NULL;
-  pCtx->uStreamBufSize = 0;
-
-  pCtx->iNalCount = 0;
-  pCtx->iCurNalStreamOffset = 0;
-
-  pCtx->bEOS = false;
-
-}
-
-/*****************************************************************************/
-void AL_SearchDecUnit_Reset(AL_TDecUnitSearchCtx* pCtx)
-{
-  pCtx->iNalCount = 0;
-  pCtx->iCurNalStreamOffset = 0;
-}
-
-/*****************************************************************************/
-void AL_SearchDecUnit_SetStream(AL_TDecUnitSearchCtx* pCtx, uint8_t* pStream, uint32_t uSize)
-{
-  pCtx->pStream = pStream;
-  pCtx->uStreamBufSize = uSize;
-}
-
-/*****************************************************************************/
-uint32_t AL_SearchDecUnit_GetStorageSize(AL_TDecUnitSearchCtx* pCtx)
-{
-  return pCtx->iMaxNal - pCtx->iNalCount;
-}
-
-/*****************************************************************************/
-static bool isFirstSliceStatusAvailable(int iSize, int iNalHdrSize)
+static bool isFirstSliceStatusAvailable(int32_t iSize, int32_t iNalHdrSize)
 {
   return iSize > iNalHdrSize;
 }
 
 /******************************************************************************/
-static int NalHeaderSize(AL_ECodec eCodec)
+static int32_t NalHeaderSize(AL_ECodec eCodec)
 {
   switch(eCodec)
   {
@@ -187,7 +205,7 @@ static int NalHeaderSize(AL_ECodec eCodec)
 
 /* should only be used when the position is right after the nal header */
 /*****************************************************************************/
-static bool isFirstSlice(uint8_t* pBuf, uint32_t uPos)
+static bool isFirstSlice(uint8_t const* pBuf, uint32_t uPos)
 {
   // in AVC, the first bit of the slice data is 1. (first_mb_in_slice = 0 encoded in ue)
   // in HEVC, the first bit is 1 too. (first_slice_segment_in_pic_flag = 1 if true))
@@ -197,7 +215,7 @@ static bool isFirstSlice(uint8_t* pBuf, uint32_t uPos)
 /*****************************************************************************/
 static uint32_t skipNalHeader(uint32_t uPos, AL_ECodec eCodec, uint32_t uSize)
 {
-  int iNalHdrSize = NalHeaderSize(eCodec);
+  int32_t iNalHdrSize = NalHeaderSize(eCodec);
   Rtos_Assert(iNalHdrSize);
   return (uPos + iNalHdrSize) % uSize; // skip start code + nal header
 }
@@ -211,7 +229,7 @@ static uint32_t skipNalHeader(uint32_t uPos, AL_ECodec eCodec, uint32_t uSize)
 /*****************************************************************************/
 static bool isFirstSliceNAL(AL_TDecUnitSearchCtx* pCtx, AL_TNal* pNal)
 {
-  uint8_t* pBuf = pCtx->pStream;
+  uint8_t const* pBuf = pCtx->pStream;
   uint32_t uPos = pNal->tStartCode.uPosition;
   uint32_t uSize = pCtx->uStreamBufSize;
 
@@ -222,37 +240,18 @@ static bool isFirstSliceNAL(AL_TDecUnitSearchCtx* pCtx, AL_TNal* pNal)
 }
 
 /*****************************************************************************/
-int AL_SearchDecUnit_GetLastVCL(AL_TDecUnitSearchCtx* pCtx)
-{
-  int iLastVclNalInAU = -1;
-
-  for(int iNal = pCtx->iNalCount - 1; iNal >= 0; --iNal)
-  {
-    AL_ENut eNUT = pCtx->pNals[iNal].tStartCode.uNUT;
-
-    if(isVcl(pCtx->eCodec, eNUT))
-    {
-      iLastVclNalInAU = iNal;
-      break;
-    }
-  }
-
-  return iLastVclNalInAU;
-}
-
-/*****************************************************************************/
-bool AL_SearchDecUnit_GetNextUnit(AL_TDecUnitSearchCtx* pCtx, int* pNalCount, int* pLastVclNalInDecodingUnit)
+bool AL_SearchDecUnit_GetNextUnit(AL_TDecUnitSearchCtx* pCtx, int32_t* pNalCount, int32_t* pLastVclNalInAccessUnit)
 {
   *pNalCount = 0;
-  (void)pLastVclNalInDecodingUnit;
+  (void)pLastVclNalInAccessUnit;
 
   if(pCtx->iNalCount == 0)
     return false;
 
   bool bVclNalSeen = false;
-  int iNalFound = 0;
+  int32_t iNalFound = 0;
 
-  for(int iNal = 0; iNal < pCtx->iNalCount; ++iNal)
+  for(int32_t iNal = 0; iNal < pCtx->iNalCount; ++iNal)
   {
     AL_TNal* pNal = &pCtx->pNals[iNal];
     AL_ENut eNUT = pNal->tStartCode.uNUT;
@@ -293,7 +292,7 @@ bool AL_SearchDecUnit_GetNextUnit(AL_TDecUnitSearchCtx* pCtx, int* pNalCount, in
 
     if(isVcl(pCtx->eCodec, eNUT))
     {
-      int iNalHdrSize = NalHeaderSize(pCtx->eCodec);
+      int32_t iNalHdrSize = NalHeaderSize(pCtx->eCodec);
       Rtos_Assert(iNalHdrSize > 0);
 
       if(isFirstSliceStatusAvailable(pNal->uSize, iNalHdrSize))
@@ -312,15 +311,15 @@ bool AL_SearchDecUnit_GetNextUnit(AL_TDecUnitSearchCtx* pCtx, int* pNalCount, in
           {
             pCtx->iNumSlicesRemaining--;
             *pNalCount = iNalFound;
-            int const iIsNotLastSlice = -1;
-            *pLastVclNalInDecodingUnit = iIsNotLastSlice;
+            int32_t const iIsNotLastSlice = -1;
+            *pLastVclNalInAccessUnit = iIsNotLastSlice;
             return true;
           }
         }
       }
 
       bVclNalSeen = true;
-      *pLastVclNalInDecodingUnit = iNal;
+      *pLastVclNalInAccessUnit = iNal;
     }
   }
 
@@ -339,46 +338,44 @@ bool AL_SearchDecUnit_GetNextUnit(AL_TDecUnitSearchCtx* pCtx, int* pNalCount, in
 }
 
 /*****************************************************************************/
-int AL_SearchDecUnit_GetCurNalCount(AL_TDecUnitSearchCtx* pCtx)
+int32_t AL_SearchDecUnit_GetLastVCL(AL_TDecUnitSearchCtx const* pCtx)
 {
-  return pCtx->iNalCount;
-}
+  int32_t iLastVclNalInAU = -1;
 
-/*****************************************************************************/
-void AL_SearchDecUnit_Update(AL_TDecUnitSearchCtx* pCtx, AL_TStartCode* pSC, int iNumSC, uint32_t uLastByte, bool bEOS)
-{
-  AL_TNal* dst = pCtx->pNals;
-
-  if(pCtx->iNalCount && iNumSC)
-    dst[pCtx->iNalCount - 1].uSize = DeltaPosition(dst[pCtx->iNalCount - 1].tStartCode.uPosition, pSC[0].uPosition, pCtx->uStreamBufSize);
-
-  for(int i = 0; i < iNumSC; i++)
+  for(int32_t iNal = pCtx->iNalCount - 1; iNal >= 0; --iNal)
   {
-    dst[pCtx->iNalCount].tStartCode = pSC[i];
+    AL_ENut eNUT = pCtx->pNals[iNal].tStartCode.uNUT;
 
-    if(i + 1 == iNumSC)
-      dst[pCtx->iNalCount].uSize = DeltaPosition(pSC[i].uPosition, uLastByte, pCtx->uStreamBufSize);
-    else
-      dst[pCtx->iNalCount].uSize = DeltaPosition(pSC[i].uPosition, pSC[i + 1].uPosition, pCtx->uStreamBufSize);
-
-    pCtx->iNalCount++;
+    if(isVcl(pCtx->eCodec, eNUT))
+    {
+      iLastVclNalInAU = iNal;
+      break;
+    }
   }
 
-  pCtx->bEOS = bEOS;
+  return iLastVclNalInAU;
 }
 
 /*****************************************************************************/
-void AL_SearchDecUnit_ConsumeNals(AL_TDecUnitSearchCtx* pCtx, int iNumNal)
+int32_t AL_SearchDecUnit_GetCurrentStreamOffset(AL_TDecUnitSearchCtx const* pCtx)
 {
-  if(iNumNal)
-    pCtx->iCurNalStreamOffset = (pCtx->pNals[iNumNal - 1].tStartCode.uPosition + pCtx->pNals[iNumNal - 1].uSize) % pCtx->uStreamBufSize;
+  return pCtx->iCurNalStreamOffset;
+}
 
+/*****************************************************************************/
+void AL_SearchDecUnit_ConsumeNals(AL_TDecUnitSearchCtx* pCtx, int32_t iNumNal)
+{
+  if(iNumNal == 0)
+    return;
+
+  pCtx->iCurNalStreamOffset = (pCtx->pNals[iNumNal - 1].tStartCode.uPosition + pCtx->pNals[iNumNal - 1].uSize) % pCtx->uStreamBufSize;
   pCtx->iNalCount -= iNumNal;
   Rtos_Memmove(pCtx->pNals, pCtx->pNals + iNumNal, pCtx->iNalCount * sizeof(AL_TNal));
 }
 
 /*****************************************************************************/
-int AL_SearchDecUnit_GetCurOffset(AL_TDecUnitSearchCtx* pCtx)
+void AL_SearchDecUnit_ResetNals(AL_TDecUnitSearchCtx* pCtx)
 {
-  return pCtx->iCurNalStreamOffset;
+  pCtx->iNalCount = 0;
+  pCtx->iCurNalStreamOffset = 0;
 }

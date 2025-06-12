@@ -1,11 +1,11 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #include "Com_Encoder.h"
 #include "AVC_Sections.h"
 #include "lib_common_enc/PictureInfo.h"
 
-static void updateHlsAndWriteSections(AL_TEncCtx* pCtx, AL_TEncPicStatus* pPicStatus, AL_TBuffer* pStream, int iLayerID, int iPicID)
+static void updateHlsAndWriteSections(AL_TEncCtx* pCtx, AL_TEncPicStatus* pPicStatus, AL_TBuffer* pStream, int32_t iLayerID, int32_t iPicID)
 {
   AL_HLSInfo* pHLSInfo = AL_GetHLSInfo(pCtx, iPicID);
   AL_AVC_UpdateSPS(&pCtx->tLayerCtx[iLayerID].sps, pCtx->pSettings, pPicStatus, pHLSInfo, &pCtx->tHeadersCtx[iLayerID]);
@@ -18,7 +18,7 @@ static void updateHlsAndWriteSections(AL_TEncCtx* pCtx, AL_TEncPicStatus* pPicSt
 
   if(pPicStatus->eType == AL_SLICE_I)
   {
-    int const iDefaultCpbRemovalDelay = 0;
+    int32_t const iDefaultCpbRemovalDelay = 0;
     pCtx->cpbRemovalDelay = iDefaultCpbRemovalDelay;
   }
 }
@@ -34,12 +34,12 @@ static void initHlsSps(AL_TEncChanParam* pChParam, uint32_t* pSpsParam)
   (void)pChParam;
   *pSpsParam = AL_SPS_TEMPORAL_MVP_EN_FLAG; // TODO
 
-  int log2_max_poc = (pChParam->tRCParam.eOptions & AL_RC_OPT_ENABLE_SKIP) ? 16 : 10;
+  int32_t log2_max_poc = (pChParam->tRCParam.eOptions & AL_RC_OPT_ENABLE_SKIP) ? 16 : 10;
 
   if(AL_IS_XAVC(pChParam->eProfile))
     log2_max_poc = 4;
   AL_SET_SPS_LOG2_MAX_POC(pSpsParam, log2_max_poc);
-  int log2_max_frame_num_minus4 = 0; // This value SHOULD be equals to IP_Utils SPS
+  int32_t log2_max_frame_num_minus4 = 0; // This value SHOULD be equals to IP_Utils SPS
 
   if((pChParam->tGopParam.eMode & AL_GOP_FLAG_PYRAMIDAL) && pChParam->tGopParam.uNumB == 15)
     log2_max_frame_num_minus4 = 1;
@@ -64,12 +64,12 @@ static void SetMotionEstimationRange(AL_TEncChanParam* pChParam)
 
 static void ComputeQPInfo(AL_TEncChanParam* pChParam)
 {
-  int iCbOffset = pChParam->iCbPicQpOffset;
-  int iCrOffset = pChParam->iCrPicQpOffset;
+  int32_t iCbOffset = pChParam->iCbPicQpOffset;
+  int32_t iCrOffset = pChParam->iCrPicQpOffset;
   AL_Common_Encoder_ComputeRCParam(iCbOffset, iCrOffset, 12, pChParam);
 }
 
-static void generateNals(AL_TEncCtx* pCtx, int iLayerID, bool bWriteVps)
+static void generateNals(AL_TEncCtx* pCtx, int32_t iLayerID, bool bWriteVps)
 {
   (void)bWriteVps;
   AL_TEncChanParam* pChParam = &pCtx->pSettings->tChParam[iLayerID];
@@ -105,4 +105,3 @@ void AL_CreateAvcEncoder(HighLevelEncoder* pCtx)
   pCtx->generateNals = &generateNals;
   pCtx->updateHlsAndWriteSections = &updateHlsAndWriteSections;
 }
-

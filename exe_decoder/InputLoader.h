@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #pragma once
@@ -61,7 +61,7 @@ struct CircBufferFrame
 /****************************************************************************/
 struct SplitInput : public InputLoader
 {
-  SplitInput(int iSize, AL_ECodec eCodec, bool bSliceCut);
+  SplitInput(int32_t iSize, AL_ECodec eCodec, bool bSliceCut);
   uint32_t ReadStream(std::istream& ifFileStream, AL_TBuffer* pBufStream, uint8_t& uBufFlags) override;
 
 private:

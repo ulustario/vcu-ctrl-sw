@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #pragma once
@@ -7,13 +7,13 @@
 #include <algorithm>
 
 template<typename T>
-void LoadLumaTile(T pInY, uint16_t* Tile, int iPitch, int iWidth, int iHeight, int iTileWidth, int iTileHeight)
+void LoadLumaTile(T pInY, uint16_t* Tile, int32_t iPitch, int32_t iWidth, int32_t iHeight, int32_t iTileWidth, int32_t iTileHeight)
 {
   auto const S1 = iTileWidth == 32 ? 7 : 8;
 
-  for(int iY = 0; iY < iTileHeight; ++iY)
+  for(int32_t iY = 0; iY < iTileHeight; ++iY)
   {
-    for(int iX = 0; iX < iTileWidth; ++iX)
+    for(int32_t iX = 0; iX < iTileWidth; ++iX)
     {
       bool bPadding = iX >= iWidth;
       Tile[((iY >> 2) << S1) + ((iX >> 2) << 4) + ((iY & 0x3) << 2) + (iX & 3)] = (bPadding ? pInY[-1] : *pInY);
@@ -32,16 +32,16 @@ void LoadLumaTile(T pInY, uint16_t* Tile, int iPitch, int iWidth, int iHeight, i
 }
 
 template<typename T>
-void LoadChromaTile(T pInU, T pInV, uint16_t* Tile, int iPitch, int iWidth, int iTileHeight, int iHeight, bool bTileWidth32)
+void LoadChromaTile(T pInU, T pInV, uint16_t* Tile, int32_t iPitch, int32_t iWidth, int32_t iTileHeight, int32_t iHeight, bool bTileWidth32)
 {
   auto const iTileSize = bTileWidth32 ? 16 : 32;
   auto const S1 = bTileWidth32 ? 7 : 8;
 
-  for(int iY = 0; iY < iTileHeight; ++iY)
+  for(int32_t iY = 0; iY < iTileHeight; ++iY)
   {
     bool bVertPadding = iY >= iHeight;
 
-    for(int iX = 0; iX < iTileSize; ++iX)
+    for(int32_t iX = 0; iX < iTileSize; ++iX)
     {
       bool bHorzPadding = iX >= iWidth;
       auto const iIdx = ((iY >> 2) << S1) + ((iX / 4) * 32) + ((iY & 0x3) * 4) + (iX & 3);

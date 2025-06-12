@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #pragma once
@@ -17,7 +17,7 @@ struct SinkCrop final : IFrameSink
   void ProcessFrame(AL_TBuffer* pBuf) override;
 
 private:
-  void ApplyCrop(AL_TBuffer* pYUV, int iSizePix, int iLeft, int iRight, int iTop, int iBottom);
+  void ApplyCrop(AL_TBuffer* pYUV, int32_t iSizePix, int32_t iLeft, int32_t iRight, int32_t iTop, int32_t iBottom);
 
   std::unique_ptr<IFrameSink> m_pSink;
   bool m_bFixedCrop = false;

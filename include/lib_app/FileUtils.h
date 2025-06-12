@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #pragma once
@@ -7,23 +7,29 @@
 #include <regex>
 
 /****************************************************************************/
-void formatFolderPath(std::string& folderPath);
+void FormatFolderPath(std::string& folderPath);
 
 /****************************************************************************/
-std::string combinePath(std::string const& folder, std::string const& filename);
+std::string CombinePath(std::string const& folder, std::string const& filename);
 
 /****************************************************************************/
-std::string createFileNameWithID(std::string const& path, std::string const& motif, std::string const& extension, int iFrameID);
+std::string CreateFileNameWithID(std::string const& path, std::string const& motif, std::string const& extension, int32_t iFrameID);
 
 /****************************************************************************/
-bool checkFolder(std::string folderPath);
+bool FolderExists(std::string folderPath);
 
 /****************************************************************************/
-bool checkFileAvailability(std::string folderPath, std::regex const& regex);
+bool FileExists(std::string folderPath, std::regex const& regex);
+
+/****************************************************************************/
+bool GetFileSize(std::ifstream& fileStream, size_t& zSize);
+
+/****************************************************************************/
+bool GetFileSize(std::string const& filename, size_t& zSize);
 
 /****************************************************************************/
 #define FROM_HEX_ERROR -1
-int FromHex2(char a, char b);
+int32_t FromHex2(char a, char b);
 
 /****************************************************************************/
-int FromHex4(char a, char b, char c, char d);
+int32_t FromHex4(char a, char b, char c, char d);

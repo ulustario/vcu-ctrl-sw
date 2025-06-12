@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #pragma once
@@ -11,13 +11,13 @@
 /*****************************************************************************
    \brief Slice Buffers: Set of buffers needed to encode a slice
 *****************************************************************************/
-typedef struct t_Span
+typedef struct TSpan
 {
   uint8_t* pBuf;
   uint32_t uSize;
 }TSpan;
 
-typedef struct t_SliceBuffersEnc
+typedef struct TSliceBuffersEnc
 {
   AL_TBuffer* pSrc; /*!< Pointer to Source frame buffer. */
 

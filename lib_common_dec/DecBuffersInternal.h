@@ -1,11 +1,6 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
-/******************************************************************************
-   \addtogroup lib_base
-   !@{
-   \file
- *****************************************************************************/
 #pragma once
 
 #include "lib_common/BufCommonInternal.h"
@@ -28,27 +23,28 @@
 #define WP_ONE_SET_SIZE 8
 #define WP_SLICE_SIZE (16 * 2 * WP_ONE_SET_SIZE) // WP coefficient per slice (num_ref_idx * number_of_list * 16 bytes = 16 * 2 * 16)
 
-static const int HEVC_LCU_CMP_SIZE[4] =
+static const int32_t HEVC_LCU_CMP_SIZE[4] =
 {
   832, 1088, 1344, 1856
 }; /*!< HEVC LCU compressed max size*/
-static const int AVC_LCU_CMP_SIZE[4] =
+static const int32_t AVC_LCU_CMP_SIZE[4] =
 {
   800, 1120, 1408, 2016
 }; /*!< AVC  LCU compressed max size*/
 
 #define MAX_NB_REF_PLANE 2
 
-static const int SCLST_SIZE_DEC = 1024;
+static const int32_t SCLST_SIZE_DEC = 1024;
 
 /*****************************************************************************
    \brief Buffer with Poc list content
 *****************************************************************************/
 typedef TBuffer TBufferPOC;
 
-static const int POCBUFF_PL_SIZE = 96;  // POC List size
-static const int POCBUFF_LONG_TERM_OFFSET = 64;  // Long term flag List
-static const int POCBUFF_SUBPIC_OFFSET = 68;  // Frame with subpicture flag List
+static const int32_t POCBUFF_PL_SIZE = 96;  // POC List size
+static const int32_t POCBUFF_LONG_TERM_OFFSET = 64;  // Long term flag List
+static const int32_t POCBUFF_AVAILABLE_REF_OFFSET = 66;  // Available Ref flag List
+static const int32_t POCBUFF_SUBPIC_OFFSET = 68;  // Frame with subpicture flag List
 
 /*****************************************************************************
    \brief List of references frame buffer
@@ -75,7 +71,7 @@ typedef struct TRefListOffsets
    \param[in] eChromaMode Chroma sub-sampling mode
    \return maximum size (in bytes) needed for the compressed buffer
 *****************************************************************************/
-int AL_GetAllocSize_HevcCompData(AL_TDimension tDim, AL_EChromaMode eChromaMode);
+int32_t AL_GetAllocSize_HevcCompData(AL_TDimension tDim, AL_EChromaMode eChromaMode);
 
 /*****************************************************************************
    \brief Retrieves the size of a AVC compressed buffer(LCU header + MVDs + Residuals)
@@ -83,28 +79,28 @@ int AL_GetAllocSize_HevcCompData(AL_TDimension tDim, AL_EChromaMode eChromaMode)
    \param[in] eChromaMode Chroma sub-sampling mode
    \return maximum size (in bytes) needed for the compressed buffer
 *****************************************************************************/
-int AL_GetAllocSize_AvcCompData(AL_TDimension tDim, AL_EChromaMode eChromaMode);
+int32_t AL_GetAllocSize_AvcCompData(AL_TDimension tDim, AL_EChromaMode eChromaMode);
 
 /*****************************************************************************
    \brief Retrieves the size of the compressed map buffer (LCU Offset & size)
    \param[in] tDim  Frame dimension (width, height) in pixel
    \return maximum size (in bytes) needed for the compressed map buffer
 *****************************************************************************/
-int AL_GetAllocSize_DecCompMap(AL_TDimension tDim);
+int32_t AL_GetAllocSize_DecCompMap(AL_TDimension tDim);
 
 /*****************************************************************************
    \brief Retrieves the size of a HEVC motion vector buffer
    \param[in] tDim  Frame dimension (width, height) in pixel
    \return the size (in bytes) needed for the collocated frame buffer
 *****************************************************************************/
-int AL_GetAllocSize_HevcMV(AL_TDimension tDim);
+int32_t AL_GetAllocSize_HevcMV(AL_TDimension tDim);
 
 /*****************************************************************************
    \brief Retrieves the size of a AVC motion vector buffer
    \param[in] tDim  Frame dimension (width, height) in pixel
    \return the size (in bytes) needed for the collocated frame buffer
 *****************************************************************************/
-int AL_GetAllocSize_AvcMV(AL_TDimension tDim);
+int32_t AL_GetAllocSize_AvcMV(AL_TDimension tDim);
 
 /*****************************************************************************
    \brief Retrieves the size of the output frame buffer, using the
@@ -116,7 +112,7 @@ int AL_GetAllocSize_AvcMV(AL_TDimension tDim);
    \param[in] eFrameBufferStorageMode Storage Mode of the frame buffer
    \return the size (in bytes) needed for the output frame buffer
 *****************************************************************************/
-int AL_GetAllocSize_Frame(AL_TDimension tDim, AL_EChromaMode eChromaMode, uint8_t uBitDepth, bool bFrameBufferCompression, AL_EFbStorageMode eFrameBufferStorageMode);
+int32_t AL_GetAllocSize_Frame(AL_TDimension tDim, AL_EChromaMode eChromaMode, uint8_t uBitDepth, bool bFrameBufferCompression, AL_EFbStorageMode eFrameBufferStorageMode);
 
 /*****************************************************************************
    \brief Get offsets to the different data of the reference list buffer
@@ -128,7 +124,6 @@ int AL_GetAllocSize_Frame(AL_TDimension tDim, AL_EChromaMode eChromaMode, uint8_
 *****************************************************************************/
 uint32_t AL_GetRefListOffsets(TRefListOffsets* pOffsets, AL_ECodec eCodec, AL_TPicFormat tPicFormat, uint8_t uAddrSizeInBytes);
 
-int32_t RndPitch(int32_t iWidth, AL_TPicFormat const* pPicFormat);
-int32_t RndHeight(int32_t iHeight, AL_TPicFormat const* pPicFormat);
+int32_t AL_DecGetLumaPixPlanePitch(int32_t iWidth, AL_TPicFormat const* pPicFormat);
+int32_t AL_DecGetPixPlaneHeight(int32_t iHeight, AL_TPicFormat const* pPicFormat);
 
-/*!@}*/

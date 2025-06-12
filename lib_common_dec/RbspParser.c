@@ -1,13 +1,9 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
-/******************************************************************************
-   \addtogroup lib_base
-   !@{
-   \file
- *****************************************************************************/
 #include "RbspParser.h"
 
+#include "lib_common/Utils.h"
 #include "lib_common_dec/DecBuffersInternal.h"
 
 #define odd(a) ((a) & 1)
@@ -32,7 +28,7 @@ static const uint8_t tab_log2[256] =
 *****************************************************************************/
 static uint32_t al_log2(uint32_t value)
 {
-  int n = 0;
+  int32_t n = 0;
 
   if(value & 0xFF000000)
   {
@@ -78,7 +74,7 @@ static bool finished_fetching(AL_TRbspParser* pRP)
 /*****************************************************************************/
 static bool fetch_data(AL_TRbspParser* pRP)
 {
-  if(!pRP->bHasSC)
+  if(!pRP->bHasStartCodes)
   {
     if(pRP->iBufInAvailSize)
     {
@@ -98,7 +94,7 @@ static bool fetch_data(AL_TRbspParser* pRP)
   if(finished_fetching(pRP))
     return false;
 
-  int const byte_offset = (int)(pRP->iTrailingBitOneIndex >> 3);
+  int32_t const byte_offset = (int)(pRP->iTrailingBitOneIndex >> 3);
 
   if(byte_offset >= pRP->iBufOutSize)
     return false;
@@ -122,7 +118,7 @@ static bool fetch_data(AL_TRbspParser* pRP)
 
     const uint8_t read = pBuf[uRead % pRP->iBufInSize];
 
-    if(pRP->bHasSC)
+    if(pRP->bHasStartCodes)
     {
       if((pRP->uZeroBytesCount == 2) && (read == 0x03))
       {
@@ -143,7 +139,6 @@ static bool fetch_data(AL_TRbspParser* pRP)
       else
         pRP->uZeroBytesCount = 0;
     }
-
     pRP->iTrailingBitOneIndex += 8;
     pRP->iTrailingBitOneIndexConceal += 8;
     pBufOut[uWrite++] = read;
@@ -155,14 +150,14 @@ static bool fetch_data(AL_TRbspParser* pRP)
 }
 
 /*****************************************************************************/
-void InitRbspParser(AL_TCircBuffer const* pStream, uint8_t* pNoAEBuffer, int32_t iNoAESize, bool bHasSC, AL_TRbspParser* pRP)
+void InitRbspParser(AL_TCircBuffer const* pStream, uint8_t* pNoAEBuffer, int32_t iNoAESize, bool bHasStartCodes, AL_TRbspParser* pRP)
 {
   pRP->pBufIn = pStream->tMD.pVirtualAddr;
   pRP->iBufInSize = pStream->tMD.uSize;
   pRP->iBufInOffset = pStream->iOffset;
   pRP->iBufInAvailSize = pStream->iAvailSize;
 
-  if(bHasSC)
+  if(bHasStartCodes)
   {
     pRP->pBuffer = pNoAEBuffer;
     pRP->iBufOutSize = iNoAESize;
@@ -173,7 +168,7 @@ void InitRbspParser(AL_TCircBuffer const* pStream, uint8_t* pNoAEBuffer, int32_t
   }
   else
   {
-    int iSize = pRP->iBufInSize - pRP->iBufInOffset;
+    int32_t iSize = pRP->iBufInSize - pRP->iBufInOffset;
 
     if(iSize > pRP->iBufInAvailSize)
       iSize = pRP->iBufInAvailSize;
@@ -191,7 +186,7 @@ void InitRbspParser(AL_TCircBuffer const* pStream, uint8_t* pNoAEBuffer, int32_t
   pRP->uNumScDetect = 0;
   pRP->uZeroBytesCount = 0;
   pRP->pByte = pRP->pBuffer;
-  pRP->bHasSC = bHasSC;
+  pRP->bHasStartCodes = bHasStartCodes;
 }
 
 /*****************************************************************************/
@@ -213,7 +208,7 @@ uint8_t read_bit(AL_TRbspParser* pRP, uint32_t iBitIndex)
     fetch_data(pRP);
 
   uint32_t iByteOffset = iBitIndex >> 3;
-  int iBitOffset = (int)(7 - (iBitIndex & 7));
+  int32_t iBitOffset = (int)(7 - (iBitIndex & 7));
 
   return pRP->pBuffer[iByteOffset] & (1 << iBitOffset);
 }
@@ -302,7 +297,7 @@ uint8_t getbyte(AL_TRbspParser* pRP)
 
   Rtos_Assert(pRP->iCurrentBitIndex <= pRP->iTrailingBitOneIndex);
 
-  int byte_offset = (int)(pRP->iCurrentBitIndex >> 3);
+  int32_t byte_offset = (int)(pRP->iCurrentBitIndex >> 3);
 
   pRP->iCurrentBitIndex += 8;
   ++(pRP->pByte);
@@ -320,7 +315,7 @@ uint8_t get_next_bit(AL_TRbspParser* pRP)
   if(pRP->iTrailingBitOneIndex < pRP->iCurrentBitIndex + 1 && !fetch_data(pRP))
     return -1;
 
-  int bit_offset = (int)(pRP->iCurrentBitIndex & 0x07);
+  int32_t bit_offset = (int)(pRP->iCurrentBitIndex & 0x07);
   uint8_t bit;
 
   if(*(pRP->pByte) & (0x80 >> bit_offset))
@@ -342,13 +337,13 @@ uint32_t get_cache_24(AL_TRbspParser* pRP)
 {
   uint8_t pTmp[4];
 
-  int byte_offset = (int)(pRP->iCurrentBitIndex >> 3);
+  int32_t byte_offset = (int)(pRP->iCurrentBitIndex >> 3);
 
   uint8_t const* pBuf = pRP->pBuffer + byte_offset;
 
   if((pRP->iTrailingBitOneIndex - pRP->iCurrentBitIndex) < 32)
   {
-    if(!pRP->bHasSC)
+    if(!pRP->bHasStartCodes)
     {
       byte_offset += pRP->iBufInOffset;
       pTmp[0] = pRP->pBufIn[(byte_offset + 0) % pRP->iBufInSize];
@@ -361,7 +356,7 @@ uint32_t get_cache_24(AL_TRbspParser* pRP)
       fetch_data(pRP);
   }
 
-  int bit_offset = (int)(pRP->iCurrentBitIndex & 0x7);
+  int32_t bit_offset = (int)(pRP->iCurrentBitIndex & 0x7);
 
   uint32_t b0 = ((uint32_t)pBuf[0]) << 24;
   uint32_t b1 = ((uint32_t)pBuf[1]) << 16;
@@ -412,27 +407,27 @@ uint32_t offset(AL_TRbspParser* pRP)
 }
 
 /*****************************************************************************/
-uint32_t u(AL_TRbspParser* pRP, uint8_t iNumBits)
+uint32_t u(AL_TRbspParser* pRP, uint8_t uNumBits)
 {
   if(!more_rbsp_data_conceal(pRP))
     return 0;
 
-  if(iNumBits == 1)
+  if(uNumBits == 1)
     return get_next_bit(pRP);
 
-  if(iNumBits <= 24)
+  if(uNumBits <= 24)
   {
     uint32_t c = get_cache_24(pRP);
-    uint32_t mask = ((1 << iNumBits) - 1);
-    uint32_t val2 = (c >> (24 - iNumBits)) & mask;
-    skip(pRP, iNumBits);
+    uint32_t mask = ((1 << uNumBits) - 1);
+    uint32_t val2 = (c >> (24 - uNumBits)) & mask;
+    skip(pRP, uNumBits);
     return val2;
   }
 
   uint32_t val = get_cache_24(pRP);
   skip(pRP, 24);
 
-  for(int i = 0; i < iNumBits - 24; ++i)
+  for(int32_t i = 0; i < uNumBits - 24; ++i)
   {
     val <<= 1;
     val |= get_next_bit(pRP);
@@ -442,15 +437,15 @@ uint32_t u(AL_TRbspParser* pRP, uint8_t iNumBits)
 }
 
 /*****************************************************************************/
-int32_t i(AL_TRbspParser* pRP, uint8_t iNumBits)
+int32_t i(AL_TRbspParser* pRP, uint8_t uNumBits)
 {
   uint32_t mask = 0;
 
-  if(iNumBits > 0)
-    mask = (1 << (iNumBits - 1)) - 1; // mask=000001111 (when n=5)
+  if(uNumBits > 0)
+    mask = (1 << (uNumBits - 1)) - 1; // mask=000001111 (when n=5)
 
-  uint32_t val_u = u(pRP, iNumBits);
-  int abs_val = val_u & mask;
+  uint32_t val_u = u(pRP, uNumBits);
+  int32_t abs_val = val_u & mask;
 
   if(val_u & ~mask)
     return -(((~val_u) & mask) + 1);
@@ -465,7 +460,7 @@ uint32_t ue(AL_TRbspParser* pRP)
     return 0;
 
   uint32_t c = get_cache_24(pRP);
-  int n = 23 - al_log2(c);
+  int32_t n = 23 - al_log2(c);
 
   // if the code is too long, fallback to classic decoding
   if(n == 23)
@@ -504,15 +499,14 @@ uint32_t ue(AL_TRbspParser* pRP)
 }
 
 /*****************************************************************************/
-int se(AL_TRbspParser* pRP)
+int32_t se(AL_TRbspParser* pRP)
 {
   if(!more_rbsp_data_conceal(pRP))
     return 0;
 
   uint32_t k = ue(pRP);
-  int iValue = (k + 1) >> 1;
+  int32_t iValue = (k + 1) >> 1;
 
   return even(k + 1) ? iValue : -iValue;
 }
 
-/*!@}*/

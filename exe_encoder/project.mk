@@ -7,11 +7,15 @@ EXE_ENCODER_SRCS:=\
   $(THIS_EXE_ENCODER)/main.cpp\
   $(THIS_EXE_ENCODER)/sink_bitstream_writer.cpp\
   $(THIS_EXE_ENCODER)/sink_bitrate.cpp\
+  $(THIS_EXE_ENCODER)/sink_ratectrl_meta.cpp\
   $(THIS_EXE_ENCODER)/sink_yuv_md5.cpp\
   $(THIS_EXE_ENCODER)/EncCmdMngr.cpp\
   $(THIS_EXE_ENCODER)/QPGenerator.cpp\
   $(THIS_EXE_ENCODER)/CommandsSender.cpp\
   $(THIS_EXE_ENCODER)/CfgParser.cpp\
+
+ifneq ($(ENABLE_SMART_FEATURES),0)
+endif
 
 ifneq ($(ENABLE_ROI),0)
   EXE_ENCODER_SRCS+=$(THIS_EXE_ENCODER)/ROIMngr.cpp
@@ -28,7 +32,6 @@ ifneq ($(ENABLE_HIGH_DYNAMIC_RANGE),0)
 endif
 
 
-
 EXE_ENCODER_OBJ:=$(EXE_ENCODER_SRCS:%=$(BIN)/%.o)
 
 $(BIN)/$(THIS_EXE_ENCODER)/main.cpp.o: CFLAGS+=$(SCM_REV_SW)
@@ -37,9 +40,17 @@ $(BIN)/$(THIS_EXE_ENCODER)/main.cpp.o: CFLAGS+=$(DELIVERY_BUILD_NUMBER)
 $(BIN)/$(THIS_EXE_ENCODER)/main.cpp.o: CFLAGS+=$(DELIVERY_SCM_REV)
 $(BIN)/$(THIS_EXE_ENCODER)/main.cpp.o: CFLAGS+=$(DELIVERY_DATE)
 
+ifneq ($(ENABLE_SW_SHOW_COMPILATION_FLAGS),0)
 $(BIN)/$(THIS_EXE_ENCODER)/main.cpp.o: INTROSPECT_FLAGS=-DAL_COMPIL_FLAGS='"$(CFLAGS)"'
 $(BIN)/$(THIS_EXE_ENCODER)/main.cpp.o: INTROSPECT_FLAGS+=-DHAS_COMPIL_FLAGS=1
+endif
 
+
+
+ifneq ($(ENABLE_SH_TESTS),0)
+AL_Encoder.test: AL_Encoder.exe
+	$(TEST)/run.sh -b $(BIN) -h $(THIS_EXE_ENCODER)/tests.sh
+endif
 
 $(BIN)/AL_Encoder.exe: $(EXE_ENCODER_OBJ) $(LIB_REFENC_A) $(LIB_REFALLOC_A) $(LIB_ENCODER_A) $(LIB_APP_A) $(LIB_REFFBC_A)
 AL_Encoder.exe: $(BIN)/AL_Encoder.exe
@@ -54,20 +65,9 @@ AL_Encoder.sh: $(BIN)/AL_Encoder.sh
 TARGETS+=AL_Encoder.sh
 endif
 
-EXE_CFG_PARSER_SRCS:=\
-  $(THIS_EXE_ENCODER)/ParserMain.cpp\
-  $(THIS_EXE_ENCODER)/CfgParser.cpp\
-
-EXE_CFG_PARSER_OBJ:=$(EXE_CFG_PARSER_SRCS:%=$(BIN)/%.o)
-
-$(BIN)/AL_CfgParser.exe: $(EXE_CFG_PARSER_OBJ) $(LIB_ENCODER_A) $(LIB_APP_A) $(LIB_REFFBC_A)
-AL_CfgParser.exe: $(BIN)/AL_CfgParser.exe
-TARGETS+=AL_CfgParser.exe
-
-exe_encoder_src: $(EXE_ENCODER_SRCS) $(EXE_CFG_PARSER_SRCS)
-	@echo $(EXE_ENCODER_SRCS) $(EXE_CFG_PARSER_SRCS)
+exe_encoder_src: $(EXE_ENCODER_SRCS)
+	@echo $(EXE_ENCODER_SRCS)
 
 $(BIN)/$(THIS_EXE_ENCODER)/unittests/commandsparser.cpp.o: CFLAGS+=-Wno-missing-field-initializers
-
 
 .PHONY: exe_encoder_src

@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #include "lib_common_dec/StreamSettings.h"
@@ -24,19 +24,19 @@ static bool IsStreamChromaSet(AL_EChromaMode eChroma)
 }
 
 /******************************************************************************/
-static bool IsStreamBitDepthSet(int iBitDepth)
+static bool IsStreamBitDepthSet(int32_t iBitDepth)
 {
   return iBitDepth > 0;
 }
 
 /******************************************************************************/
-static bool IsStreamLevelSet(int iLevel)
+static bool IsStreamLevelSet(int32_t iLevel)
 {
   return iLevel != STREAM_SETTING_UNKNOWN;
 }
 
 /******************************************************************************/
-static bool IsStreamProfileSet(int iProfileIdc)
+static bool IsStreamProfileSet(int32_t iProfileIdc)
 {
   return iProfileIdc != STREAM_SETTING_UNKNOWN;
 }

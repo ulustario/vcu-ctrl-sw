@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #include "SeiParser.h"
@@ -10,7 +10,7 @@
 /*****************************************************************************/
 void sei_get_uuid_iso_iec_11578(AL_TRbspParser* pRP, uint8_t* uuid)
 {
-  for(int i = 0; i < 16; i++)
+  for(int32_t i = 0; i < 16; i++)
     uuid[i] = getbyte(pRP);
 }
 
@@ -40,7 +40,7 @@ static bool SeiMasteringDisplayColourVolume(AL_TMasteringDisplayColourVolume* pM
 {
   Rtos_Memset(pMDCV, 0, sizeof(*pMDCV));
 
-  for(int c = 0; c < 3; c++)
+  for(int32_t c = 0; c < 3; c++)
   {
     pMDCV->display_primaries[c].x = u(pRP, 16);
     pMDCV->display_primaries[c].y = u(pRP, 16);
@@ -101,7 +101,7 @@ static bool SeiSt2094_10(AL_TDynamicMeta_ST2094_10* pST2094_10, AL_TRbspParser* 
       if(!simple_byte_alignment(pRP, 0))
         return false;
 
-      for(int iBlock = 0; iBlock < num_ext_block; iBlock++)
+      for(int32_t iBlock = 0; iBlock < num_ext_block; iBlock++)
       {
         uint16_t ext_block_length = ue(pRP);
         uint8_t ext_block_level = u(pRP, 8);
@@ -176,8 +176,8 @@ static void SeiSt2094_40_peakluminance(AL_TDisplayPeakLuminance_ST2094_40* pPeak
     pPeakLuminance->num_rows_actual_peak_luminance = u(pRP, 5);
     pPeakLuminance->num_cols_actual_peak_luminance = u(pRP, 5);
 
-    for(int i = 0; i < pPeakLuminance->num_rows_actual_peak_luminance; i++)
-      for(int j = 0; j < pPeakLuminance->num_cols_actual_peak_luminance; j++)
+    for(int32_t i = 0; i < pPeakLuminance->num_rows_actual_peak_luminance; i++)
+      for(int32_t j = 0; j < pPeakLuminance->num_cols_actual_peak_luminance; j++)
         pPeakLuminance->actual_peak_luminance[i][j] = u(pRP, 4);
   }
 }
@@ -195,7 +195,7 @@ bool SeiSt2094_40(AL_TDynamicMeta_ST2094_40* pST2094_40, AL_TRbspParser* pRP)
 
   pST2094_40->num_windows = u(pRP, 2);
 
-  for(int iWin = 0; iWin < pST2094_40->num_windows - 1; iWin++)
+  for(int32_t iWin = 0; iWin < pST2094_40->num_windows - 1; iWin++)
   {
     AL_TProcessingWindow_ST2094_40* pWin = &pST2094_40->processing_windows[iWin];
     pWin->base_processing_window.upper_left_corner_x = u(pRP, 16);
@@ -214,17 +214,17 @@ bool SeiSt2094_40(AL_TDynamicMeta_ST2094_40* pST2094_40, AL_TRbspParser* pRP)
   pST2094_40->targeted_system_display.maximum_luminance = u(pRP, 27);
   SeiSt2094_40_peakluminance(&pST2094_40->targeted_system_display.peak_luminance, pRP);
 
-  for(int iWin = 0; iWin < pST2094_40->num_windows; iWin++)
+  for(int32_t iWin = 0; iWin < pST2094_40->num_windows; iWin++)
   {
     AL_TProcessingWindowTransform_ST2094_40* pWinTransfo = &pST2094_40->processing_window_transforms[iWin];
 
-    for(int i = 0; i < 3; i++)
+    for(int32_t i = 0; i < 3; i++)
       pWinTransfo->maxscl[i] = u(pRP, 17);
 
     pWinTransfo->average_maxrgb = u(pRP, 17);
     pWinTransfo->num_distribution_maxrgb_percentiles = u(pRP, 4);
 
-    for(int i = 0; i < pWinTransfo->num_distribution_maxrgb_percentiles; i++)
+    for(int32_t i = 0; i < pWinTransfo->num_distribution_maxrgb_percentiles; i++)
     {
       pWinTransfo->distribution_maxrgb_percentages[i] = u(pRP, 7);
       pWinTransfo->distribution_maxrgb_percentiles[i] = u(pRP, 17);
@@ -235,7 +235,7 @@ bool SeiSt2094_40(AL_TDynamicMeta_ST2094_40* pST2094_40, AL_TRbspParser* pRP)
 
   SeiSt2094_40_peakluminance(&pST2094_40->mastering_display_peak_luminance, pRP);
 
-  for(int iWin = 0; iWin < pST2094_40->num_windows; iWin++)
+  for(int32_t iWin = 0; iWin < pST2094_40->num_windows; iWin++)
   {
     AL_TProcessingWindowTransform_ST2094_40* pWinTransfo = &pST2094_40->processing_window_transforms[iWin];
 
@@ -248,7 +248,7 @@ bool SeiSt2094_40(AL_TDynamicMeta_ST2094_40* pST2094_40, AL_TRbspParser* pRP)
       pToneMapping->knee_point_y = u(pRP, 12);
       pToneMapping->num_bezier_curve_anchors = u(pRP, 4);
 
-      for(int i = 0; i < pToneMapping->num_bezier_curve_anchors; i++)
+      for(int32_t i = 0; i < pToneMapping->num_bezier_curve_anchors; i++)
         pToneMapping->bezier_curve_anchors[i] = u(pRP, 10);
     }
 

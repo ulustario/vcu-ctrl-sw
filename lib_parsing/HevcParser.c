@@ -1,12 +1,10 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #include "HevcParser.h"
-#include "lib_parsing/Concealment.h"
-#include "lib_rtos/lib_rtos.h"
 #include "lib_common/Utils.h"
 #include "lib_common/SeiInternal.h"
-#include "lib_common_dec/RbspParser.h"
+#include "lib_common/ScalingList.h"
 #include "SeiParser.h"
 
 #define CONCEAL_LEVEL_IDC 60 * 3
@@ -37,6 +35,72 @@ static void initPps(AL_THevcPps* pPPS)
   pPPS->log2_sao_offset_scale_chroma = 0;
 
   pPPS->bConceal = true;
+}
+
+/*****************************************************************************/
+static bool hevc_is_default_dc_coeff(uint8_t uSizeID)
+{
+  return uSizeID > 1;
+}
+
+/*****************************************************************************/
+static void hevc_scaling_list_data(AL_TSCLParam* pSCLParam, AL_TRbspParser* pRP)
+{
+  for(uint8_t uSizeID = 0; uSizeID < 4; ++uSizeID)
+  {
+    uint8_t uIncr = (uSizeID == 3) ? 3 : 1;
+
+    for(uint8_t uMatrixID = 0; uMatrixID < 6; uMatrixID += uIncr)
+    {
+      pSCLParam->scaling_list_pred_mode_flag[uSizeID][uMatrixID] = u(pRP, 1);
+
+      if(!pSCLParam->scaling_list_pred_mode_flag[uSizeID][uMatrixID])
+      {
+        pSCLParam->scaling_list_pred_matrix_id_delta[uSizeID][uMatrixID] = ue(pRP);
+
+        if(!pSCLParam->scaling_list_pred_matrix_id_delta[uSizeID][uMatrixID])
+        {
+          if(hevc_is_default_dc_coeff(uSizeID))
+            pSCLParam->scaling_list_dc_coeff[uSizeID - 2][uMatrixID] = 16;
+
+          if(uSizeID) /* superior to 4x4 */
+            Rtos_Memcpy(pSCLParam->ScalingList[uSizeID][uMatrixID], AL_HEVC_DefaultScalingLists8x8[uMatrixID / 3], 64);
+          else /* equal to 4x4 */
+            Rtos_Memcpy(pSCLParam->ScalingList[uSizeID][uMatrixID], AL_HEVC_DefaultScalingLists4x4[uMatrixID / 3], 16);
+        }
+        else
+        {
+          uint8_t uPredMatrixID = Clip3(uMatrixID - pSCLParam->scaling_list_pred_matrix_id_delta[uSizeID][uMatrixID], 0, ((uSizeID == 3) ? 0 : 4));
+
+          if(hevc_is_default_dc_coeff(uSizeID))
+            pSCLParam->scaling_list_dc_coeff[uSizeID - 2][uMatrixID] = pSCLParam->scaling_list_dc_coeff[uSizeID - 2][uPredMatrixID];
+
+          if(uSizeID) /* superior to 4x4 */
+            Rtos_Memcpy(pSCLParam->ScalingList[uSizeID][uMatrixID], pSCLParam->ScalingList[uSizeID][uPredMatrixID], 64);
+          else /* equal to 4x4 */
+            Rtos_Memcpy(pSCLParam->ScalingList[uSizeID][uMatrixID], pSCLParam->ScalingList[uSizeID][uPredMatrixID], 16);
+        }
+      }
+      else
+      {
+        int16_t uNextCoeff = 8;
+        uint16_t uCoeffNum = Min(64, (1 << (4 + (uSizeID << 1))));
+        uint8_t const* pScanOrder = (uCoeffNum == 64) ? AL_HEVC_ScanOrder8x8 : AL_HEVC_ScanOrder4x4;
+
+        if(hevc_is_default_dc_coeff(uSizeID))
+        {
+          uNextCoeff = Clip3(se(pRP), -7, 247) + 8;
+          pSCLParam->scaling_list_dc_coeff[uSizeID - 2][uMatrixID] = uNextCoeff;
+        }
+
+        for(uint8_t uCoeff = 0; uCoeff < uCoeffNum; ++uCoeff)
+        {
+          uNextCoeff = (uNextCoeff + Clip3(se(pRP), -128, 127) + 256) % 256; // scaling_list_delta_coeff
+          pSCLParam->ScalingList[uSizeID][uMatrixID][pScanOrder[uCoeff]] = uNextCoeff;
+        }
+      }
+    }
+  }
 }
 
 /*****************************************************************************/
@@ -117,22 +181,22 @@ AL_PARSE_RESULT AL_HEVC_ParsePPS(AL_TAup* pIAup, AL_TRbspParser* pRP, uint16_t* 
 
       for(uint8_t i = 0; i < pPPS->num_tile_columns_minus1; ++i)
       {
-        pPPS->tile_column_width[i] = ue(pRP) + 1;
-        uClmnOffset += pPPS->tile_column_width[i];
+        pPPS->pTileColWidths[i] = ue(pRP) + 1;
+        uClmnOffset += pPPS->pTileColWidths[i];
       }
 
       COMPLY(uClmnOffset < uLCUPicWidth);
 
       for(uint8_t i = 0; i < pPPS->num_tile_rows_minus1; ++i)
       {
-        pPPS->tile_row_height[i] = ue(pRP) + 1;
-        uLineOffset += pPPS->tile_row_height[i];
+        pPPS->pTileRowHeights[i] = ue(pRP) + 1;
+        uLineOffset += pPPS->pTileRowHeights[i];
       }
 
       COMPLY(uLineOffset < uLCUPicHeight);
 
-      pPPS->tile_column_width[pPPS->num_tile_columns_minus1] = uLCUPicWidth - uClmnOffset;
-      pPPS->tile_row_height[pPPS->num_tile_rows_minus1] = uLCUPicHeight - uLineOffset;
+      pPPS->pTileColWidths[pPPS->num_tile_columns_minus1] = uLCUPicWidth - uClmnOffset;
+      pPPS->pTileRowHeights[pPPS->num_tile_rows_minus1] = uLCUPicHeight - uLineOffset;
     }
     else /* tile of same size */
     {
@@ -140,10 +204,10 @@ AL_PARSE_RESULT AL_HEVC_ParsePPS(AL_TAup* pIAup, AL_TRbspParser* pRP, uint16_t* 
       uint16_t num_line = pPPS->num_tile_rows_minus1 + 1;
 
       for(uint8_t i = 0; i <= pPPS->num_tile_columns_minus1; ++i)
-        pPPS->tile_column_width[i] = (((i + 1) * uLCUPicWidth) / num_clmn) - ((i * uLCUPicWidth) / num_clmn);
+        pPPS->pTileColWidths[i] = (((i + 1) * uLCUPicWidth) / num_clmn) - ((i * uLCUPicWidth) / num_clmn);
 
       for(uint8_t i = 0; i <= pPPS->num_tile_rows_minus1; ++i)
-        pPPS->tile_row_height[i] = (((i + 1) * uLCUPicHeight) / num_line) - ((i * uLCUPicHeight) / num_line);
+        pPPS->pTileRowHeights[i] = (((i + 1) * uLCUPicHeight) / num_line) - ((i * uLCUPicHeight) / num_line);
     }
 
     /* register tile topology within the frame */
@@ -157,10 +221,10 @@ AL_PARSE_RESULT AL_HEVC_ParsePPS(AL_TAup* pIAup, AL_TRbspParser* pRP, uint16_t* 
         uint8_t uLine = 0;
 
         while(line < i)
-          uLine += pPPS->tile_row_height[line++];
+          uLine += pPPS->pTileRowHeights[line++];
 
         while(clmn < j)
-          uClmn += pPPS->tile_column_width[clmn++];
+          uClmn += pPPS->pTileColWidths[clmn++];
 
         pPPS->TileTopology[(i * (pPPS->num_tile_columns_minus1 + 1)) + j] = uLine * uLCUPicWidth + uClmn;
       }
@@ -179,8 +243,8 @@ AL_PARSE_RESULT AL_HEVC_ParsePPS(AL_TAup* pIAup, AL_TRbspParser* pRP, uint16_t* 
 
     if(!pPPS->pps_deblocking_filter_disabled_flag)
     {
-      pPPS->pps_beta_offset_div2 = Clip3(se(pRP), AL_MIN_DBF_PARAM, AL_MAX_DBF_PARAM);
-      pPPS->pps_tc_offset_div2 = Clip3(se(pRP), AL_MIN_DBF_PARAM, AL_MAX_DBF_PARAM);
+      pPPS->pps_beta_offset_div2 = Clip3(se(pRP), AL_HEVC_MIN_DBF_PARAM, AL_HEVC_MAX_DBF_PARAM);
+      pPPS->pps_tc_offset_div2 = Clip3(se(pRP), AL_HEVC_MIN_DBF_PARAM, AL_HEVC_MAX_DBF_PARAM);
     }
   }
 
@@ -251,7 +315,7 @@ static bool AL_HEVC_sComputeRefPicSetVariables(AL_THevcSps* pSPS, uint8_t RpsIdx
       return false;
 
     // num negative pics computation
-    for(int j = pSPS->NumPositivePics[RIdx] - 1; j >= 0; --j)
+    for(int32_t j = pSPS->NumPositivePics[RIdx] - 1; j >= 0; --j)
     {
       int32_t delta_poc = pSPS->DeltaPocS1[RIdx][j] + DeltaRPS;
 
@@ -274,7 +338,7 @@ static bool AL_HEVC_sComputeRefPicSetVariables(AL_THevcSps* pSPS, uint8_t RpsIdx
       pSPS->UsedByCurrPicS0[RpsIdx][num_negative++] = ref_pic_set.used_by_curr_pic_flag[pSPS->NumDeltaPocs[RIdx]];
     }
 
-    for(int j = 0; j < pSPS->NumNegativePics[RIdx]; ++j)
+    for(int32_t j = 0; j < pSPS->NumNegativePics[RIdx]; ++j)
     {
       int32_t delta_poc = pSPS->DeltaPocS0[RIdx][j] + DeltaRPS;
 
@@ -291,7 +355,7 @@ static bool AL_HEVC_sComputeRefPicSetVariables(AL_THevcSps* pSPS, uint8_t RpsIdx
     pSPS->NumNegativePics[RpsIdx] = num_negative;
 
     // num positive pics computation
-    for(int j = pSPS->NumNegativePics[RIdx] - 1; j >= 0; --j)
+    for(int32_t j = pSPS->NumNegativePics[RIdx] - 1; j >= 0; --j)
     {
       int32_t delta_poc = pSPS->DeltaPocS0[RIdx][j] + DeltaRPS;
 
@@ -314,7 +378,7 @@ static bool AL_HEVC_sComputeRefPicSetVariables(AL_THevcSps* pSPS, uint8_t RpsIdx
       pSPS->UsedByCurrPicS1[RpsIdx][num_positive++] = ref_pic_set.used_by_curr_pic_flag[pSPS->NumDeltaPocs[RIdx]];
     }
 
-    for(int j = 0; j < pSPS->NumPositivePics[RIdx]; ++j)
+    for(int32_t j = 0; j < pSPS->NumPositivePics[RIdx]; ++j)
     {
       int32_t delta_poc = pSPS->DeltaPocS1[RIdx][j] + DeltaRPS;
 
@@ -341,13 +405,13 @@ static bool AL_HEVC_sComputeRefPicSetVariables(AL_THevcSps* pSPS, uint8_t RpsIdx
     pSPS->DeltaPocS0[RpsIdx][0] = -(ref_pic_set.delta_poc_s0_minus1[0] + 1);
     pSPS->DeltaPocS1[RpsIdx][0] = ref_pic_set.delta_poc_s1_minus1[0] + 1;
 
-    for(int j = 1; j < ref_pic_set.num_negative_pics; ++j)
+    for(int32_t j = 1; j < ref_pic_set.num_negative_pics; ++j)
     {
       pSPS->UsedByCurrPicS0[RpsIdx][j] = ref_pic_set.used_by_curr_pic_s0_flag[j];
       pSPS->DeltaPocS0[RpsIdx][j] = pSPS->DeltaPocS0[RpsIdx][j - 1] - (ref_pic_set.delta_poc_s0_minus1[j] + 1);
     }
 
-    for(int j = 1; j < ref_pic_set.num_positive_pics; ++j)
+    for(int32_t j = 1; j < ref_pic_set.num_positive_pics; ++j)
     {
       pSPS->UsedByCurrPicS1[RpsIdx][j] = ref_pic_set.used_by_curr_pic_s1_flag[j];
       pSPS->DeltaPocS1[RpsIdx][j] = pSPS->DeltaPocS1[RpsIdx][j - 1] + (ref_pic_set.delta_poc_s1_minus1[j] + 1);
@@ -356,6 +420,186 @@ static bool AL_HEVC_sComputeRefPicSetVariables(AL_THevcSps* pSPS, uint8_t RpsIdx
   pSPS->NumDeltaPocs[RpsIdx] = pSPS->NumNegativePics[RpsIdx] + pSPS->NumPositivePics[RpsIdx];
 
   return true;
+}
+
+/*****************************************************************************/
+static void hevc_profile_tier_level(AL_THevcProfilevel* pPrfLvl, int32_t iMaxSubLayersMinus1, AL_TRbspParser* pRP)
+{
+  pPrfLvl->general_profile_space = u(pRP, 2);
+  pPrfLvl->general_tier_flag = u(pRP, 1);
+  pPrfLvl->general_profile_idc = u(pRP, 5);
+
+  for(int32_t i = 0; i < 32; ++i)
+    pPrfLvl->general_profile_compatibility_flag[i] = u(pRP, 1);
+
+  pPrfLvl->general_progressive_source_flag = u(pRP, 1);
+  pPrfLvl->general_interlaced_source_flag = u(pRP, 1);
+  pPrfLvl->general_non_packed_constraint_flag = u(pRP, 1);
+  pPrfLvl->general_frame_only_constraint_flag = u(pRP, 1);
+
+  pPrfLvl->general_max_12bit_constraint_flag = 0;
+  pPrfLvl->general_max_10bit_constraint_flag = 0;
+  pPrfLvl->general_max_8bit_constraint_flag = 0;
+  pPrfLvl->general_max_422chroma_constraint_flag = 0;
+  pPrfLvl->general_max_420chroma_constraint_flag = 0;
+  pPrfLvl->general_max_monochrome_constraint_flag = 0;
+  pPrfLvl->general_intra_constraint_flag = 0;
+  pPrfLvl->general_one_picture_only_constraint_flag = 0;
+  pPrfLvl->general_lower_bit_rate_constraint_flag = 0;
+  pPrfLvl->general_max_14bit_constraint_flag = 0;
+  pPrfLvl->general_inbld_flag = 0;
+
+  if(pPrfLvl->general_profile_idc == 4 || pPrfLvl->general_profile_compatibility_flag[4] ||
+     pPrfLvl->general_profile_idc == 5 || pPrfLvl->general_profile_compatibility_flag[5] ||
+     pPrfLvl->general_profile_idc == 6 || pPrfLvl->general_profile_compatibility_flag[6] ||
+     pPrfLvl->general_profile_idc == 7 || pPrfLvl->general_profile_compatibility_flag[7] ||
+     pPrfLvl->general_profile_idc == 8 || pPrfLvl->general_profile_compatibility_flag[8] ||
+     pPrfLvl->general_profile_idc == 9 || pPrfLvl->general_profile_compatibility_flag[9] ||
+     pPrfLvl->general_profile_idc == 10 || pPrfLvl->general_profile_compatibility_flag[10] ||
+     pPrfLvl->general_profile_idc == 11 || pPrfLvl->general_profile_compatibility_flag[11])
+  {
+    pPrfLvl->general_max_12bit_constraint_flag = u(pRP, 1);
+    pPrfLvl->general_max_10bit_constraint_flag = u(pRP, 1);
+    pPrfLvl->general_max_8bit_constraint_flag = u(pRP, 1);
+    pPrfLvl->general_max_422chroma_constraint_flag = u(pRP, 1);
+    pPrfLvl->general_max_420chroma_constraint_flag = u(pRP, 1);
+    pPrfLvl->general_max_monochrome_constraint_flag = u(pRP, 1);
+    pPrfLvl->general_intra_constraint_flag = u(pRP, 1);
+    pPrfLvl->general_one_picture_only_constraint_flag = u(pRP, 1);
+    pPrfLvl->general_lower_bit_rate_constraint_flag = u(pRP, 1);
+
+    if(pPrfLvl->general_profile_idc == 5 || pPrfLvl->general_profile_compatibility_flag[5] ||
+       pPrfLvl->general_profile_idc == 9 || pPrfLvl->general_profile_compatibility_flag[9] ||
+       pPrfLvl->general_profile_idc == 10 || pPrfLvl->general_profile_compatibility_flag[10] ||
+       pPrfLvl->general_profile_idc == 11 || pPrfLvl->general_profile_compatibility_flag[11])
+    {
+      pPrfLvl->general_max_14bit_constraint_flag = u(pRP, 1);
+      skip(pRP, 33); // general_reserved_zero_33bits
+    }
+    else
+      skip(pRP, 34); // general_reserved_zero_34bits
+  }
+  else if(pPrfLvl->general_profile_idc == 2 || pPrfLvl->general_profile_compatibility_flag[2])
+  {
+    skip(pRP, 7); // general_reserved_zero_7bits
+    pPrfLvl->general_one_picture_only_constraint_flag = u(pRP, 1);
+    skip(pRP, 35); // general_reserved_zero_35bits
+  }
+  else
+    skip(pRP, 43); // general_reserved_zero_43bits
+
+  if(pPrfLvl->general_profile_idc == 1 || pPrfLvl->general_profile_compatibility_flag[1] ||
+     pPrfLvl->general_profile_idc == 2 || pPrfLvl->general_profile_compatibility_flag[2] ||
+     pPrfLvl->general_profile_idc == 3 || pPrfLvl->general_profile_compatibility_flag[3] ||
+     pPrfLvl->general_profile_idc == 4 || pPrfLvl->general_profile_compatibility_flag[4] ||
+     pPrfLvl->general_profile_idc == 5 || pPrfLvl->general_profile_compatibility_flag[5] ||
+     pPrfLvl->general_profile_idc == 9 || pPrfLvl->general_profile_compatibility_flag[9] ||
+     pPrfLvl->general_profile_idc == 11 || pPrfLvl->general_profile_compatibility_flag[11])
+  {
+    pPrfLvl->general_inbld_flag = u(pRP, 1);
+  }
+  else
+    skip(pRP, 1); // general_reserved_zero_bit
+
+  pPrfLvl->general_level_idc = u(pRP, 8);
+
+  for(int32_t i = 0; i < iMaxSubLayersMinus1; i++)
+  {
+    Rtos_Assert(iMaxSubLayersMinus1 <= MAX_SUB_LAYER);
+    pPrfLvl->sub_layer_profile_present_flag[i] = u(pRP, 1);
+    pPrfLvl->sub_layer_level_present_flag[i] = u(pRP, 1);
+  }
+
+  if(iMaxSubLayersMinus1 > 0)
+  {
+    for(int32_t i = iMaxSubLayersMinus1; i <= MAX_SUB_LAYER; i++)
+      skip(pRP, 2); // reserved_zero_2_bits
+  }
+
+  for(int32_t i = 0; i < iMaxSubLayersMinus1; ++i)
+  {
+    if(pPrfLvl->sub_layer_profile_present_flag[i])
+    {
+      pPrfLvl->sub_layer_profile_space[i] = u(pRP, 2);
+      pPrfLvl->sub_layer_tier_flag[i] = u(pRP, 1);
+      pPrfLvl->sub_layer_profile_idc[i] = u(pRP, 5);
+
+      for(int32_t j = 0; j < 32; ++j)
+        pPrfLvl->sub_layer_profile_compatibility_flag[i][j] = u(pRP, 1);
+
+      pPrfLvl->sub_layer_progressive_source_flag[i] = u(pRP, 1);
+      pPrfLvl->sub_layer_interlaced_source_flag[i] = u(pRP, 1);
+      pPrfLvl->sub_layer_non_packed_constraint_flag[i] = u(pRP, 1);
+      pPrfLvl->sub_layer_frame_only_constraint_flag[i] = u(pRP, 1);
+
+      pPrfLvl->sub_layer_max_12bit_constraint_flag[i] = pPrfLvl->general_max_12bit_constraint_flag;
+      pPrfLvl->sub_layer_max_10bit_constraint_flag[i] = pPrfLvl->general_max_10bit_constraint_flag;
+      pPrfLvl->sub_layer_max_8bit_constraint_flag[i] = pPrfLvl->general_max_8bit_constraint_flag;
+      pPrfLvl->sub_layer_max_422chroma_constraint_flag[i] = pPrfLvl->general_max_422chroma_constraint_flag;
+      pPrfLvl->sub_layer_max_420chroma_constraint_flag[i] = pPrfLvl->general_max_420chroma_constraint_flag;
+      pPrfLvl->sub_layer_max_monochrome_constraint_flag[i] = pPrfLvl->general_max_monochrome_constraint_flag;
+      pPrfLvl->sub_layer_intra_constraint_flag[i] = pPrfLvl->general_intra_constraint_flag;
+      pPrfLvl->sub_layer_one_picture_only_constraint_flag[i] = pPrfLvl->general_one_picture_only_constraint_flag;
+      pPrfLvl->sub_layer_lower_bit_rate_constraint_flag[i] = pPrfLvl->general_lower_bit_rate_constraint_flag;
+      pPrfLvl->sub_layer_max_14bit_constraint_flag[i] = pPrfLvl->general_max_14bit_constraint_flag;
+      pPrfLvl->sub_layer_inbld_flag[i] = pPrfLvl->general_inbld_flag;
+
+      if(pPrfLvl->sub_layer_profile_idc[i] == 4 || pPrfLvl->sub_layer_profile_compatibility_flag[i][4] ||
+         pPrfLvl->sub_layer_profile_idc[i] == 5 || pPrfLvl->sub_layer_profile_compatibility_flag[i][5] ||
+         pPrfLvl->sub_layer_profile_idc[i] == 6 || pPrfLvl->sub_layer_profile_compatibility_flag[i][6] ||
+         pPrfLvl->sub_layer_profile_idc[i] == 7 || pPrfLvl->sub_layer_profile_compatibility_flag[i][7] ||
+         pPrfLvl->sub_layer_profile_idc[i] == 8 || pPrfLvl->sub_layer_profile_compatibility_flag[i][8] ||
+         pPrfLvl->sub_layer_profile_idc[i] == 9 || pPrfLvl->sub_layer_profile_compatibility_flag[i][9] ||
+         pPrfLvl->sub_layer_profile_idc[i] == 10 || pPrfLvl->sub_layer_profile_compatibility_flag[i][10] ||
+         pPrfLvl->sub_layer_profile_idc[i] == 11 || pPrfLvl->sub_layer_profile_compatibility_flag[i][11])
+      {
+        pPrfLvl->sub_layer_max_12bit_constraint_flag[i] = u(pRP, 1);
+        pPrfLvl->sub_layer_max_10bit_constraint_flag[i] = u(pRP, 1);
+        pPrfLvl->sub_layer_max_8bit_constraint_flag[i] = u(pRP, 1);
+        pPrfLvl->sub_layer_max_422chroma_constraint_flag[i] = u(pRP, 1);
+        pPrfLvl->sub_layer_max_420chroma_constraint_flag[i] = u(pRP, 1);
+        pPrfLvl->sub_layer_max_monochrome_constraint_flag[i] = u(pRP, 1);
+        pPrfLvl->sub_layer_intra_constraint_flag[i] = u(pRP, 1);
+        pPrfLvl->sub_layer_one_picture_only_constraint_flag[i] = u(pRP, 1);
+        pPrfLvl->sub_layer_lower_bit_rate_constraint_flag[i] = u(pRP, 1);
+
+        if(pPrfLvl->sub_layer_profile_idc[i] == 5 || pPrfLvl->sub_layer_profile_compatibility_flag[i][5] ||
+           pPrfLvl->sub_layer_profile_idc[i] == 9 || pPrfLvl->sub_layer_profile_compatibility_flag[i][9] ||
+           pPrfLvl->sub_layer_profile_idc[i] == 10 || pPrfLvl->sub_layer_profile_compatibility_flag[i][10] ||
+           pPrfLvl->sub_layer_profile_idc[i] == 11 || pPrfLvl->sub_layer_profile_compatibility_flag[i][11])
+        {
+          pPrfLvl->sub_layer_max_14bit_constraint_flag[i] = u(pRP, 1);
+          skip(pRP, 33); // sub_layer_reserved_zero_33bits
+        }
+        else
+          skip(pRP, 34); // sub_layer_reserved_zero_34bits
+      }
+      else if(pPrfLvl->sub_layer_profile_idc[i] == 2 || pPrfLvl->sub_layer_profile_compatibility_flag[i][2])
+      {
+        skip(pRP, 7); // sub_layer_reserved_zero_7bits
+        pPrfLvl->sub_layer_one_picture_only_constraint_flag[i] = u(pRP, 1);
+        skip(pRP, 35); // sub_layer_reserved_zero_35bits
+      }
+      else
+        skip(pRP, 43); // sub_layer_reserved_zero_43bits
+
+      if(pPrfLvl->sub_layer_profile_idc[i] == 1 || pPrfLvl->sub_layer_profile_compatibility_flag[i][1] ||
+         pPrfLvl->sub_layer_profile_idc[i] == 2 || pPrfLvl->sub_layer_profile_compatibility_flag[i][2] ||
+         pPrfLvl->sub_layer_profile_idc[i] == 3 || pPrfLvl->sub_layer_profile_compatibility_flag[i][3] ||
+         pPrfLvl->sub_layer_profile_idc[i] == 4 || pPrfLvl->sub_layer_profile_compatibility_flag[i][4] ||
+         pPrfLvl->sub_layer_profile_idc[i] == 5 || pPrfLvl->sub_layer_profile_compatibility_flag[i][5] ||
+         pPrfLvl->sub_layer_profile_idc[i] == 9 || pPrfLvl->sub_layer_profile_compatibility_flag[i][9] ||
+         pPrfLvl->sub_layer_profile_idc[i] == 11 || pPrfLvl->sub_layer_profile_compatibility_flag[i][11])
+      {
+        pPrfLvl->sub_layer_inbld_flag[i] = u(pRP, 1);
+      }
+      else
+        skip(pRP, 1); // sub_layer_reserved_zero_bit
+    }
+
+    if(pPrfLvl->sub_layer_level_present_flag[i])
+      pPrfLvl->sub_layer_level_idc[i] = u(pRP, 8);
+  }
 }
 
 /*****************************************************************************/
@@ -388,6 +632,181 @@ static void initVui(AL_TVuiParam* pVuiParam, AL_THevcProfilevel* pProfileAndLeve
 }
 
 /*****************************************************************************/
+static void hevc_sub_hrd_parameters(AL_TSubHrdParam* pSubHrdParam, int32_t cpb_cnt, uint8_t sub_pic_hrd_params_present_flag, AL_TRbspParser* pRP)
+{
+  for(int32_t i = 0; i <= cpb_cnt; ++i)
+  {
+    pSubHrdParam->bit_rate_value_minus1[i] = ue(pRP);
+    pSubHrdParam->cpb_size_value_minus1[i] = ue(pRP);
+
+    if(sub_pic_hrd_params_present_flag)
+    {
+      pSubHrdParam->cpb_size_du_value_minus1[i] = ue(pRP);
+      pSubHrdParam->bit_rate_du_value_minus1[i] = ue(pRP);
+    }
+    pSubHrdParam->cbr_flag[i] = u(pRP, 1);
+  }
+}
+
+/*****************************************************************************/
+static void hevc_hrd_parameters(AL_THrdParam* pHrdParam, bool bInfoFlag, int32_t iMaxSubLayersMinus1, AL_TRbspParser* pRP)
+{
+  if(bInfoFlag)
+  {
+    pHrdParam->nal_hrd_parameters_present_flag = u(pRP, 1);
+    pHrdParam->vcl_hrd_parameters_present_flag = u(pRP, 1);
+
+    if(pHrdParam->nal_hrd_parameters_present_flag || pHrdParam->vcl_hrd_parameters_present_flag)
+    {
+      pHrdParam->sub_pic_hrd_params_present_flag = u(pRP, 1);
+
+      if(pHrdParam->sub_pic_hrd_params_present_flag)
+      {
+        pHrdParam->tick_divisor_minus2 = u(pRP, 8);
+        pHrdParam->du_cpb_removal_delay_increment_length_minus1 = u(pRP, 5);
+        pHrdParam->sub_pic_cpb_params_in_pic_timing_sei_flag = u(pRP, 1);
+        pHrdParam->dpb_output_delay_du_length_minus1 = u(pRP, 5);
+      }
+
+      pHrdParam->bit_rate_scale = u(pRP, 4);
+      pHrdParam->cpb_size_du_scale = u(pRP, 4);
+
+      if(pHrdParam->sub_pic_hrd_params_present_flag)
+        pHrdParam->cpb_size_scale = u(pRP, 4);
+      pHrdParam->initial_cpb_removal_delay_length_minus1 = u(pRP, 5);
+      pHrdParam->au_cpb_removal_delay_length_minus1 = u(pRP, 5);
+      pHrdParam->dpb_output_delay_length_minus1 = u(pRP, 5);
+    }
+  }
+  else
+  {
+    pHrdParam->nal_hrd_parameters_present_flag = 0;
+    pHrdParam->vcl_hrd_parameters_present_flag = 0;
+  }
+
+  for(int32_t i = 0; i <= iMaxSubLayersMinus1; ++i)
+  {
+    /* initialization */
+    pHrdParam->low_delay_hrd_flag[i] = 0;
+    pHrdParam->cpb_cnt_minus1[i] = 0;
+
+    pHrdParam->fixed_pic_rate_general_flag[i] = u(pRP, 1);
+
+    if(!pHrdParam->fixed_pic_rate_general_flag[i])
+      pHrdParam->fixed_pic_rate_within_cvs_flag[i] = u(pRP, 1);
+    else
+      pHrdParam->fixed_pic_rate_within_cvs_flag[i] = 1;
+
+    if(pHrdParam->fixed_pic_rate_within_cvs_flag[i])
+      pHrdParam->elemental_duration_in_tc_minus1[i] = ue(pRP);
+    else
+      pHrdParam->low_delay_hrd_flag[i] = u(pRP, 1);
+
+    if(!pHrdParam->low_delay_hrd_flag[i])
+      pHrdParam->cpb_cnt_minus1[i] = ue(pRP);
+
+    /* Concealment: E.2.2 : cpb_cnt_minus1 shall be in the range of 0 to 31, inclusive */
+    pHrdParam->cpb_cnt_minus1[i] = UnsignedMin(pHrdParam->cpb_cnt_minus1[i], 31);
+
+    if(pHrdParam->nal_hrd_parameters_present_flag)
+      hevc_sub_hrd_parameters(&pHrdParam->nal_sub_hrd_param, pHrdParam->cpb_cnt_minus1[i], pHrdParam->sub_pic_hrd_params_present_flag, pRP);
+
+    if(pHrdParam->vcl_hrd_parameters_present_flag)
+      hevc_sub_hrd_parameters(&pHrdParam->vcl_sub_hrd_param, pHrdParam->cpb_cnt_minus1[i], pHrdParam->sub_pic_hrd_params_present_flag, pRP);
+  }
+}
+
+/*****************************************************************************/
+static void hevc_vui_parameters(AL_TVuiParam* pVuiParam, int32_t iMaxSubLayersMinus1, AL_TRbspParser* pRP)
+{
+  pVuiParam->aspect_ratio_info_present_flag = u(pRP, 1);
+
+  if(pVuiParam->aspect_ratio_info_present_flag)
+  {
+    pVuiParam->aspect_ratio_idc = u(pRP, 8);
+
+    if(pVuiParam->aspect_ratio_idc == 255)
+    {
+      pVuiParam->sar_width = u(pRP, 16);
+      pVuiParam->sar_height = u(pRP, 16);
+    }
+  }
+
+  pVuiParam->overscan_info_present_flag = u(pRP, 1);
+
+  if(pVuiParam->overscan_info_present_flag)
+    pVuiParam->overscan_appropriate_flag = u(pRP, 1);
+
+  pVuiParam->video_signal_type_present_flag = u(pRP, 1);
+
+  if(pVuiParam->video_signal_type_present_flag)
+  {
+    pVuiParam->video_format = u(pRP, 3);
+    pVuiParam->video_full_range_flag = u(pRP, 1);
+    pVuiParam->colour_description_present_flag = u(pRP, 1);
+
+    if(pVuiParam->colour_description_present_flag)
+    {
+      pVuiParam->colour_primaries = u(pRP, 8);
+      pVuiParam->transfer_characteristics = u(pRP, 8);
+      pVuiParam->matrix_coefficients = u(pRP, 8);
+    }
+  }
+
+  pVuiParam->chroma_loc_info_present_flag = u(pRP, 1);
+
+  if(pVuiParam->chroma_loc_info_present_flag)
+  {
+    pVuiParam->chroma_sample_loc_type_top_field = ue(pRP);
+    pVuiParam->chroma_sample_loc_type_bottom_field = ue(pRP);
+  }
+  pVuiParam->neutral_chroma_indication_flag = u(pRP, 1);
+  pVuiParam->field_seq_flag = u(pRP, 1);
+  pVuiParam->frame_field_info_present_flag = u(pRP, 1);
+
+  pVuiParam->default_display_window_flag = u(pRP, 1);
+
+  if(pVuiParam->default_display_window_flag)
+  {
+    pVuiParam->def_disp_win_left_offset = ue(pRP);
+    pVuiParam->def_disp_win_right_offset = ue(pRP);
+    pVuiParam->def_disp_win_top_offset = ue(pRP);
+    pVuiParam->def_disp_win_bottom_offset = ue(pRP);
+  }
+
+  pVuiParam->vui_timing_info_present_flag = u(pRP, 1);
+
+  if(pVuiParam->vui_timing_info_present_flag)
+  {
+    pVuiParam->vui_num_units_in_tick = u(pRP, 32);
+    pVuiParam->vui_time_scale = u(pRP, 32);
+    pVuiParam->vui_poc_proportional_to_timing_flag = u(pRP, 1);
+
+    if(pVuiParam->vui_poc_proportional_to_timing_flag)
+      pVuiParam->vui_num_ticks_poc_diff_one_minus1 = ue(pRP);
+
+    pVuiParam->vui_hrd_parameters_present_flag = u(pRP, 1);
+
+    if(pVuiParam->vui_hrd_parameters_present_flag)
+      hevc_hrd_parameters(&pVuiParam->hrd_param, true, iMaxSubLayersMinus1, pRP);
+  }
+
+  pVuiParam->bitstream_restriction_flag = u(pRP, 1);
+
+  if(pVuiParam->bitstream_restriction_flag)
+  {
+    pVuiParam->tiles_fixed_structure_flag = u(pRP, 1);
+    pVuiParam->motion_vectors_over_pic_boundaries_flag = u(pRP, 1);
+    pVuiParam->restricted_ref_pic_lists_flag = u(pRP, 1);
+    pVuiParam->min_spatial_segmentation_idc = ue(pRP);
+    pVuiParam->max_bytes_per_pic_denom = ue(pRP);
+    pVuiParam->max_bits_per_min_cu_denom = ue(pRP);
+    pVuiParam->log2_max_mv_length_horizontal = ue(pRP);
+    pVuiParam->log2_max_mv_length_vertical = ue(pRP);
+  }
+}
+
+/*****************************************************************************/
 AL_PARSE_RESULT AL_HEVC_ParseSPS(AL_TRbspParser* pRP, AL_THevcSps* pSPS)
 {
   skipAllZerosAndTheNextByte(pRP);
@@ -398,7 +817,7 @@ AL_PARSE_RESULT AL_HEVC_ParseSPS(AL_TRbspParser* pRP, AL_THevcSps* pSPS)
   pSPS->sps_video_parameter_set_id = u(pRP, 4);
   COMPLY_ID(pSPS->sps_video_parameter_set_id < AL_HEVC_MAX_VPS);
 
-  int max_sub_layers = Clip3(u(pRP, 3), 0, MAX_SUB_LAYER - 1);
+  int32_t max_sub_layers = Clip3(u(pRP, 3), 0, MAX_SUB_LAYER - 1);
   pSPS->sps_max_sub_layers_minus1 = max_sub_layers;
   pSPS->sps_temporal_id_nesting_flag = u(pRP, 1);
 
@@ -450,17 +869,17 @@ AL_PARSE_RESULT AL_HEVC_ParseSPS(AL_TRbspParser* pRP, AL_THevcSps* pSPS)
     }
   }
 
-  pSPS->bit_depth_luma_minus8 = Clip3(ue(pRP), 0, MAX_BIT_DEPTH);
-  pSPS->bit_depth_chroma_minus8 = Clip3(ue(pRP), 0, MAX_BIT_DEPTH);
+  pSPS->bit_depth_luma_minus8 = Clip3(ue(pRP), 0, MAX_BIT_DEPTH_MINUS_8);
+  pSPS->bit_depth_chroma_minus8 = Clip3(ue(pRP), 0, MAX_BIT_DEPTH_MINUS_8);
 
   pSPS->log2_max_slice_pic_order_cnt_lsb_minus4 = ue(pRP);
 
-  COMPLY(pSPS->log2_max_slice_pic_order_cnt_lsb_minus4 <= MAX_POC_LSB);
+  COMPLY(pSPS->log2_max_slice_pic_order_cnt_lsb_minus4 <= MAX_POC_LSB_MINUS_4);
 
   pSPS->sps_sub_layer_ordering_info_present_flag = u(pRP, 1);
-  int layer_offset = pSPS->sps_sub_layer_ordering_info_present_flag ? 0 : max_sub_layers;
+  int32_t layer_offset = pSPS->sps_sub_layer_ordering_info_present_flag ? 0 : max_sub_layers;
 
-  for(int i = layer_offset; i <= max_sub_layers; ++i)
+  for(int32_t i = layer_offset; i <= max_sub_layers; ++i)
   {
     pSPS->sps_max_dec_pic_buffering_minus1[i] = ue(pRP);
     pSPS->sps_max_num_reorder_pics[i] = ue(pRP);
@@ -469,7 +888,7 @@ AL_PARSE_RESULT AL_HEVC_ParseSPS(AL_TRbspParser* pRP, AL_THevcSps* pSPS)
 
   if(!pSPS->sps_sub_layer_ordering_info_present_flag)
   {
-    for(int i = 0; i < layer_offset; ++i)
+    for(int32_t i = 0; i < layer_offset; ++i)
     {
       pSPS->sps_max_dec_pic_buffering_minus1[i] = pSPS->sps_max_dec_pic_buffering_minus1[layer_offset];
       pSPS->sps_max_num_reorder_pics[i] = pSPS->sps_max_num_reorder_pics[layer_offset];
@@ -489,7 +908,7 @@ AL_PARSE_RESULT AL_HEVC_ParseSPS(AL_TRbspParser* pRP, AL_THevcSps* pSPS)
   COMPLY(pSPS->Log2CtbSize >= 4);
 
   pSPS->log2_min_transform_block_size_minus2 = ue(pRP);
-  int Log2MinTransfoSize = pSPS->log2_min_transform_block_size_minus2 + 2;
+  int32_t Log2MinTransfoSize = pSPS->log2_min_transform_block_size_minus2 + 2;
   pSPS->log2_diff_max_min_transform_block_size = ue(pRP);
 
   COMPLY(pSPS->log2_min_transform_block_size_minus2 <= pSPS->log2_min_luma_coding_block_size_minus3);
@@ -513,7 +932,7 @@ AL_PARSE_RESULT AL_HEVC_ParseSPS(AL_TRbspParser* pRP, AL_THevcSps* pSPS)
     if(pSPS->sps_scaling_list_data_present_flag)
       hevc_scaling_list_data(&pSPS->scaling_list_param, pRP);
     else
-      for(int i = 0; i < 20; ++i)
+      for(int32_t i = 0; i < 20; ++i)
         pSPS->scaling_list_param.UseDefaultScalingMatrixFlag[i] = 1;
   }
 
@@ -546,7 +965,7 @@ AL_PARSE_RESULT AL_HEVC_ParseSPS(AL_TRbspParser* pRP, AL_THevcSps* pSPS)
 
   COMPLY(pSPS->num_short_term_ref_pic_sets <= MAX_REF_PIC_SET);
 
-  for(int i = 0; i < pSPS->num_short_term_ref_pic_sets; ++i)
+  for(int32_t i = 0; i < pSPS->num_short_term_ref_pic_sets; ++i)
   {
     // check if NAL isn't empty
     COMPLY(more_rbsp_data(pRP));
@@ -565,7 +984,7 @@ AL_PARSE_RESULT AL_HEVC_ParseSPS(AL_TRbspParser* pRP, AL_THevcSps* pSPS)
 
     COMPLY(pSPS->num_long_term_ref_pics_sps <= MAX_LONG_TERM_PIC);
 
-    for(int i = 0; i < pSPS->num_long_term_ref_pics_sps; ++i)
+    for(int32_t i = 0; i < pSPS->num_long_term_ref_pics_sps; ++i)
     {
       pSPS->lt_ref_pic_poc_lsb_sps[i] = u(pRP, syntax_size);
       pSPS->used_by_curr_pic_lt_sps_flag[i] = u(pRP, 1);
@@ -705,7 +1124,7 @@ AL_PARSE_RESULT AL_HEVC_ParseVPS(AL_TAup* pIAup, AL_TRbspParser* pRP)
 
   u(pRP, 16); // Skip NUT + temporal_id
 
-  int vps_id = u(pRP, 4);
+  int32_t vps_id = u(pRP, 4);
 
   if(vps_id >= AL_HEVC_MAX_VPS)
     return AL_UNSUPPORTED;
@@ -728,9 +1147,9 @@ AL_PARSE_RESULT AL_HEVC_ParseVPS(AL_TAup* pIAup, AL_TRbspParser* pRP)
 
   pVPS->vps_sub_layer_ordering_info_present_flag = u(pRP, 1);
 
-  int layer_offset = pVPS->vps_sub_layer_ordering_info_present_flag ? 0 : pVPS->vps_max_sub_layers_minus1;
+  int32_t layer_offset = pVPS->vps_sub_layer_ordering_info_present_flag ? 0 : pVPS->vps_max_sub_layers_minus1;
 
-  for(int i = layer_offset; i <= pVPS->vps_max_sub_layers_minus1; ++i)
+  for(int32_t i = layer_offset; i <= pVPS->vps_max_sub_layers_minus1; ++i)
   {
     pVPS->vps_max_dec_pic_buffering_minus1[i] = ue(pRP);
     pVPS->vps_max_num_reorder_pics[i] = ue(pRP);
@@ -740,11 +1159,11 @@ AL_PARSE_RESULT AL_HEVC_ParseVPS(AL_TAup* pIAup, AL_TRbspParser* pRP)
   pVPS->vps_max_layer_id = u(pRP, 6);
   pVPS->vps_num_layer_sets_minus1 = ue(pRP);
 
-  for(int i = 1; i <= pVPS->vps_num_layer_sets_minus1; ++i)
+  for(int32_t i = 1; i <= pVPS->vps_num_layer_sets_minus1; ++i)
   {
     uint16_t uOffset = Min(i, 1);
 
-    for(int j = 0; j <= pVPS->vps_max_layer_id; j++)
+    for(int32_t j = 0; j <= pVPS->vps_max_layer_id; j++)
       pVPS->layer_id_included_flag[uOffset][j] = u(pRP, 1);
   }
 
@@ -761,7 +1180,7 @@ AL_PARSE_RESULT AL_HEVC_ParseVPS(AL_TAup* pIAup, AL_TRbspParser* pRP)
 
     pVPS->vps_num_hrd_parameters = ue(pRP);
 
-    for(int i = 0; i < pVPS->vps_num_hrd_parameters; ++i)
+    for(int32_t i = 0; i < pVPS->vps_num_hrd_parameters; ++i)
     {
       uint16_t uOffset = Min(i, 1);
       pVPS->hrd_layer_set_idx[uOffset] = ue(pRP);
@@ -795,7 +1214,7 @@ static AL_PARSE_RESULT SeiActiveParameterSets(AL_TRbspParser* pRP, AL_THevcAup* 
 
   uint8_t active_seq_parameter_set_id[AL_HEVC_MAX_SPS];
 
-  for(int i = 0; i <= num_sps_ids_minus1; ++i)
+  for(int32_t i = 0; i <= num_sps_ids_minus1; ++i)
   {
     active_seq_parameter_set_id[i] = ue(pRP);
     COMPLY(active_seq_parameter_set_id[i] < AL_HEVC_MAX_SPS);
@@ -804,7 +1223,7 @@ static AL_PARSE_RESULT SeiActiveParameterSets(AL_TRbspParser* pRP, AL_THevcAup* 
   AL_THevcVps const* pVPS = &aup->pVPS[active_video_parameter_set_id];
   uint8_t MaxLayersMinus1 = Min(62, pVPS->vps_max_layers_minus1);
 
-  for(int i = pVPS->vps_base_layer_internal_flag; i <= MaxLayersMinus1; ++i)
+  for(int32_t i = pVPS->vps_base_layer_internal_flag; i <= MaxLayersMinus1; ++i)
     /*layer_sps_idx[i] =*/ ue(pRP);
 
   COMPLY(aup->pSPS[active_seq_parameter_set_id[0]].bConceal == false);
@@ -872,7 +1291,7 @@ static bool SeiPicTiming(AL_TRbspParser* pRP, AL_THevcSps* pSPS, AL_THevcPicTimi
 }
 
 /*****************************************************************************/
-static bool ParseSeiPayload(SeiParserParam* p, AL_TRbspParser* pRP, AL_ESeiPayloadType ePayloadType, int iPayloadSize, bool* bCanSendToUser, bool* bParsed)
+static bool ParseSeiPayload(SeiParserParam* p, AL_TRbspParser* pRP, AL_ESeiPayloadType ePayloadType, int32_t iPayloadSize, bool* bCanSendToUser, bool* bParsed)
 {
   bool bParsingOk = true;
   AL_THevcAup* aup = &p->pIAup->hevcAup;

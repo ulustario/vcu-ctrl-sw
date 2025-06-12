@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #pragma once
@@ -18,6 +18,7 @@
 ** More information are filled in the metadata while in the fifo (scene change, complexity)
 ** The frames are then sent to the real EncoderSink for the second pass, with first pass info in the metadata
 */
+
 struct EncoderLookAheadSink : IFrameSink
 {
 
@@ -35,7 +36,8 @@ struct EncoderLookAheadSink : IFrameSink
     cfgLA = cfg;
     AL_TwoPassMngr_SetPass1Settings(cfgLA.Settings);
 
-    AL_Settings_CheckCoherency(&cfgLA.Settings, &cfgLA.Settings.tChParam[0], cfgLA.MainInput.FileInfo.FourCC, NULL);
+    if(AL_Settings_CheckCoherency(&cfgLA.Settings, &cfgLA.Settings.tChParam[0], cfgLA.MainInput.FileInfo.FourCC, NULL) < 0)
+      throw std::runtime_error("Incoherent settings!");
 
     qpBuffers.Configure(&cfgLA.Settings, cfgLA.RunInfo.eGenerateQpMode);
 
@@ -65,7 +67,7 @@ struct EncoderLookAheadSink : IFrameSink
     Rtos_DeleteEvent(FifoFlushFinished);
   }
 
-  void AddQpBufPool(QPBuffers::QPLayerInfo qpInf, int iLayerID)
+  void AddQpBufPool(QPBuffers::QPLayerInfo qpInf, int32_t iLayerID)
   {
     qpBuffers.AddBufPool(qpInf, iLayerID);
   }
@@ -122,9 +124,9 @@ struct EncoderLookAheadSink : IFrameSink
   std::unique_ptr<IFrameSink> RecOutput;
 
 private:
-  int m_picCount = 0;
-  int m_maxpicCount = -1;
-  int m_pictureType = -1;
+  int32_t m_picCount = 0;
+  int32_t m_maxpicCount = -1;
+  int32_t m_pictureType = -1;
   std::ifstream CmdFile;
   CEncCmdMngr EncCmd;
   ConfigFile cfgLA;
@@ -134,8 +136,8 @@ private:
   bool bEnableFirstPassSceneChangeDetection;
   AL_EVENT EOSFinished;
   AL_EVENT FifoFlushFinished;
-  int iNumLayer;
-  int iNumFrameEnded;
+  int32_t iNumLayer;
+  int32_t iNumFrameEnded;
 
   static inline bool isStreamReleased(AL_TBuffer* pStream, AL_TBuffer const* pSrc)
   {

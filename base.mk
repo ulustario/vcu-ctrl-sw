@@ -48,6 +48,8 @@ $(BIN)/%.a:
 	@mkdir -p $(dir $@)
 	$(Q)$(AR) cr $@ $^
 	@echo "AR $@"
+	$(Q)$(RANLIB) $@
+	@echo "RANLIB $@"
 
 $(BIN)/%.so:
 	$(Q)$(CXX) $(CFLAGS) -shared -Wl,-soname,$(notdir $@).$(MAJOR) -o "$@.$(VERSION)" $(call filter_out_dyn_lib, $^) $(LDFLAGS) $(call add_dyn_lib_link, $^)
@@ -55,7 +57,11 @@ $(BIN)/%.so:
 	@ln -fs "$(@:$(BIN)/%=%).$(VERSION)" $@.$(MAJOR)
 	@ln -fs "$(@:$(BIN)/%=%).$(VERSION)" $@
 
-$(BIN)/%.exe:
+$(BIN)/include/config.h:
+	@mkdir -p $(dir $@)
+	@cp include/config.h $(dir $@)
+
+$(BIN)/%.exe: $(BIN)/include/config.h
 	@mkdir -p $(dir $@)
 	$(Q)$(CXX) -o $@ $(call filter_out_dyn_lib, $^) $(LINK_COMPAT) $(LDFLAGS) $(call add_dyn_lib_link, $^)
 	@echo "CXX $@"

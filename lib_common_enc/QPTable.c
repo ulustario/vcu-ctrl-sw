@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #include "lib_common_enc/QPTableInternal.h"
@@ -10,14 +10,14 @@
 
 typedef struct AL_tIntRange
 {
-  int iMinVal;
-  int iMaxVal;
+  int32_t iMinVal;
+  int32_t iMaxVal;
 }AL_TIntRange;
 
 typedef struct AL_tQPTableConstraints
 {
-  int iQPTableDepth;
-  int iMaxDepth;
+  int32_t iQPTableDepth;
+  int32_t iMaxDepth;
   bool bRelativeQP;
   bool bAllowTopQP;
 
@@ -29,7 +29,7 @@ typedef struct AL_tQPTableConstraints
 }AL_TQPTableConstraints;
 
 /****************************************************************************/
-static bool CheckIntRange(int iVal, AL_TIntRange tRange)
+static bool CheckIntRange(int32_t iVal, AL_TIntRange tRange)
 {
   return tRange.iMinVal <= iVal && iVal <= tRange.iMaxVal;
 }
@@ -37,13 +37,13 @@ static bool CheckIntRange(int iVal, AL_TIntRange tRange)
 /*****************************************************************************/
 static void GetRelativeRange(AL_TIntRange* pRange)
 {
-  int iMaxDelta = pRange->iMaxVal - pRange->iMinVal;
+  int32_t iMaxDelta = pRange->iMaxVal - pRange->iMinVal;
   pRange->iMinVal = -iMaxDelta;
   pRange->iMaxVal = iMaxDelta;
 }
 
 /****************************************************************************/
-static uint32_t GetEP2OneLCUSize(uint8_t uLog2MaxCuSize, int iQPTableDepth)
+static uint32_t GetEP2OneLCUSize(uint8_t uLog2MaxCuSize, int32_t iQPTableDepth)
 {
   (void)uLog2MaxCuSize;
   switch(iQPTableDepth)
@@ -64,9 +64,9 @@ uint32_t AL_QPTable_GetFlexibleSize(AL_TDimension tDim, AL_ECodec eCodec, uint8_
 {
   (void)eCodec;
 
-  int iMaxLCUs = GetSquareBlkNumber(tDim, uQpLCUGranularity << uLog2MaxCuSize);
+  int32_t iMaxLCUs = GetSquareBlkNumber(tDim, uQpLCUGranularity << uLog2MaxCuSize);
 
-  int iQPTableDepth;
+  int32_t iQPTableDepth;
   iQPTableDepth = 0;
 
   uint32_t uLCUSize = GetEP2OneLCUSize(uLog2MaxCuSize, iQPTableDepth);
@@ -77,7 +77,7 @@ uint32_t AL_QPTable_GetFlexibleSize(AL_TDimension tDim, AL_ECodec eCodec, uint8_
 }
 
 /****************************************************************************/
-static int GetEffectiveQPTableDepth(AL_ECodec eCodec, int iQPTableDepth)
+static int32_t GetEffectiveQPTableDepth(AL_ECodec eCodec, int32_t iQPTableDepth)
 {
   (void)eCodec;
 
@@ -97,7 +97,7 @@ static AL_TIntRange CheckValidity_GetQPTableBounds(AL_ECodec eCodec, bool bRelat
 }
 
 /*****************************************************************************/
-static void CheckValidity_FillQPTableConstraints(AL_TQPTableConstraints* pQPTableConstraints, AL_ECodec eCodec, int iQPTableDepth, uint8_t uLog2MaxCuSize, bool bDisIntra, bool bRelative)
+static void CheckValidity_FillQPTableConstraints(AL_TQPTableConstraints* pQPTableConstraints, AL_ECodec eCodec, int32_t iQPTableDepth, uint8_t uLog2MaxCuSize, bool bDisIntra, bool bRelative)
 {
   pQPTableConstraints->iQPTableDepth = iQPTableDepth;
   pQPTableConstraints->iMaxDepth = Min(uLog2MaxCuSize - 4, iQPTableDepth);
@@ -156,11 +156,11 @@ static AL_ERR CheckValidity_CUQP(const uint8_t* pQPByte, AL_ECodec eCodec, int8_
 
   if(bCheckNextDepth)
   {
-    for(int iSubQuad = 0; iSubQuad < 4; iSubQuad++)
+    for(int32_t iSubQuad = 0; iSubQuad < 4; iSubQuad++)
     {
       AL_ERR eErr = CheckValidity_CUQP(pQPByte + iSubQuad, eCodec, iDepth + 1, iSubQuad, tConstraints);
 
-      if(eErr != AL_SUCCESS)
+      if(!AL_IS_SUCCESS_CODE(eErr))
         return eErr;
     }
   }
@@ -171,14 +171,14 @@ static AL_ERR CheckValidity_CUQP(const uint8_t* pQPByte, AL_ECodec eCodec, int8_
 /*****************************************************************************/
 static AL_ERR CheckValidity_QPs(const uint8_t* pQP, AL_TDimension tDim, AL_ECodec eCodec, uint8_t uLog2MaxCuSize, AL_TQPTableConstraints tConstraints)
 {
-  int iLCUCnt = GetSquareBlkNumber(tDim, 1 << uLog2MaxCuSize);
+  int32_t iLCUCnt = GetSquareBlkNumber(tDim, 1 << uLog2MaxCuSize);
   uint32_t uLCUSize = GetEP2OneLCUSize(uLog2MaxCuSize, tConstraints.iQPTableDepth);
 
-  for(int i = 0; i < iLCUCnt; i++)
+  for(int32_t i = 0; i < iLCUCnt; i++)
   {
     AL_ERR eErr = CheckValidity_CUQP(pQP, eCodec, 0, 0, tConstraints);
 
-    if(eErr != AL_SUCCESS)
+    if(!AL_IS_SUCCESS_CODE(eErr))
       return eErr;
 
     pQP += uLCUSize;
@@ -188,7 +188,7 @@ static AL_ERR CheckValidity_QPs(const uint8_t* pQP, AL_TDimension tDim, AL_ECode
 }
 
 /*****************************************************************************/
-AL_ERR AL_QPTable_CheckValidity(const uint8_t* pQPTable, AL_TDimension tDim, AL_ECodec eCodec, int iQPTableDepth, uint8_t uLog2MaxCuSize, bool bDisIntra, bool bRelative)
+AL_ERR AL_QPTable_CheckValidity(const uint8_t* pQPTable, AL_TDimension tDim, AL_ECodec eCodec, int32_t iQPTableDepth, uint8_t uLog2MaxCuSize, bool bDisIntra, bool bRelative)
 {
   iQPTableDepth = GetEffectiveQPTableDepth(eCodec, iQPTableDepth);
 

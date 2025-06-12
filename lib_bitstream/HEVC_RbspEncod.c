@@ -1,20 +1,18 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #include "HEVC_RbspEncod.h"
 #include "RbspEncod.h"
 #include "lib_common/SliceConsts.h"
 #include "lib_common/Utils.h"
-#include "lib_common/SPS.h"
-#include "lib_common/PPS.h"
 #include "lib_common/Nuts.h"
 #include "lib_common/ScalingList.h"
 #include "lib_common_enc/PictureInfo.h"
 
 /******************************************************************************/
-static void writeSublayer(AL_TBitStreamLite* pBS, AL_THrdParam const* pHrd, AL_TSubHrdParam const* pSubHrd, int CpbCnt)
+static void writeSublayer(AL_TBitStreamLite* pBS, AL_THrdParam const* pHrd, AL_TSubHrdParam const* pSubHrd, int32_t CpbCnt)
 {
-  for(int iIdx = 0; iIdx <= CpbCnt; ++iIdx)
+  for(int32_t iIdx = 0; iIdx <= CpbCnt; ++iIdx)
   {
     AL_BitStreamLite_PutUE(pBS, pSubHrd->bit_rate_value_minus1[iIdx]);
     AL_BitStreamLite_PutUE(pBS, pSubHrd->cpb_size_value_minus1[iIdx]);
@@ -58,7 +56,7 @@ static void writeHrdParam(AL_TBitStreamLite* pBS, AL_THrdParam const* pHrd, uint
     }
   }
 
-  for(int iSubLayer = 0; iSubLayer <= uMaxSubLayersMinus1; ++iSubLayer)
+  for(int32_t iSubLayer = 0; iSubLayer <= uMaxSubLayersMinus1; ++iSubLayer)
   {
     AL_BitStreamLite_PutBit(pBS, pHrd->fixed_pic_rate_general_flag[iSubLayer]);
 
@@ -90,7 +88,7 @@ static void writeProfileTierLevel(AL_TBitStreamLite* pBS, AL_THevcProfilevel con
     AL_BitStreamLite_PutBit(pBS, pPTL->general_tier_flag);
     AL_BitStreamLite_PutU(pBS, 5, pPTL->general_profile_idc);
 
-    for(int j = 0; j < 32; ++j)
+    for(int32_t j = 0; j < 32; ++j)
       AL_BitStreamLite_PutBit(pBS, pPTL->general_profile_compatibility_flag[j]);
 
     AL_BitStreamLite_PutBit(pBS, pPTL->general_progressive_source_flag);
@@ -147,7 +145,7 @@ static void writeProfileTierLevel(AL_TBitStreamLite* pBS, AL_THevcProfilevel con
   }
   AL_BitStreamLite_PutU(pBS, 8, pPTL->general_level_idc);
 
-  for(int j = 0; j < MaxLayerMinus1; ++j)
+  for(int32_t j = 0; j < MaxLayerMinus1; ++j)
   {
     AL_BitStreamLite_PutBit(pBS, pPTL->sub_layer_profile_present_flag[j]);
     AL_BitStreamLite_PutBit(pBS, pPTL->sub_layer_level_present_flag[j]);
@@ -155,11 +153,11 @@ static void writeProfileTierLevel(AL_TBitStreamLite* pBS, AL_THevcProfilevel con
 
   if(MaxLayerMinus1 > 0)
   {
-    for(int j = MaxLayerMinus1; j < 8; ++j)
+    for(int32_t j = MaxLayerMinus1; j < 8; ++j)
       AL_BitStreamLite_PutU(pBS, 2, 0);
   }
 
-  for(int iLayerID = 0; iLayerID < MaxLayerMinus1; ++iLayerID)
+  for(int32_t iLayerID = 0; iLayerID < MaxLayerMinus1; ++iLayerID)
   {
     if(pPTL->sub_layer_profile_present_flag[iLayerID])
     {
@@ -167,7 +165,7 @@ static void writeProfileTierLevel(AL_TBitStreamLite* pBS, AL_THevcProfilevel con
       AL_BitStreamLite_PutBit(pBS, pPTL->sub_layer_tier_flag[iLayerID]);
       AL_BitStreamLite_PutU(pBS, 5, pPTL->sub_layer_profile_idc[iLayerID]);
 
-      for(int j = 0; j < 32; ++j)
+      for(int32_t j = 0; j < 32; ++j)
         AL_BitStreamLite_PutBit(pBS, pPTL->sub_layer_profile_compatibility_flag[iLayerID][j]);
 
       AL_BitStreamLite_PutBit(pBS, pPTL->sub_layer_progressive_source_flag[iLayerID]);
@@ -198,7 +196,7 @@ static void writeVpsData(AL_TBitStreamLite* pBS, AL_THevcVps const* pVps)
 
   AL_BitStreamLite_PutBit(pBS, pVps->vps_sub_layer_ordering_info_present_flag);
 
-  int iIdx = pVps->vps_sub_layer_ordering_info_present_flag ? 0 : pVps->vps_max_sub_layers_minus1;
+  int32_t iIdx = pVps->vps_sub_layer_ordering_info_present_flag ? 0 : pVps->vps_max_sub_layers_minus1;
 
   for(; iIdx <= pVps->vps_max_sub_layers_minus1; ++iIdx)
   {
@@ -212,7 +210,7 @@ static void writeVpsData(AL_TBitStreamLite* pBS, AL_THevcVps const* pVps)
 
   for(iIdx = 1; iIdx <= pVps->vps_num_layer_sets_minus1; ++iIdx)
   {
-    for(int iLayerID = 0; iLayerID <= pVps->vps_max_layer_id; ++iLayerID)
+    for(int32_t iLayerID = 0; iLayerID <= pVps->vps_max_layer_id; ++iLayerID)
       AL_BitStreamLite_PutBit(pBS, pVps->layer_id_included_flag[iIdx][iLayerID]);
   }
 
@@ -243,7 +241,7 @@ static void writeVpsData(AL_TBitStreamLite* pBS, AL_THevcVps const* pVps)
 }
 
 /******************************************************************************/
-static void writeStRefPicSet(AL_TBitStreamLite* pBS, AL_TRefPicSet const* pRefPicSet, int iSetIdx)
+static void writeStRefPicSet(AL_TBitStreamLite* pBS, AL_TRefPicSet const* pRefPicSet, int32_t iSetIdx)
 {
   if(iSetIdx)
     AL_BitStreamLite_PutBit(pBS, pRefPicSet->inter_ref_pic_set_prediction_flag);
@@ -253,13 +251,13 @@ static void writeStRefPicSet(AL_TBitStreamLite* pBS, AL_TRefPicSet const* pRefPi
   AL_BitStreamLite_PutUE(pBS, pRefPicSet->num_negative_pics);
   AL_BitStreamLite_PutUE(pBS, pRefPicSet->num_positive_pics);
 
-  for(int i = 0; i < pRefPicSet->num_negative_pics; ++i)
+  for(int32_t i = 0; i < pRefPicSet->num_negative_pics; ++i)
   {
     AL_BitStreamLite_PutUE(pBS, pRefPicSet->delta_poc_s0_minus1[i]);
     AL_BitStreamLite_PutBit(pBS, pRefPicSet->used_by_curr_pic_s0_flag[i]);
   }
 
-  for(int i = 0; i < pRefPicSet->num_positive_pics; ++i)
+  for(int32_t i = 0; i < pRefPicSet->num_positive_pics; ++i)
   {
     AL_BitStreamLite_PutUE(pBS, pRefPicSet->delta_poc_s1_minus1[i]);
     AL_BitStreamLite_PutBit(pBS, pRefPicSet->used_by_curr_pic_s1_flag[i]);
@@ -358,9 +356,9 @@ static void writeVui(AL_TBitStreamLite* pBS, AL_THevcSps const* pSps, AL_TVuiPar
 /******************************************************************************/
 static void writeScalingListData(AL_TBitStreamLite* pBS, AL_THevcSps const* pSps)
 {
-  for(int iSizeId = 0; iSizeId < 4; ++iSizeId)
+  for(int32_t iSizeId = 0; iSizeId < 4; ++iSizeId)
   {
-    for(int iMatrixId = 0; iMatrixId < 6; iMatrixId += (iSizeId == 3) ? 3 : 1)
+    for(int32_t iMatrixId = 0; iMatrixId < 6; iMatrixId += (iSizeId == 3) ? 3 : 1)
     {
       AL_BitStreamLite_PutBit(pBS, pSps->scaling_list_param.scaling_list_pred_mode_flag[iSizeId][iMatrixId]);
 
@@ -383,7 +381,7 @@ static void writeScalingListData(AL_TBitStreamLite* pBS, AL_THevcSps const* pSps
 
         for(uCoeff = 0; uCoeff < uCoeffNum; ++uCoeff)
         {
-          int iTmpCoeff = pSps->scaling_list_param.ScalingList[iSizeId][iMatrixId][pScanOrder[uCoeff]] - (int)uPrevCoef;
+          int32_t iTmpCoeff = pSps->scaling_list_param.ScalingList[iSizeId][iMatrixId][pScanOrder[uCoeff]] - (int)uPrevCoef;
 
           if(iTmpCoeff > 127)
             iTmpCoeff -= 256;
@@ -398,7 +396,7 @@ static void writeScalingListData(AL_TBitStreamLite* pBS, AL_THevcSps const* pSps
 }
 
 /******************************************************************************/
-static void writeSpsData(AL_TBitStreamLite* pBS, AL_THevcSps const* pSps, int iLayer)
+static void writeSpsData(AL_TBitStreamLite* pBS, AL_THevcSps const* pSps, int32_t iLayer)
 {
   // 1 - Write SPS following spec 7.3.2.2
 
@@ -452,9 +450,9 @@ static void writeSpsData(AL_TBitStreamLite* pBS, AL_THevcSps const* pSps, int iL
   {
     AL_BitStreamLite_PutBit(pBS, pSps->sps_sub_layer_ordering_info_present_flag);
 
-    int iLayerOffset = pSps->sps_sub_layer_ordering_info_present_flag ? 0 : pSps->sps_max_sub_layers_minus1;
+    int32_t iLayerOffset = pSps->sps_sub_layer_ordering_info_present_flag ? 0 : pSps->sps_max_sub_layers_minus1;
 
-    for(int i = iLayerOffset; i <= pSps->sps_max_sub_layers_minus1; ++i)
+    for(int32_t i = iLayerOffset; i <= pSps->sps_max_sub_layers_minus1; ++i)
     {
       AL_BitStreamLite_PutUE(pBS, pSps->sps_max_dec_pic_buffering_minus1[i]);
       AL_BitStreamLite_PutUE(pBS, pSps->sps_max_num_reorder_pics[i]);
@@ -501,7 +499,7 @@ static void writeSpsData(AL_TBitStreamLite* pBS, AL_THevcSps const* pSps, int iL
 
   AL_BitStreamLite_PutUE(pBS, pSps->num_short_term_ref_pic_sets);
 
-  for(int i = 0; i < pSps->num_short_term_ref_pic_sets; ++i)
+  for(int32_t i = 0; i < pSps->num_short_term_ref_pic_sets; ++i)
     writeStRefPicSet(pBS, &pSps->short_term_ref_pic_set[i], i);
 
   AL_BitStreamLite_PutBit(pBS, pSps->long_term_ref_pics_present_flag);
@@ -573,16 +571,16 @@ static void writePpsData(AL_TBitStreamLite* pBS, AL_THevcPps const* pPps)
 
   if(pPps->tiles_enabled_flag)
   {
-    int iClmn, iRow;
+    int32_t iClmn, iRow;
     AL_BitStreamLite_PutUE(pBS, pPps->num_tile_columns_minus1);
     AL_BitStreamLite_PutUE(pBS, pPps->num_tile_rows_minus1);
     AL_BitStreamLite_PutBit(pBS, 0);
 
     for(iClmn = 0; iClmn < pPps->num_tile_columns_minus1; ++iClmn)
-      AL_BitStreamLite_PutUE(pBS, pPps->tile_column_width[iClmn] - 1);
+      AL_BitStreamLite_PutUE(pBS, pPps->pTileColWidths[iClmn] - 1);
 
     for(iRow = 0; iRow < pPps->num_tile_rows_minus1; ++iRow)
-      AL_BitStreamLite_PutUE(pBS, pPps->tile_row_height[iRow] - 1);
+      AL_BitStreamLite_PutUE(pBS, pPps->pTileRowHeights[iRow] - 1);
 
     AL_BitStreamLite_PutBit(pBS, pPps->loop_filter_across_tiles_enabled_flag);
   }
@@ -635,7 +633,7 @@ static void writeVps(AL_TBitStreamLite* pBS, AL_TVps const* pVps)
 }
 
 /******************************************************************************/
-static void writeSps(AL_TBitStreamLite* pBS, AL_TSps const* pSps, int iLayerId)
+static void writeSps(AL_TBitStreamLite* pBS, AL_TSps const* pSps, int32_t iLayerId)
 {
   writeSpsData(pBS, &pSps->HevcSPS, iLayerId);
 
@@ -660,17 +658,17 @@ static void writeSeiActiveParameterSets(AL_TBitStreamLite* pBS, AL_THevcVps cons
   AL_THevcSps* pSps = (AL_THevcSps*)pISps;
 
   // Active Parameter Sets
-  int bookmark = AL_RbspEncoding_BeginSEI(pBS, 129);
+  int32_t bookmark = AL_RbspEncoding_BeginSEI(pBS, 129);
 
   AL_BitStreamLite_PutU(pBS, 4, pSps->sps_video_parameter_set_id);
   AL_BitStreamLite_PutBit(pBS, 0); // self_contained_cvs_flag
   AL_BitStreamLite_PutBit(pBS, 1); // no_parameter_set_update_flag
   AL_BitStreamLite_PutUE(pBS, 0); // num_sps_ids_minus1
 
-  // for(int i=0; i <= num_sps_ids_minus1; ++i)
+  // for(int32_t i=0; i <= num_sps_ids_minus1; ++i)
   AL_BitStreamLite_PutUE(pBS, pSps->sps_seq_parameter_set_id);
 
-  for(int i = pVps->vps_base_layer_internal_flag; i <= pVps->vps_max_layers_minus1; ++i)
+  for(int32_t i = pVps->vps_base_layer_internal_flag; i <= pVps->vps_max_layers_minus1; ++i)
     AL_BitStreamLite_PutUE(pBS, 0);
 
   AL_BitStreamLite_EndOfSEIPayload(pBS);
@@ -680,12 +678,12 @@ static void writeSeiActiveParameterSets(AL_TBitStreamLite* pBS, AL_THevcVps cons
 }
 
 /******************************************************************************/
-static void writeSeiBufferingPeriod(AL_TBitStreamLite* pBS, AL_TSps const* pISps, int iInitialCpbRemovalDelay, int iInitialCpbRemovalOffset)
+static void writeSeiBufferingPeriod(AL_TBitStreamLite* pBS, AL_TSps const* pISps, int32_t iInitialCpbRemovalDelay, int32_t iInitialCpbRemovalOffset)
 {
   AL_THevcSps* pSps = (AL_THevcSps*)pISps;
 
   // buffering_period
-  int bookmark = AL_RbspEncoding_BeginSEI(pBS, 0);
+  int32_t bookmark = AL_RbspEncoding_BeginSEI(pBS, 0);
 
   AL_BitStreamLite_PutUE(pBS, pSps->sps_seq_parameter_set_id);
 
@@ -694,8 +692,8 @@ static void writeSeiBufferingPeriod(AL_TBitStreamLite* pBS, AL_TSps const* pISps
   if(!pSps->vui_param.hrd_param.sub_pic_hrd_params_present_flag)
     AL_BitStreamLite_PutBit(pBS, uIRAPCpbParamsPresentFLag);
 
-  int const inferred_au_cpb_removal_delay_length_minus1 = 23;
-  int au_cpb_removal_delay_length_minus1 = pSps->vui_param.vui_hrd_parameters_present_flag ? pSps->vui_param.hrd_param.au_cpb_removal_delay_length_minus1 : inferred_au_cpb_removal_delay_length_minus1;
+  int32_t const inferred_au_cpb_removal_delay_length_minus1 = 23;
+  int32_t au_cpb_removal_delay_length_minus1 = pSps->vui_param.vui_hrd_parameters_present_flag ? pSps->vui_param.hrd_param.au_cpb_removal_delay_length_minus1 : inferred_au_cpb_removal_delay_length_minus1;
 
   if(uIRAPCpbParamsPresentFLag)
   {
@@ -713,11 +711,11 @@ static void writeSeiBufferingPeriod(AL_TBitStreamLite* pBS, AL_TSps const* pISps
   uint32_t iInitialAltCpbRemovalDelay = 0;
   uint32_t iInitialAltCpbRemovalOffset = 0;
 
-  int iInitialCpbLength = pSps->vui_param.hrd_param.initial_cpb_removal_delay_length_minus1 + 1;
+  int32_t iInitialCpbLength = pSps->vui_param.hrd_param.initial_cpb_removal_delay_length_minus1 + 1;
 
   if(pSps->vui_param.hrd_param.nal_hrd_parameters_present_flag)
   {
-    for(int i = 0; i <= (int)pSps->vui_param.hrd_param.cpb_cnt_minus1[0]; ++i)
+    for(int32_t i = 0; i <= (int)pSps->vui_param.hrd_param.cpb_cnt_minus1[0]; ++i)
     {
       AL_BitStreamLite_PutU(pBS, iInitialCpbLength, iInitialCpbRemovalDelay);
       AL_BitStreamLite_PutU(pBS, iInitialCpbLength, iInitialCpbRemovalOffset);
@@ -732,7 +730,7 @@ static void writeSeiBufferingPeriod(AL_TBitStreamLite* pBS, AL_TSps const* pISps
 
   if(pSps->vui_param.hrd_param.vcl_hrd_parameters_present_flag)
   {
-    for(int i = 0; i <= (int)pSps->vui_param.hrd_param.cpb_cnt_minus1[0]; ++i)
+    for(int32_t i = 0; i <= (int)pSps->vui_param.hrd_param.cpb_cnt_minus1[0]; ++i)
     {
       AL_BitStreamLite_PutU(pBS, iInitialCpbLength, iInitialCpbRemovalDelay);
       AL_BitStreamLite_PutU(pBS, iInitialCpbLength, iInitialCpbRemovalOffset);
@@ -751,9 +749,9 @@ static void writeSeiBufferingPeriod(AL_TBitStreamLite* pBS, AL_TSps const* pISps
 }
 
 /******************************************************************************/
-static void writeSeiRecoveryPoint(AL_TBitStreamLite* pBS, int iRecoveryFrameCnt)
+static void writeSeiRecoveryPoint(AL_TBitStreamLite* pBS, int32_t iRecoveryFrameCnt)
 {
-  int bookmark = AL_RbspEncoding_BeginSEI(pBS, 6);
+  int32_t bookmark = AL_RbspEncoding_BeginSEI(pBS, 6);
 
   AL_BitStreamLite_PutSE(pBS, iRecoveryFrameCnt);
   AL_BitStreamLite_PutBit(pBS, 1); // exact_match_flag
@@ -765,51 +763,54 @@ static void writeSeiRecoveryPoint(AL_TBitStreamLite* pBS, int iRecoveryFrameCnt)
 }
 
 /******************************************************************************/
-static void writeSeiPictureTiming(AL_TBitStreamLite* pBS, AL_TSps const* pISps, int iAuCpbRemovalDelay, int iPicDpbOutputDelay, int iPicStruct)
+static void writeSeiPictureTiming(AL_TBitStreamLite* pBS, AL_TSps const* pISps, int32_t iAuCpbRemovalDelay, int32_t iPicDpbOutputDelay, int32_t iPicStruct)
 {
   AL_THevcSps* pSps = (AL_THevcSps*)pISps;
-  int bookmark = AL_RbspEncoding_BeginSEI(pBS, 1);
+  int32_t bookmark = AL_RbspEncoding_BeginSEI(pBS, 1);
 
   if(pSps->vui_param.frame_field_info_present_flag)
   {
     AL_BitStreamLite_PutU(pBS, 4, iPicStruct);
-    int iSrcScanType = 0;
+    int32_t iSrcScanType = 0;
     AL_BitStreamLite_PutU(pBS, 2, iSrcScanType);
-    int iDuplicateFlag = 0;
+    int32_t iDuplicateFlag = 0;
     AL_BitStreamLite_PutBit(pBS, iDuplicateFlag);
   }
 
-  if(pSps->vui_param.hrd_param.nal_hrd_parameters_present_flag || pSps->vui_param.hrd_param.vcl_hrd_parameters_present_flag)
+  bool CpbDpbDelaysPresentFlag = pSps->vui_param.vui_timing_info_present_flag &&
+                                 (pSps->vui_param.hrd_param.nal_hrd_parameters_present_flag || pSps->vui_param.hrd_param.vcl_hrd_parameters_present_flag);
+
+  if(CpbDpbDelaysPresentFlag)
   {
     AL_BitStreamLite_PutU(pBS, pSps->vui_param.hrd_param.au_cpb_removal_delay_length_minus1 + 1, (iAuCpbRemovalDelay / PicStructToFieldNumber[iPicStruct]));
     AL_BitStreamLite_PutU(pBS, pSps->vui_param.hrd_param.au_cpb_removal_delay_length_minus1 + 1, (iPicDpbOutputDelay / PicStructToFieldNumber[iPicStruct]));
 
     if(pSps->vui_param.hrd_param.sub_pic_hrd_params_present_flag)
     {
-      int iPicDpbOutputDuDelay = 0;
+      int32_t iPicDpbOutputDuDelay = 0;
       AL_BitStreamLite_PutU(pBS, pSps->vui_param.hrd_param.dpb_output_delay_length_minus1 + 1, iPicDpbOutputDuDelay);
 
       if(pSps->vui_param.hrd_param.sub_pic_cpb_params_in_pic_timing_sei_flag)
       {
-        int iNumDecodingUnits = 1;
+        int32_t iNumDecodingUnits = 1;
         AL_BitStreamLite_PutUE(pBS, iNumDecodingUnits - 1);
-        int iDuCommonCpbRemovalDelayFlag = 0;
+        int32_t iDuCommonCpbRemovalDelayFlag = 0;
         AL_BitStreamLite_PutBit(pBS, iDuCommonCpbRemovalDelayFlag);
 
         if(iDuCommonCpbRemovalDelayFlag)
         {
-          int iDuCommonCpbRemovalDelayIncrement = 1;
+          int32_t iDuCommonCpbRemovalDelayIncrement = 1;
           AL_BitStreamLite_PutU(pBS, pSps->vui_param.hrd_param.du_cpb_removal_delay_increment_length_minus1 + 1, iDuCommonCpbRemovalDelayIncrement - 1);
         }
 
-        for(int i = 0; i < iNumDecodingUnits; ++i)
+        for(int32_t i = 0; i < iNumDecodingUnits; ++i)
         {
-          int iNumNalusInDu = 1;
+          int32_t iNumNalusInDu = 1;
           AL_BitStreamLite_PutUE(pBS, iNumNalusInDu - 1);
 
           if(!iDuCommonCpbRemovalDelayFlag && (i < iNumDecodingUnits - 1))
           {
-            int iDuCpbRemovalDelayIncrement = 1;
+            int32_t iDuCpbRemovalDelayIncrement = 1;
             AL_BitStreamLite_PutU(pBS, pSps->vui_param.hrd_param.du_cpb_removal_delay_increment_length_minus1 + 1, iDuCpbRemovalDelayIncrement - 1);
           }
         }
@@ -828,7 +829,7 @@ static AL_ECodec getCodec(void)
   return AL_CODEC_HEVC;
 }
 
-static inline bool isForce4BytesCode(AL_EStartCodeBytesAlignedMode eMode, int nut)
+static inline bool isForce4BytesCode(AL_EStartCodeBytesAlignedMode eMode, int32_t nut)
 {
   switch(eMode)
   {
@@ -842,7 +843,7 @@ static inline bool isForce4BytesCode(AL_EStartCodeBytesAlignedMode eMode, int nu
 }
 
 /******************************************************************************/
-static void writeStartCode(AL_TBitStreamLite* pBS, int nut, AL_EStartCodeBytesAlignedMode eStartCodeBytesAligned)
+static void writeStartCode(AL_TBitStreamLite* pBS, int32_t nut, AL_EStartCodeBytesAlignedMode eStartCodeBytesAligned)
 {
   if(isForce4BytesCode(eStartCodeBytesAligned, nut))
     AL_BitStreamLite_PutBits(pBS, 8, 0x00);

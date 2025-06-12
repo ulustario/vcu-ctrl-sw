@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #pragma once
@@ -12,6 +12,7 @@ extern "C"
 #include "lib_fpga/DmaAlloc.h"
 #include "lib_log/LoggerDefault.h"
 #include "lib_common_dec/DecoderTraceHook.h"
+#include "lib_common/AllocatorTracker.h"
 }
 
 /*****************************************************************************/
@@ -24,9 +25,8 @@ struct CIpDeviceParam
 {
   AL_EDeviceType eDeviceType;
   AL_ESchedulerType eSchedulerType;
-  bool bTrackDma = false;
+  AL_ETrackDmaMode eTrackDmaMode = AL_ETrackDmaMode::AL_TRACK_DMA_MODE_NONE;
   uint8_t uNumCore = 0;
-  int iHangers = 0;
   AL_EIpCtrlMode ipCtrlMode;
   std::string apbFile;
   bool bSelectDeviceWithLowestAvailableResources;
@@ -39,6 +39,3 @@ struct I_IpDevice
   virtual AL_TAllocator* GetAllocator() = 0;
   virtual AL_ITimer* GetTimer() = 0;
 };
-
-/*****************************************************************************/
-AL_TAllocator* CreateDmaAllocator(const char* deviceName);

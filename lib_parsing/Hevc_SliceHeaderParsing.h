@@ -1,10 +1,10 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #pragma once
 
 #include "Concealment.h"
-#include "lib_common/SliceHeader.h"
+#include "lib_common/HevcHeaders.h"
 #include "lib_common_dec/RbspParser.h"
 
 /*****************************************************************************

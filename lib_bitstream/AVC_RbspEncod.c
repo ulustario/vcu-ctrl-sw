@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #include "AVC_RbspEncod.h"
@@ -6,24 +6,22 @@
 
 #include "lib_rtos/lib_rtos.h"
 #include "lib_common/SliceConsts.h"
-#include "lib_common/SliceHeader.h"
-#include "lib_common/SPS.h"
-#include "lib_common/PPS.h"
+#include "lib_common/AvcHeaders.h"
 #include "lib_common/Nuts.h"
 #include "lib_common/ScalingList.h"
 
 /******************************************************************************/
-static int writeScalingList(AL_TBitStreamLite* pBS, uint8_t const* pScalingList, int iSize)
+static int32_t writeScalingList(AL_TBitStreamLite* pBS, uint8_t const* pScalingList, int32_t iSize)
 {
   int32_t const* pDecScanBlock = (iSize == 16) ? AL_DecScanBlock4x4[0] : AL_DecScanBlock8x8[0];
   int32_t iLastScale = 8;
   uint8_t iNextScale = 8;
   /* if iSize == 0, we return an error code */
-  int iUseDefault = -1;
+  int32_t iUseDefault = -1;
 
-  for(int j = 0; j < iSize; j++)
+  for(int32_t j = 0; j < iSize; j++)
   {
-    int i = pDecScanBlock[j];
+    int32_t i = pDecScanBlock[j];
 
     if(iNextScale != 0)
     {
@@ -51,16 +49,16 @@ static void writeScalingMatrix(AL_TBitStreamLite* pBS, uint8_t isScalingMatrixPr
   if(isScalingMatrixPresent == 0)
     return;
 
-  int iNbScalingList = pSps->chroma_format_idc != 3 ? 8 : 12;
+  int32_t iNbScalingList = pSps->chroma_format_idc != 3 ? 8 : 12;
 
-  for(int i = 0; i < iNbScalingList; i++)
+  for(int32_t i = 0; i < iNbScalingList; i++)
   {
     AL_BitStreamLite_PutU(pBS, 1, pSps->seq_scaling_list_present_flag[i]);
 
     if(pSps->seq_scaling_list_present_flag[i] == 0)
       continue;
 
-    int row, size, column;
+    int32_t row, size, column;
 
     if(i < 6)
     {
@@ -234,12 +232,22 @@ static void writeSpsData(AL_TBitStreamLite* pBS, AL_TAvcSps const* pSps)
 
     AL_BitStreamLite_PutU(pBS, 1, pSps->vui_param.pic_struct_present_flag);
     AL_BitStreamLite_PutU(pBS, 1, pSps->vui_param.bitstream_restriction_flag);
-    Rtos_Assert(pSps->vui_param.bitstream_restriction_flag == 0);
+
+    if(pSps->vui_param.bitstream_restriction_flag)
+    {
+      AL_BitStreamLite_PutU(pBS, 1, pSps->vui_param.motion_vectors_over_pic_boundaries_flag);
+      AL_BitStreamLite_PutUE(pBS, pSps->vui_param.max_bytes_per_pic_denom);
+      AL_BitStreamLite_PutUE(pBS, pSps->vui_param.max_bits_per_min_cu_denom); // max_bits_per_mb_denom
+      AL_BitStreamLite_PutUE(pBS, pSps->vui_param.log2_max_mv_length_horizontal);
+      AL_BitStreamLite_PutUE(pBS, pSps->vui_param.log2_max_mv_length_vertical);
+      AL_BitStreamLite_PutUE(pBS, pSps->vui_param.max_num_reorder_frames);
+      AL_BitStreamLite_PutUE(pBS, pSps->vui_param.max_dec_frame_buffering);
+    }
   }
 }
 
 /******************************************************************************/
-static void writeSps(AL_TBitStreamLite* pBS, AL_TSps const* pSps, int iLayerId)
+static void writeSps(AL_TBitStreamLite* pBS, AL_TSps const* pSps, int32_t iLayerId)
 {
   (void)iLayerId;
   writeSpsData(pBS, &pSps->AvcSPS);
@@ -292,21 +300,21 @@ static void writePps(AL_TBitStreamLite* pBS, AL_TPps const* pIPps)
 }
 
 /******************************************************************************/
-static void writeSeiBufferingPeriod(AL_TBitStreamLite* pBS, AL_TSps const* pISps, int iCpbInitialDelay, int iCpbInitialOffset)
+static void writeSeiBufferingPeriod(AL_TBitStreamLite* pBS, AL_TSps const* pISps, int32_t iCpbInitialDelay, int32_t iCpbInitialOffset)
 {
   (void)iCpbInitialOffset;
   AL_TAvcSps* pSps = (AL_TAvcSps*)pISps;
 
   // buffering_period
-  int bookmark = AL_RbspEncoding_BeginSEI(pBS, 0);
+  int32_t bookmark = AL_RbspEncoding_BeginSEI(pBS, 0);
 
   AL_BitStreamLite_PutUE(pBS, pSps->seq_parameter_set_id);
 
-  int iInitialCpbLength = pSps->vui_param.hrd_param.initial_cpb_removal_delay_length_minus1 + 1;
+  int32_t iInitialCpbLength = pSps->vui_param.hrd_param.initial_cpb_removal_delay_length_minus1 + 1;
 
   if(pSps->vui_param.hrd_param.nal_hrd_parameters_present_flag)
   {
-    for(int i = 0; i <= (int)pSps->vui_param.hrd_param.cpb_cnt_minus1[0]; ++i)
+    for(int32_t i = 0; i <= (int)pSps->vui_param.hrd_param.cpb_cnt_minus1[0]; ++i)
     {
       AL_BitStreamLite_PutU(pBS, iInitialCpbLength, iCpbInitialDelay);
       AL_BitStreamLite_PutU(pBS, iInitialCpbLength, iCpbInitialOffset);
@@ -315,7 +323,7 @@ static void writeSeiBufferingPeriod(AL_TBitStreamLite* pBS, AL_TSps const* pISps
 
   if(pSps->vui_param.hrd_param.vcl_hrd_parameters_present_flag)
   {
-    for(int i = 0; i <= (int)pSps->vui_param.hrd_param.cpb_cnt_minus1[0]; ++i)
+    for(int32_t i = 0; i <= (int)pSps->vui_param.hrd_param.cpb_cnt_minus1[0]; ++i)
     {
       AL_BitStreamLite_PutU(pBS, iInitialCpbLength, iCpbInitialDelay);
       AL_BitStreamLite_PutU(pBS, iInitialCpbLength, iCpbInitialOffset);
@@ -328,10 +336,10 @@ static void writeSeiBufferingPeriod(AL_TBitStreamLite* pBS, AL_TSps const* pISps
 }
 
 /******************************************************************************/
-static void writeSeiRecoveryPoint(AL_TBitStreamLite* pBS, int iRecoveryFrameCnt)
+static void writeSeiRecoveryPoint(AL_TBitStreamLite* pBS, int32_t iRecoveryFrameCnt)
 {
   // recovery_point
-  int bookmark = AL_RbspEncoding_BeginSEI(pBS, 6);
+  int32_t bookmark = AL_RbspEncoding_BeginSEI(pBS, 6);
 
   AL_BitStreamLite_PutUE(pBS, iRecoveryFrameCnt);
   AL_BitStreamLite_PutBit(pBS, 1); // exact_match_flag
@@ -344,17 +352,17 @@ static void writeSeiRecoveryPoint(AL_TBitStreamLite* pBS, int iRecoveryFrameCnt)
 }
 
 /******************************************************************************/
-static void writeSeiPictureTiming(AL_TBitStreamLite* pBS, AL_TSps const* pISps, int iCpbRemovalDelay, int iDpbOutputDelay, int iPicStruct)
+static void writeSeiPictureTiming(AL_TBitStreamLite* pBS, AL_TSps const* pISps, int32_t iCpbRemovalDelay, int32_t iDpbOutputDelay, int32_t iPicStruct)
 {
   AL_TAvcSps* pSps = (AL_TAvcSps*)pISps;
   // Table D-1
-  static const int PicStructToNumClockTS[9] =
+  static const int32_t PicStructToNumClockTS[9] =
   {
     1, 1, 1, 2, 2, 3, 3, 2, 3
   };
 
   // pic_timing
-  int bookmark = AL_RbspEncoding_BeginSEI(pBS, 1);
+  int32_t bookmark = AL_RbspEncoding_BeginSEI(pBS, 1);
 
   if(pSps->vui_param.hrd_param.nal_hrd_parameters_present_flag || pSps->vui_param.hrd_param.vcl_hrd_parameters_present_flag)
   {
@@ -381,7 +389,7 @@ static AL_ECodec getCodec(void)
   return AL_CODEC_AVC;
 }
 
-static inline bool isForce4BytesCode(AL_EStartCodeBytesAlignedMode eMode, int nut)
+static inline bool isForce4BytesCode(AL_EStartCodeBytesAlignedMode eMode, int32_t nut)
 {
   switch(eMode)
   {
@@ -394,7 +402,7 @@ static inline bool isForce4BytesCode(AL_EStartCodeBytesAlignedMode eMode, int nu
   return nut >= AL_AVC_NUT_PREFIX_SEI && nut < AL_AVC_NUT_UNSPEC_24;
 }
 
-static void writeStartCode(AL_TBitStreamLite* pBS, int nut, AL_EStartCodeBytesAlignedMode eStartCodeBytesAligned)
+static void writeStartCode(AL_TBitStreamLite* pBS, int32_t nut, AL_EStartCodeBytesAlignedMode eStartCodeBytesAligned)
 {
   if(isForce4BytesCode(eStartCodeBytesAligned, nut))
     AL_BitStreamLite_PutBits(pBS, 8, 0x00);

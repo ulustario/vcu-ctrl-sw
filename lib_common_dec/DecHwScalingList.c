@@ -1,19 +1,19 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #include "DecHwScalingList.h"
 #include "lib_rtos/lib_rtos.h"
 
 /******************************************************************************/
-static void AL_sWriteWord(const uint8_t* pSrc, int iSize, uint32_t* pBuf, const int* pScan)
+static void AL_sWriteWord(const uint8_t* pSrc, int32_t iSize, uint32_t* pBuf, const int32_t* pScan)
 {
-  for(int iScl = 0; iScl < iSize; ++iScl)
+  for(int32_t iScl = 0; iScl < iSize; ++iScl)
   {
-    int iOffset = iScl << 2;
-    int iOffset0 = pScan ? pScan[iOffset] : iOffset;
-    int iOffset1 = pScan ? pScan[iOffset + 1] : iOffset + 1;
-    int iOffset2 = pScan ? pScan[iOffset + 2] : iOffset + 2;
-    int iOffset3 = pScan ? pScan[iOffset + 3] : iOffset + 3;
+    int32_t iOffset = iScl << 2;
+    int32_t iOffset0 = pScan ? pScan[iOffset] : iOffset;
+    int32_t iOffset1 = pScan ? pScan[iOffset + 1] : iOffset + 1;
+    int32_t iOffset2 = pScan ? pScan[iOffset + 2] : iOffset + 2;
+    int32_t iOffset3 = pScan ? pScan[iOffset + 3] : iOffset + 3;
 
     uint32_t var = 0;
     var |= (uint32_t)pSrc[iOffset0];
@@ -26,7 +26,7 @@ static void AL_sWriteWord(const uint8_t* pSrc, int iSize, uint32_t* pBuf, const 
 }
 
 /****************************************************************************/
-static const int AL_AVC_DEC_SCL_ORDER_8x8[64] =
+static const int32_t AL_AVC_DEC_SCL_ORDER_8x8[64] =
 {
   0, 1, 2, 3,
   8, 9, 10, 11,
@@ -53,7 +53,7 @@ void AL_AVC_WriteDecHwScalingList(AL_TScl const* pSclLst, AL_EChromaMode eCMode,
 
   Rtos_Assert((1 & (size_t)pBuf) == 0);
 
-  for(int m = 0; m < 2; m++) // Mode : 0 = Intra; 1 = Inter
+  for(int32_t m = 0; m < 2; m++) // Mode : 0 = Intra; 1 = Inter
   {
     // 8x8
     uint8_t const* pSrc = (*pSclLst)[m].t8x8Y;
@@ -85,11 +85,12 @@ void AL_AVC_WriteDecHwScalingList(AL_TScl const* pSclLst, AL_EChromaMode eCMode,
     pSrc = (*pSclLst)[m].t4x4Cr;
     AL_sWriteWord(pSrc, 4, pBuf32, NULL);
     pBuf32 += 4;
+
   }
 }
 
 /****************************************************************************/
-static const int AL_HEVC_DEC_SCL_ORDER_8x8[64] =
+static const int32_t AL_HEVC_DEC_SCL_ORDER_8x8[64] =
 {
   0, 8, 16, 24,
   1, 9, 17, 25,
@@ -110,7 +111,7 @@ static const int AL_HEVC_DEC_SCL_ORDER_8x8[64] =
 };
 
 /****************************************************************************/
-static const int AL_HEVC_DEC_SCL_ORDER_4x4[16] =
+static const int32_t AL_HEVC_DEC_SCL_ORDER_4x4[16] =
 {
   0, 4, 8, 12,
   1, 5, 9, 13,
@@ -123,7 +124,7 @@ void AL_HEVC_WriteDecHwScalingList(AL_TScl const* pSclLst, uint8_t* pBuf)
 {
   uint32_t* pBuf32 = (uint32_t*)pBuf;
 
-  for(int m = 0; m < 2; m++) // Mode : 0 = Intra; 1 = Inter
+  for(int32_t m = 0; m < 2; m++) // Mode : 0 = Intra; 1 = Inter
   {
     // 32x32
     uint8_t const* pSrc = (*pSclLst)[m].t32x32;
@@ -174,6 +175,7 @@ void AL_HEVC_WriteDecHwScalingList(AL_TScl const* pSclLst, uint8_t* pBuf)
     pSrc = (*pSclLst)[m].t4x4Cr;
     AL_sWriteWord(pSrc, 4, pBuf32, AL_HEVC_DEC_SCL_ORDER_4x4);
     pBuf32 += 4;
+
   }
 
   *pBuf32++ = (*pSclLst)[0].tDC[0] | ((*pSclLst)[0].tDC[1] << 8) | ((*pSclLst)[0].tDC[2] << 16);

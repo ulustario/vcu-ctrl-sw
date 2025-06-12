@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 /******************************************************************************
@@ -11,6 +11,7 @@
 
 #include "I_PictMngr.h"
 #include "lib_common_dec/DecPicParam.h"
+#include "lib_common/HevcHeaders.h"
 
 /*****************************************************************************
    \brief This function updates the reconstructed resolution information
@@ -54,8 +55,8 @@ bool AL_HEVC_PictMngr_HasPictInDPB(AL_TPictMngrCtx const* pCtx);
 /*****************************************************************************
    \brief Retrieves all buffers (input and output) required to decode the current slice
    \param[in]  pCtx          Pointer to a Picture manager context object
-   \param[in]  pPP           Pointer to the current picture parameters
-   \param[in]  pSP           Pointer to the current slice parameters
+   \param[in]  pPicParam           Pointer to the current picture parameters
+   \param[in]  pSliceParam           Pointer to the current slice parameters
    \param[out] pListVirtAddr used for traces
    \param[out] pListAddr     Pointer to the buffer that will receive the references, colocated POC and colocated motion vectors address list
    \param[out] pPOC         Receives pointer to the POC buffer where
@@ -66,7 +67,7 @@ bool AL_HEVC_PictMngr_HasPictInDPB(AL_TPictMngrCtx const* pCtx);
    \return If the function succeeds the return value is nonzero (true)
         If the function fails the return value is zero (false)
 *****************************************************************************/
-bool AL_HEVC_PictMngr_GetBuffers(AL_TPictMngrCtx* pCtx, AL_TDecSliceParam const* pSP, TBuffer* pListVirtAddr, TBuffer* pListAddr, TBufferPOC* pPOC, TBufferMV* pMV, AL_TRecBuffers* pRecs);
+bool AL_HEVC_PictMngr_GetBuffers(AL_TPictMngrCtx* pCtx, AL_TDecSliceParam const* pSliceParam, TBuffer* pListVirtAddr, TBuffer* pListAddr, TBufferPOC* pPOC, TBufferMV* pMV, AL_TRecBuffers* pRecs);
 
 /*****************************************************************************
    \brief Prepares the reference picture set for the current slice reference picture list construction

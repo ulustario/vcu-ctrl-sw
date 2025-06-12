@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #pragma once
@@ -6,19 +6,19 @@
 #include "lib_common/HDR.h"
 
 /***************************************************************************/
-int AL_H273_ColourDescToColourPrimaries(AL_EColourDescription colourDesc);
+int32_t AL_H273_ColourDescToColourPrimaries(AL_EColourDescription colourDesc);
 
 /***************************************************************************/
-AL_EColourDescription AL_H273_ColourPrimariesToColourDesc(int iColourPrimaries);
+AL_EColourDescription AL_H273_ColourPrimariesToColourDesc(uint8_t iColourPrimaries);
 
 /***************************************************************************/
-int AL_TransferCharacteristicsToVUIValue(AL_ETransferCharacteristics eTransferCharacteristics);
+int32_t AL_TransferCharacteristicsToVUIValue(AL_ETransferCharacteristics eTransferCharacteristics);
 
 /***************************************************************************/
-AL_ETransferCharacteristics AL_VUIValueToTransferCharacteristics(int iTransferCharacteristics);
+AL_ETransferCharacteristics AL_VUIValueToTransferCharacteristics(uint8_t iTransferCharacteristics);
 
 /***************************************************************************/
-int AL_ColourMatrixCoefficientsToVUIValue(AL_EColourMatrixCoefficients eColourMatrixCoef);
+int32_t AL_ColourMatrixCoefficientsToVUIValue(AL_EColourMatrixCoefficients eColourMatrixCoef);
 
 /***************************************************************************/
-AL_EColourMatrixCoefficients AL_VUIValueToColourMatrixCoefficients(int iColourMatrixCoef);
+AL_EColourMatrixCoefficients AL_VUIValueToColourMatrixCoefficients(uint8_t iColourMatrixCoef);

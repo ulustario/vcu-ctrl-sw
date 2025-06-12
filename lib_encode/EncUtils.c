@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 /****************************************************************************
@@ -7,12 +7,12 @@
 
 #include "EncUtils.h"
 #include "lib_common/Profiles.h"
-#include "lib_common/SPS.h"
+#include "lib_common_enc/SPS.h"
 #include "lib_common/Utils.h"
 #include "lib_common_enc/EncPicInfo.h"
 
 /****************************************************************************/
-bool isBaseLayer(int iLayer)
+bool isBaseLayer(int32_t iLayer)
 {
   return iLayer == 0;
 }
@@ -39,13 +39,13 @@ void AL_Decomposition(uint32_t* y, uint8_t* x)
 /****************************************************************************/
 void AL_Reduction(uint32_t* pN, uint32_t* pD)
 {
-  static const int Prime[] =
+  static const int32_t Prime[] =
   {
     2, 3, 5, 7, 11, 13, 17, 19, 23
   };
-  const int iNumPrime = sizeof(Prime) / sizeof(int);
+  const int32_t iNumPrime = sizeof(Prime) / sizeof(int);
 
-  for(int i = 0; i < iNumPrime; i++)
+  for(int32_t i = 0; i < iNumPrime; i++)
   {
     while(((*pN % Prime[i]) == 0) && ((*pD % Prime[i]) == 0))
     {
@@ -229,7 +229,7 @@ bool AL_IsGdrEnabled(AL_TEncChanParam const* pChParam)
 }
 
 /****************************************************************************/
-void AL_UpdateVuiTimingInfo(AL_TVuiParam* pVUI, int iLayerId, AL_TRCParam const* pRCParam, int iTimeScalefactor)
+void AL_UpdateVuiTimingInfo(AL_TVuiParam* pVUI, int32_t iLayerId, AL_TRCParam const* pRCParam, int32_t iTimeScalefactor)
 {
   // When fixed_frame_rate_flag = 1, num_units_in_tick/time_scale should be equal to
   // a duration of one field both for progressive and interlaced sequences.
@@ -247,6 +247,7 @@ static bool AreTemporalLevelsHandled(AL_TGopParam const* pGop, AL_ECodec eCodec,
   (void)eVideoMode;
 
   bool bTemporalLevelsHandled = (pGop->eMode & AL_GOP_FLAG_PYRAMIDAL) != 0;
+  bTemporalLevelsHandled |= pGop->uNumB != 0 && (pGop->eMode & AL_GOP_FLAG_DEFAULT);
   bTemporalLevelsHandled = bTemporalLevelsHandled &&
                            !(eCodec != AL_CODEC_AVC && eVideoMode != AL_VM_PROGRESSIVE);
 
@@ -254,23 +255,29 @@ static bool AreTemporalLevelsHandled(AL_TGopParam const* pGop, AL_ECodec eCodec,
 }
 
 /****************************************************************************/
-int DeduceNumTemporalLayer(AL_TGopParam const* pGop, AL_ECodec eCodec, AL_EVideoMode eVideoMode)
+int32_t DeduceNumTemporalLayer(AL_TGopParam const* pGop, AL_ECodec eCodec, AL_EVideoMode eVideoMode)
 {
   if(!AreTemporalLevelsHandled(pGop, eCodec, eVideoMode))
     return 1;
 
-  int iNumTemporalLayers;
-  switch(pGop->uNumB)
+  int32_t iNumTemporalLayers;
+
+  if(pGop->eMode & AL_GOP_FLAG_DEFAULT)
+    iNumTemporalLayers = 2;
+  else
   {
-  case 15:
-    iNumTemporalLayers = 5;
-    break;
-  case 7:
-    iNumTemporalLayers = 4;
-    break;
-  default:
-    iNumTemporalLayers = 3;
-    break;
+    switch(pGop->uNumB)
+    {
+    case 15:
+      iNumTemporalLayers = 5;
+      break;
+    case 7:
+      iNumTemporalLayers = 4;
+      break;
+    default:
+      iNumTemporalLayers = 3;
+      break;
+    }
   }
 
   if(pGop->eMode & AL_GOP_FLAG_B_ONLY)
@@ -306,14 +313,13 @@ uint8_t AL_GetSps(AL_THeadersCtx* pHdrs, uint16_t uWidth, uint16_t uHeight, AL_E
     return pHdrs->iPrevSps;
   }
 
-  int iMaxSpsIds = MAX_SPS_IDS;
+  int32_t iMaxSpsIds = MAX_SPS_IDS;
 
   if(AL_GET_CODEC(eProfile) == AL_CODEC_HEVC)
     iMaxSpsIds = AL_HEVC_MAX_SPS;
 
   if(AL_GET_CODEC(eProfile) == AL_CODEC_AVC)
     iMaxSpsIds = AL_AVC_MAX_SPS;
-
   pHdrs->iPrevSps = (pHdrs->iPrevSps + 1) % iMaxSpsIds;
   pCurrent = &pHdrs->spsCtx[pHdrs->iPrevSps];
   Rtos_Assert(pCurrent->iRefCnt == 0);

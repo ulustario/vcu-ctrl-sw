@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #include <stdexcept>
@@ -12,6 +12,7 @@ ETileMode EFbStorageModeToETileMode(AL_EFbStorageMode eFbStorageMode, uint8_t uB
   case AL_FB_TILE_32x4: return TILE_32x4_v1;
   case AL_FB_TILE_64x4: return TILE_64x4_v1;
   case AL_FB_RASTER: return RASTER;
+
   default: throw std::runtime_error("Unsupported eFbStorageMode");
   }
 

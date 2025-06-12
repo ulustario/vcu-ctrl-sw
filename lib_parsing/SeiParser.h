@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #pragma once
@@ -7,7 +7,6 @@
 #include "lib_common_dec/RbspParser.h"
 #include "lib_common_dec/DecCallbacks.h"
 #include "Aup.h"
-#include "common_syntax.h"
 
 /* COMMON SEI PAYLOAD TYPES */
 typedef enum
@@ -42,7 +41,7 @@ typedef struct
 
 typedef struct
 {
-  bool (* func)(SeiParserParam* pParam, AL_TRbspParser* pRP, AL_ESeiPayloadType ePayloadType, int iPayloadSize, bool* bCanSendToUser, bool* bParsed);
+  bool (* func)(SeiParserParam* pParam, AL_TRbspParser* pRP, AL_ESeiPayloadType ePayloadType, int32_t iPayloadSize, bool* bCanSendToUser, bool* bParsed);
   SeiParserParam* pParam;
 }SeiParserCB;
 

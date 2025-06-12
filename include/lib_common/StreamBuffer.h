@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 /******************************************************************************
@@ -30,7 +30,7 @@
    \param[in] iLevel Level
    \return maximum size of one NAL unit
 *****************************************************************************/
-int AL_GetMaxNalSize(AL_TDimension tDim, AL_EChromaMode eMode, int iBitDepth, AL_EProfile eProfile, int iLevel);
+int32_t AL_GetMaxNalSize(AL_TDimension tDim, AL_EChromaMode eMode, int32_t iBitDepth, AL_EProfile eProfile, int32_t iLevel);
 
 /*****************************************************************************
    \brief Retrieves the most likely to happen real worst case size of the encoder
@@ -42,7 +42,7 @@ int AL_GetMaxNalSize(AL_TDimension tDim, AL_EChromaMode eMode, int iBitDepth, AL
    \param[in] iBitDepth Bitdepth
    \return maximum size of one NAL unit
 *****************************************************************************/
-int AL_GetMitigatedMaxNalSize(AL_TDimension tDim, AL_EChromaMode eMode, int iBitDepth);
+int32_t AL_GetMitigatedMaxNalSize(AL_TDimension tDim, AL_EChromaMode eMode, int32_t iBitDepth);
 
 /*****************************************************************************
    \brief Retrieves the minimal memory space needed for the encoder to generate
@@ -54,6 +54,6 @@ int AL_GetMitigatedMaxNalSize(AL_TDimension tDim, AL_EChromaMode eMode, int iBit
    \return Minimal size for non-VCL NAL unit, slice header and
    specific structure to encode one frame
 *****************************************************************************/
-int AL_GetMinimalNalSize(int iNumSlices, AL_ECodec eCodec);
+int32_t AL_GetMinimalNalSize(int32_t iNumSlices, AL_ECodec eCodec);
 
 /*!@}*/

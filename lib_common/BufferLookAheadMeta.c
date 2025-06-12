@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #include "lib_common/BufferLookAheadMeta.h"
@@ -56,7 +56,7 @@ void AL_LookAheadMetaData_Copy(AL_TLookAheadMetaData* pMetaSrc, AL_TLookAheadMet
   pMetaDest->iComplexity = pMetaSrc->iComplexity;
   pMetaDest->iTargetLevel = pMetaSrc->iTargetLevel;
 
-  for(int i = 0; i < 5; i++)
+  for(int32_t i = 0; i < 5; i++)
     pMetaDest->iPercentIntra[i] = pMetaSrc->iPercentIntra[i];
 }
 

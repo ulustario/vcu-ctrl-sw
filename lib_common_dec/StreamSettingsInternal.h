@@ -1,11 +1,11 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #pragma once
 
 #include "lib_common_dec/StreamSettings.h"
 
-static int const STREAM_SETTING_UNKNOWN = -1;
+static int32_t const STREAM_SETTING_UNKNOWN = -1;
 
 /******************************************************************************/
 bool IsAllStreamSettingsSet(AL_TStreamSettings const* pStreamSettings);

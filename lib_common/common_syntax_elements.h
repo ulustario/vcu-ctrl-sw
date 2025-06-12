@@ -1,75 +1,16 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
-/******************************************************************************
-   \addtogroup lib_base
-   !@{
-   \file
- *****************************************************************************/
 #pragma once
 
 #include "lib_rtos/types.h"
 #include "lib_common/BufConst.h"
 
 #define MAX_NUM_CPB 32
-
-/*****************************************************************************
-   \brief Mimics structure described in spec sec. 7.3.2.1.2
-*****************************************************************************/
-typedef struct AL_THevcProfilevel
-{
-  uint8_t general_profile_space;
-  uint8_t general_tier_flag;
-  uint8_t general_profile_idc;
-  uint8_t general_profile_compatibility_flag[32];
-
-  uint8_t general_progressive_source_flag;
-  uint8_t general_interlaced_source_flag;
-  uint8_t general_non_packed_constraint_flag;
-  uint8_t general_frame_only_constraint_flag;
-
-  uint16_t general_rext_profile_flags;
-
-  uint8_t general_max_12bit_constraint_flag;
-  uint8_t general_max_10bit_constraint_flag;
-  uint8_t general_max_8bit_constraint_flag;
-  uint8_t general_max_422chroma_constraint_flag;
-  uint8_t general_max_420chroma_constraint_flag;
-  uint8_t general_max_monochrome_constraint_flag;
-  uint8_t general_intra_constraint_flag;
-  uint8_t general_one_picture_only_constraint_flag;
-  uint8_t general_lower_bit_rate_constraint_flag;
-  uint8_t general_max_14bit_constraint_flag;
-
-  uint8_t general_inbld_flag;
-
-  uint8_t general_level_idc;
-
-  uint8_t sub_layer_profile_present_flag[MAX_SUB_LAYER + 1];
-  uint8_t sub_layer_level_present_flag[MAX_SUB_LAYER + 1];
-  uint8_t sub_layer_profile_space[MAX_SUB_LAYER + 1];
-  uint8_t sub_layer_tier_flag[MAX_SUB_LAYER + 1];
-  uint8_t sub_layer_profile_idc[MAX_SUB_LAYER + 1];
-  uint8_t sub_layer_profile_compatibility_flag[MAX_SUB_LAYER + 1][32];
-
-  uint8_t sub_layer_progressive_source_flag[MAX_SUB_LAYER + 1];
-  uint8_t sub_layer_interlaced_source_flag[MAX_SUB_LAYER + 1];
-  uint8_t sub_layer_non_packed_constraint_flag[MAX_SUB_LAYER + 1];
-  uint8_t sub_layer_frame_only_constraint_flag[MAX_SUB_LAYER + 1];
-  uint8_t sub_layer_max_12bit_constraint_flag[MAX_SUB_LAYER + 1];
-  uint8_t sub_layer_max_10bit_constraint_flag[MAX_SUB_LAYER + 1];
-  uint8_t sub_layer_max_8bit_constraint_flag[MAX_SUB_LAYER + 1];
-  uint8_t sub_layer_max_422chroma_constraint_flag[MAX_SUB_LAYER + 1];
-  uint8_t sub_layer_max_420chroma_constraint_flag[MAX_SUB_LAYER + 1];
-  uint8_t sub_layer_max_monochrome_constraint_flag[MAX_SUB_LAYER + 1];
-  uint8_t sub_layer_intra_constraint_flag[MAX_SUB_LAYER + 1];
-  uint8_t sub_layer_one_picture_only_constraint_flag[MAX_SUB_LAYER + 1];
-  uint8_t sub_layer_lower_bit_rate_constraint_flag[MAX_SUB_LAYER + 1];
-  uint8_t sub_layer_max_14bit_constraint_flag[MAX_SUB_LAYER + 1];
-  uint8_t sub_layer_inbld_flag[MAX_SUB_LAYER + 1];
-
-  uint8_t sub_layer_level_idc[MAX_SUB_LAYER + 1];
-}AL_THevcProfilevel;
+static int32_t const AL_MIN_INIT_QP = -26;
+static int32_t const AL_MAX_INIT_QP = 25;
+static int32_t const AL_MIN_QP_OFFSET = -12;
+static int32_t const AL_MAX_QP_OFFSET = 12;
 
 /*****************************************************************************
    \brief Mimics structure to represent scaling list syntax elements
@@ -228,7 +169,7 @@ typedef struct AL_TVuiParam
 
   uint8_t low_delay_hrd_flag;
   uint8_t pic_struct_present_flag;
-  uint32_t num_reorder_frames;
+  uint32_t max_num_reorder_frames;
   uint32_t max_dec_frame_buffering;
 
   uint8_t bitstream_restriction_flag;
@@ -241,5 +182,3 @@ typedef struct AL_TVuiParam
   uint8_t log2_max_mv_length_horizontal;
   uint8_t log2_max_mv_length_vertical;
 }AL_TVuiParam;
-
-/*!@}*/

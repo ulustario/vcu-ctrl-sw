@@ -1,16 +1,18 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #pragma once
 
 #include <string>
 #include <map>
+#include <stdexcept>
 
 extern "C"
 {
 #include "lib_common/PicFormat.h"
 #include "lib_common_postproc/PostProcTypes.h"
 #include "lib_common/FourCC.h"
+#include "lib_common/AllocatorTracker.h"
 }
 
 static const std::map<std::string, AL_EPostProcRotation> HandledRotation =
@@ -28,6 +30,14 @@ static const std::map<std::string, AL_EPostProcMirror> HandledMirror =
   { "V", AL_POSTPROC_MIRROR_VERTICAL },
   { "HV", AL_POSTPROC_MIRROR_HV },
   { "VH", AL_POSTPROC_MIRROR_HV },
+};
+
+static const std::map<std::string, AL_EChromaMode> HandledChromaMode =
+{
+  { "400", AL_CHROMA_4_0_0 },
+  { "420", AL_CHROMA_4_2_0 },
+  { "422", AL_CHROMA_4_2_2 },
+  { "444", AL_CHROMA_4_4_4 },
 };
 
 static const std::map<std::string, AL_EFbStorageMode> HandledStorageModes =
@@ -68,5 +78,5 @@ T ParseHandledValue(std::string s, const std::map<std::string, T> HandledValues,
 
 AL_EFbStorageMode ParseFrameBufferFormat(const std::string& sBufFormat, bool& bBufComp);
 std::string GetFrameBufferFormatOptDesc(bool bSecondOutput = false);
-AL_TPosition ParsePosition(std::string s, int iMultiple);
-AL_TDimension ParseDimension(std::string s, int multiple);
+AL_TPosition ParsePosition(std::string s, int32_t iMultiple);
+AL_TDimension ParseDimension(std::string s, int32_t multiple);

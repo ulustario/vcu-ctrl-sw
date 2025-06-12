@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 #pragma once
@@ -16,7 +16,7 @@
    \param[in] tPicFormat picture format of the frame buffer
    \return return the size of the reconstructed picture buffer
 *****************************************************************************/
-int AL_DecGetAllocSize_Frame(AL_TDimension tDim, int iPitch, AL_TPicFormat tPicFormat);
+int32_t AL_DecGetAllocSize_Frame(AL_TDimension tDim, int32_t iPitch, AL_TPicFormat tPicFormat);
 
 /*****************************************************************************
    \brief Give the size of one pixel component of a reconstructed picture buffer
@@ -26,7 +26,7 @@ int AL_DecGetAllocSize_Frame(AL_TDimension tDim, int iPitch, AL_TPicFormat tPicF
    \param[in] ePlaneId The pixel plane type. Must not be a map plane.
    \return return the size of the pixel component of the reconstructed buffer
 *****************************************************************************/
-int AL_DecGetAllocSize_Frame_PixPlane(AL_TPicFormat const* pPicFormat, AL_TDimension tDim, int iPitch, AL_EPlaneId ePlaneId);
+int32_t AL_DecGetAllocSize_Frame_PixPlane(AL_TPicFormat const* pPicFormat, AL_TDimension tDim, int32_t iPitch, AL_EPlaneId ePlaneId);
 
 /*****************************************************************************
    \brief Create the AL_TMetaData associated to the reconstruct buffers
@@ -35,9 +35,9 @@ int AL_DecGetAllocSize_Frame_PixPlane(AL_TPicFormat const* pPicFormat, AL_TDimen
    \param[in] iPitch Pitch of the frame buffer
    \return the AL_TMetaData
 *****************************************************************************/
-AL_TMetaData* AL_CreateRecBufMetaData(AL_TDimension tDim, int iPitch, TFourCC tFourCC);
+AL_TMetaData* AL_CreateRecBufMetaData(AL_TDimension tDim, int32_t iPitch, TFourCC tFourCC);
 
 AL_DEPRECATED("Use AL_DecGetAllocSize_Frame_PixPlane.")
-int AL_DecGetAllocSize_Frame_Y(AL_EFbStorageMode eFbStorage, AL_TDimension tDim, int iPitch);
+int32_t AL_DecGetAllocSize_Frame_Y(AL_EFbStorageMode eFbStorage, AL_TDimension tDim, int32_t iPitch);
 AL_DEPRECATED("Use AL_DecGetAllocSize_Frame_PixPlane.")
-int AL_DecGetAllocSize_Frame_UV(AL_EFbStorageMode eFbStorage, AL_TDimension tDim, int iPitch, AL_EChromaMode eChromaMode);
+int32_t AL_DecGetAllocSize_Frame_UV(AL_EFbStorageMode eFbStorage, AL_TDimension tDim, int32_t iPitch, AL_EChromaMode eChromaMode);

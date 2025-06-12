@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 /******************************************************************************
@@ -37,6 +37,6 @@ private:
   void BuildAlternativeTransferCharacteristics(AL_TAlternativeTransferCharacteristics& tATC, TJsonValue& tSEIObject);
   void BuildST2094_10(AL_TDynamicMeta_ST2094_10& tST2094_10, TJsonValue& tSEIObject);
   void BuildST2094_40(AL_TDynamicMeta_ST2094_40& tST2094_40, TJsonValue& tSEIObject);
-  void BuildST2094_40ProcessingWindow(AL_TDynamicMeta_ST2094_40& tST2094_40, int iWindow, TJsonValue& tPWObject);
+  void BuildST2094_40ProcessingWindow(AL_TDynamicMeta_ST2094_40& tST2094_40, int32_t iWindow, TJsonValue& tPWObject);
   void BuildST2094_40PeakLuminance(AL_TDisplayPeakLuminance_ST2094_40& tPeakLuminance, TJsonValue& tPLRootObject, std::string sKey);
 };

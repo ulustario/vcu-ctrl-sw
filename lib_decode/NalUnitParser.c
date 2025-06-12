@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
 /******************************************************************************
@@ -66,15 +66,15 @@ static uint32_t AL_sCount_AntiEmulBytes(AL_TCircBuffer* pStream, uint32_t uLengt
 /*****************************************************************************/
 uint32_t GetNonVclSize(AL_TCircBuffer* pBufStream)
 {
-  int iNumZeros = 0;
-  int iNumNALFound = 0;
+  int32_t iNumZeros = 0;
+  int32_t iNumNALFound = 0;
   uint8_t* pParseBuf = pBufStream->tMD.pVirtualAddr;
   uint32_t uMaxSize = pBufStream->tMD.uSize;
   uint32_t uLengthNAL = 0;
-  int iOffset = pBufStream->iOffset;
-  int iAvailSize = pBufStream->iAvailSize;
+  int32_t iOffset = pBufStream->iOffset;
+  int32_t iAvailSize = pBufStream->iAvailSize;
 
-  for(int i = iOffset; i < iOffset + iAvailSize; ++i)
+  for(int32_t i = iOffset; i < iOffset + iAvailSize; ++i)
   {
     uint8_t uRead = pParseBuf[i % uMaxSize];
 
@@ -122,7 +122,7 @@ static void InitNonVclBuf(AL_TDecCtx* pCtx)
 static uint32_t GetSliceHdrSize(AL_TRbspParser* pRP, AL_TCircBuffer* pBufStream)
 {
   uint32_t uLengthNAL = (offset(pRP) + 7) >> 3;
-  int iNumAE = AL_sCount_AntiEmulBytes(pBufStream, uLengthNAL);
+  int32_t iNumAE = AL_sCount_AntiEmulBytes(pBufStream, uLengthNAL);
   return uLengthNAL + iNumAE;
 }
 
@@ -135,13 +135,13 @@ void UpdateContextAtEndOfFrame(AL_TDecCtx* pCtx)
   pCtx->tConceal.bValidFrame = false;
   pCtx->tCurrentFrameCtx.uNumSlice = 0;
 
-  Rtos_Memset(&pCtx->PoolPP[pCtx->uToggle], 0, sizeof(AL_TDecPicParam));
-  Rtos_Memset(&pCtx->PoolPB[pCtx->uToggle], 0, sizeof(AL_TDecBuffers));
-  AL_SET_DEC_OPT(&pCtx->PoolPP[pCtx->uToggle], IntraOnly, 1);
+  Rtos_Memset(&pCtx->tPoolPicParams[pCtx->uToggle], 0, sizeof(AL_TDecPicParam));
+  Rtos_Memset(&pCtx->tPoolPicBuffers[pCtx->uToggle], 0, sizeof(AL_TDecBuffers));
+  AL_SET_DEC_OPT(&pCtx->tPoolPicParams[pCtx->uToggle], IntraOnly, 1);
 }
 
 /*****************************************************************************/
-void UpdateCircBuffer(AL_TRbspParser* pRP, AL_TCircBuffer* pBufStream, int* pSliceHdrLength)
+void UpdateCircBuffer(AL_TRbspParser* pRP, AL_TCircBuffer* pBufStream, int32_t* pSliceHdrLength)
 {
   uint32_t uLengthNAL = GetSliceHdrSize(pRP, pBufStream);
 
@@ -178,4 +178,20 @@ AL_TRbspParser getParserOnNonVclNalInternalBuf(AL_TDecCtx* pCtx)
 {
   InitNonVclBuf(pCtx);
   return getParserOnNonVclNal(pCtx, pCtx->BufNoAE.tMD.pVirtualAddr, pCtx->BufNoAE.tMD.uSize);
+}
+
+/*****************************************************************************/
+AL_TRbspParser getParserOnNonVclObu(AL_TDecCtx* pCtx, uint8_t* pBufNoAE, int32_t iBufNoAESize)
+{
+  AL_TCircBuffer* pBufStream = &pCtx->Stream;
+  AL_TRbspParser rp;
+  InitRbspParser(pBufStream, pBufNoAE, iBufNoAESize, false, &rp);
+  return rp;
+}
+
+/*****************************************************************************/
+AL_TRbspParser getParserOnNonVclObuInternalBuf(AL_TDecCtx* pCtx)
+{
+  InitNonVclBuf(pCtx);
+  return getParserOnNonVclObu(pCtx, pCtx->BufNoAE.tMD.pVirtualAddr, pCtx->BufNoAE.tMD.uSize);
 }

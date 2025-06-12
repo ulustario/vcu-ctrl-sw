@@ -1,6 +1,8 @@
-// SPDX-FileCopyrightText: © 2024 Allegro DVT <github-ip@allegrodvt.com>
+// SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
+#include "lib_common/Utils.h"
+#include "lib_common/ChannelResources.h"
 #include "lib_common_enc/ParamConstraints.h"
 
 #define MIN_QP_CHROMA_OFFSET -12
@@ -59,11 +61,42 @@ bool AL_ParamConstraints_CheckChromaOffsets(AL_EProfile eProfile, int8_t iCbPicQ
   return true;
 }
 
-void AL_ParamConstraints_GetQPBounds(AL_ECodec eCodec, int* pMinQP, int* pMaxQP)
+void AL_ParamConstraints_GetQPBounds(AL_ECodec eCodec, int32_t* pMinQP, int32_t* pMaxQP)
 {
   *pMinQP = 0;
   *pMaxQP = 51;
 
   (void)eCodec;
 
+}
+
+uint8_t AL_ParamConstraints_CheckNumCore(AL_TEncChanParam* pChParam)
+{
+  uint8_t err = 0;
+
+  uint16_t uNumTile = pChParam->uNumCore != NUMCORE_AUTO ? pChParam->uNumCore : 1;
+
+  if(pChParam->uNumCore != NUMCORE_AUTO)
+  {
+    AL_NumCoreDiagnostic diagnostic;
+
+    if(!AL_Constraint_NumTileIsSane(AL_GET_CODEC(pChParam->eProfile), pChParam->uEncWidth, uNumTile, pChParam->uLog2MaxCuSize, &diagnostic))
+    {
+      ++err;
+      Rtos_Log(AL_LOG_ERROR, "[ERROR]: Invalid Number of Tile. The width should at least be %d CTB per tile. With the specified number of tile, it is %d CTB per tile. (Multi core alignment constraint might be the reason of this error if the CTB are equal)", diagnostic.requiredWidthInCtbPerCore, diagnostic.actualWidthInCtbPerCore);
+    }
+  }
+
+  if(pChParam->uNumCore != NUMCORE_AUTO && pChParam->uNumCore > 1)
+  {
+    int32_t MinCoreWidth = 256;
+
+    if(AL_IS_HEVC(pChParam->eProfile) && (pChParam->uEncWidth < MinCoreWidth * pChParam->uNumCore))
+    {
+      ++err;
+      Rtos_Log(AL_LOG_ERROR, "[ERROR]: Invalid parameter: NumCore. The width should at least be 256 pixels per core for HEVC conformance");
+    }
+  }
+
+  return err;
 }
