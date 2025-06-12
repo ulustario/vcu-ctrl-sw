@@ -8,7 +8,7 @@ CXX:=$(CROSS_COMPILE)g++
 CC:=$(CROSS_COMPILE)gcc
 
 # Same as: ar/nm/ranlib --plugin=<liblto_plugin.so>
-ARCHIVER_TOOL?=gcc-
+ARCHIVER_TOOL?=
 AR:=$(CROSS_COMPILE)$(ARCHIVER_TOOL)ar
 NM:=$(CROSS_COMPILE)$(ARCHIVER_TOOL)nm
 RANLIB:=$(CROSS_COMPILE)$(ARCHIVER_TOOL)ranlib
