@@ -1,9 +1,9 @@
 // SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
-#include "CfgParser.h"
-#include "lib_app/Parser.h"
-#include "lib_app/JsonFile.h"
+#include "CfgParser.hpp"
+#include "lib_app/Parser.hpp"
+#include "lib_app/JsonFile.hpp"
 
 #include <algorithm>
 #include <cassert>
@@ -27,10 +27,11 @@
 
 extern "C"
 {
-#include "lib_common/RoundUp.h"
+#include "lib_common/Round.h"
 #include "lib_common/SEI.h"
 #include "lib_common/SliceConsts.h"
 #include "lib_common_enc/RateCtrlMeta.h"
+#include "lib_rtos/utils.h"
 }
 
 using std::cout;
@@ -260,6 +261,7 @@ static void populateOutputSection(ConfigParser& parser, ConfigFile& cfg)
 {
   auto curSection = Section::Output;
   parser.addPath(curSection, "BitstreamFile", cfg.BitstreamFileName, "Elementary stream output file name", allCodecs());
+  parser.addBool(curSection, "DisableBitstreamOutput", cfg.bDisableBitstreamOutput, "Disable writing compressed output file", allCodecs());
   parser.addPath(curSection, "RecFile", cfg.RecFileName, "Optional output file name for reconstructed picture (in YUV format).", aomituCodecs());
   parser.addNote(curSection, "RecFile", "If unset, the reconstruted picture is not saved. The reconstructed picture can be used for quality measurement, for example the SSIM between source and reconstructed pictures can be computed using the following tool: http://compression.ru/video/quality_measure/video_measurement_tool_en.html");
   parser.addCustom(curSection, "Format", [&](std::deque<Token>& tokens)
@@ -602,7 +604,7 @@ static void populateGopSection(ConfigParser& parser, ConfigFile& cfg)
   parser.addSeeAlso(curSection, "Gop.GdrMode", { curSection, "Gop.FreqRP" });
   parser.addSeeAlso(curSection, "Gop.GdrMode", { Section::Settings, "EnableSEI" });
   parser.addSeeAlso(curSection, "Gop.GdrMode", { Section::Settings, "LoopFilter" });
-  parser.addArith(curSection, "Gop.FreqRP", GopParam.uFreqRP, "Specifies the minimum number of frames between two recovery points. Must be used with GDR, where it defines how many frames we have between two intra-line sweep starts.", {
+  parser.addArith(curSection, "Gop.FreqRP", GopParam.iFreqRP, "Specifies the minimum number of frames between two recovery points. Must be used with GDR, where it defines how many frames we have between two intra-line sweep starts.", {
     { ituCodecs(), 0, UINT32_MAX }
   });
   parser.addSeeAlso(curSection, "Gop.FreqRP", { curSection, "Gop.GdrMode" });
@@ -633,6 +635,7 @@ static void populateProfileAndLevel(ConfigParser& parser, ConfigFile& cfg, Secti
   profiles["AVC_HIGH10"] = { AL_PROFILE_AVC_HIGH10, "See AVC/H.264 specification", isOnlyCodec(Codec::Avc) };
   profiles["AVC_HIGH_422_INTRA"] = { AL_PROFILE_AVC_HIGH_422_INTRA, "See AVC/H.264 specification", isOnlyCodec(Codec::Avc) };
   profiles["AVC_HIGH_422"] = { AL_PROFILE_AVC_HIGH_422, "See AVC/H.264 specification", isOnlyCodec(Codec::Avc) };
+  profiles["AVC_HIGH_INTRA"] = { AL_PROFILE_AVC_HIGH_INTRA, "This profile is not clearly named in the AVC/H.264 specification; but is allowed as part of High 10 Intra profile (see NOTE 1 in A.2.8)", isOnlyCodec(Codec::Avc) };
   profiles["AVC_HIGH"] = { AL_PROFILE_AVC_HIGH, "See AVC/H.264 specification", isOnlyCodec(Codec::Avc) };
   profiles["AVC_C_HIGH"] = { AL_PROFILE_AVC_C_HIGH, "See AVC/H.264 specification", isOnlyCodec(Codec::Avc) };
   profiles["AVC_PROG_HIGH"] = { AL_PROFILE_AVC_PROG_HIGH, "See AVC/H.264 specification", isOnlyCodec(Codec::Avc) };
@@ -737,13 +740,19 @@ static void populateMultipassOptions(ConfigParser& parser, ConfigFile& cfg, Sect
   parser.addArithOrEnum(curSection, "TwoPass", cfg.Settings.TwoPass, twoPassEnums, "Enables/Disables the two_pass encoding mode and specifies which pass is considered for the current encoding. In two-pass encoding some information from the first pass are stored in a file and read back by the second pass", {
     { aomituCodecs(), 0, 2 }
   });
+  parser.addPath(curSection, "TwoPassFile", cfg.sTwoPassFileName, "File containing the first pass statistics", aomituCodecs());
   map<string, EnumDescription<int>> lookAheadEnums;
   lookAheadEnums["DISABLE"] = { 0, "Disable the lookAhead encoding mode", aomituCodecs() };
-  parser.addArithOrEnum(curSection, "LookAhead", cfg.Settings.LookAhead, lookAheadEnums, "Enables/Disables the lookAhead encoding mode and specifies the number of frames in advance for the first analysis pass. this option increase the encoding latency and the number of required memory buffers.", {
+  parser.addArithOrEnum(curSection, "LookAhead", cfg.Settings.LookAhead, lookAheadEnums,
+                        "Enable the lookahead mode, by specifying a number of frame encoded in advance in a first pass of encoding."
+                        " First pass is used to extract statistics to better adjust to scene-changes in the second pass. Increases "
+                        "the encoding latency and the number of required memory buffers.", {
     { aomituCodecs(), 1, 20 },
   });
-  parser.addBool(curSection, "SCDFirstPass", cfg.Settings.bEnableFirstPassSceneChangeDetection, "During first pass, to encode faster, enable only the scene change detection", allCodecs());
-  parser.addPath(curSection, "TwoPassFile", cfg.sTwoPassFileName, "File containing the first pass statistics", aomituCodecs());
+  parser.addBool(curSection, "SCDFirstPass", cfg.Settings.bEnableFirstPassSceneChangeDetection,
+                 "If disabled, full frames are encoded in the first pass, allowing an elaborated scene change adjustment."
+                 " If enabled, encode only sub-patches of the frames in the first pass, allowing a faster but simplified "
+                 " scene change detection. ", allCodecs());
 }
 
 static void populateOptionalNUTOptions(ConfigParser& parser, ConfigFile& cfg, Section& curSection)
@@ -867,6 +876,7 @@ static void populateLdaCtrlOptions(ConfigParser& parser, ConfigFile& cfg, Tempor
   }, "Specifies a lambda factor for each pictures. The factors are ordered as: I, P, B(temporalId = 1), B(temporalId = 2), B(temporalId = 3), and B(temporalId = 4). A factor on LOAD_LDA lambdas is available for each picture type and temporal ID with the LambdaFactors table. Example: LambdaFactors = 0.20 0.35 0.59 0.60 1 1", { ParameterType::Array }, toCallbackInfo(ldaFactorsInfo));
 }
 
+DISABLE_VAR_TRACKING_ASSIGNMENT
 static void populateSettingsSection(ConfigParser& parser, ConfigFile& cfg, Temporary& temp, std::ostream& warnStream)
 {
   (void)temp;
@@ -1031,6 +1041,8 @@ static void populateSettingsSection(ConfigParser& parser, ConfigFile& cfg, Tempo
 
 }
 
+RESTORE_VAR_TRACKING_ASSIGNMENT
+
 static void populateRunSection(ConfigParser& parser, ConfigFile& cfg)
 {
   auto curSection = Section::Run;
@@ -1085,7 +1097,7 @@ static void populateRunSection(ConfigParser& parser, ConfigFile& cfg)
   rateCtrlStatModes["STATS"].description += " Values are printed to rate_ctrl_stats.txt file.";
 
   rateCtrlStatModes["MOTION_VECTORS"] = { AL_RATECTRL_STAT_MODE_MV, "Append used Motion Vectors to the stream buffers. For each frame motion vectors are written to motion_vectors.bin file.", aomituCodecs() };
-  parser.addEnum(curSection, "RateCtrlStats", cfg.RunInfo.rateCtrlStat, rateCtrlStatModes, "Selects the rate control statistics to embbed with stream buffers.");
+  parser.addEnum(curSection, "RateCtrlStats", cfg.RunInfo.rateCtrlStat, rateCtrlStatModes, "Selects the rate control statistics to embed with stream buffers.");
   parser.addSeeAlso(curSection, "RateCtrlStats", { curSection, "RateCtrlStats.Path" });
   parser.addPath(curSection, "RateCtrlStats.Path", cfg.RunInfo.rateCtrlMetaPath, "If RateCtrlStats enum is set, specifys a path where the statistics files should be written", aomituCodecs());
   parser.addSeeAlso(curSection, "RateCtrlStats.Path", { curSection, "RateCtrlStats" });
@@ -1496,6 +1508,7 @@ static void GetScalingList(AL_TEncSettings& Settings, string const& sScalingList
 static void PostParsingChecks(AL_TEncSettings& Settings)
 {
   auto& GopParam = Settings.tChParam[0].tGopParam;
+  (void)GopParam;
 
   if((GopParam.eMode & AL_GOP_FLAG_DEFAULT)
      && (GopParam.eMode & AL_GOP_FLAG_PYRAMIDAL)
@@ -1508,7 +1521,7 @@ static void PostParsingChecks(AL_TEncSettings& Settings)
      && GopParam.eGdrMode != AL_GDR_OFF)
     throw std::runtime_error("GDR mode is not supported only in mode low delay or hierarchical P");
 
-  if((GopParam.eGdrMode != AL_GDR_OFF) && (GopParam.uFreqRP == 0))
+  if((GopParam.eGdrMode != AL_GDR_OFF) && (GopParam.iFreqRP == 0))
     throw std::runtime_error("Gop.FreqRP must be set for GDR mode");
 
 }
@@ -1538,6 +1551,9 @@ static void UpdateRelativePathFiles(string const& cfgFilename, ConfigFile& cfg)
   CheckAndUpdateRelativePath(cfgPath, cfg.sCmdFileName);
   CheckAndUpdateRelativePath(cfgPath, cfg.sTwoPassFileName);
   CheckAndUpdateRelativePath(cfgPath, cfg.sHDRFileName);
+
+  CheckAndUpdateRelativePath(cfgPath, cfg.RunInfo.bitrateFile);
+  CheckAndUpdateRelativePath(cfgPath, cfg.RunInfo.rateCtrlMetaPath);
 }
 
 static void DefaultLambdaFactors(AL_TEncSettings& Settings, bool bParseLambdaFactors)

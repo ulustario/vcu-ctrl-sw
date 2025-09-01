@@ -4,6 +4,7 @@
 #include "lib_common/StreamBuffer.h"
 #include "lib_common/StreamBufferPrivate.h"
 #include "lib_common/Utils.h"
+#include "lib_common/Round.h"
 #include "lib_common/AvcLevelsLimit.h"
 #include "lib_common/HevcLevelsLimit.h"
 
@@ -29,7 +30,7 @@ int32_t GetPCMSize(int32_t iNumLCU, uint8_t uLog2MaxCuSize, AL_EChromaMode eChro
   int32_t iLCUSize = GetOneLCUPCMSize(eChromaMode, uLog2MaxCuSize, uBitDepth);
 
   // Rounding because of potential tiling
-  iLCUSize = RoundUp(iLCUSize, HW_IP_BURST_ALIGNMENT);
+  iLCUSize = AL_RoundUp(iLCUSize, HW_IP_BURST_ALIGNMENT);
 
   return iNumLCU * iLCUSize;
 }
@@ -53,7 +54,7 @@ int32_t Hevc_GetMaxVclNalSize(AL_TDimension tDim, AL_EChromaMode eMode, int32_t 
   iLCUSize = (iLCUSize * 5 + 2) / 3;
   // Round at LCU?
   int32_t iSize = GetSquareBlkNumber(tDim, 1 << STREAM_ALLOC_LOG2_MAXCUSIZE) * iLCUSize;
-  return RoundUp(iSize, HW_IP_BURST_ALIGNMENT);
+  return AL_RoundUp(iSize, HW_IP_BURST_ALIGNMENT);
 }
 
 /****************************************************************************/
@@ -75,7 +76,7 @@ int32_t AL_GetMaxNalSize(AL_TDimension tDim, AL_EChromaMode eMode, int32_t iBitD
 
   int32_t iMaxNalSize = iMaxPCM + AL_ENC_MAX_HEADER_SIZE + (iNumSlices * AL_MAX_SLICE_HEADER_SIZE);
 
-  return RoundUp(iMaxNalSize, HW_IP_BURST_ALIGNMENT);
+  return AL_RoundUp(iMaxNalSize, HW_IP_BURST_ALIGNMENT);
 }
 
 /****************************************************************************/
@@ -86,7 +87,7 @@ int32_t AL_GetMitigatedMaxNalSize(AL_TDimension tDim, AL_EChromaMode eMode, int3
   int32_t iNumSlices = ((tDim.iHeight + 15) / 16);
   iMaxPCM += AL_ENC_MAX_HEADER_SIZE + (iNumSlices * AL_MAX_SLICE_HEADER_SIZE);
 
-  return RoundUp(iMaxPCM, HW_IP_BURST_ALIGNMENT);
+  return AL_RoundUp(iMaxPCM, HW_IP_BURST_ALIGNMENT);
 }
 
 /****************************************************************************/
@@ -97,11 +98,11 @@ int32_t AL_GetMinimalNalSize(int32_t iNumSlices, AL_ECodec eCodec)
   bool bHasHeaders = true;
   int32_t iNumNal = 16;
 
-  int32_t iNonVclSize = bHasHeaders ? RoundUp(AL_ENC_MAX_HEADER_SIZE, HW_IP_BURST_ALIGNMENT) : 0;
-  int32_t iSliceHdrSize = bHasHeaders ? iNumSlices* RoundUp(AL_MAX_SLICE_HEADER_SIZE, HW_IP_BURST_ALIGNMENT) : 0;
+  int32_t iNonVclSize = bHasHeaders ? AL_RoundUp(AL_ENC_MAX_HEADER_SIZE, HW_IP_BURST_ALIGNMENT) : 0;
+  int32_t iSliceHdrSize = bHasHeaders ? iNumSlices* AL_RoundUp(AL_MAX_SLICE_HEADER_SIZE, HW_IP_BURST_ALIGNMENT) : 0;
 
   int32_t const AL_ENC_STREAM_PART_SIZE = 2 * sizeof(uint32_t);
-  int32_t iStreamPartSize = RoundUp((iNumSlices + iNumNal) * AL_ENC_STREAM_PART_SIZE, 128);
+  int32_t iStreamPartSize = AL_RoundUp((iNumSlices + iNumNal) * AL_ENC_STREAM_PART_SIZE, 128);
   int32_t const iHardwareMinimalBurst = 128;
 
   return iNonVclSize + iSliceHdrSize + iStreamPartSize + iHardwareMinimalBurst;

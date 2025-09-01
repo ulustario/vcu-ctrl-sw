@@ -1,8 +1,8 @@
 // SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
-#include "lib_app/FrameReader.h"
-#include "lib_app/FileUtils.h"
+#include "lib_app/FrameReader.hpp"
+#include "lib_app/FileUtils.hpp"
 
 extern "C"
 {

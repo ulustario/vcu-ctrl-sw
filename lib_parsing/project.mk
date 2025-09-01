@@ -1,10 +1,13 @@
 LIB_PARSING_SRC:=\
 	lib_parsing/DPB.c\
 	lib_parsing/I_PictMngr.c\
+	lib_parsing/CommonPictMngr.c\
+	lib_parsing/BufPool.c\
 	lib_parsing/Concealment.c\
 
 ifneq ($(ENABLE_DEC_ITU),0)
 	LIB_PARSING_SRC+=lib_parsing/SeiParser.c
+	LIB_PARSING_SRC+=lib_parsing/ItuPictMngr.c
 endif
 
 ifneq ($(ENABLE_DEC_AVC),0)

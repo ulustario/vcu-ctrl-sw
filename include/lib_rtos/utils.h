@@ -32,4 +32,17 @@
 #define VFPRINTF(...) do { int ERR(__LINE__) = vfprintf(__VA_ARGS__); Rtos_Assert(ERR(__LINE__) >= 0); } while(0);
 #define FFLUSH(...) do { int ERR(__LINE__) = fflush(__VA_ARGS__); Rtos_Assert(ERR(__LINE__) != EOF); } while(0);
 
+#if (__GNUC__ > 4) && !defined(__clang__)
+
+#define DISABLE_VAR_TRACKING_ASSIGNMENT _Pragma("GCC push_options") \
+  _Pragma("GCC optimize \"no-var-tracking-assignments\"")
+
+#define RESTORE_VAR_TRACKING_ASSIGNMENT _Pragma("GCC pop_options")
+#else
+
+#define DISABLE_VAR_TRACKING_ASSIGNMENT
+#define RESTORE_VAR_TRACKING_ASSIGNMENT
+
+#endif
+
 /*!@}*/

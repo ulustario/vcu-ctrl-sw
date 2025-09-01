@@ -3,6 +3,7 @@
 
 #include "HEVC_RbspEncod.h"
 #include "RbspEncod.h"
+#include "include/lib_rtos/lib_rtos.h"
 #include "lib_common/SliceConsts.h"
 #include "lib_common/Utils.h"
 #include "lib_common/Nuts.h"

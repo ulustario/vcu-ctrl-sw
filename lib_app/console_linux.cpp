@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
-#include "lib_app/console.h"
+#include "lib_app/console.hpp"
 
 extern "C" {
 #include "lib_rtos/utils.h"

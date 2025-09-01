@@ -9,7 +9,7 @@
 #pragma once
 
 #include "lib_common/ScalingList.h"
-#include "lib_parsing/I_PictMngr.h"
+#include "lib_parsing/ItuPictMngr.h"
 #include "lib_decode/I_DecoderCtx.h"
 #include "lib_common/AvcHeaders.h"
 #include "lib_common/HevcHeaders.h"

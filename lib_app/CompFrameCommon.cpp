@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MIT
 
 #include <stdexcept>
-#include "include/lib_app/CompFrameCommon.h"
+#include "lib_app/CompFrameCommon.hpp"
 
 ETileMode EFbStorageModeToETileMode(AL_EFbStorageMode eFbStorageMode, uint8_t uBitDepth)
 {

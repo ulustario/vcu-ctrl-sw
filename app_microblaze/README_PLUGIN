@@ -36,7 +36,7 @@ Source Code
 * include/lib_rate_ctrl/PluginInterface.h contains the interface your plugin needs to implement.
 * lib_rate_ctrl/ExampleRCPlugin.c contains a rate ctrl plugin which traces all the call to the
 api.
-* exe_encoder/RCPlugin.h contains the userland code that talks with the example plugin
+* exe_encoder/RCPlugin.hpp contains the userland code that talks with the example plugin
 
 Misc
 ====

@@ -40,30 +40,30 @@ typedef struct AL_THevcProfilevel
 
   uint8_t general_level_idc;
 
-  uint8_t sub_layer_profile_present_flag[MAX_SUB_LAYER + 1];
-  uint8_t sub_layer_level_present_flag[MAX_SUB_LAYER + 1];
-  uint8_t sub_layer_profile_space[MAX_SUB_LAYER + 1];
-  uint8_t sub_layer_tier_flag[MAX_SUB_LAYER + 1];
-  uint8_t sub_layer_profile_idc[MAX_SUB_LAYER + 1];
-  uint8_t sub_layer_profile_compatibility_flag[MAX_SUB_LAYER + 1][32];
+  uint8_t sub_layer_profile_present_flag[AL_MAX_SUB_LAYER + 1];
+  uint8_t sub_layer_level_present_flag[AL_MAX_SUB_LAYER + 1];
+  uint8_t sub_layer_profile_space[AL_MAX_SUB_LAYER + 1];
+  uint8_t sub_layer_tier_flag[AL_MAX_SUB_LAYER + 1];
+  uint8_t sub_layer_profile_idc[AL_MAX_SUB_LAYER + 1];
+  uint8_t sub_layer_profile_compatibility_flag[AL_MAX_SUB_LAYER + 1][32];
 
-  uint8_t sub_layer_progressive_source_flag[MAX_SUB_LAYER + 1];
-  uint8_t sub_layer_interlaced_source_flag[MAX_SUB_LAYER + 1];
-  uint8_t sub_layer_non_packed_constraint_flag[MAX_SUB_LAYER + 1];
-  uint8_t sub_layer_frame_only_constraint_flag[MAX_SUB_LAYER + 1];
-  uint8_t sub_layer_max_12bit_constraint_flag[MAX_SUB_LAYER + 1];
-  uint8_t sub_layer_max_10bit_constraint_flag[MAX_SUB_LAYER + 1];
-  uint8_t sub_layer_max_8bit_constraint_flag[MAX_SUB_LAYER + 1];
-  uint8_t sub_layer_max_422chroma_constraint_flag[MAX_SUB_LAYER + 1];
-  uint8_t sub_layer_max_420chroma_constraint_flag[MAX_SUB_LAYER + 1];
-  uint8_t sub_layer_max_monochrome_constraint_flag[MAX_SUB_LAYER + 1];
-  uint8_t sub_layer_intra_constraint_flag[MAX_SUB_LAYER + 1];
-  uint8_t sub_layer_one_picture_only_constraint_flag[MAX_SUB_LAYER + 1];
-  uint8_t sub_layer_lower_bit_rate_constraint_flag[MAX_SUB_LAYER + 1];
-  uint8_t sub_layer_max_14bit_constraint_flag[MAX_SUB_LAYER + 1];
-  uint8_t sub_layer_inbld_flag[MAX_SUB_LAYER + 1];
+  uint8_t sub_layer_progressive_source_flag[AL_MAX_SUB_LAYER + 1];
+  uint8_t sub_layer_interlaced_source_flag[AL_MAX_SUB_LAYER + 1];
+  uint8_t sub_layer_non_packed_constraint_flag[AL_MAX_SUB_LAYER + 1];
+  uint8_t sub_layer_frame_only_constraint_flag[AL_MAX_SUB_LAYER + 1];
+  uint8_t sub_layer_max_12bit_constraint_flag[AL_MAX_SUB_LAYER + 1];
+  uint8_t sub_layer_max_10bit_constraint_flag[AL_MAX_SUB_LAYER + 1];
+  uint8_t sub_layer_max_8bit_constraint_flag[AL_MAX_SUB_LAYER + 1];
+  uint8_t sub_layer_max_422chroma_constraint_flag[AL_MAX_SUB_LAYER + 1];
+  uint8_t sub_layer_max_420chroma_constraint_flag[AL_MAX_SUB_LAYER + 1];
+  uint8_t sub_layer_max_monochrome_constraint_flag[AL_MAX_SUB_LAYER + 1];
+  uint8_t sub_layer_intra_constraint_flag[AL_MAX_SUB_LAYER + 1];
+  uint8_t sub_layer_one_picture_only_constraint_flag[AL_MAX_SUB_LAYER + 1];
+  uint8_t sub_layer_lower_bit_rate_constraint_flag[AL_MAX_SUB_LAYER + 1];
+  uint8_t sub_layer_max_14bit_constraint_flag[AL_MAX_SUB_LAYER + 1];
+  uint8_t sub_layer_inbld_flag[AL_MAX_SUB_LAYER + 1];
 
-  uint8_t sub_layer_level_idc[MAX_SUB_LAYER + 1];
+  uint8_t sub_layer_level_idc[AL_MAX_SUB_LAYER + 1];
 }AL_THevcProfilevel;
 /****************************************************************************/
 #define AL_HEVC_MAX_VPS 16
@@ -158,9 +158,9 @@ typedef struct AL_THevcSps
   uint8_t log2_max_slice_pic_order_cnt_lsb_minus4;
 
   uint8_t sps_sub_layer_ordering_info_present_flag;
-  uint8_t sps_max_dec_pic_buffering_minus1[MAX_SUB_LAYER + 1];
-  uint8_t sps_max_num_reorder_pics[MAX_SUB_LAYER + 1];
-  uint32_t sps_max_latency_increase_plus1[MAX_SUB_LAYER + 1];
+  uint8_t sps_max_dec_pic_buffering_minus1[AL_MAX_SUB_LAYER + 1];
+  uint8_t sps_max_num_reorder_pics[AL_MAX_SUB_LAYER + 1];
+  uint32_t sps_max_latency_increase_plus1[AL_MAX_SUB_LAYER + 1];
 
   uint8_t log2_min_luma_coding_block_size_minus3;
   uint8_t log2_diff_max_min_luma_coding_block_size;
@@ -239,11 +239,11 @@ typedef struct AL_THevcSps
 
   /* short term reference picture set variables */
   uint8_t NumNegativePics[MAX_REF_PIC_SET + 1];
-  int32_t DeltaPocS0[MAX_REF_PIC_SET + 1][MAX_REF];
-  uint8_t UsedByCurrPicS0[MAX_REF_PIC_SET + 1][MAX_REF];
+  int32_t DeltaPocS0[MAX_REF_PIC_SET + 1][AL_MAX_REF];
+  uint8_t UsedByCurrPicS0[MAX_REF_PIC_SET + 1][AL_MAX_REF];
   uint8_t NumPositivePics[MAX_REF_PIC_SET + 1];
-  int32_t DeltaPocS1[MAX_REF_PIC_SET + 1][MAX_REF];
-  uint8_t UsedByCurrPicS1[MAX_REF_PIC_SET + 1][MAX_REF];
+  int32_t DeltaPocS1[MAX_REF_PIC_SET + 1][AL_MAX_REF];
+  uint8_t UsedByCurrPicS1[MAX_REF_PIC_SET + 1][AL_MAX_REF];
   uint8_t NumDeltaPocs[MAX_REF_PIC_SET + 1];
 
   /* picture order count variable */

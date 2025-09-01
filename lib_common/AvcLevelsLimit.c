@@ -176,7 +176,7 @@ uint32_t AL_AVC_GetMaxDPBSize(int32_t iLevel, int32_t iWidth, int32_t iHeight, i
 
   int32_t iMaxDpbMbs = getMaxDpbMBs(iLevel);
   int32_t const iNumMbs = ((iWidth / 16) * (iHeight / 16));
-  return UnsignedMax(Clip3(iMaxDpbMbs / iNumMbs, 2, MAX_REF), iSpsMaxRef);
+  return UnsignedMax(Clip3(iMaxDpbMbs / iNumMbs, 2, AL_MAX_REF), iSpsMaxRef);
 }
 
 /******************************************************************************/

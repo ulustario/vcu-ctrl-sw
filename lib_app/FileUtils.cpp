@@ -5,7 +5,6 @@
 #include <string>
 #include <sstream>
 #include <fstream>
-#include <regex>
 
 #if defined(__linux__)
 #include <dirent.h>
@@ -15,7 +14,7 @@
 #include "extra/dirent/include/dirent.h"
 #endif
 
-#include "lib_app/FileUtils.h"
+#include "lib_app/FileUtils.hpp"
 
 extern "C" {
 #include "lib_rtos/utils.h"

@@ -14,11 +14,11 @@ typedef struct
   bool enableMultiCore;
 }AL_CoreConstraint;
 
-void AL_CoreConstraint_Init(AL_CoreConstraint* constraint, int32_t coreFrequency, int32_t margin, int32_t const* hardwareCyclesCounts, int32_t minWidth, int32_t maxWidth, int32_t lcuSize);
+void AL_CoreConstraint_Init(AL_CoreConstraint* constraint, int32_t coreFrequency, int32_t margin, uint32_t const* hardwareCyclesCounts, int32_t minWidth, int32_t maxWidth, int32_t lcuSize);
 int32_t AL_CoreConstraint_GetExpectedNumberOfCores(AL_CoreConstraint const* constraint, int32_t width, int32_t height, int32_t chromaModeIdc, int32_t frameRate, int32_t clockRatio);
 int32_t AL_CoreConstraint_GetMinCoresCount(AL_CoreConstraint const* constraint, int32_t width);
 
-uint64_t AL_GetResources(int32_t width, int32_t height, int32_t frameRate, int32_t clockRatio, int32_t cycles32x32);
+AL_64U AL_GetResources(int32_t width, int32_t height, int32_t frameRate, int32_t clockRatio, int32_t cycles32x32);
 
 /* Doesn't support NUMCORE_AUTO, only works on actual number of cores. */
 typedef struct

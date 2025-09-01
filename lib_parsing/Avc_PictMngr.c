@@ -15,7 +15,7 @@
 #include "lib_rtos/types.h"
 
 /*****************************************************************************/
-static void AL_sGetPocType0(AL_TPictMngrCtx* pCtx, AL_TAvcSliceHdr const* pSlice)
+static void AL_sGetPocType0(AL_TDpb* pDpb, AL_TAvcSliceHdr const* pSlice)
 {
   int32_t iPrevPocMSB = 0;
   int32_t iPrevPocLSB = 0;
@@ -23,15 +23,15 @@ static void AL_sGetPocType0(AL_TPictMngrCtx* pCtx, AL_TAvcSliceHdr const* pSlice
 
   if(!AL_AVC_IsIDR(pSlice->nal_unit_type))
   {
-    if(AL_Dpb_LastHasMMCO5(&pCtx->DPB))
+    if(AL_Dpb_LastHasMMCO5(pDpb))
     {
       /*warning : work in frame only*/
-      iPrevPocLSB = pCtx->iTopFieldOrderCnt;
+      iPrevPocLSB = pDpb->iTopFieldOrderCnt;
     }
     else
     {
-      iPrevPocMSB = pCtx->iPrevPocMSB;
-      iPrevPocLSB = pCtx->iPrevPocLSB;
+      iPrevPocMSB = pDpb->iPrevPocMSB;
+      iPrevPocLSB = pDpb->iPrevPocLSB;
     }
   }
 
@@ -44,18 +44,18 @@ static void AL_sGetPocType0(AL_TPictMngrCtx* pCtx, AL_TAvcSliceHdr const* pSlice
     iPrevPocMSB = iPrevPocMSB - iMaxPocLSB;
 
   /*warning : work in frame only*/
-  pCtx->iTopFieldOrderCnt = iPrevPocMSB + pSlice->pic_order_cnt_lsb;
-  pCtx->iBotFieldOrderCnt = pCtx->iTopFieldOrderCnt + pSlice->delta_pic_order_cnt_bottom;
+  pDpb->iTopFieldOrderCnt = iPrevPocMSB + pSlice->pic_order_cnt_lsb;
+  pDpb->iBotFieldOrderCnt = pDpb->iTopFieldOrderCnt + pSlice->delta_pic_order_cnt_bottom;
 
   if(pSlice->nal_ref_idc)
   {
-    pCtx->iPrevPocLSB = pSlice->pic_order_cnt_lsb;
-    pCtx->iPrevPocMSB = iPrevPocMSB;
+    pDpb->iPrevPocLSB = pSlice->pic_order_cnt_lsb;
+    pDpb->iPrevPocMSB = iPrevPocMSB;
   }
 }
 
 /*****************************************************************************/
-static void AL_sGetPocType1(AL_TPictMngrCtx* pCtx, AL_TAvcSliceHdr const* pSlice)
+static void AL_sGetPocType1(AL_TDpb* pDpb, AL_TAvcSliceHdr const* pSlice)
 {
   AL_64S iExpectedDeltaPerPicOrderCntCycle = 0;
   bool bIsIDR = AL_AVC_IsIDR(pSlice->nal_unit_type);
@@ -65,10 +65,10 @@ static void AL_sGetPocType1(AL_TPictMngrCtx* pCtx, AL_TAvcSliceHdr const* pSlice
 
   if(!bIsIDR)
   {
-    if(AL_Dpb_LastHasMMCO5(&pCtx->DPB))
+    if(AL_Dpb_LastHasMMCO5(pDpb))
     {
-      pCtx->iPrevFrameNumOffset = 0;
-      pCtx->iPrevFrameNum = 0;
+      pDpb->iPrevFrameNumOffset = 0;
+      pDpb->iPrevFrameNum = 0;
     }
   }
 
@@ -78,10 +78,10 @@ static void AL_sGetPocType1(AL_TPictMngrCtx* pCtx, AL_TAvcSliceHdr const* pSlice
 
   if(bIsIDR)
     iFrameNumOffset = 0;
-  else if(pCtx->iPrevFrameNum > pSlice->frame_num)
-    iFrameNumOffset = pCtx->iPrevFrameNumOffset + iMaxFrameNum;
+  else if(pDpb->iPrevFrameNum > pSlice->frame_num)
+    iFrameNumOffset = pDpb->iPrevFrameNumOffset + iMaxFrameNum;
   else
-    iFrameNumOffset = pCtx->iPrevFrameNumOffset;
+    iFrameNumOffset = pDpb->iPrevFrameNumOffset;
 
   AL_64S iAbsFrameNum = 0;
 
@@ -106,24 +106,24 @@ static void AL_sGetPocType1(AL_TPictMngrCtx* pCtx, AL_TAvcSliceHdr const* pSlice
   if(!pSlice->nal_ref_idc)
     iExpectedPicOrderCnt += pSlice->pSPS->offset_for_non_ref_pic;
 
-  pCtx->iPrevFrameNumOffset = iFrameNumOffset;
+  pDpb->iPrevFrameNumOffset = iFrameNumOffset;
   /*warning : work only in frame mode*/
-  pCtx->iTopFieldOrderCnt = iExpectedPicOrderCnt + pSlice->delta_pic_order_cnt[0];
-  pCtx->iBotFieldOrderCnt = pCtx->iTopFieldOrderCnt + pSlice->pSPS->offset_for_top_to_bottom_field +
+  pDpb->iTopFieldOrderCnt = iExpectedPicOrderCnt + pSlice->delta_pic_order_cnt[0];
+  pDpb->iBotFieldOrderCnt = pDpb->iTopFieldOrderCnt + pSlice->pSPS->offset_for_top_to_bottom_field +
                             pSlice->delta_pic_order_cnt[1];
 }
 
 /*****************************************************************************/
-static void AL_sGetPocType2(AL_TPictMngrCtx* pCtx, AL_TAvcSliceHdr const* pSlice)
+static void AL_sGetPocType2(AL_TDpb* pDpb, AL_TAvcSliceHdr const* pSlice)
 {
   bool bIsIDR = AL_AVC_IsIDR(pSlice->nal_unit_type);
 
   if(!bIsIDR)
   {
-    if(AL_Dpb_LastHasMMCO5(&pCtx->DPB))
+    if(AL_Dpb_LastHasMMCO5(pDpb))
     {
-      pCtx->iPrevFrameNumOffset = 0;
-      pCtx->iPrevFrameNum = 0;
+      pDpb->iPrevFrameNumOffset = 0;
+      pDpb->iPrevFrameNum = 0;
     }
   }
 
@@ -133,10 +133,10 @@ static void AL_sGetPocType2(AL_TPictMngrCtx* pCtx, AL_TAvcSliceHdr const* pSlice
 
   if(bIsIDR)
     iFrameNumOffset = 0;
-  else if(pCtx->iPrevFrameNum > pSlice->frame_num)
-    iFrameNumOffset = pCtx->iPrevFrameNumOffset + iMaxFrameNum;
+  else if(pDpb->iPrevFrameNum > pSlice->frame_num)
+    iFrameNumOffset = pDpb->iPrevFrameNumOffset + iMaxFrameNum;
   else
-    iFrameNumOffset = pCtx->iPrevFrameNumOffset;
+    iFrameNumOffset = pDpb->iPrevFrameNumOffset;
 
   AL_64S iTempPicOrderCnt;
 
@@ -147,100 +147,87 @@ static void AL_sGetPocType2(AL_TPictMngrCtx* pCtx, AL_TAvcSliceHdr const* pSlice
   else
     iTempPicOrderCnt = 2 * (iFrameNumOffset + pSlice->frame_num);
 
-  pCtx->iPrevFrameNumOffset = iFrameNumOffset;
+  pDpb->iPrevFrameNumOffset = iFrameNumOffset;
   /*warning : work only in frame mode*/
-  pCtx->iTopFieldOrderCnt = iTempPicOrderCnt;
-  pCtx->iBotFieldOrderCnt = iTempPicOrderCnt;
+  pDpb->iTopFieldOrderCnt = iTempPicOrderCnt;
+  pDpb->iBotFieldOrderCnt = iTempPicOrderCnt;
 }
 
 /*****************************************************************************/
-static int32_t AL_sCalculatePOC(AL_TPictMngrCtx* pCtx, AL_TAvcSliceHdr const* pSlice)
+static int32_t AL_sCalculatePOC(AL_TDpb* pDpb, AL_TAvcSliceHdr const* pSlice)
 {
   switch(pSlice->pSPS->pic_order_cnt_type)
   {
   case 0:
-    AL_sGetPocType0(pCtx, pSlice);
+    AL_sGetPocType0(pDpb, pSlice);
     break;
 
   case 1:
-    AL_sGetPocType1(pCtx, pSlice);
+    AL_sGetPocType1(pDpb, pSlice);
     break;
 
   case 2:
-    AL_sGetPocType2(pCtx, pSlice);
+    AL_sGetPocType2(pDpb, pSlice);
     break;
 
   default:
     return 0xBAADF00D;
   }
 
-  return (pCtx->iTopFieldOrderCnt < pCtx->iBotFieldOrderCnt) ? pCtx->iTopFieldOrderCnt :
-         pCtx->iBotFieldOrderCnt;
+  return (pDpb->iTopFieldOrderCnt < pDpb->iBotFieldOrderCnt) ? pDpb->iTopFieldOrderCnt :
+         pDpb->iBotFieldOrderCnt;
 }
 
 /*****************************************************************************/
-void AL_AVC_PictMngr_SetCurrentPOC(AL_TPictMngrCtx* pCtx, AL_TAvcSliceHdr const* pSlice)
+void AL_AVC_Dpb_SetCurrentPOC(AL_TDpb* pDpb, AL_TAvcSliceHdr const* pSlice)
 {
-  int32_t iCurPoc = AL_sCalculatePOC(pCtx, pSlice);
-
-  pCtx->iCurFramePOC = iCurPoc;
+  pDpb->iCurFramePOC = AL_sCalculatePOC(pDpb, pSlice);
 }
 
 /*****************************************************************************/
 void AL_AVC_PictMngr_SetCurrentPicStruct(AL_TPictMngrCtx* pCtx, AL_EPicStruct ePicStruct)
 {
-  pCtx->ePicStruct = ePicStruct;
+  AL_TDpb* pDpb = (AL_TDpb*)pCtx->pRefMngr;
+  pDpb->ePicStruct = ePicStruct;
 }
 
 /*****************************************************************************/
 void AL_AVC_PictMngr_UpdateRecInfo(AL_TPictMngrCtx* pCtx, AL_TCropInfo const* pCropInfo, AL_EPicStruct ePicStruct)
 {
-  AL_PictMngr_UpdateDisplayBufferCrop(pCtx, pCtx->uFrameID, pCropInfo);
-  AL_PictMngr_UpdateDisplayBufferPicStruct(pCtx, pCtx->uFrameID, ePicStruct);
+  AL_PictMngr_UpdateDisplayBufferCrop(pCtx, pCropInfo);
+  AL_PictMngr_UpdateDisplayBufferPicStruct(pCtx, ePicStruct);
 }
 
 /***************************************************************************/
-void AL_AVC_PictMngr_EndParsing(AL_TPictMngrCtx* pCtx, bool bClearRef, AL_EMarkingRef eMarkingFlag)
+void AL_AVC_Dpb_EndParsing(AL_TDpb* pDpb)
 {
-  AL_TDpb* pDpb = &pCtx->DPB;
-
-  if(bClearRef)
-    AL_PictMngr_Flush(pCtx);
-
   // increment present pictures latency count
-  uint8_t uNode = AL_Dpb_GetHeadPOC(pDpb);
+  AL_TIndex tNodeID = AL_Dpb_GetHeadPOC(pDpb);
 
-  while(uNode != uEndOfList)
+  while(IS_NODE_VALID(tNodeID))
   {
-    AL_Dpb_IncrementPicLatency(pDpb, uNode, pCtx->iCurFramePOC);
-    uNode = AL_Dpb_GetNextPOC(pDpb, uNode);
+    AL_Dpb_IncrementPicLatency(pDpb, tNodeID);
+    tNodeID = AL_Dpb_GetNextPOC(pDpb, tNodeID);
   }
 
-  uint8_t uDelete = AL_Dpb_SearchPOC(&pCtx->DPB, pCtx->iCurFramePOC);
-  bool bIsPOCAlreadyInDPB = uDelete != uEndOfList;
+  AL_TIndex tDeleteNodeID = AL_Dpb_SearchPOC(pDpb, pDpb->iCurFramePOC);
+  bool bIsPOCAlreadyInDPB = IS_NODE_VALID(tDeleteNodeID);
 
   if(bIsPOCAlreadyInDPB)
   {
-    if(AL_Dpb_GetOutputFlag(pDpb, uDelete))
-      AL_Dpb_Display(pDpb, uDelete);
+    if(AL_Dpb_GetOutputFlag(pDpb, tDeleteNodeID))
+      AL_Dpb_Display(pDpb, tDeleteNodeID);
 
-    AL_Dpb_Remove(pDpb, uDelete);
+    AL_Dpb_Remove(pDpb, tDeleteNodeID);
   }
 
-  AL_PictMngr_Insert(pCtx, pCtx->iCurFramePOC, pCtx->ePicStruct, 0, pCtx->uFrameID, pCtx->uMvID, 1, eMarkingFlag, 0, 0, 0);
-  AL_Dpb_ResetMMCO5(&pCtx->DPB);
+  AL_Dpb_ResetMMCO5(pDpb);
 }
 
 /***************************************************************************/
-void AL_AVC_PictMngr_CleanDPB(AL_TPictMngrCtx* pCtx)
+bool AL_AVC_PictMngr_GetBuffers(AL_TPictMngrCtx* pCtx, AL_TDecSliceParam const* pSliceParam, AL_TRecBuffers* pRecs, AL_TDecBuffers* pPicBuffers)
 {
-  AL_Dpb_AVC_Cleanup(&pCtx->DPB);
-}
-
-/***************************************************************************/
-bool AL_AVC_PictMngr_GetBuffers(AL_TPictMngrCtx* pCtx, AL_TDecSliceParam const* pSliceParam, TBuffer* pListVirtAddr, TBuffer* pListAddr, TBufferPOC* pPOC, TBufferMV* pMV, AL_TRecBuffers* pRecs)
-{
-  if(!AL_PictMngr_GetBuffers(pCtx, pSliceParam, pListVirtAddr, pListAddr, pPOC, pMV, pRecs))
+  if(!AL_ItuPictMngr_GetBuffers(pCtx, AL_CODEC_AVC, pSliceParam, pRecs, pPicBuffers))
     return false;
 
   return true;
@@ -249,19 +236,20 @@ bool AL_AVC_PictMngr_GetBuffers(AL_TPictMngrCtx* pCtx, AL_TDecSliceParam const* 
 /*****************************************************************************/
 void AL_AVC_PictMngr_Fill_Gap_In_FrameNum(AL_TPictMngrCtx* pCtx, AL_TAvcSliceHdr const* pSlice)
 {
+  AL_TDpb* pDpb = (AL_TDpb*)pCtx->pRefMngr;
   int32_t iMaxFrameNum = 1 << (pSlice->pSPS->log2_max_frame_num_minus4 + 4);
 
   if(!(
        (!AL_AVC_IsIDR(pSlice->nal_unit_type))
-       && (pSlice->frame_num != pCtx->iPrevFrameNum)
-       && (pSlice->frame_num != ((pCtx->iPrevFrameNum + 1) % iMaxFrameNum))
+       && (pSlice->frame_num != pDpb->iPrevFrameNum)
+       && (pSlice->frame_num != ((pDpb->iPrevFrameNum + 1) % iMaxFrameNum))
        ))
     return;
 
   if(pSlice->pSPS->gaps_in_frame_num_value_allowed_flag == 0)
     return;
 
-  int32_t iUnusedShortTermFrameNum = (pCtx->iPrevFrameNum + 1) % iMaxFrameNum;
+  int32_t iUnusedShortTermFrameNum = (pDpb->iPrevFrameNum + 1) % iMaxFrameNum;
   int32_t iCurrFrameNum = pSlice->frame_num;
 
   while(iCurrFrameNum != iUnusedShortTermFrameNum)
@@ -270,33 +258,39 @@ void AL_AVC_PictMngr_Fill_Gap_In_FrameNum(AL_TPictMngrCtx* pCtx, AL_TAvcSliceHdr
 
     pUnusedSlice.frame_num = iUnusedShortTermFrameNum;
     pUnusedSlice.adaptive_ref_pic_marking_mode_flag = 0;
-    int32_t iFramePOC = AL_sCalculatePOC(pCtx, &pUnusedSlice);
 
-    AL_PictMngr_Insert(pCtx, iFramePOC, AL_PS_FRM, 0, uEndOfList, uEndOfList, 0, SHORT_TERM_REF, 1, 0, 0);
-    AL_Dpb_MarkingProcess(&pCtx->DPB, &pUnusedSlice, pCtx->iCurFramePOC);
-    AL_Dpb_AVC_Cleanup(&pCtx->DPB);
-    pCtx->iPrevFrameNum = iUnusedShortTermFrameNum;
+    AL_TDpbInsertParam tParam;
+    Rtos_Memset(&tParam, 0, sizeof(AL_TDpbInsertParam));
+    tParam.iFramePOC = AL_sCalculatePOC(pDpb, &pUnusedSlice);
+    tParam.ePicStruct = AL_PS_FRM;
+    tParam.eMarkingFlag = SHORT_TERM_REF;
+    tParam.bNonExisting = true;
+    AL_PictMngr_Insert(pCtx, AL_BAD_INDEX, AL_BAD_INDEX, &tParam);
+
+    AL_Dpb_MarkingProcess(pDpb, &pUnusedSlice, pDpb->iCurFramePOC);
+    AL_Dpb_AVC_Cleanup(pDpb);
+    pDpb->iPrevFrameNum = iUnusedShortTermFrameNum;
     iUnusedShortTermFrameNum = (iUnusedShortTermFrameNum + 1) % iMaxFrameNum;
   }
 }
 
 /*****************************************************************************/
-void AL_AVC_PictMngr_InitPictList(AL_TPictMngrCtx const* pCtx, AL_TAvcSliceHdr const* pSlice, TBufferListRef* pListRef)
+void AL_AVC_Dpb_InitPictList(AL_TDpb const* pDpb, AL_TAvcSliceHdr const* pSlice, TBufferListRef* pListRef)
 {
-  for(uint8_t uRef = 0; uRef < MAX_REF; ++uRef)
+  for(uint8_t uRef = 0; uRef < AL_MAX_REF; ++uRef)
   {
-    (*pListRef)[0][uRef].uNodeID = uEndOfList;
-    (*pListRef)[1][uRef].uNodeID = uEndOfList;
+    (*pListRef)[0][uRef].tNodeID = AL_BAD_INDEX;
+    (*pListRef)[1][uRef].tNodeID = AL_BAD_INDEX;
   }
 
   if(pSlice->slice_type == AL_SLICE_P || pSlice->slice_type == AL_SLICE_SP)
-    AL_Dpb_InitPSlice_RefList(&pCtx->DPB, pCtx->ePicStruct, &(*pListRef)[0][0]);
+    AL_Dpb_InitPSlice_RefList(pDpb, pDpb->ePicStruct, &(*pListRef)[0][0]);
   else if(pSlice->slice_type == AL_SLICE_B)
-    AL_Dpb_InitBSlice_RefList(&pCtx->DPB, pCtx->iCurFramePOC, pCtx->ePicStruct, pListRef);
+    AL_Dpb_InitBSlice_RefList(pDpb, pDpb->iCurFramePOC, pDpb->ePicStruct, pListRef);
 }
 
 /*****************************************************************************/
-void AL_AVC_PictMngr_ReorderPictList(AL_TPictMngrCtx const* pCtx, AL_TAvcSliceHdr const* pSlice, TBufferListRef* pListRef)
+void AL_AVC_Dpb_ReorderPictList(AL_TDpb* pDpb, AL_TAvcSliceHdr const* pSlice, TBufferListRef* pListRef)
 {
   int32_t iPicNumPred = pSlice->frame_num * (1 + pSlice->field_pic_flag) + pSlice->field_pic_flag;
 
@@ -314,10 +308,10 @@ void AL_AVC_PictMngr_ReorderPictList(AL_TPictMngrCtx const* pCtx, AL_TAvcSliceHd
       {
       case 0:
       case 1:
-        AL_Dpb_ModifShortTerm(&pCtx->DPB, pSlice, iPicNumIdc, uParseShort++, 0, &uRefIdxL0, &iPicNumPred, pListRef);
+        AL_Dpb_ModifShortTerm(pDpb, pSlice, iPicNumIdc, uParseShort++, 0, &uRefIdxL0, &iPicNumPred, pListRef);
         break;
       case 2:
-        AL_Dpb_ModifLongTerm(&pCtx->DPB, pSlice, uParseLong++, 0, &uRefIdxL0, pListRef);
+        AL_Dpb_ModifLongTerm(pDpb, pSlice, uParseLong++, 0, &uRefIdxL0, pListRef);
         break;
       default:
         break;
@@ -341,22 +335,16 @@ void AL_AVC_PictMngr_ReorderPictList(AL_TPictMngrCtx const* pCtx, AL_TAvcSliceHd
       {
       case 0:
       case 1:
-        AL_Dpb_ModifShortTerm(&pCtx->DPB, pSlice, iPicNumIdc, uParseShort++, 1, &uRefIdxL1, &iPicNumPred, pListRef);
+        AL_Dpb_ModifShortTerm(pDpb, pSlice, iPicNumIdc, uParseShort++, 1, &uRefIdxL1, &iPicNumPred, pListRef);
         break;
       case 2:
-        AL_Dpb_ModifLongTerm(&pCtx->DPB, pSlice, uParseLong++, 1, &uRefIdxL1, pListRef);
+        AL_Dpb_ModifLongTerm(pDpb, pSlice, uParseLong++, 1, &uRefIdxL1, pListRef);
         break;
       default:
         break;
       }
     }
   }
-}
-
-/*****************************************************************************/
-int32_t AL_AVC_PictMngr_GetNumExistingRef(AL_TPictMngrCtx const* pCtx, TBufferListRef const* pListRef)
-{
-  return AL_Dpb_GetNumExistingRef(&pCtx->DPB, pListRef);
 }
 
 /*!@}*/

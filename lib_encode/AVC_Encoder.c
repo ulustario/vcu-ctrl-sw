@@ -41,7 +41,10 @@ static void initHlsSps(AL_TEncChanParam* pChParam, uint32_t* pSpsParam)
   AL_SET_SPS_LOG2_MAX_POC(pSpsParam, log2_max_poc);
   int32_t log2_max_frame_num_minus4 = 0; // This value SHOULD be equals to IP_Utils SPS
 
-  if((pChParam->tGopParam.eMode & AL_GOP_FLAG_PYRAMIDAL) && pChParam->tGopParam.uNumB == 15)
+  bool bGopParamModeFlagPyramidal = false;
+  bGopParamModeFlagPyramidal = pChParam->tGopParam.eMode & AL_GOP_FLAG_PYRAMIDAL;
+
+  if((bGopParamModeFlagPyramidal) && pChParam->tGopParam.uNumB == 15)
     log2_max_frame_num_minus4 = 1;
 
   else if(AL_IsGdrEnabled(pChParam))
@@ -74,7 +77,8 @@ static void generateNals(AL_TEncCtx* pCtx, int32_t iLayerID, bool bWriteVps)
   (void)bWriteVps;
   AL_TEncChanParam* pChParam = &pCtx->pSettings->tChParam[iLayerID];
 
-  uint32_t uCpbBitSize = (uint32_t)((uint64_t)pChParam->tRCParam.uCPBSize * (uint64_t)pChParam->tRCParam.uMaxBitRate / 90000LL);
+  uint32_t uMaxBitRate = (pChParam->tRCParam.uMaxBitRate >> 6) << 6;
+  uint32_t uCpbBitSize = (uint32_t)((uint64_t)pChParam->tRCParam.uCPBSize * (uint64_t)uMaxBitRate / 90000LL);
   AL_AVC_GenerateSPS(&pCtx->tLayerCtx[0].sps, pCtx->pSettings, pCtx->iMaxNumRef, uCpbBitSize);
   AL_AVC_GeneratePPS(&pCtx->tLayerCtx[0].pps, pCtx->pSettings, &pCtx->tLayerCtx[0].sps);
 }

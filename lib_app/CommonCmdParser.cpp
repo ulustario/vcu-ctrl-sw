@@ -4,7 +4,7 @@
 #include <stdexcept>
 #include <sstream>
 
-#include "lib_app/CommonCmdParser.h"
+#include "lib_app/CommonCmdParser.hpp"
 
 /******************************************************************************/
 AL_EFbStorageMode ParseFrameBufferFormat(const std::string& sBufFormat, bool& bBufComp)

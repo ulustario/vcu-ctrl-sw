@@ -4,17 +4,18 @@
 #include <algorithm>
 #include <stdexcept>
 
-#include "CmdParser.h"
-#include "exe_decoder/CodecUtils.h"
-#include "lib_app/CommandLineParser.h"
-#include "lib_app/CommonCmdParser.h"
-#include "lib_common/PicFormat.h"
+#include "CmdParser.hpp"
+#include "exe_decoder/CodecUtils.hpp"
+#include "lib_app/CommandLineParser.hpp"
+#include "lib_app/CommonCmdParser.hpp"
 
 extern "C"
 {
 #include "lib_common/AllocatorTracker.h"
-#include "lib_common/RoundUp.h"
 #include "lib_common/BufCommon.h"
+#include "lib_common/PicFormat.h"
+#include "lib_common/Round.h"
+#include "lib_rtos/utils.h"
 }
 
 using namespace std;
@@ -136,6 +137,7 @@ static AL_EProfile ParseProfile(string const& sProf)
     { "AVC_HIGH10", AL_PROFILE_AVC_HIGH10 },
     { "AVC_HIGH_422_INTRA", AL_PROFILE_AVC_HIGH_422_INTRA },
     { "AVC_HIGH_422", AL_PROFILE_AVC_HIGH_422 },
+    { "AVC_HIGH_INTRA", AL_PROFILE_AVC_HIGH_INTRA },
     { "AVC_HIGH", AL_PROFILE_AVC_HIGH },
     { "AVC_C_HIGH", AL_PROFILE_AVC_C_HIGH },
     { "AVC_PROG_HIGH", AL_PROFILE_AVC_PROG_HIGH },
@@ -329,6 +331,7 @@ static string toStringPathsSet(set<string> paths)
 }
 
 /******************************************************************************/
+DISABLE_VAR_TRACKING_ASSIGNMENT
 Config ParseCommandLine(int32_t argc, char* argv[])
 {
   Config config {};
@@ -338,8 +341,8 @@ Config ParseCommandLine(int32_t argc, char* argv[])
   bool helpJson = false;
 
   string sRasterOut;
-  string sOutputBitDepth = "";
-  string sOutputFormat = "";
+  string sOutputBitDepth;
+  string sOutputFormat;
   set<string> const sDecDefaultDevicePath(DECODER_DEVICES);
 
   SetDefaultDecOutputSettings(&config.tUserOutputSettings);
@@ -362,7 +365,7 @@ Config ParseCommandLine(int32_t argc, char* argv[])
               AL_CODEC_HEVC);
   opt.addInt("--framerate,--fps,-fps", &fps, "force framerate");
   opt.addCustom("--clock,--clk,-clk", &config.tDecSettings.uClkRatio, &IntWithOffset<1000>, "Set clock ratio, (0 for 1000, 1 for 1001)", "number");
-  opt.addString("--bitdepth,--bd,-bd", &sOutputBitDepth, "Output YUV bitdepth (8, 10, 12, alloc (auto), stream, first)");
+  opt.addString("--bitdepth,--bd,-bd", &sOutputBitDepth, "Output YUV bitdepth (8, 10, 12, alloc : force prealloc if present, if not fallback to first, stream: use current frame bitdepth, first: always use bitdepth of the first decoded frame)");
   opt.addString("--output-format", &sOutputFormat, "Output format FourCC (default: auto)");
   opt.addFlag("--sync-i-frames", &config.tDecSettings.bUseIFramesAsSyncPoint,
               "Allow decoder to sync on I frames if configurations' nals are presents",
@@ -562,6 +565,8 @@ Config ParseCommandLine(int32_t argc, char* argv[])
 
   return config;
 }
+
+RESTORE_VAR_TRACKING_ASSIGNMENT
 
 bool IsOutputStorageModeCompressed(AL_TDecOutputSettings tUserOutputSettings, bool bMainOutputCompressed)
 {

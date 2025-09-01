@@ -22,6 +22,11 @@ typedef struct AL_TDimension
   int32_t iHeight;
 }AL_TDimension;
 
+static inline bool AL_AreDimensionsEqual(AL_TDimension tDim1, AL_TDimension tDim2)
+{
+  return tDim1.iWidth == tDim2.iWidth && tDim1.iHeight == tDim2.iHeight;
+}
+
 /*****************************************************************************
    \brief Struct for position
 *****************************************************************************/
@@ -156,6 +161,27 @@ typedef enum AL_EComponentOrder
   AL_COMPONENT_ORDER_BGR,
   AL_COMPONENT_ORDER_MAX_ENUM, /* sentinel */
 }AL_EComponentOrder;
+
+/*****************************************************************************
+   \brief Identifies pic_struct (subset of table D-2)
+*****************************************************************************/
+typedef enum AL_EPicStruct
+{
+  AL_PS_FRM = 0,
+  AL_PS_TOP_FLD = 1,
+  AL_PS_BOT_FLD = 2,
+  AL_PS_TOP_BOT = 3,
+  AL_PS_BOT_TOP = 4,
+  AL_PS_TOP_BOT_TOP = 5,
+  AL_PS_BOT_TOP_BOT = 6,
+  AL_PS_FRM_x2 = 7,
+  AL_PS_FRM_x3 = 8,
+  AL_PS_TOP_FLD_WITH_PREV_BOT = 9,
+  AL_PS_BOT_FLD_WITH_PREV_TOP = 10,
+  AL_PS_TOP_FLD_WITH_NEXT_BOT = 11,
+  AL_PS_BOT_FLD_WITH_NEXT_TOP = 12,
+  AL_PS_MAX_ENUM, /* sentinel */
+}AL_EPicStruct;
 
 /*****************************************************************************
    \brief Frame buffer sample pack mode. Describes on how many bits each sample

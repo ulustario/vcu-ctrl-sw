@@ -3,12 +3,12 @@
 
 #include "SplitBufferFeeder.h"
 #include "lib_common_dec/InternalError.h"
-#include "lib_decode/lib_decode.h"
 #include "lib_common/Fifo.h"
 #include "lib_common/BufferSeiMeta.h"
 #include "lib_common/StreamSection.h"
 #include "lib_common/BufferStreamMeta.h"
-#include "lib_decode/WorkPool.h"
+#include "lib_common/WorkPool.h"
+#include "lib_decode/lib_decode.h"
 
 UNIT_ERROR AL_Decoder_TryDecodeOneUnit(AL_HDecoder hDec, AL_TBuffer* pBuf);
 void AL_Decoder_InternalFlush(AL_HDecoder hDec);

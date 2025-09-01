@@ -33,14 +33,14 @@ typedef struct AL_TRefPicSet
   uint8_t delta_idx_minus1;
   uint8_t delta_rps_sign;
   uint16_t abs_delta_rps_minus1;
-  uint8_t used_by_curr_pic_flag[MAX_REF];
-  uint8_t use_delta_flag[MAX_REF];
+  uint8_t used_by_curr_pic_flag[AL_MAX_REF];
+  uint8_t use_delta_flag[AL_MAX_REF];
   uint8_t num_negative_pics;
   uint8_t num_positive_pics;
-  uint16_t delta_poc_s0_minus1[MAX_REF];
-  uint16_t delta_poc_s1_minus1[MAX_REF];
-  uint8_t used_by_curr_pic_s0_flag[MAX_REF];
-  uint8_t used_by_curr_pic_s1_flag[MAX_REF];
+  uint16_t delta_poc_s0_minus1[AL_MAX_REF];
+  uint16_t delta_poc_s1_minus1[AL_MAX_REF];
+  uint8_t used_by_curr_pic_s0_flag[AL_MAX_REF];
+  uint8_t used_by_curr_pic_s1_flag[AL_MAX_REF];
 }AL_TRefPicSet;
 
 /*****************************************************************************
@@ -49,9 +49,9 @@ typedef struct AL_TRefPicSet
 typedef struct AL_TRefPicModif
 {
   uint8_t ref_pic_list_modification_flag_l0;
-  uint8_t list_entry_l0[MAX_REF];
+  uint8_t list_entry_l0[AL_MAX_REF];
   uint8_t ref_pic_list_modification_flag_l1;
-  uint8_t list_entry_l1[MAX_REF];
+  uint8_t list_entry_l1[AL_MAX_REF];
 }AL_TRefPicModif;
 
 /*****************************************************************************
@@ -59,13 +59,13 @@ typedef struct AL_TRefPicModif
 *****************************************************************************/
 typedef struct AL_TWPCoeff
 {
-  uint8_t luma_weight_flag[MAX_REF];
-  int8_t luma_delta_weight[MAX_REF];
-  int16_t luma_offset[MAX_REF];
+  uint8_t luma_weight_flag[AL_MAX_REF];
+  int8_t luma_delta_weight[AL_MAX_REF];
+  int16_t luma_offset[AL_MAX_REF];
 
-  uint8_t chroma_weight_flag[MAX_REF];
-  int8_t chroma_delta_weight[MAX_REF][2];
-  int16_t chroma_offset[MAX_REF][2];
+  uint8_t chroma_weight_flag[AL_MAX_REF];
+  int8_t chroma_delta_weight[AL_MAX_REF][2];
+  int16_t chroma_offset[AL_MAX_REF][2];
 }AL_TWPCoeff;
 
 typedef struct AL_TWPTable

@@ -92,6 +92,7 @@ uint8_t AL_DPBConstraint_GetMaxRef_PyramidalGop(const AL_TGopParam* pGopParam, A
 /****************************************************************************/
 uint8_t AL_DPBConstraint_GetMaxRef_LowDelayGop(const AL_TGopParam* pGopParam, AL_ECodec eCodec)
 {
+  (void)eCodec;
 
   /* Ref of a P picture */
   uint8_t uNumRef = 1;

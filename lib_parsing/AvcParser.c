@@ -530,7 +530,7 @@ AL_PARSE_RESULT AL_AVC_ParseSPS(AL_TRbspParser* pRP, AL_TAvcSps* pSPS)
       pSPS->offset_for_ref_frame[i] = se(pRP);
   }
 
-  pSPS->max_num_ref_frames = Clip3(ue(pRP), 0, MAX_REF);
+  pSPS->max_num_ref_frames = Clip3(ue(pRP), 0, AL_MAX_REF);
   pSPS->gaps_in_frame_num_value_allowed_flag = u(pRP, 1);
 
   pSPS->pic_width_in_mbs_minus1 = ue(pRP);
@@ -708,6 +708,13 @@ void AL_AVC_GetCropInfo(AL_TAvcSps const* pSPS, AL_TCropInfo* pCropInfo)
 
     pCropInfo->uCropOffsetTop = iCropUnitY * pSPS->frame_crop_top_offset;
     pCropInfo->uCropOffsetBottom = iCropUnitY * pSPS->frame_crop_bottom_offset;
+
+    if(!pSPS->frame_mbs_only_flag)
+    {
+      // Decoder output independent field, not interlaced frame
+      pCropInfo->uCropOffsetTop /= 2;
+      pCropInfo->uCropOffsetBottom /= 2;
+    }
   }
   else
   {

@@ -160,7 +160,9 @@ static bool AL_Encoder_Process_Host(AL_HEncoder hEnc, AL_TBuffer* pFrame, AL_TBu
 {
   AL_TEncoder* pEnc = (AL_TEncoder*)hEnc;
 
-  return AL_Common_Encoder_Process(pEnc->pCtx, pFrame, pQpTable, 0);
+  bool bMainPassOK = AL_Common_Encoder_Process(pEnc->pCtx, pFrame, pQpTable, 0);
+
+  return bMainPassOK;
 }
 
 /****************************************************************************/

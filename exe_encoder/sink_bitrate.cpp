@@ -1,12 +1,12 @@
 // SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
-#include "sink_bitrate.h"
-#include "CodecUtils.h" // for GetImageStreamSize
+#include "sink_bitrate.hpp"
+#include "CodecUtils.hpp" // for GetImageStreamSize
 #include <deque>
 #include <string>
 #include <fstream>
-#include "lib_app/utils.h" // for OpenOutput
+#include "lib_app/utils.hpp" // for OpenOutput
 
 #include <iostream>
 

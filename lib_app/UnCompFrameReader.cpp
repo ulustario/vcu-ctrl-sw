@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
-#include "lib_app/UnCompFrameReader.h"
+#include "lib_app/UnCompFrameReader.hpp"
 
 UnCompFrameReader::UnCompFrameReader(std::ifstream& iRecFile, AL_TYUVFileInfo& tFileInfo, bool bLoopFrames) :
   FrameReader(iRecFile, bLoopFrames), m_tFileInfo(tFileInfo), m_uRndDim(DEFAULT_RND_DIM)

@@ -94,7 +94,7 @@ static AL_TSeiPrefixCtx createSeiPrefixCtx(const AL_TNalsData* pNalsData, AL_TEn
 static AL_TSeiPrefixUDUCtx createSeiPrefixUDUCtx(int8_t iNumSlices)
 {
   AL_TSeiPrefixUDUCtx ctx;
-  int32_t iSize = sizeof(SEI_PREFIX_USER_DATA_UNREGISTERED_UUID) / sizeof(*SEI_PREFIX_USER_DATA_UNREGISTERED_UUID);
+  int32_t iSize = ARRAY_SIZE(SEI_PREFIX_USER_DATA_UNREGISTERED_UUID);
   Rtos_Memcpy(&ctx.uuid, SEI_PREFIX_USER_DATA_UNREGISTERED_UUID, iSize);
   Rtos_Memcpy(&ctx.numSlices, &iNumSlices, sizeof(iNumSlices));
   return ctx;

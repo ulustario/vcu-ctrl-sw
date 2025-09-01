@@ -1,10 +1,10 @@
 // SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
-#include "sink_bitstream_writer.h"
-#include "lib_app/utils.h" // OpenOutput
-#include "lib_app/InputFiles.h"
-#include "CodecUtils.h" // WriteStream
+#include "sink_bitstream_writer.hpp"
+#include "lib_app/utils.hpp" // OpenOutput
+#include "lib_app/InputFiles.hpp"
+#include "CodecUtils.hpp" // WriteStream
 #include <fstream>
 
 extern "C"

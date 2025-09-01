@@ -22,7 +22,7 @@
 /****************************************************************************/
 typedef struct
 {
-  void (* func)(void* pUserParam, int32_t iFrameID, int32_t iSliceID);
+  void (* func)(void* pUserParam, AL_TIndex tFrameID, int32_t iSliceID);
   void* userParam;
 }AL_TDecScheduler_CB_EndParsing;
 

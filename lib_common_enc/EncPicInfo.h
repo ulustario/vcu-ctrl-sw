@@ -9,21 +9,7 @@
 #include "lib_common_enc/EncChanParam.h"
 #include "lib_common/BufferAPI.h"
 #include "lib_common_enc/RateCtrlStats.h"
-
-/*****************************************************************************
-   \brief Segmentation structure
-*****************************************************************************/
-#define MAX_SEGMENTS 8
-
-typedef struct
-{
-  bool enable;
-  bool update_map;
-  bool temporal_update;
-  bool update_data;
-  bool abs_delta;
-  int16_t feature_data[MAX_SEGMENTS];  // only store data for Q
-}AL_TSegmentation;
+#include "lib_common/AomDefinesInternal.h"
 
 /*****************************************************************************
    \brief Encoding tool enum

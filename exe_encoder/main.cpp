@@ -1,7 +1,6 @@
 // SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
-#include "lib_common/PicFormat.h"
 #include <climits>
 #include <cstdarg>
 #include <cstdlib>
@@ -28,50 +27,52 @@
 #include "extra/dirent/include/dirent.h"
 #endif
 
-#include "lib_app/BufPool.h"
-#include "lib_app/FileUtils.h"
-#include "lib_app/PixMapBufPool.h"
-#include "lib_app/YuvIO.h"
-#include "lib_app/console.h"
-#include "lib_app/plateform.h"
-#include "lib_app/utils.h"
-#include "lib_app/CommonCmdParser.h"
-#include "lib_app/CompFrameCommon.h"
-#include "lib_app/UnCompFrameReader.h"
-#include "lib_app/SinkFrame.h"
+#include "lib_app/BufPool.hpp"
+#include "lib_app/FileUtils.hpp"
+#include "lib_app/PixMapBufPool.hpp"
+#include "lib_app/YuvIO.hpp"
+#include "lib_app/console.hpp"
+#include "lib_app/plateform.hpp"
+#include "lib_app/utils.hpp"
+#include "lib_app/CommonCmdParser.hpp"
+#include "lib_app/CompFrameCommon.hpp"
+#include "lib_app/UnCompFrameReader.hpp"
+#include "lib_app/SinkFrame.hpp"
 
-#include "CfgParser.h"
-#include "CodecUtils.h"
-#include "IpDevice.h"
-#include "resource.h"
+#include "CfgParser.hpp"
+#include "CodecUtils.hpp"
+#include "IpDevice.hpp"
+#include "IEncoderSink.hpp"
 
 extern "C" {
+#include "lib_common/PicFormat.h"
 #include "lib_common/BufferPictureMeta.h"
 #include "lib_common/BufferStreamMeta.h"
 #include "lib_common/Error.h"
 #include "lib_common/PixMapBuffer.h"
-#include "lib_common/RoundUp.h"
+#include "lib_common/Round.h"
 #include "lib_common/StreamBuffer.h"
 #include "lib_common_enc/RateCtrlMeta.h"
 #include "lib_encode/lib_encoder.h"
 #include "lib_rtos/lib_rtos.h"
 #include "lib_common_enc/EncBuffers.h"
 #include "lib_common_enc/IpEncFourCC.h"
+#include "resource.h"
 }
 
-#include "lib_app/AL_RasterConvert.h"
+#include "lib_app/AL_RasterConvert.hpp"
 
-#include "sink_encoder.h"
-#include "sink_yuv_md5.h"
-#include "sink_ratectrl_meta.h"
-#include "sink_lookahead.h"
-#include "QPGenerator.h"
-#include "lib_app/SinkStreamMd5.h"
-#include "sink_bitrate.h"
-#include "sink_bitstream_writer.h"
-#include "sink_repeater.h"
+#include "sink_encoder.hpp"
+#include "sink_yuv_md5.hpp"
+#include "sink_ratectrl_meta.hpp"
+#include "sink_lookahead.hpp"
+#include "QPGenerator.hpp"
+#include "lib_app/SinkStreamMd5.hpp"
+#include "sink_bitrate.hpp"
+#include "sink_bitstream_writer.hpp"
+#include "sink_repeater.hpp"
 
-#include "RCPlugin.h"
+#include "RCPlugin.hpp"
 
 static int32_t g_numFrameToRepeat;
 static int32_t g_StrideHeight = -1;
@@ -117,7 +118,7 @@ AL_HANDLE alignedAlloc(AL_TAllocator* pAllocator, char const* pBufName, uint32_t
 
 /*****************************************************************************/
 
-#include "lib_app/BuildInfo.h"
+#include "lib_app/BuildInfo.hpp"
 
 #if !HAS_COMPIL_FLAGS
 #define AL_COMPIL_FLAGS ""
@@ -148,6 +149,7 @@ void DisplayVersionInfo(void)
 void SetDefaults(ConfigFile& cfg)
 {
   cfg.BitstreamFileName = "Stream.bin";
+  cfg.bDisableBitstreamOutput = false;
   cfg.RecFourCC = FOURCC(NULL);
   AL_Settings_SetDefaults(&cfg.Settings);
   cfg.MainInput.FileInfo.FourCC = FOURCC(I420);
@@ -167,7 +169,7 @@ void SetDefaults(ConfigFile& cfg)
   cfg.iForceStreamBufSize = 0;
 }
 
-#include "lib_app/CommandLineParser.h"
+#include "lib_app/CommandLineParser.hpp"
 
 static void Usage(CommandLineParser const& opt, char* ExeName)
 {
@@ -315,6 +317,7 @@ void ParseCommandLine(int32_t argc, char** argv, ConfigFile& cfg, CfgParser& cfg
   opt.addString("--input,-i", &cfg.MainInput.YUVFileName, "YUV input file");
   opt.addString("--map,-m", &cfg.MainInput.sMapFileName, "Map input file");
   opt.addString("--output,-o", &cfg.BitstreamFileName, "Compressed output file");
+  opt.addFlag("--no-output", &cfg.bDisableBitstreamOutput, "Disable writing compressed output file");
   opt.addString("--output-rec,-r", &cfg.RecFileName, "Output reconstructed YUV file");
   opt.addString("--md5-rec", &cfg.RunInfo.sRecMd5Path, "Filename to the output MD5 of the reconstructed pictures");
   opt.addString("--md5-stream", &cfg.RunInfo.sStreamMd5Path, "Filename to the output MD5 of the bitstream");
@@ -346,11 +349,6 @@ void ParseCommandLine(int32_t argc, char** argv, ConfigFile& cfg, CfgParser& cfg
   opt.addFlag("--slicelat", &cfg.Settings.tChParam[0].bSubframeLatency, "Enable subframe latency");
   opt.addFlag("--framelat", &cfg.Settings.tChParam[0].bSubframeLatency, "Disable subframe latency", false);
 
-  opt.addInt("--lookahead", &cfg.Settings.LookAhead, "Set the twopass LookAhead size");
-  opt.addInt("--pass", &cfg.Settings.TwoPass, "Specify which pass we are encoding");
-  opt.addString("--pass-logfile", &cfg.sTwoPassFileName, "LogFile to transmit dual pass statistics");
-  opt.addFlag("--first-pass-scd", &cfg.Settings.bEnableFirstPassSceneChangeDetection, "During first pass, the encoder encode faster by only enabling scene change detection");
-
   opt.startSection("Rate Control && GOP");
   opt.addCustom("--ratectrl-mode", &cfg.Settings.tChParam[0].tRCParam.eRCMode, createParseRCMode(&cfgParser),
                 "Specifies rate control mode (CONST_QP, CBR, VBR"
@@ -380,6 +378,9 @@ void ParseCommandLine(int32_t argc, char** argv, ConfigFile& cfg, CfgParser& cfg
   opt.addInt("--first-picture", &cfg.RunInfo.iFirstPict, "First picture encoded (skip those before)");
   opt.addInt("--max-picture", &cfg.RunInfo.iMaxPict, "Maximum number of pictures encoded (1,2 .. -1 for ALL)");
   opt.addFlag("--loop", &cfg.RunInfo.bLoop, "Loop at the end of the yuv file");
+
+  bool dummyNextChan; // As the --next-channel is parsed elsewhere, this option is only used to add the description in the usage
+  opt.addFlag("--next-chan", &dummyNextChan, "Start the configuration of a new encoding channel.");
 
   opt.addInt("--input-sleep", &cfg.RunInfo.uInputSleepInMilliseconds, "Minimum waiting time in milliseconds between each process frame (0 by default)");
 
@@ -876,15 +877,15 @@ struct LayerResources
                      , EncoderLookAheadSink* encFirstPassLA
                      );
 
-  void OpenEncoderInput(ConfigFile& cfg, AL_HEncoder hEnc);
+  void OpenEncoderInput(ConfigFile& cfg);
 
-  bool SendInput(ConfigFile& cfg, IFrameSink* firstSink, void* pTraceHook);
+  void ChangeEncoderInput(ConfigFile& cfg, int32_t iInputIdx);
 
-  bool sendInputFileTo(unique_ptr<FrameReader>& frameReader, PixMapBufPool& SrcBufPool, AL_TBuffer* Yuv, ConfigFile const& cfg, AL_TYUVFileInfo& FileInfo, IConvSrc* pSrcConv, IFrameSink* sink, int& iPictCount, int& iReadCount);
+  bool SendInput(ConfigFile& cfg, IEncoderSink* pEncoderSink, void* pTraceHook);
+
+  bool sendInputFileTo(unique_ptr<FrameReader>& frameReader, PixMapBufPool& SrcBufPool, AL_TBuffer* Yuv, ConfigFile const& cfg, AL_TYUVFileInfo& FileInfo, IConvSrc* pSrcConv, IEncoderSink* pEncoderSink, int& iPictCount, int& iReadCount);
 
   unique_ptr<FrameReader> InitializeFrameReader(ConfigFile& cfg, ifstream& YuvFile, string sYuvFileName, ifstream& MapFile, string sMapFileName, AL_TYUVFileInfo& FileInfo);
-
-  void ChangeInput(ConfigFile& cfg, int32_t iInputIdx, AL_HEncoder hEnc);
 
   BufPool StreamBufPool;
   BufPool QpBufPool;
@@ -1064,30 +1065,54 @@ void LayerResources::PushResources(ConfigFile& cfg, EncoderSink* enc
   }
 }
 
-void LayerResources::OpenEncoderInput(ConfigFile& cfg, AL_HEncoder hEnc)
+void LayerResources::OpenEncoderInput(ConfigFile& cfg)
 {
-  ChangeInput(cfg, iInputIdx, hEnc);
+  if(iInputIdx >= static_cast<int>(layerInputs.size()))
+    throw std::runtime_error("Invalid source input index!");
+
+  AL_TDimension tInputDim = { layerInputs[iInputIdx].FileInfo.PictWidth, layerInputs[iInputIdx].FileInfo.PictHeight };
+  bool bResChange = (tInputDim.iWidth != AL_GetSrcWidth(cfg.Settings.tChParam[iLayerID])) || (tInputDim.iHeight != AL_GetSrcHeight(cfg.Settings.tChParam[iLayerID]));
+
+  if(bResChange)
+  {
+    /* No resize with dynamic resolution changes */
+    cfg.Settings.tChParam[iLayerID].uEncWidth = cfg.Settings.tChParam[iLayerID].uSrcWidth = tInputDim.iWidth;
+    cfg.Settings.tChParam[iLayerID].uEncHeight = cfg.Settings.tChParam[iLayerID].uSrcHeight = tInputDim.iHeight;
+  }
+
+  frameReader = InitializeFrameReader(cfg, YuvFile,
+                                      layerInputs[iInputIdx].YUVFileName,
+                                      MapFile,
+                                      cfg.MainInput.sMapFileName,
+                                      layerInputs[iInputIdx].FileInfo);
+
 }
 
-bool LayerResources::SendInput(ConfigFile& cfg, IFrameSink* firstSink, void* pTraceHooker)
+void LayerResources::ChangeEncoderInput(ConfigFile& cfg, int32_t iInputIdx)
+{
+  this->iInputIdx = iInputIdx;
+  OpenEncoderInput(cfg);
+}
+
+bool LayerResources::SendInput(ConfigFile& cfg, IEncoderSink* pEncoderSink, void* pTraceHooker)
 {
   (void)pTraceHooker;
-  firstSink->PreprocessFrame();
+  pEncoderSink->PreprocessFrame();
 
-  return sendInputFileTo(frameReader, SrcBufPool, SrcYuv.get(), cfg, layerInputs[iInputIdx].FileInfo, pSrcConv.get(), firstSink, iPictCount, iReadCount);
+  return sendInputFileTo(frameReader, SrcBufPool, SrcYuv.get(), cfg, layerInputs[iInputIdx].FileInfo, pSrcConv.get(), pEncoderSink, iPictCount, iReadCount);
 }
 
-bool LayerResources::sendInputFileTo(unique_ptr<FrameReader>& frameReader, PixMapBufPool& SrcBufPool, AL_TBuffer* Yuv, ConfigFile const& cfg, AL_TYUVFileInfo& FileInfo, IConvSrc* pSrcConv, IFrameSink* sink, int& iPictCount, int& iReadCount)
+bool LayerResources::sendInputFileTo(unique_ptr<FrameReader>& frameReader, PixMapBufPool& SrcBufPool, AL_TBuffer* Yuv, ConfigFile const& cfg, AL_TYUVFileInfo& FileInfo, IConvSrc* pSrcConv, IEncoderSink* pEncoderSink, int& iPictCount, int& iReadCount)
 {
-  if(AL_IS_ERROR_CODE(GetEncoderLastError()))
+  if(AL_IS_ERROR_CODE(pEncoderSink->GetLastError()))
   {
-    sink->ProcessFrame(nullptr);
+    pEncoderSink->ProcessFrame(nullptr);
     return false;
   }
 
   shared_ptr<AL_TBuffer> frame = GetSrcFrame(iReadCount, iPictCount, frameReader, FileInfo, SrcBufPool, Yuv, cfg.Settings.tChParam[0], cfg, pSrcConv);
 
-  sink->ProcessFrame(frame.get());
+  pEncoderSink->ProcessFrame(frame.get());
 
   if(!frame)
     return false;
@@ -1116,34 +1141,6 @@ unique_ptr<FrameReader> LayerResources::InitializeFrameReader(ConfigFile& cfg, i
   pFrameReader->SeekAbsolute(cfg.RunInfo.iFirstPict + iReadCount);
 
   return pFrameReader;
-}
-
-void LayerResources::ChangeInput(ConfigFile& cfg, int32_t iInputIdx, AL_HEncoder hEnc)
-{
-  (void)hEnc;
-
-  if(iInputIdx < static_cast<int>(layerInputs.size()))
-  {
-    this->iInputIdx = iInputIdx;
-    AL_TDimension inputDim = { layerInputs[iInputIdx].FileInfo.PictWidth, layerInputs[iInputIdx].FileInfo.PictHeight };
-    bool bResChange = (inputDim.iWidth != AL_GetSrcWidth(cfg.Settings.tChParam[iLayerID])) || (inputDim.iHeight != AL_GetSrcHeight(cfg.Settings.tChParam[iLayerID]));
-
-    if(bResChange)
-    {
-      /* No resize with dynamic resolution changes */
-      cfg.Settings.tChParam[iLayerID].uEncWidth = cfg.Settings.tChParam[iLayerID].uSrcWidth = inputDim.iWidth;
-      cfg.Settings.tChParam[iLayerID].uEncHeight = cfg.Settings.tChParam[iLayerID].uSrcHeight = inputDim.iHeight;
-
-      AL_Encoder_SetInputResolution(hEnc, inputDim);
-    }
-
-    frameReader = InitializeFrameReader(cfg, YuvFile,
-                                        layerInputs[iInputIdx].YUVFileName,
-                                        MapFile,
-                                        cfg.MainInput.sMapFileName,
-                                        layerInputs[iInputIdx].FileInfo);
-
-  }
 }
 
 void SafeChannelMain(ConfigFile& cfg, CIpDevice* pIpDevice, CIpDeviceParam& param, int32_t chanId)
@@ -1175,14 +1172,13 @@ void SafeChannelMain(ConfigFile& cfg, CIpDevice* pIpDevice, CIpDeviceParam& para
 
   enc.reset(new EncoderSink(cfg, pScheduler, pAllocator));
 
-  IFrameSink* firstSink = enc.get();
+  IEncoderSink* pFirstEncoderSink = enc.get();
 
   if(AL_TwoPassMngr_HasLookAhead(cfg.Settings))
   {
-    encFirstPassLA.reset(new EncoderLookAheadSink(cfg, pScheduler, pAllocator));
+    encFirstPassLA.reset(new EncoderLookAheadSink(pFirstEncoderSink, cfg, pScheduler, pAllocator));
 
-    encFirstPassLA->next = firstSink;
-    firstSink = encFirstPassLA.get();
+    pFirstEncoderSink = encFirstPassLA.get();
   }
 
   // --------------------------------------------------------------------------------
@@ -1214,8 +1210,11 @@ void SafeChannelMain(ConfigFile& cfg, CIpDevice* pIpDevice, CIpDeviceParam& para
 
   auto multisink = unique_ptr<MultiSink>(new MultiSink);
 
-  std::unique_ptr<IFrameSink> bitstreamOutput(createBitstreamWriter(StreamFileName, cfg));
-  multisink->addSink(bitstreamOutput);
+  if(!cfg.bDisableBitstreamOutput)
+  {
+    std::unique_ptr<IFrameSink> bitstreamOutput(createBitstreamWriter(StreamFileName, cfg));
+    multisink->addSink(bitstreamOutput);
+  }
 
   if(!RunInfo.sStreamMd5Path.empty())
   {
@@ -1239,9 +1238,6 @@ void SafeChannelMain(ConfigFile& cfg, CIpDevice* pIpDevice, CIpDeviceParam& para
 
   // --------------------------------------------------------------------------------
   // Set Callbacks
-  enc->m_InputChanged = ([&](int32_t iInputIdx, int32_t iLayerID) {
-    layerResources[iLayerID].ChangeInput(cfg, iInputIdx, enc->hEnc);
-  });
 
   enc->m_done = ([&]() {
     Rtos_SetEvent(hFinished);
@@ -1264,23 +1260,27 @@ void SafeChannelMain(ConfigFile& cfg, CIpDevice* pIpDevice, CIpDeviceParam& para
 
   if(g_numFrameToRepeat > 0)
   {
-    prefetch.reset(new RepeaterSink(g_numFrameToRepeat, RunInfo.iMaxPict));
-    prefetch->next = firstSink;
-    firstSink = prefetch.get();
+    prefetch.reset(new RepeaterSink(pFirstEncoderSink, g_numFrameToRepeat, RunInfo.iMaxPict));
+    pFirstEncoderSink = prefetch.get();
     RunInfo.iMaxPict = g_numFrameToRepeat;
   }
+
+  pFirstEncoderSink->SetChangeSourceCallback(
+    [&](int32_t iInputIdx, int32_t iLayerID) {
+    return layerResources[iLayerID].ChangeEncoderInput(cfg, iInputIdx);
+  });
 
   bool hasInputAndNoError = true;
 
   for(int32_t i = 0; i < Settings.NumLayer; ++i)
-    layerResources[i].OpenEncoderInput(cfg, enc->hEnc);
+    layerResources[i].OpenEncoderInput(cfg);
 
   while(hasInputAndNoError)
   {
     AL_64U uBeforeTime = Rtos_GetTime();
 
     for(int32_t i = 0; i < Settings.NumLayer; ++i)
-      hasInputAndNoError = layerResources[i].SendInput(cfg, firstSink, pTraceHook) && hasInputAndNoError;
+      hasInputAndNoError = layerResources[i].SendInput(cfg, pFirstEncoderSink, pTraceHook) && hasInputAndNoError;
 
     AL_64U uAfterTime = Rtos_GetTime();
 
@@ -1290,7 +1290,7 @@ void SafeChannelMain(ConfigFile& cfg, CIpDevice* pIpDevice, CIpDeviceParam& para
 
   Rtos_WaitEvent(hFinished, AL_WAIT_FOREVER);
 
-  if(auto err = GetEncoderLastError())
+  if(auto err = enc->GetLastError())
     throw codec_error(AL_Codec_ErrorToString(err), err);
 
 }
@@ -1322,19 +1322,56 @@ static void ChannelMain(ConfigFile& cfg, CIpDevice* pIpDevice, CIpDeviceParam& p
   }
 }
 
+static int32_t constexpr MAX_CHANNELS = 64;
+
+int32_t GetChannelsArgv(vector<char*>* argvChannels, int32_t argc, char* argv[])
+{
+  int32_t curChan = 0;
+
+  for(int32_t i = 0; i < argc; ++i)
+  {
+    if(string(argv[i]) == "--next-chan")
+    {
+      ++curChan;
+
+      if(curChan > MAX_CHANNELS)
+        throw runtime_error("Too many channels");
+
+      argvChannels[curChan].push_back(argv[0]);
+      continue;
+    }
+
+    argvChannels[curChan].push_back(argv[i]);
+  }
+
+  return curChan;
+}
+
 /*****************************************************************************/
 void SafeMain(int32_t argc, char* argv[])
 {
   InitializePlateform();
 
-  ConfigFile cfg {
-  }
+  vector<char*> argvChannels[MAX_CHANNELS] {};
 
-  ;
-  CfgParser cfgParser;
+  int32_t const maxChan = GetChannelsArgv(argvChannels, argc, argv);
+  auto const numChan = maxChan + 1;
+
+  if(numChan > 1)
+    cout << "channel number: " << numChan << endl;
+
+  ConfigFile cfgChannels[MAX_CHANNELS] {};
+  CfgParser cfgParserChannels[MAX_CHANNELS] {};
+  exception_ptr errorChannels[MAX_CHANNELS] {};
+  thread worker[MAX_CHANNELS];
+
+  for(int32_t chan = 0; chan < numChan; ++chan)
   {
+    ConfigFile& cfg = cfgChannels[chan];
+    CfgParser& cfgParser = cfgParserChannels[chan];
+
     SetDefaults(cfg);
-    ParseCommandLine(argc, argv, cfg, cfgParser);
+    ParseCommandLine(argvChannels[chan].size(), argvChannels[chan].data(), cfg, cfgParser);
 
     auto& Settings = cfg.Settings;
     auto& RecFileName = cfg.RecFileName;
@@ -1361,6 +1398,7 @@ void SafeMain(int32_t argc, char* argv[])
 
   AL_ELibEncoderArch eArch = AL_LIB_ENCODER_ARCH_HOST;
 
+  auto& cfg = cfgChannels[0];
   auto& RunInfo = cfg.RunInfo;
 
   if(!AL_IS_SUCCESS_CODE(AL_Lib_Encoder_Init(eArch)))
@@ -1379,6 +1417,32 @@ void SafeMain(int32_t argc, char* argv[])
     throw runtime_error("Can't create IpDevice");
 
   pIpDevice->Configure(param);
+
+  if(numChan > 1)
+  {
+    for(int32_t chan = 0; chan < numChan; ++chan)
+    {
+      cout << "[main] Launching channel " << chan << endl;
+      worker[chan] = thread(&ChannelMain, ref(cfgChannels[chan]), pIpDevice.get(), ref(param), ref(errorChannels[chan]), chan);
+    }
+
+    for(int32_t chan = 0; chan < numChan; ++chan)
+    {
+      cout << "[main] Waiting for channel " << chan << endl;
+      worker[chan].join();
+      cout << "[main] channel " << chan << " ended" << endl;
+    }
+
+    for(int32_t chan = 0; chan < numChan; ++chan)
+    {
+      cout << "[main] Looking for errors in channel " << chan << endl;
+
+      if(errorChannels[chan])
+        rethrow_exception(errorChannels[chan]);
+    }
+
+    return;
+  }
 
   exception_ptr pError;
   ChannelMain(cfg, pIpDevice.get(), param, pError, 0);

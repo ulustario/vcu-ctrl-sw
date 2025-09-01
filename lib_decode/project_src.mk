@@ -9,9 +9,9 @@ LIB_DECODE_SRC+=\
   lib_decode/DecoderFeeder.c\
   lib_decode/SplitBufferFeeder.c\
   lib_decode/I_DecScheduler.c\
-  lib_decode/WorkPool.c\
   lib_decode/DecSettings.c\
-  lib_decode/SearchDecUnit.c
+  lib_decode/SearchDecUnit.c\
+  lib_decode/DecoderCommon.c
 
 
 ifneq ($(ENABLE_DEC_ITU), 0)

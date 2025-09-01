@@ -55,6 +55,8 @@ typedef enum AL_ERR
   AL_WARN_INVALID_ACCESS_UNIT_STRUCTURE = AL_DEF_WARNING(15),
   /*! The hardware decoder had to conceal some errors in the stream */
   AL_WARN_HW_CONCEAL_DETECT = AL_DEF_WARNING(16),
+  /*! The decoder detect one or more P or B slices in Intra only profile and skipped them*/
+  AL_WARN_UNEXPECTED_SLICE_IN_INTRA_PROFILE = AL_DEF_WARNING(17),
 
   /*! Unknown error */
   AL_ERROR = AL_DEF_ERROR(0),
@@ -111,6 +113,10 @@ typedef enum AL_ERR
   AL_ERR_CORRUPTED_QUANTIZATION_MATRIX = AL_DEF_ERROR(39),
   AL_ERR_BUFFER_TOO_SMALL = AL_DEF_ERROR(40),
   AL_ERR_ALIGNMENT = AL_DEF_ERROR(41),
+  /*! maximal number of buffer reached */
+  AL_ERR_BUFFER_STACK_FULL = AL_DEF_ERROR(42),
+  /*! Loadable version not handled, buffer corrupted... */
+  AL_ERR_INVALID_NEURAL_VIDEO_PROCESSOR_LOADABLE = AL_DEF_ERROR(43),
 
   AL_ERR_UNKNOWN,
 }AL_ERR;

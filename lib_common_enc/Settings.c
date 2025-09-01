@@ -12,6 +12,7 @@
 #include "lib_common_enc/Settings.h"
 #include "lib_common/ChannelResources.h"
 #include "lib_common/Utils.h"
+#include "lib_common/Round.h"
 #include "lib_common/StreamBufferPrivate.h"
 #include "lib_common_enc/EncBuffers.h"
 #include "lib_common_enc/EncSize.h"
@@ -45,6 +46,7 @@ static bool AL_sSettings_CheckProfile(AL_EProfile eProfile)
   case AL_PROFILE_AVC_HIGH_444_PRED:
   case AL_PROFILE_AVC_C_HIGH:
   case AL_PROFILE_AVC_PROG_HIGH:
+  case AL_PROFILE_AVC_HIGH_INTRA:
   case AL_PROFILE_AVC_HIGH10_INTRA:
   case AL_PROFILE_AVC_HIGH_422_INTRA:
   case AL_PROFILE_AVC_HIGH_444_INTRA:
@@ -394,7 +396,7 @@ static void XAVC_CheckCoherency(AL_TEncSettings* pSettings)
     AL_TRCParam* pRateControl = &pChannel->tRCParam;
     pRateControl->eRCMode = AL_RC_VBR;
 
-    const int32_t pCycles32x32Counts[] = ENCODER_CYCLES_FOR_BLK_32X32;
+    const uint32_t pCycles32x32Counts[] = ENCODER_CYCLES_FOR_BLK_32X32;
     AL_CoreConstraint constraint;
     AL_CoreConstraint_Init(&constraint, ENCODER_CORE_FREQUENCY, ENCODER_CORE_FREQUENCY_MARGIN, pCycles32x32Counts, 0, AL_ENC_CORE_MAX_WIDTH, 1);
     int32_t iNumCore = AL_CoreConstraint_GetExpectedNumberOfCores(&constraint, pChannel->uEncWidth, pChannel->uEncHeight, AL_GET_CHROMA_MODE(pChannel->ePicFormat), pRateControl->uFrameRate * 1000, pRateControl->uClkRatio);
@@ -466,7 +468,7 @@ static void AL_sSettings_SetDefaultAVCParam(AL_TEncSettings* pSettings)
 static void AL_sSettings_SetDefaultHEVCParam(AL_TEncSettings* pSettings)
 {
   if(pSettings->eScalingList == AL_SCL_MAX_ENUM)
-    pSettings->eScalingList = AL_SCL_DEFAULT;
+    pSettings->eScalingList = AL_SCL_FLAT;
   pSettings->tChParam[0].uLog2MaxTuSkipSize = 2;
 }
 
@@ -553,7 +555,7 @@ void AL_Settings_SetDefaultChannelParam(AL_TEncChanParam* pChan)
   pGop->eMode = AL_GOP_MODE_DEFAULT;
   pGop->uFreqIDR = UINT32_MAX;
   pGop->eGdrMode = AL_GDR_OFF;
-  pGop->uFreqRP = UINT32_MAX;
+  pGop->iFreqRP = INT32_MAX;
   pGop->iGdrDuration = 0;
   pGop->uGopLength = 30;
 
@@ -568,9 +570,6 @@ void AL_Settings_SetDefaultChannelParam(AL_TEncChanParam* pChan)
   pChan->iBetaOffset = iBetaOffsetAuto;
 
   pChan->uNumCore = NUMCORE_AUTO;
-
-  if(AL_ENC_NUM_CORES == 1 || AL_ENC_NUM_CORE_JPEG == 1)
-    pChan->uNumCore = 1;
 
   pChan->uNumSlices = 1;
 
@@ -956,6 +955,12 @@ int32_t AL_Settings_CheckValidity(AL_TEncSettings* pSettings, AL_TEncChanParam* 
     MSG_ERROR("Invalid parameter: LookAheadMode should be 0 or above");
   }
 
+  if((pSettings->LookAhead > 0) && (AL_IS_INTERLACED(pChParam->eVideoMode)))
+  {
+    ++err;
+    MSG_ERROR("Invalid parameter: LookAheadMode is not supported with Interlaced Video mode");
+  }
+
   if(pSettings->TwoPass < 0 || pSettings->TwoPass > 2)
   {
     ++err;
@@ -1289,10 +1294,10 @@ int32_t AL_Settings_CheckCoherency(AL_TEncSettings* pSettings, AL_TEncChanParam*
     {
     case 1:
 
-      if(!(pChParam->tGopParam.iGdrDuration <= (int32_t)pChParam->tGopParam.uFreqRP))
+      if(!(pChParam->tGopParam.iGdrDuration <= pChParam->tGopParam.iFreqRP))
       {
         MSG_WARNING("GDR refresh duration must be less or equal to period of recovery point. GDR refresh duration was adapted.");
-        pChParam->tGopParam.iGdrDuration = (int32_t)pChParam->tGopParam.uFreqRP;
+        pChParam->tGopParam.iGdrDuration = pChParam->tGopParam.iFreqRP;
       }
       break;
     case 0:
@@ -1301,9 +1306,9 @@ int32_t AL_Settings_CheckCoherency(AL_TEncSettings* pSettings, AL_TEncChanParam*
       int32_t iLcuSize = 1 << pChParam->uLog2MaxCuSize;
       int32_t iNbLcu = (iLimit + iLcuSize - 1) / iLcuSize;
 
-      if((int)pChParam->tGopParam.uFreqRP < iNbLcu)
+      if((int)pChParam->tGopParam.iFreqRP < iNbLcu)
       {
-        pChParam->tGopParam.uFreqRP = iNbLcu;
+        pChParam->tGopParam.iFreqRP = iNbLcu;
         MSG_WARNING("Frequency of recovery point must be at least equal to the number of LCU line/column");
       }
     }
@@ -1541,11 +1546,11 @@ int32_t AL_Settings_CheckCoherency(AL_TEncSettings* pSettings, AL_TEncChanParam*
     ++numIncoherency;
   }
 
-  int32_t const MAX_LOW_DELAY_B_GOP_LENGTH = 4;
-  int32_t const MIN_LOW_DELAY_B_GOP_LENGTH = 1;
-
   if(pChParam->tRCParam.bUseGoldenRef && (pChParam->tGopParam.uNumB > 0 || pChParam->tRCParam.eRCMode != AL_RC_CONST_QP))
     pChParam->tRCParam.bUseGoldenRef = false;
+
+  int32_t const MAX_LOW_DELAY_B_GOP_LENGTH = 4;
+  int32_t const MIN_LOW_DELAY_B_GOP_LENGTH = 1;
 
   if(pChParam->tGopParam.eMode == AL_GOP_MODE_LOW_DELAY_B && (pChParam->tGopParam.uGopLength > MAX_LOW_DELAY_B_GOP_LENGTH ||
                                                               pChParam->tGopParam.uGopLength < MIN_LOW_DELAY_B_GOP_LENGTH))
@@ -1689,7 +1694,7 @@ int32_t AL_Settings_CheckCoherency(AL_TEncSettings* pSettings, AL_TEncChanParam*
   {
     int32_t iNumCore = pChParam->uNumCore;
     AL_CoreConstraint constraint;
-    const int32_t pCycles32x32Counts[] = ENCODER_CYCLES_FOR_BLK_32X32;
+    const uint32_t pCycles32x32Counts[] = ENCODER_CYCLES_FOR_BLK_32X32;
     AL_CoreConstraint_Init(&constraint, ENCODER_CORE_FREQUENCY, ENCODER_CORE_FREQUENCY_MARGIN, pCycles32x32Counts, 0, AL_ENC_CORE_MAX_WIDTH, 1);
 
     if(iNumCore == NUMCORE_AUTO)
@@ -1701,9 +1706,16 @@ int32_t AL_Settings_CheckCoherency(AL_TEncSettings* pSettings, AL_TEncChanParam*
 
     bool bHasTile = iNumCore > 1;
 
-    if(bHasTile && pChParam->uNumSlices > AL_HEVC_GetMaxTileRows(pChParam->uLevel))
+    uint32_t uCtbSize = 1 << pChParam->uLog2MaxCuSize;
+    uint32_t uPicHeightInCtbsY = AL_RoundUp(pChParam->uEncHeight, uCtbSize) / uCtbSize;
+    uint32_t uPicTileHeightRatio = AL_RoundUp(pChParam->uEncHeight, 64) / 64;
+
+    uint32_t uMaxTileRows = Min(AL_HEVC_GetMaxTileRows(pChParam->uLevel), uPicHeightInCtbsY);
+    uMaxTileRows = Min(uMaxTileRows, uPicTileHeightRatio);
+
+    if(bHasTile && (pChParam->uNumSlices > uMaxTileRows))
     {
-      pChParam->uNumSlices = Clip3(pChParam->uNumSlices, 1, AL_HEVC_GetMaxTileRows(pChParam->uLevel));
+      pChParam->uNumSlices = Clip3(pChParam->uNumSlices, 1, uMaxTileRows);
       MSG_WARNING("With this Configuration, this NumSlices cannot be set");
       ++numIncoherency;
     }
@@ -1737,7 +1749,7 @@ int32_t AL_Settings_CheckCoherency(AL_TEncSettings* pSettings, AL_TEncChanParam*
 
   }
 
-  // Fill zero value with surrounding non-zero value if any. Warning: don't change the order of if statements below
+// Fill zero value with surrounding non-zero value if any. Warning: don't change the order of if statements below
   if(pChParam->tRCParam.pMaxPictureSize[AL_SLICE_P] == 0)
     pChParam->tRCParam.pMaxPictureSize[AL_SLICE_P] = pChParam->tRCParam.pMaxPictureSize[AL_SLICE_I];
 

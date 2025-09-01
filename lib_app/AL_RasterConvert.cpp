@@ -6,8 +6,8 @@
 #include <sstream>
 #include <string>
 
-#include "lib_app/convert.h"
-#include "lib_app/AL_RasterConvert.h"
+#include "lib_app/convert.hpp"
+#include "lib_app/AL_RasterConvert.hpp"
 
 extern "C"
 {

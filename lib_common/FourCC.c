@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: MIT
 
 #include "lib_common/FourCC.h"
+#include "lib_common/Utils.h"
 #include "lib_rtos/lib_rtos.h"
 
 /* FOURCC from chars */
@@ -121,7 +122,7 @@ static const TFourCCMapping FourCCMappings[] =
 
 };
 
-static int32_t const FourCCMappingSize = sizeof(FourCCMappings) / sizeof(FourCCMappings[0]);
+static int32_t const FourCCMappingSize = ARRAY_SIZE(FourCCMappings);
 
 /****************************************************************************/
 bool AL_GetPicFormat(TFourCC tFourCC, AL_TPicFormat* tPicFormat)

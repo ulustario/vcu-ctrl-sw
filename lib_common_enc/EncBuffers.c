@@ -4,6 +4,7 @@
 #include "EncBuffersInternal.h"
 
 #include "lib_common/Utils.h"
+#include "lib_common/Round.h"
 
 #include "lib_rtos/lib_rtos.h"
 #include "lib_common_enc/EncBuffers.h"
@@ -21,7 +22,7 @@ uint32_t AL_GetAllocSizeEP1(AL_ECodec eCodec)
   if(AL_IS_ITU_CODEC(eCodec))
     uEP1Size += EP1_BUF_SCL_LST.Size;
 
-  return RoundUp(uEP1Size, HW_IP_BURST_ALIGNMENT);
+  return AL_RoundUp(uEP1Size, HW_IP_BURST_ALIGNMENT);
 }
 
 /****************************************************************************/
@@ -46,7 +47,7 @@ uint32_t AL_GetAllocSizeEP3PerCore(void)
 uint32_t AL_GetAllocSizeEP3(void)
 {
   uint32_t uMaxSize = AL_GetAllocSizeEP3PerCore() * AL_ENC_NUM_CORES;
-  return RoundUp(uMaxSize, 128);
+  return AL_RoundUp(uMaxSize, 128);
 }
 
 /****************************************************************************/
@@ -112,7 +113,7 @@ bool AL_IsSrcMSB(AL_ESrcMode eSrcMode)
 /****************************************************************************/
 uint32_t AL_GetAllocSizeSrc_PixPlane(AL_TPicFormat const* pPicFormat, int32_t iPitch, int32_t iStrideHeight, AL_EPlaneId ePlaneId)
 {
-  return RoundUp(AL_GetAllocSize_Frame_PixPlane(pPicFormat, (AL_TPitch) {iPitch, iStrideHeight / AL_GetNumLinesInPitch(pPicFormat->eStorageMode) }, ePlaneId), HW_IP_BURST_ALIGNMENT);
+  return AL_RoundUp(AL_GetAllocSize_Frame_PixPlane(pPicFormat, (AL_TPitch) {iPitch, iStrideHeight / AL_GetNumLinesInPitch(pPicFormat->eStorageMode) }, ePlaneId), HW_IP_BURST_ALIGNMENT);
 }
 
 /****************************************************************************/
@@ -172,12 +173,12 @@ uint32_t AL_GetRecPitch(AL_TDimension tTileDim, uint32_t uBitDepth, AL_EFbStorag
   uint8_t uTileVerticalAlignmentInTiles = 1;
 
   if(uBitDepth == 8)
-    return UnsignedRoundUp(uWidth, tTileDim.iWidth) * uTileVerticalAlignmentInTiles * tTileDim.iHeight;
+    return AL_UnsignedRoundUp(uWidth, tTileDim.iWidth) * uTileVerticalAlignmentInTiles * tTileDim.iHeight;
 
   if(bIsTileAligned)
     uBitDepth = 16;
 
-  return UnsignedRoundUp(uWidth, tTileDim.iWidth) * uTileVerticalAlignmentInTiles * tTileDim.iHeight * uBitDepth / 8;
+  return AL_UnsignedRoundUp(uWidth, tTileDim.iWidth) * uTileVerticalAlignmentInTiles * tTileDim.iHeight * uBitDepth / 8;
 }
 
 /****************************************************************************/
@@ -241,13 +242,13 @@ uint32_t AL_GetAllocSize_EncReference(AL_TDimension tDim, uint8_t uBitDepth, AL_
   (void)uMVVRange, (void)uLCUSize;
 
   AL_TDimension RoundedDim;
-  RoundedDim.iHeight = RoundUp(tDim.iHeight, 64);
-  RoundedDim.iWidth = RoundUp(tDim.iWidth, 64);
+  RoundedDim.iHeight = AL_RoundUp(tDim.iHeight, 64);
+  RoundedDim.iWidth = AL_RoundUp(tDim.iWidth, 64);
 
   bool bIsTileAligned = false;
 
   if(bIsTileAligned)
-    uBitDepth = RoundUp(uBitDepth, 8);
+    uBitDepth = AL_RoundUp(uBitDepth, 8);
 
   return GetAllocSize_Ref(RoundedDim, uBitDepth, eStorageMode, eChromaMode, uMVVRange, uLCUSize, eOptions);
 }
@@ -264,7 +265,7 @@ uint32_t AL_GetAllocSize_EncCompMap(AL_TDimension tDim, uint8_t uLog2MaxCuSize, 
 {
   (void)uLog2MaxCuSize, (void)uNumCore, (void)bUseEnt;
   uint32_t uBlk16x16 = GetSquareBlkNumber(tDim, 16);
-  return RoundUp(SIZE_LCU_INFO * uBlk16x16, 32);
+  return AL_RoundUp(SIZE_LCU_INFO * uBlk16x16, 32);
 }
 
 /*****************************************************************************/
@@ -291,7 +292,7 @@ uint32_t AL_GetAllocSize_MV(AL_TDimension tDim, uint8_t uLog2MaxCuSize, AL_ECode
 uint32_t AL_GetAllocSize_WPP(int32_t iLCUPicHeight, int32_t iNumSlices, uint8_t uNumCore)
 {
   uint32_t uNumLinesPerCmd = (((iLCUPicHeight + iNumSlices - 1) / iNumSlices) + uNumCore - 1) / uNumCore;
-  uint32_t uAlignedSize = RoundUp(uNumLinesPerCmd * sizeof(uint32_t), 128) * uNumCore * iNumSlices;
+  uint32_t uAlignedSize = AL_RoundUp(uNumLinesPerCmd * sizeof(uint32_t), 128) * uNumCore * iNumSlices;
   return uAlignedSize;
 }
 
@@ -301,7 +302,7 @@ uint32_t AL_GetAllocSize_SliceSize(uint32_t uWidth, uint32_t uHeight, uint32_t u
   int32_t iWidthInLcu = (uWidth + ((1 << uLog2MaxCuSize) - 1)) >> uLog2MaxCuSize;
   int32_t iHeightInLcu = (uHeight + ((1 << uLog2MaxCuSize) - 1)) >> uLog2MaxCuSize;
   uint32_t uSize = (uint32_t)Max(iWidthInLcu * iHeightInLcu * 32, iWidthInLcu * iHeightInLcu * sizeof(uint32_t) + uNumSlices * AL_ENC_NUM_CORES * 128);
-  uint32_t uAlignedSize = RoundUp(uSize, 32);
+  uint32_t uAlignedSize = AL_RoundUp(uSize, 32);
   return uAlignedSize;
 }
 
@@ -314,7 +315,7 @@ uint32_t GetAllocSize_StreamPart(AL_EProfile eProfile, int32_t iNumCores, int32_
   int32_t iNumNal = 16;
 
   uint32_t uStreamPartSize = ((iMaxPart * iNumCores * iNumTilesPerCore) + iNumNal) * sizeof(AL_TStreamPart);
-  uStreamPartSize = RoundUp(uStreamPartSize, 128);
+  uStreamPartSize = AL_RoundUp(uStreamPartSize, 128);
 
   return uStreamPartSize;
 }

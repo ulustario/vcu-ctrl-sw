@@ -1,9 +1,11 @@
 // SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
-#include "lib_app/SinkFrame.h"
-#include "lib_app/UnCompFrameWriter.h"
+#include "lib_app/SinkFrame.hpp"
+#include "lib_app/UnCompFrameWriter.hpp"
+extern "C" {
 #include  "lib_common/DisplayInfoMeta.h"
+}
 #include <fstream>
 #include <stdexcept>
 

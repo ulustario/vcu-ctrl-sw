@@ -1,10 +1,10 @@
 // SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
-#include "lib_app/RasterInputLoader.h"
+#include "lib_app/RasterInputLoader.hpp"
 #include <cstring>
 #include <cassert>
-#include "lib_app/PixMapBufPool.h"
+#include "lib_app/PixMapBufPool.hpp"
 
 namespace
 {

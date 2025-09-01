@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: MIT
 
 #include "lib_common/Allocator.h"
+#include "lib_common/Round.h"
 #include "Utils.h"
 
 typedef struct
@@ -46,7 +47,7 @@ static AL_HANDLE AL_AlignedAllocator_AllocNamed(AL_TAllocator* pAllocator, size_
   }
 
   AL_PADDR pAddr = AL_Allocator_GetPhysicalAddr(p->pRealAllocator, pBuf);
-  uint32_t uAlignmentOffset = UnsignedRoundUp(pAddr, p->uAlign) - pAddr;
+  uint32_t uAlignmentOffset = AL_PhysAddrRoundUp(pAddr, p->uAlign) - pAddr;
 
   AL_TAlignedHandle* pAlignedHandle = (AL_TAlignedHandle*)AL_Allocator_GetVirtualAddr(p->pMemoryAllocator, h);
   pAlignedHandle->pRealBuf = pBuf;

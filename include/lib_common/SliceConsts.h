@@ -50,27 +50,6 @@ static_assert(((int)AL_SLICE_I + 1) == AL_MAX_FRAME_TYPE, "Invalid slice-type de
 static_assert(((int)AL_SLICE_P + 1) == AL_MAX_INTER_FRAME_TYPE, "Invalid slice-type definition");
 
 /*****************************************************************************
-   \brief Identifies pic_struct (subset of table D-2)
-*****************************************************************************/
-typedef enum AL_EPicStruct
-{
-  AL_PS_FRM = 0,
-  AL_PS_TOP_FLD = 1,
-  AL_PS_BOT_FLD = 2,
-  AL_PS_TOP_BOT = 3,
-  AL_PS_BOT_TOP = 4,
-  AL_PS_TOP_BOT_TOP = 5,
-  AL_PS_BOT_TOP_BOT = 6,
-  AL_PS_FRM_x2 = 7,
-  AL_PS_FRM_x3 = 8,
-  AL_PS_TOP_FLD_WITH_PREV_BOT = 9,
-  AL_PS_BOT_FLD_WITH_PREV_TOP = 10,
-  AL_PS_TOP_FLD_WITH_NEXT_BOT = 11,
-  AL_PS_BOT_FLD_WITH_NEXT_TOP = 12,
-  AL_PS_MAX_ENUM, /* sentinel */
-}AL_EPicStruct;
-
-/*****************************************************************************
    \brief identifies the entropy coding method
 *****************************************************************************/
 typedef enum AL_EEntropyMode

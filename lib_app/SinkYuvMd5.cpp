@@ -2,9 +2,9 @@
 // SPDX-License-Identifier: MIT
 
 #include <fstream>
-#include "SinkYuvMd5.h"
-#include "lib_app/MD5.h"
-#include "lib_app/YuvIO.h"
+#include "SinkYuvMd5.hpp"
+#include "lib_app/MD5.hpp"
+#include "lib_app/YuvIO.hpp"
 
 extern "C"
 {

@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MIT
 
 #include <stdexcept>
-#include "lib_app/BufPool.h"
+#include "lib_app/BufPool.hpp"
 
 extern "C"
 {

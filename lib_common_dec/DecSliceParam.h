@@ -4,6 +4,7 @@
 #pragma once
 
 #include "lib_common/SliceConsts.h"
+#include "lib_common_dec/Types.h"
 #include "lib_common_dec/DecBuffersInternal.h"
 
 /*****************************************************************************
@@ -30,10 +31,10 @@ typedef struct AL_TDecSliceParam
   bool bTileNgbH;
   bool bTileNgbI;
   uint16_t uNumEntryPoint;
-  uint8_t pPicIdL0s[MAX_REF];
-  uint8_t pPicIdL1s[MAX_REF];
-  uint8_t uColocPicID;
-  uint8_t uConcealPicID;
+  uint8_t pPicIdL0s[AL_MAX_REF];
+  uint8_t pPicIdL1s[AL_MAX_REF];
+  AL_TIndex tColocPicID;
+  AL_TIndex tConcealPicID;
 
   int8_t iCbQpOffset;
   int8_t iCrQpOffset;

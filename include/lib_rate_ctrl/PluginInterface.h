@@ -18,6 +18,7 @@
 #include "lib_rtos/types.h"
 #include "lib_common/Allocator.h"
 #include "lib_common/SliceConsts.h"
+#include "lib_common/PicFormat.h"
 #include "lib_common_enc/RateCtrlStats.h"
 
 /*****************************************************************************

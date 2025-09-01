@@ -8,6 +8,7 @@
  *****************************************************************************/
 
 #include "Utils.h"
+#include "lib_common/Round.h"
 
 /***************************************************************************/
 static int32_t const tab_ceil_log2[] =
@@ -61,7 +62,7 @@ int32_t floor_log2(int32_t n)
 /****************************************************************************/
 int32_t GetBlkNumber(AL_TDimension tDim, uint32_t uBlkWidth, uint32_t uBlkHeight)
 {
-  return DivideRoundUp(tDim.iWidth, uBlkWidth) * DivideRoundUp(tDim.iHeight, uBlkHeight);
+  return AL_RoundUpAndDivide(tDim.iWidth, uBlkWidth, uBlkWidth) * AL_RoundUpAndDivide(tDim.iHeight, uBlkHeight, uBlkHeight);
 }
 
 /****************************************************************************/
@@ -80,7 +81,7 @@ AL_HANDLE AlignedAlloc(AL_TAllocator* pAllocator, const char* pBufName, uint32_t
 
   *uAllocatedSize = uSize;
   AL_PADDR pAddr = AL_Allocator_GetPhysicalAddr(pAllocator, pBuf);
-  *uAlignmentOffset = UnsignedRoundUp(pAddr, uAlign) - pAddr;
+  *uAlignmentOffset = AL_PhysAddrRoundUp(pAddr, uAlign) - pAddr;
 
   return pBuf;
 }

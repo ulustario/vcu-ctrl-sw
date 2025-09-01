@@ -15,13 +15,13 @@
 
 extern "C"
 {
-#include "lib_rtos/lib_rtos.h"
 #include "lib_common/BufferStreamMeta.h"
+#include "lib_rtos/lib_rtos.h"
+#include "lib_rtos/utils.h"
 }
 
-#include "CodecUtils.h"
-#include "lib_app/utils.h"
-#include "lib_rtos/utils.h"
+#include "CodecUtils.hpp"
+#include "lib_app/utils.hpp"
 
 using namespace std;
 

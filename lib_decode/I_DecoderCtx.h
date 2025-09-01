@@ -9,6 +9,8 @@
 
 #pragma once
 
+#include "lib_common/Nuts.h"
+#include "lib_common/BufCommonInternal.h"
 #include "lib_common_dec/StartCodeParam.h"
 #include "lib_common_dec/ChannelState.h"
 #include "lib_common_dec/I_Feeder.h"
@@ -18,6 +20,7 @@
 #include "lib_parsing/I_PictMngr.h"
 #include "lib_parsing/Concealment.h"
 #include "lib_parsing/Aup.h"
+#include "lib_parsing/Av1FrameContext.h"
 #include "lib_common/BufferSeiMeta.h"
 #include "lib_decode/I_DecScheduler.h"
 #include "lib_decode/DecoderFrameCtx.h"
@@ -165,10 +168,8 @@ struct AL_TDecCtx
   AL_TConceal tConceal;
   uint16_t uConcealMaxFps; // Clipping of framerate for stream having corrupted or invalid SPS header
 
-  // Decoder toggle buffer
-  TBufferPOC POC;          // Colocated POC buffer
-  TBufferMV MV;            // Motion Vector buffer
-  AL_TRecBuffers pRecs;    // Reconstructed buffers
+  // Reconstructed buffers
+  AL_TRecBuffers pRecs;
 
   // decoder counters
   uint16_t uToggle;

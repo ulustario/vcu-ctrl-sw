@@ -5,7 +5,7 @@
 #include <algorithm>
 #include <cassert>
 
-#include "lib_app/UnCompFrameWriter.h"
+#include "lib_app/UnCompFrameWriter.hpp"
 
 extern "C"
 {

@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
-#include "IpDevice.h"
+#include "IpDevice.hpp"
 
 #include <stdexcept>
 #include <memory>
@@ -10,11 +10,11 @@
 #include <iostream>
 #include <string>
 
-#include "IpDevice.h"
-#include "IpDeviceCommon.h"
-#include "lib_app/AllocatorHelper.h"
-#include "lib_app/console.h"
-#include "lib_app/utils.h"
+#include "IpDevice.hpp"
+#include "IpDeviceCommon.hpp"
+#include "lib_app/AllocatorHelper.hpp"
+#include "lib_app/console.hpp"
+#include "lib_app/utils.hpp"
 
 extern "C"
 {

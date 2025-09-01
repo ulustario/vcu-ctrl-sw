@@ -7,7 +7,7 @@
 #include "lib_common/BufCommon.h"
 #include "lib_common/BufCommonInternal.h"
 #include "lib_common/FbcMapSize.h"
-#include "lib_common/RoundUp.h"
+#include "lib_common/Round.h"
 
 AL_TBuffer* AL_PixMapBuffer_Create(AL_TAllocator* pAllocator, PFN_RefCount_CallBack pCallBack, AL_TDimension tDim, TFourCC tFourCC)
 {

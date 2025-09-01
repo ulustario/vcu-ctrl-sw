@@ -5,10 +5,10 @@
 #include <string>
 #include <stdexcept>
 
-#include "sink_ratectrl_meta.h"
-#include "lib_app/Sink.h"
-#include "lib_app/utils.h"
-#include "lib_app/FileUtils.h"
+#include "sink_ratectrl_meta.hpp"
+#include "lib_app/Sink.hpp"
+#include "lib_app/utils.hpp"
+#include "lib_app/FileUtils.hpp"
 
 extern "C" {
 #include "lib_common/BufferAPI.h"

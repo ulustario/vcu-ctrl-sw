@@ -13,7 +13,6 @@
 #include <malloc.h>
 #include <stdio.h>
 #include <stdarg.h>
-#include <assert.h>
 #include <stdbool.h>
 
 /****************************************************************************/
@@ -25,21 +24,6 @@ void Rtos_LogWithoutLevel(char const* sMsg, ...)
   va_end(args);
   /* fflush all streams. It can be a performance issue if logs are enabled */
   FFLUSH(NULL);
-}
-
-/****************************************************************************/
-void Rtos_AssertWithMessage(bool bCondition, char const* sMsg, char const* sFile, int32_t iLine)
-{
-  (void)bCondition;
-  (void)sMsg;
-  (void)sFile;
-  (void)iLine;
-
-  if(bCondition)
-    return;
-
-  Rtos_LogWithoutLevel("[%s:%i] %s\n", sFile, iLine, sMsg);
-  assert(false);
 }
 
 /****************************************************************************/
@@ -719,13 +703,6 @@ Rtos_AtomicInt Rtos_AtomicDecrement(Rtos_AtomicInt* iVal)
 #if __MICROBLAZE__
 #include "McuSys.h"
 #include "McuDebug.h"
-
-void Rtos_AssertWithMessage(bool bCondition, char const* sMsg, char const* sFile, int32_t iLine)
-{
-  (void)sFile;
-  (void)iLine;
-  Mcu_Debug_Assert(bCondition, sMsg);
-}
 
 void Rtos_InitCacheCB(void* ctx, Rtos_MemoryFnCB pfnInvalCB, Rtos_MemoryFnCB pfnFlushCB)
 {

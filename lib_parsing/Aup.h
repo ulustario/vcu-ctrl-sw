@@ -4,6 +4,7 @@
 #pragma once
 
 #include "lib_common/SliceConsts.h"
+#include "lib_common/PicFormat.h"
 #include "lib_common/HDR.h"
 
 #include "lib_common/HevcHeaders.h"

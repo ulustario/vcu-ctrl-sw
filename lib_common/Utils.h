@@ -14,13 +14,13 @@ static const int32_t MAX_POC_LSB_MINUS_4 = 12;
 #define ARRAY_SIZE(x) (int)(sizeof(x) / sizeof((x)[0]))
 
 /***************************************************************************/
-static inline size_t BitsToBytes(size_t zBits)
+static inline AL_64U BitsToBytes(AL_64U zBits)
 {
   return (zBits + 7) / 8;
 }
 
 /***************************************************************************/
-static inline size_t BytesToBits(size_t zBytes)
+static inline AL_64U BytesToBits(AL_64U zBytes)
 {
   return zBytes * 8;
 }
@@ -44,13 +44,13 @@ static inline int32_t Max(int32_t iVal1, int32_t iVal2)
 }
 
 /***************************************************************************/
-static inline size_t UnsignedMax(size_t zVal1, size_t zVal2)
+static inline AL_64U UnsignedMax(AL_64U zVal1, AL_64U zVal2)
 {
   return (zVal1 < zVal2) ? zVal2 : zVal1;
 }
 
 /***************************************************************************/
-static inline size_t UnsignedMin(size_t iVal1, size_t iVal2)
+static inline AL_64U UnsignedMin(AL_64U iVal1, AL_64U iVal2)
 {
   return (iVal1 > iVal2) ? iVal2 : iVal1;
 }
@@ -71,36 +71,6 @@ static inline int32_t Abs(int32_t iVal)
 static inline int32_t Sign(int32_t iVal)
 {
   return (iVal > 0) ? 1 : ((iVal < 0) ? -1 : 0);
-}
-
-/***************************************************************************/
-static inline int32_t DivideRoundUp(int32_t iVal, int32_t iDiv)
-{
-  return iVal >= 0 ? ((iVal + iDiv - 1) / iDiv) : (iVal / iDiv);
-}
-
-/***************************************************************************/
-static inline int32_t RoundUp(int32_t iVal, int32_t iRnd)
-{
-  return DivideRoundUp(iVal, iRnd) * iRnd;
-}
-
-/***************************************************************************/
-static inline int32_t RoundDown(int32_t iVal, int32_t iRnd)
-{
-  return iVal >= 0 ? (iVal / iRnd) * iRnd : ((iVal - iRnd + 1) / iRnd) * iRnd;
-}
-
-/***************************************************************************/
-static inline size_t UnsignedRoundUp(size_t zVal, size_t zRnd)
-{
-  return ((zVal + zRnd - 1) / zRnd) * zRnd;
-}
-
-/***************************************************************************/
-static inline size_t UnsignedRoundDown(size_t zVal, size_t zRnd)
-{
-  return (zVal / zRnd) * zRnd;
 }
 
 /***************************************************************************/

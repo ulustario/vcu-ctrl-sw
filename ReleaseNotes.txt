@@ -680,7 +680,7 @@
     -- Version of the API is now 0.31.0
     -- Add 'const char* AL_Codec_ErrorToString(AL_ERR eErrorCode)' to get a string matching an error
     -- Modify 'AL_GetMaxNalSize':
-      -- remove uncessary AL_ECodec parameter -> prevents lot of errors
+      -- remove unnecessary AL_ECodec parameter -> prevents lot of errors
       -- change profile <-> level location
       -- use AL_EProfile instead of profile_idc
     -- Rename iProfileIdc -> eProfile:

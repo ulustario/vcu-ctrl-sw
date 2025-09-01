@@ -13,7 +13,6 @@ AR:=$(CROSS_COMPILE)$(ARCHIVER_TOOL)ar
 NM:=$(CROSS_COMPILE)$(ARCHIVER_TOOL)nm
 RANLIB:=$(CROSS_COMPILE)$(ARCHIVER_TOOL)ranlib
 
-
 AS:=$(CROSS_COMPILE)as
 LD:=$(CROSS_COMPILE)ld
 OBJDUMP:=$(CROSS_COMPILE)objdump
@@ -38,8 +37,8 @@ THEIR_LDFLAGS:=${LDFLAGS}
 CFLAGS:=${OUR_CFLAGS} ${THEIR_CFLAGS}
 LDFLAGS:=${OUR_LDFLAGS} ${THEIR_LDFLAGS}
 
-SCM_REV_SW:=-D'SCM_REV_SW="$(shell git rev-parse HEAD 2> /dev/null || echo 0)"'
-SCM_BRANCH=-D'SCM_BRANCH="$(shell git rev-parse --abbrev-ref HEAD 2> /dev/null || echo unknown)"'
+SCM_REV_SW:=-DSCM_REV_SW=\"$(shell git rev-parse HEAD 2> /dev/null || echo 0)\"
+SCM_BRANCH=-DSCM_BRANCH=\"$(shell git rev-parse --abbrev-ref HEAD 2> /dev/null || echo unknown)\"
 
 REQUIRED_MAKE_VERSION:=4.0
 ifneq ($(REQUIRED_MAKE_VERSION), $(firstword $(sort $(MAKE_VERSION) $(REQUIRED_MAKE_VERSION))))
@@ -50,13 +49,19 @@ define get-my-dir
 $(patsubst %/,%,$(dir $(lastword $(MAKEFILE_LIST))))
 endef
 
-include config.mk
+ifneq ($(MAKECMDGOALS), clean)
+  ifeq ($(wildcard include/config.h),)
+    $(error config.h does not exist, cannot compile)
+  endif
+
+  include config.mk
+endif
 
 -include delivery.mk
 
-DELIVERY_BUILD_NUMBER?=-D'DELIVERY_BUILD_NUMBER=0'
-DELIVERY_SCM_REV?=-D'DELIVERY_SCM_REV="unknown"'
-DELIVERY_DATE?=-D'DELIVERY_DATE="unknown"'
+DELIVERY_BUILD_NUMBER?=-DDELIVERY_BUILD_NUMBER=0
+DELIVERY_SCM_REV?=-DDELIVERY_SCM_REV=\"unknown\"
+DELIVERY_DATE?=-DDELIVERY_DATE=\"unknown\"
 
 
 all: true_all
@@ -73,15 +78,19 @@ include codec_defs.mk
 -include lib_ip_ctrl/project.mk
 -include lib_log/project.mk
 
-# For now running tests from make needs to be manually enabled
-ENABLE_SH_TESTS?=0
-
 BUILD_LIB_A2P=0
 
 ifneq ($(BUILD_LIB_A2P), 0)
   -include lib_a2p/project.mk
 endif
 
+
+-include lib_app/project.mk #lib_common, lib_log and lib_fbc_standalone dependency
+
+
+
+# For now running tests from make needs to be manually enabled
+ENABLE_SH_TESTS?=0
 
 BUILD_LIB_BITSTREAM=0
 ifneq ($(ENABLE_EXE_ENCODER),0)
@@ -98,7 +107,6 @@ ifneq ($(ENABLE_EXE_ENCODER),0)
   -include lib_scheduler_enc/project.mk
   -include lib_encode/project.mk
 endif
-
 
 BUILD_LIB_COM_DEC=0
 ifneq ($(ENABLE_EXE_DECODER),0)
@@ -145,8 +153,6 @@ $(ref_target): .submake ;
 else
 -include ref.mk
 endif
-
--include lib_app/project.mk #lib_common and lib_log dependency
 
 ifneq ($(ENABLE_EXE_DECODER),0)
   # AL_Decoder
@@ -220,4 +226,11 @@ coverage: LDFLAGS+=-lgcov
 
 true_all: $(TARGETS)
 
+ifneq ($(ENABLE_SH_TESTS),0)
+test_targets: $(TEST_TARGETS)
+test: true_all test_targets
+test_clean:
+	@echo CLEAN $(BIN)/*.test
+	@rm -f $(BIN)/*.test
+endif
 .PHONY: true_all clean all

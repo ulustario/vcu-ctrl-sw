@@ -12,7 +12,7 @@ bool AL_Plane_IsPixelPlane(AL_EPlaneId ePlaneId)
 
 bool AL_Plane_IsLumaPlane(AL_EPlaneId ePlaneId)
 {
-  return ePlaneId == AL_PLANE_MAP_Y || ePlaneId == AL_PLANE_YUV || ePlaneId == AL_PLANE_MAP_Y;
+  return ePlaneId == AL_PLANE_Y || ePlaneId == AL_PLANE_MAP_Y || ePlaneId == AL_PLANE_YUV || ePlaneId == AL_PLANE_MAP_Y;
 }
 
 bool AL_Plane_IsMapPlane(AL_EPlaneId ePlaneId)

@@ -3,8 +3,8 @@
 
 #include <fstream>
 #include <string>
-#include "lib_app/InputFiles.h"
-#include "CodecUtils.h"
+#include "lib_app/InputFiles.hpp"
+#include "CodecUtils.hpp"
 
 using namespace std;
 

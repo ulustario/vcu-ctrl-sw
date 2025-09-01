@@ -1,3 +1,5 @@
+LIB_COMMON_ENC_GENERATED_SRC:=
+
 LIB_COMMON_ENC_SRC:=\
 	lib_common_enc/EncBuffers.c\
 	lib_common_enc/IpEncFourCC.c\

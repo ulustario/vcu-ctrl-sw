@@ -51,9 +51,8 @@ static const int32_t POCBUFF_SUBPIC_OFFSET = 68;  // Frame with subpicture flag 
 *****************************************************************************/
 typedef struct TBufferRef
 {
-  AL_TBuffer RefBuf; // address of the corresponding frame buffer
-  uint8_t uNodeID;
-}TBufferRef, TBufferListRef[2][MAX_REF + 1];
+  uint8_t tNodeID;
+}TBufferRef, TBufferListRef[2][AL_MAX_REF + 1];
 
 /*****************************************************************************
    \brief Offsets to the data in the reference frame list
@@ -114,15 +113,7 @@ int32_t AL_GetAllocSize_AvcMV(AL_TDimension tDim);
 *****************************************************************************/
 int32_t AL_GetAllocSize_Frame(AL_TDimension tDim, AL_EChromaMode eChromaMode, uint8_t uBitDepth, bool bFrameBufferCompression, AL_EFbStorageMode eFrameBufferStorageMode);
 
-/*****************************************************************************
-   \brief Get offsets to the different data of the reference list buffer
-   \param[out] pOffset the data offsets in the reference list buffer
-   \param[in] eCodec Current codec
-   \param[in] eChromaMode Chroma mode
-   \param[in] uAddrSizeInBytes References list's buffer address size in bytes.
-   \return the total size of the RefListBuffer
-*****************************************************************************/
-uint32_t AL_GetRefListOffsets(TRefListOffsets* pOffsets, AL_ECodec eCodec, AL_TPicFormat tPicFormat, uint8_t uAddrSizeInBytes);
+uint32_t AL_GetRefListOffsets(TRefListOffsets* pOffsets, AL_ECodec eCodec, AL_TPicFormat const* pPicFormat, uint8_t uMaxRef, uint8_t uAddrSizeInBytes);
 
 int32_t AL_DecGetLumaPixPlanePitch(int32_t iWidth, AL_TPicFormat const* pPicFormat);
 int32_t AL_DecGetPixPlaneHeight(int32_t iHeight, AL_TPicFormat const* pPicFormat);

@@ -11,6 +11,7 @@
 #include "lib_common/SliceConsts.h"
 #include "lib_common/VideoMode.h"
 #include "lib_common/PicFormat.h"
+
 #include "lib_rtos/lib_rtos.h"
 
 /*****************************************************************************
@@ -350,20 +351,17 @@ static inline bool AL_IsEncHwRateCtrlEnabled(AL_TRCParam const* pRCParam)
    \brief GOP Control Mode
 *****************************************************************************/
 #define AL_GOP_FLAG_B_ONLY 0x01
-#define AL_GOP_FLAG_DEFAULT 0x02
 #define AL_GOP_FLAG_PYRAMIDAL 0x04
+#define AL_GOP_FLAG_DEFAULT 0x02
 #define AL_GOP_FLAG_LOW_DELAY 0x08
 typedef enum AL_EGopCtrlMode
 {
   AL_GOP_MODE_DEFAULT = AL_GOP_FLAG_DEFAULT,
   AL_GOP_MODE_PYRAMIDAL = AL_GOP_FLAG_PYRAMIDAL,
-
   AL_GOP_MODE_DEFAULT_B = AL_GOP_FLAG_DEFAULT | AL_GOP_FLAG_B_ONLY,
   AL_GOP_MODE_PYRAMIDAL_B = AL_GOP_FLAG_PYRAMIDAL | AL_GOP_FLAG_B_ONLY,
-
   AL_GOP_MODE_LOW_DELAY_P = AL_GOP_FLAG_LOW_DELAY,
   AL_GOP_MODE_LOW_DELAY_B = AL_GOP_FLAG_LOW_DELAY | AL_GOP_FLAG_B_ONLY,
-
   AL_GOP_MODE_ADAPTIVE = 0x10,
 
   AL_GOP_MODE_BYPASS = 0x20,
@@ -385,7 +383,7 @@ typedef AL_INTROSPECT (category = "debug") struct __AL_ALIGNED__ (4) AL_TGopPara
   bool bWriteAvcHdrSvcExt;
   uint32_t uFreqLT;
   AL_EGdrMode eGdrMode;
-  uint32_t uFreqRP;
+  int32_t iFreqRP;
   int32_t iGdrDuration;
   int8_t tempDQP[4];
 } AL_TGopParam;
@@ -431,19 +429,6 @@ AL_DEPRECATED_ENUM_VALUE(AL_ESrcMode, AL_SRC_NVX, AL_SRC_RASTER, "Renamed. Use A
 #define MASK_SRC_COMP 0x01
 #define AL_GET_COMP_MODE(SrcConvFmt) ((SrcConvFmt) & MASK_SRC_COMP)
 #define AL_SET_COMP_MODE(SrcConvFmt, CompMode) (SrcConvFmt) = ((SrcConvFmt) & ~MASK_SRC_COMP) | ((CompMode) & MASK_SRC_COMP)
-
-/*****************************************************************************
-   \brief AOM interpolation filter
-*****************************************************************************/
-typedef enum AL_EInterPFilter
-{
-  AL_INTERP_REGULAR,
-  AL_INTERP_SMOOTH,
-  AL_INTERP_SHARP,
-  AL_INTERP_BILINEAR,
-  AL_INTERP_SWITCHABLE,
-  AL_INTERP_MAX_ENUM, /* sentinel */
-}AL_EInterPFilter;
 
 /*****************************************************************************
    \brief Extended merge candidates for VVC

@@ -10,7 +10,7 @@
 #include <stdexcept>
 #include <string>
 
-#include "lib_app/YuvIO.h"
+#include "lib_app/YuvIO.hpp"
 
 using namespace std;
 
@@ -18,12 +18,7 @@ extern "C"
 {
 #include "lib_common/PixMapBuffer.h"
 #include "lib_common/BufCommon.h"
-}
-
-/*****************************************************************************/
-static inline int32_t RoundUp(int32_t iVal, int32_t iRnd)
-{
-  return (iVal + iRnd - 1) / iRnd * iRnd;
+#include "lib_common/Round.h"
 }
 
 /*****************************************************************************/
@@ -49,7 +44,7 @@ static uint32_t GetIOLumaRowSize(TFourCC tFourCC, uint32_t uWidth)
     AL_EFbStorageMode eStorageMode = AL_GetStorageMode(tFourCC);
     uint32_t uTileWidth = eStorageMode == AL_FB_TILE_32x4 ? 32 : 64;
 
-    uint32_t uRndWidth = RoundUp(uWidth, uTileWidth);
+    uint32_t uRndWidth = static_cast<uint32_t>(AL_RoundUp(uWidth, uTileWidth));
     auto iBitDepth = AL_GetBitDepth(tFourCC);
     uRowSizeLuma = uRndWidth * iBitDepth / 8;
   }
@@ -221,7 +216,7 @@ static void ReadFileLuma(ifstream& File, AL_TBuffer* pBuf, uint32_t uFileRowSize
     {
       int32_t iLinesInPitch = AL_GetNumLinesInPitch(eStorageMode);
       uint32_t uTileSize = iLinesInPitch * (eStorageMode == AL_FB_TILE_32x4 ? 32 : 64);
-      uSize = RoundUp(uFileRowSize, uTileSize);
+      uSize = static_cast<uint32_t>(AL_RoundUp(uFileRowSize, uTileSize));
     }
 
     for(uint32_t h = 0; h < uFileNumRow; h++)
@@ -274,7 +269,7 @@ static void ReadFileChroma(ifstream& File, AL_TBuffer* pBuf, AL_EPlaneId ePlaneT
     {
       int32_t iLinesInPitch = AL_GetNumLinesInPitch(eStorageMode);
       uint32_t uTileSize = iLinesInPitch * (eStorageMode == AL_FB_TILE_32x4 ? 32 : 64);
-      uSize = RoundUp(uRowSizeC, uTileSize);
+      uSize = static_cast<uint32_t>(AL_RoundUp(uRowSizeC, uTileSize));
     }
 
     for(uint32_t h = 0; h < uNumRowC; h++)

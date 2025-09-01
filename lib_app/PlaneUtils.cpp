@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
-#include "lib_app/PlaneUtils.h"
+#include "lib_app/PlaneUtils.hpp"
 
 std::vector<AL_TPlaneDescription> getPlaneDescription(TFourCC tFourCC, int32_t iPitch, int32_t iPitchMap, size_t sizes[], int& iTotalOffset)
 {

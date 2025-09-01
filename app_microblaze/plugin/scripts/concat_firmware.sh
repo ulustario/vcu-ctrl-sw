@@ -2,7 +2,9 @@
 
 set -euo pipefail
 
-readonly tmpDir=$(mktemp -d)
+readonly TMPDIR=${TMPDIR-"$HOME"}
+readonly scriptName=$(basename $0)
+readonly tmpDir=$(mktemp -d --tmpdir=$TMPDIR --suffix=.$scriptName)
 trap "rm -rf $tmpDir" EXIT
 mkdir -p $tmpDir
 

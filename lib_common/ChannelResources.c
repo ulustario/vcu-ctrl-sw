@@ -4,6 +4,7 @@
 #include "ChannelResources.h"
 #include "Utils.h"
 #include "lib_rtos/lib_rtos.h"
+#include "lib_common/Round.h"
 
 static int32_t divideRoundUp(AL_64U dividende, AL_64U divisor)
 {
@@ -26,7 +27,7 @@ static int32_t ChoseCoresCount(int32_t width, int32_t height, int32_t frameRate,
   return Max(GetMinCoresCount(width, maxWidth), divideRoundUp(channelResources, resourcesByCore));
 }
 
-void AL_CoreConstraint_Init(AL_CoreConstraint* constraint, int32_t coreFrequency, int32_t margin, int32_t const* hardwareCyclesCounts, int32_t minWidth, int32_t maxWidth, int32_t lcuSize)
+void AL_CoreConstraint_Init(AL_CoreConstraint* constraint, int32_t coreFrequency, int32_t margin, uint32_t const* hardwareCyclesCounts, int32_t minWidth, int32_t maxWidth, int32_t lcuSize)
 {
   constraint->minWidth = minWidth;
   constraint->maxWidth = maxWidth;
@@ -104,7 +105,7 @@ bool AL_Constraint_NumTileIsSane(AL_ECodec codec, int32_t width, int32_t numTile
     offset = roundedOffset;
     int32_t curTileMinWidthInCtb = min_ctb_per_tile * ctbSize;
     offset += curTileMinWidthInCtb;
-    roundedOffset = RoundUp(offset, 64);
+    roundedOffset = AL_RoundUp(offset, 64);
   }
 
   if(diagnostic)
@@ -113,5 +114,5 @@ bool AL_Constraint_NumTileIsSane(AL_ECodec codec, int32_t width, int32_t numTile
     diagnostic->actualWidthInCtbPerCore = widthPerTileInCtb;
   }
 
-  return widthPerTileInCtb >= min_ctb_per_tile && offset <= RoundUp(width, ctbSize);
+  return widthPerTileInCtb >= min_ctb_per_tile && offset <= AL_RoundUp(width, ctbSize);
 }

@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
-#include "lib_app/MD5.h"
+#include "lib_app/MD5.hpp"
 #include <string>
 
 // mix functions for processBlock(void)

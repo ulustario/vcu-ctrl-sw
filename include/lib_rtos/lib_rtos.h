@@ -14,6 +14,7 @@
 #pragma once
 
 #include "lib_rtos/types.h"
+#include "lib_rtos/assert.h"
 
 /****************************************************************************/
 typedef void* AL_MUTEX;
@@ -24,22 +25,6 @@ typedef void* AL_THREAD;
 /****************************************************************************/
 #define AL_NO_WAIT 0
 #define AL_WAIT_FOREVER 0xFFFFFFFF
-
-/****************************************************************************/
-/* Assert */
-/****************************************************************************/
-void Rtos_AssertWithMessage(bool bCondition, char const* sMsg, char const* sFile, int32_t iLine);
-
-#if !defined(NDEBUG)
-#define Rtos_Assert(bCondition) \
-  do \
-  { \
-    Rtos_AssertWithMessage(bCondition, # bCondition, __FILE__, __LINE__); \
-  } while(false)
-#else
-#define Rtos_Assert(bCondition) \
-  (void)(bCondition);
-#endif
 
 /****************************************************************************/
 /*  Memory */

@@ -182,9 +182,5 @@ void AL_HEVC_WriteDecHwScalingList(AL_TScl const* pSclLst, uint8_t* pBuf)
   *pBuf32++ = (*pSclLst)[0].tDC[3];
   *pBuf32++ = (*pSclLst)[1].tDC[0] | ((*pSclLst)[1].tDC[1] << 8) | ((*pSclLst)[1].tDC[2] << 16);
   *pBuf32++ = (*pSclLst)[1].tDC[3];
-  *pBuf32++ = 0;
-  *pBuf32++ = 0;
-  *pBuf32++ = 0;
-  *pBuf32++ = 0;
 }
 

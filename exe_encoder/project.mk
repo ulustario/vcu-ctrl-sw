@@ -27,9 +27,10 @@ ifneq ($(ENABLE_ENC_SW_MULTIPASS),0)
   EXE_ENCODER_SRCS+=$(THIS_EXE_ENCODER)/TwoPassMngr.cpp
 endif
 
-ifneq ($(ENABLE_HIGH_DYNAMIC_RANGE),0)
+ifneq ($(ENABLE_ENC_SW_HIGH_DYNAMIC_RANGE),0)
   EXE_ENCODER_SRCS+=$(THIS_EXE_ENCODER)/HDRParser.cpp
 endif
+
 
 
 EXE_ENCODER_OBJ:=$(EXE_ENCODER_SRCS:%=$(BIN)/%.o)
@@ -48,8 +49,14 @@ endif
 
 
 ifneq ($(ENABLE_SH_TESTS),0)
-AL_Encoder.test: AL_Encoder.exe
-	$(TEST)/run.sh -b $(BIN) -h $(THIS_EXE_ENCODER)/tests.sh
+TEST_TARGETS+=$(BIN)/AL_Encoder.test
+
+AL_Encoder.test: $(BIN)/AL_Encoder.test
+
+$(BIN)/AL_Encoder.test: $(THIS_EXE_ENCODER)/tests.sh $(BIN)/AL_Encoder.exe
+	@echo "TEST $<"
+	@rm -f $@
+	@$(TEST)/run.sh -b $(BIN) -h $< > $@.failed && mv $@.failed $@
 endif
 
 $(BIN)/AL_Encoder.exe: $(EXE_ENCODER_OBJ) $(LIB_REFENC_A) $(LIB_REFALLOC_A) $(LIB_ENCODER_A) $(LIB_APP_A) $(LIB_REFFBC_A)

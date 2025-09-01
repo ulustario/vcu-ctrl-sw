@@ -16,15 +16,15 @@ extern "C"
 #include "lib_rtos/lib_rtos.h"
 #include "lib_common/BufferAPI.h"
 #include "lib_common/Error.h"
-#include "lib_common/RoundUp.h"
+#include "lib_common/Round.h"
 #include "lib_common_enc/EncBuffers.h"
 #include "lib_common_enc/QpTableMeta.h"
 }
 
-#include "QPGenerator.h"
-#include "ROIMngr.h"
+#include "QPGenerator.hpp"
+#include "ROIMngr.hpp"
 
-#include "lib_app/FileUtils.h"
+#include "lib_app/FileUtils.hpp"
 
 using namespace std;
 

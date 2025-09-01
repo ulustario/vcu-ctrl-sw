@@ -3,9 +3,10 @@
 
 #include "SourceBufferChecker.h"
 #include "lib_common/PixMapBufferInternal.h"
+#include "lib_common/Utils.h"
+#include "lib_common/Round.h"
 #include "lib_common_enc/EncBuffers.h"
 #include "lib_common_enc/IpEncFourCC.h"
-#include "lib_common/Utils.h"
 
 void AL_SrcBuffersChecker_Init(AL_TSrcBufferChecker* pCtx, AL_TEncChanParam const* pChParam)
 {
@@ -89,7 +90,7 @@ static bool CheckPlanes(AL_TSrcBufferChecker* pCtx, AL_TBuffer* pBuf)
   AL_EPlaneId ePlaneId = AL_PLANE_Y;
 
   const int32_t iMinPitch = AL_EncGetMinPitch(tDim.iWidth, &tPicFormat);
-  int32_t const iMinStrideHeight = RoundUp(tDim.iHeight, 8);
+  int32_t const iMinStrideHeight = AL_RoundUp(tDim.iHeight, 8);
 
   int32_t const iPitchY = AL_PixMapBuffer_GetPlanePitch(pBuf, ePlaneId);
 

@@ -15,14 +15,14 @@
 /******************************************************************************/
 static void FillRefPicID(AL_TDecCtx* pCtx, AL_TDecSliceParam* pSliceParam)
 {
-  AL_TDpb* pDpb = &pCtx->PictMngr.DPB;
+  AL_TDpb* pDpb = (AL_TDpb*)pCtx->PictMngr.pRefMngr;
   TBufferListRef* pListRef = &pCtx->ListRef;
 
   // Reg 9 ~ C
-  for(uint8_t uRef = 0; uRef < MAX_REF; ++uRef)
+  for(uint8_t uRef = 0; uRef < AL_MAX_REF; ++uRef)
   {
-    uint8_t uNodeIDL0 = (*pListRef)[0][uRef].uNodeID;
-    uint8_t uNodeIDL1 = (*pListRef)[1][uRef].uNodeID;
+    uint8_t uNodeIDL0 = (*pListRef)[0][uRef].tNodeID;
+    uint8_t uNodeIDL1 = (*pListRef)[1][uRef].tNodeID;
     pSliceParam->pPicIdL0s[uRef] = (uNodeIDL0 == 0xFF) ? 0x00 : AL_Dpb_GetPicID_FromNode(pDpb, uNodeIDL0);
     pSliceParam->pPicIdL1s[uRef] = (uNodeIDL1 == 0xFF) ? 0x00 : AL_Dpb_GetPicID_FromNode(pDpb, uNodeIDL1);
   }
@@ -31,14 +31,14 @@ static void FillRefPicID(AL_TDecCtx* pCtx, AL_TDecSliceParam* pSliceParam)
 /******************************************************************************/
 static void FillConcealValue(AL_TDecCtx* pCtx, AL_TDecSliceParam* pSliceParam)
 {
-  AL_TDpb* pDpb = &pCtx->PictMngr.DPB;
+  AL_TDpb* pDpb = (AL_TDpb*)pCtx->PictMngr.pRefMngr;
 
-  if(pDpb->uLastPOC == 0xFF)
+  if(pDpb->tLastPOCNodeID == AL_BAD_INDEX)
     pSliceParam->bValidConceal = false;
   else
   {
     pSliceParam->bValidConceal = true;
-    pSliceParam->uColocPicID = pDpb->Nodes[pCtx->PictMngr.DPB.uLastPOC].uPicID;
+    pSliceParam->tColocPicID = pDpb->Nodes[pDpb->tLastPOCNodeID].tPicID;
   }
 }
 
@@ -66,16 +66,13 @@ void AL_AVC_FillPictParameters(const AL_TAvcSliceHdr* pSlice, const AL_TDecCtx* 
   pPicParam->uNumTileCols = 1;
   pPicParam->uNumTileRows = 1;
 
-  // Reg 0
   pPicParam->uLog2MaxTuSize = pPps->transform_8x8_mode_flag ? 3 : 2;
   pPicParam->uLog2MaxCuSize = 4;
   pPicParam->eCodec = AL_CODEC_AVC;
 
-  // Reg 1
   AL_TDimension const tDim = { (pSps->pic_width_in_mbs_minus1 + 1) << 4, AL_AVC_GetFrameHeight(pSps, pSlice->field_pic_flag) << 4 };
   DecPicParam_SetPicDim(pPicParam, tDim);
 
-  // Reg 2
   pPicParam->eEntMode = pPps->entropy_coding_mode_flag ? AL_MODE_CABAC : AL_MODE_CAVLC;
   pPicParam->uBitDepthLuma = pSps->bit_depth_luma_minus8 + 8;
   pPicParam->uBitDepthChroma = pSps->bit_depth_chroma_minus8 + 8;
@@ -84,7 +81,6 @@ void AL_AVC_FillPictParameters(const AL_TAvcSliceHdr* pSlice, const AL_TDecCtx* 
   AL_SET_DEC_OPT(pPicParam, LossLess, pSps->qpprime_y_zero_transform_bypass_flag);
   AL_SET_DEC_OPT(pPicParam, Direct8x8Infer, pSps->direct_8x8_inference_flag);
 
-  // Reg 0x10
   if(!pSps->seq_scaling_matrix_present_flag && !pPps->pic_scaling_matrix_present_flag)
   {
     AL_SET_DEC_OPT(pPicParam, EnableSclLst, 0);
@@ -97,8 +93,8 @@ void AL_AVC_FillPictParameters(const AL_TAvcSliceHdr* pSlice, const AL_TDecCtx* 
   }
   AL_SET_DEC_OPT(pPicParam, ConstrainedIntraPred, pPps->constrained_intra_pred_flag);
 
-  // Reg 0x13
-  pPicParam->iCurrentPoc = pCtx->PictMngr.iCurFramePOC;
+  AL_TDpb* pDpb = (AL_TDpb*)pCtx->PictMngr.pRefMngr;
+  pPicParam->iCurrentPoc = pDpb->iCurFramePOC;
 
   pPicParam->ePicStruct = AL_PS_FRM;
 
@@ -110,14 +106,11 @@ void AL_AVC_FillSliceParameters(const AL_TAvcSliceHdr* pSlice, const AL_TDecCtx*
 {
   const AL_TAvcPps* pPps = pSlice->pPPS;
 
-  /* to speed up memset we don't reset pEntryPointOffsets array */
   Rtos_Memset(pSliceParam, 0, offsetof(AL_TDecSliceParam, pEntryPointOffsets));
 
-  // Reg 2
   pSliceParam->uCabacInitIdc = pSlice->cabac_init_idc;
   pSliceParam->bDirectSpatial = (bool)pSlice->direct_spatial_mv_pred_flag;
 
-  // Reg 3
   pSliceParam->iCbQpOffset = pPps->chroma_qp_index_offset;
   pSliceParam->iCrQpOffset = pPps->second_chroma_qp_index_offset;
   pSliceParam->iSliceQq = pPps->pic_init_qp_minus26 + pSlice->slice_qp_delta + 26;
@@ -125,7 +118,6 @@ void AL_AVC_FillSliceParameters(const AL_TAvcSliceHdr* pSlice, const AL_TDecCtx*
   if(!bConceal)
     pSliceParam->eSliceType = (AL_ESliceType)pSlice->slice_type;
 
-  // Reg 4
   pSliceParam->iTcOffsetDiv2 = pSlice->slice_alpha_c0_offset_div2;
   pSliceParam->iBetaOffsetDiv2 = pSlice->slice_beta_offset_div2;
   int32_t const DEBLOCKING_FILTER_DISABLE = 0x1;
@@ -134,7 +126,6 @@ void AL_AVC_FillSliceParameters(const AL_TAvcSliceHdr* pSlice, const AL_TDecCtx*
   pSliceParam->bAcrossSliceLoopFilter = !(pSlice->disable_deblocking_filter_idc & DEBLOCKING_FILTER_SLICE);
   pSliceParam->uSliceId = pCtx->tCurrentFrameCtx.uNumSlice;
 
-  // Reg 5
   if(pSliceParam->eSliceType == AL_SLICE_CONCEAL)
   {
     pSliceParam->uSliceFirstLcu = pCtx->tCurrentFrameCtx.uNumSlice;
@@ -151,11 +142,9 @@ void AL_AVC_FillSliceParameters(const AL_TAvcSliceHdr* pSlice, const AL_TDecCtx*
   pSliceParam->uNumRefIdxL0Minus1 = pSlice->num_ref_idx_l0_active_minus1;
   pSliceParam->uNumRefIdxL1Minus1 = pSlice->num_ref_idx_l1_active_minus1;
 
-  // Reg 6
   pSliceParam->uSliceNumLcu = DecPicParam_GetNumLcuInFrame(pPicParam);
   pSliceParam->uSliceHeaderLength = pSlice->slice_header_length;
 
-  // Reg 0x11
   if(pSliceParam->eSliceType == AL_SLICE_P)
   {
     pSliceParam->bWeightedPred = pPps->weighted_pred_flag;
@@ -189,16 +178,16 @@ void AL_AVC_FillSliceParameters(const AL_TAvcSliceHdr* pSlice, const AL_TDecCtx*
 /******************************************************************************/
 void AL_AVC_FillSlicePicIdRegister(AL_TDecCtx* pCtx, AL_TDecSliceParam* pSliceParam)
 {
-  AL_TDpb* pDpb = &pCtx->PictMngr.DPB;
+  AL_TDpb* pDpb = (AL_TDpb*)pCtx->PictMngr.pRefMngr;
   TBufferListRef* pListRef = &pCtx->ListRef;
 
   FillRefPicID(pCtx, pSliceParam);
 
   // Reg 0x12
-  pSliceParam->uColocPicID = 0;
+  pSliceParam->tColocPicID = 0;
 
   if(pSliceParam->eSliceType == AL_SLICE_B)
-    pSliceParam->uColocPicID = AL_Dpb_GetPicID_FromNode(pDpb, (*pListRef)[1][0].uNodeID);
+    pSliceParam->tColocPicID = AL_Dpb_GetPicID_FromNode(pDpb, (*pListRef)[1][0].tNodeID);
 
   FillConcealValue(pCtx, pSliceParam);
 }
@@ -206,7 +195,6 @@ void AL_AVC_FillSlicePicIdRegister(AL_TDecCtx* pCtx, AL_TDecSliceParam* pSlicePa
 /******************************************************************************/
 void AL_HEVC_FillPictParameters(const AL_THevcSliceHdr* pSlice, const AL_TDecCtx* pCtx, AL_TDecPicParam* pPicParam)
 {
-  // fast access
   AL_THevcSps* pSps = pSlice->pSPS;
   const AL_THevcPps* pPps = pSlice->pPPS;
 
@@ -224,14 +212,12 @@ void AL_HEVC_FillPictParameters(const AL_THevcSliceHdr* pSlice, const AL_TDecCtx
   pPicParam->eCodec = AL_CODEC_HEVC;
   AL_SET_DEC_OPT(pPicParam, Tile, pPps->tiles_enabled_flag);
 
-  // Reg 1
   AL_TDimension const tDim = { pSps->pic_width_in_luma_samples, pSps->pic_height_in_luma_samples };
   DecPicParam_SetPicDim(pPicParam, tDim);
 
   pPicParam->uPcmBitDepthY = pSps->pcm_enabled_flag ? pSps->pcm_sample_bit_depth_luma_minus1 + 1 : 0;
   pPicParam->uPcmBitDepthC = pSps->pcm_enabled_flag ? pSps->pcm_sample_bit_depth_chroma_minus1 + 1 : 0;
 
-  // Reg 2
   pPicParam->uDeltaQpCuDepth = pPps->cu_qp_delta_enabled_flag ? pPps->diff_cu_qp_delta_depth : 0;
   AL_SET_DEC_OPT(pPicParam, CabacBypassAlign, pSps->cabac_bypass_alignment_enabled_flag);
   AL_SET_DEC_OPT(pPicParam, RiceAdapt, pSps->persistent_rice_adaptation_enabled_flag);
@@ -253,40 +239,34 @@ void AL_HEVC_FillPictParameters(const AL_THevcSliceHdr* pSlice, const AL_TDecCtx
   pPicParam->uLog2SaoOffsetScaleLuma = pPps->log2_sao_offset_scale_luma;
   pPicParam->uLog2SaoOffsetScaleChroma = pPps->log2_sao_offset_scale_chroma;
 
-  // Reg 3
   pPicParam->uQpOffLstSize = pPps->chroma_qp_offset_list_enabled_flag ? pPps->chroma_qp_offset_list_len_minus1 : 0;
   AL_SET_DEC_OPT(pPicParam, WaveFront, pPps->entropy_coding_sync_enabled_flag);
 
-  // Reg 4
   pPicParam->uChromaQpOffsetDepth = pPps->chroma_qp_offset_list_enabled_flag ? pPps->diff_cu_chroma_qp_offset_depth : 0;
 
-  // Reg D
   AL_SET_DEC_OPT(pPicParam, IntraSmoothDisable, pSps->intra_smoothing_disabled_flag);
   AL_SET_DEC_OPT(pPicParam, EnableSclLst, pSps->scaling_list_enabled_flag);
   AL_SET_DEC_OPT(pPicParam, LoadSclLst, pSps->scaling_list_enabled_flag);
 
-  // Reg E
   AL_SET_DEC_OPT(pPicParam, XTileLoopFilter, pPps->loop_filter_across_tiles_enabled_flag);
   AL_SET_DEC_OPT(pPicParam, DisPCMLoopFilter, pSps->pcm_loop_filter_disabled_flag);
   AL_SET_DEC_OPT(pPicParam, StrongIntraSmooth, pSps->strong_intra_smoothing_enabled_flag);
   AL_SET_DEC_OPT(pPicParam, ConstrainedIntraPred, pPps->constrained_intra_pred_flag);
 
-  // Reg F
   pPicParam->uParallelMerge = pPps->log2_parallel_merge_level_minus2 + 2;
   pPicParam->iPicCbQpOffset = pPps->pps_cb_qp_offset;
   pPicParam->iPicCrQpOffset = pPps->pps_cr_qp_offset;
   AL_SET_DEC_OPT(pPicParam, TransfoSkipRot, pSps->transform_skip_rotation_enabled_flag);
   AL_SET_DEC_OPT(pPicParam, HighPrecOffset, pSps->high_precision_offsets_enabled_flag);
 
-  // Reg G-H
   for(int32_t i = 0; i < 6; ++i)
   {
     pPicParam->pCbQpOffsets[i] = pPps->cb_qp_offset_list[i];
     pPicParam->pCrQpOffsets[i] = pPps->cr_qp_offset_list[i];
   }
 
-  // Reg J
-  pPicParam->iCurrentPoc = pCtx->PictMngr.iCurFramePOC;
+  AL_TDpb* pDpb = (AL_TDpb*)pCtx->PictMngr.pRefMngr;
+  pPicParam->iCurrentPoc = pDpb->iCurFramePOC;
 
   pPicParam->ePicStruct = (AL_EPicStruct)pCtx->aup.hevcAup.ePicStruct;
 
@@ -376,18 +356,18 @@ void AL_HEVC_FillSliceParameters(const AL_THevcSliceHdr* pSlice, const AL_TDecCt
 void AL_HEVC_FillSlicePicIdRegister(const AL_THevcSliceHdr* pSlice, AL_TDecCtx* pCtx, AL_TDecPicParam* pPicParam, AL_TDecSliceParam* pSliceParam)
 {
   TBufferListRef* pListRef = &pCtx->ListRef;
-  AL_TDpb* pDpb = &pCtx->PictMngr.DPB;
+  AL_TDpb* pDpb = (AL_TDpb*)pCtx->PictMngr.pRefMngr;
 
   FillRefPicID(pCtx, pSliceParam);
 
   if(!pSliceParam->uFirstLcuSlice)
-    pPicParam->uColocPicID = UndefID;
+    pPicParam->tColocPicID = AL_BAD_INDEX;
 
   // Reg 0x12
   if((pSliceParam->eSliceType == AL_SLICE_B && pSlice->collocated_from_l0_flag) || pSliceParam->eSliceType == AL_SLICE_P)
-    pPicParam->uColocPicID = AL_Dpb_GetPicID_FromNode(pDpb, (*pListRef)[0][pSlice->collocated_ref_idx].uNodeID);
+    pPicParam->tColocPicID = AL_Dpb_GetPicID_FromNode(pDpb, (*pListRef)[0][pSlice->collocated_ref_idx].tNodeID);
   else if(pSliceParam->eSliceType == AL_SLICE_B)
-    pPicParam->uColocPicID = AL_Dpb_GetPicID_FromNode(pDpb, (*pListRef)[1][pSlice->collocated_ref_idx].uNodeID);
+    pPicParam->tColocPicID = AL_Dpb_GetPicID_FromNode(pDpb, (*pListRef)[1][pSlice->collocated_ref_idx].tNodeID);
 
   FillConcealValue(pCtx, pSliceParam);
 }

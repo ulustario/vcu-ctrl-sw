@@ -7,6 +7,7 @@
 #include "lib_common/BufCommon.h"
 #include "lib_common/BufCommonInternal.h"
 #include "lib_common/BufferPixMapMeta.h"
+#include "lib_common/Round.h"
 
 /*****************************************************************************/
 int32_t AL_GetNumLinesInPitch(AL_EFbStorageMode eFrameBufferStorageMode)
@@ -47,11 +48,12 @@ static inline int32_t GetWidthRound(AL_EFbStorageMode eStorageMode, uint8_t uBit
 int32_t AL_GetLumaPixPlanePitch(int32_t iWidth, AL_TPicFormat const* pPicFormat, int32_t iPitchAlignment)
 {
   int32_t iVal = 0;
-  int32_t const iRndWidth = RoundUp(iWidth, GetWidthRound(pPicFormat->eStorageMode, pPicFormat->uBitDepth));
+  int32_t const iRndWidth = AL_RoundUp(iWidth, GetWidthRound(pPicFormat->eStorageMode, pPicFormat->uBitDepth));
 
   if(IsTile(pPicFormat->eStorageMode))
   {
     uint8_t uBitDepth = (pPicFormat->uBitDepth + 1) & 0xFE; // Prevent 9 and 11 bitdepth -> 10/12
+
     iVal = iRndWidth * AL_GetNumLinesInPitch(pPicFormat->eStorageMode) * uBitDepth / 8;
 
   }
@@ -72,6 +74,7 @@ int32_t AL_GetLumaPixPlanePitch(int32_t iWidth, AL_TPicFormat const* pPicFormat,
       /* This checks mainly Y416 format*/
       if(pPicFormat->eSamplePackMode == AL_SAMPLE_PACK_MODE_BYTE && (pPicFormat->uBitDepth == 12 || pPicFormat->uBitDepth == 10))
         iPixSize = sizeof(AL_64U);
+
       iVal = iRndWidth * iPixSize / iHorizontalScale;
     }
     else
@@ -89,7 +92,7 @@ int32_t AL_GetLumaPixPlanePitch(int32_t iWidth, AL_TPicFormat const* pPicFormat,
   }
 
   Rtos_Assert(iPitchAlignment > 0);
-  return RoundUp(iVal, iPitchAlignment);
+  return AL_RoundUp(iVal, iPitchAlignment);
 }
 
 /****************************************************************************/
@@ -157,7 +160,7 @@ int32_t AL_GetChromaPitch(TFourCC tFourCC, int32_t iLumaPitch)
   if(tPicFormat.eChromaMode != AL_CHROMA_4_4_4)
   {
     int32_t iRound = tPicFormat.uBitDepth > 8 ? 4 : 2;
-    iChromaPitch = RoundUp(iLumaPitch, iRound) / 2;
+    iChromaPitch = AL_RoundUp(iLumaPitch, iRound) / 2;
   }
 
   return iChromaPitch * iNumPlanes;

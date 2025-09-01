@@ -16,7 +16,7 @@
 #include <cstring>
 #include <string>
 #include <algorithm>
-#include "lib_app/convert.h"
+#include "lib_app/convert.hpp"
 
 extern "C" {
 #include "lib_common/PixMapBuffer.h"

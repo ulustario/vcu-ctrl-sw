@@ -25,6 +25,7 @@ typedef struct AL_TDecChannelParam
   uint32_t uClkRatio;
   uint32_t uMaxLatency;
   uint8_t uNumCore;
+  uint8_t uNumTileColumns;
   uint8_t uPostProcId;
   bool bNonRealtime;
   uint8_t uDDRWidth;
@@ -32,7 +33,7 @@ typedef struct AL_TDecChannelParam
   bool bParallelWPP;
   bool bDisableCache;
   bool bFrameBufferCompression;
-  bool bUseEarlyCallback; /*< LLP2: this only makes sense with special support for hw synchro */
+  bool bCallDecodeCallbackAtStart; /*< LLP2: this only makes sense with special support for hw synchro */
   AL_EFbStorageMode eFBStorageMode;
   AL_ECodec eCodec;
   AL_EChromaMode eMaxChromaMode;

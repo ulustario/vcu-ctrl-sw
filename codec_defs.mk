@@ -1,6 +1,11 @@
 ENABLE_64BIT?=1
 ENABLE_STATIC?=0
 BIN?=bin
+  ifneq ($(ENABLE_SH_TESTS),0)
+    TEST=test
+  endif
+
+GENERATED_FILES_DIR=$(BIN)/gen
 
 CONFIG?=include/config.h
 ifneq ($(CONFIG),)
@@ -14,9 +19,12 @@ INCLUDES+=-I./extra/include
 CFLAGS+=-Wwrite-strings
 CFLAGS+=-Wredundant-decls
 CFLAGS+=-pedantic
+ifneq (,$(filter -fsanitize,$(CFLAGS)))
 CFLAGS+=-pedantic-errors
 CFLAGS+=-Werror=pedantic
 CFLAGS+=-Werror
+endif
+
 CFLAGS+=-Wall -Wextra
 CFLAGS+=-DAL_ENABLE_64BIT=$(ENABLE_64BIT)
 

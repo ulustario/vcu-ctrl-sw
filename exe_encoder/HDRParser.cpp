@@ -1,9 +1,9 @@
 // SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
-#include "HDRParser.h"
+#include "HDRParser.hpp"
 
-#include "lib_app/JsonFile.h"
+#include "lib_app/JsonFile.hpp"
 
 using namespace std;
 

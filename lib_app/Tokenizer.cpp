@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
-#include "lib_app/Tokenizer.h"
+#include "lib_app/Tokenizer.hpp"
 #include <cctype>
 #include <sstream>
 
@@ -163,7 +163,7 @@ char Tokenizer::getNextChar(void)
     ++curPos;
 
   if(getChar(curPos) == '#')
-    while(getChar(curPos) != '\n')
+    while(getChar(curPos) != '\n' && getChar(curPos) != '\0')
       ++curPos;
 
   return getChar(curPos++);

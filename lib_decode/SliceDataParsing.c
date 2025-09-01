@@ -90,14 +90,6 @@ static void AL_sSaveCommandBlk2(AL_TDecCtx* pCtx, AL_TDecPicParam const* pPicPar
   pPicBuffers->tRecC1.tMD.uPhysicalAddr += uOffset;
   pPicBuffers->tRecC1.tMD.pVirtualAddr += uOffset;
 
-  pPicBuffers->tPoc.tMD.uPhysicalAddr = pCtx->POC.tMD.uPhysicalAddr;
-  pPicBuffers->tPoc.tMD.pVirtualAddr = pCtx->POC.tMD.pVirtualAddr;
-  pPicBuffers->tPoc.tMD.uSize = pCtx->POC.tMD.uSize;
-
-  pPicBuffers->tMV.tMD.uPhysicalAddr = pCtx->MV.tMD.uPhysicalAddr;
-  pPicBuffers->tMV.tMD.pVirtualAddr = pCtx->MV.tMD.pVirtualAddr;
-  pPicBuffers->tMV.tMD.uSize = pCtx->MV.tMD.uSize;
-
 }
 
 /*****************************************************************************/
@@ -144,7 +136,7 @@ static void AL_SetBufferAddrs(AL_TDecCtx* pCtx, AL_TDecBufferAddrs* pBufAddrs)
 
 }
 
-static void SetBufferHandleMetaData(AL_TDecCtx* pCtx)
+static void SetBufferHandleMetaData(AL_TDecCtx* pCtx, bool bConceal)
 {
   if(!pCtx->pInputBuffer)
     return;
@@ -162,7 +154,8 @@ static void SetBufferHandleMetaData(AL_TDecCtx* pCtx)
     AL_Buffer_AddMetaData(pFrame, (AL_TMetaData*)pMeta);
   }
 
-  AL_TDecMetaHandle handle = { AL_DEC_HANDLE_STATE_PROCESSING, pCtx->pInputBuffer };
+  AL_EDecHandleState eState = bConceal ? AL_DEC_HANDLE_STATE_CONCEALING : AL_DEC_HANDLE_STATE_PROCESSING;
+  AL_TDecMetaHandle handle = { eState, pCtx->pInputBuffer };
   AL_HandleMetaData_AddHandle(pMeta, &handle);
 }
 
@@ -208,14 +201,14 @@ void AL_LaunchSliceDecoding(AL_TDecCtx* pCtx, bool bIsLastAUNal, bool hasPreviou
     {
       AL_FlushBuffers(pCtx);
       AL_SetBufferAddrs(pCtx, &pCtx->BufAddrs);
-      SetBufferHandleMetaData(pCtx);
+      SetBufferHandleMetaData(pCtx, true);
     }
     decodeOneSlice(pCtx, uSliceID - 1, &pCtx->BufAddrs);
   }
 
   AL_FlushBuffers(pCtx);
   AL_SetBufferAddrs(pCtx, &pCtx->BufAddrs);
-  SetBufferHandleMetaData(pCtx);
+  SetBufferHandleMetaData(pCtx, false);
 
   if(!bIsLastAUNal)
     return;
@@ -238,7 +231,7 @@ void AL_LaunchFrameDecoding(AL_TDecCtx* pCtx)
 
   AL_TDecBufferAddrs BufAddrs;
   AL_SetBufferAddrs(pCtx, &BufAddrs);
-  SetBufferHandleMetaData(pCtx);
+  SetBufferHandleMetaData(pCtx, false);
 
   UpdateStreamOffset(pCtx);
   AL_TDecSliceParam* pSliceParam = (AL_TDecSliceParam*)pCtx->tPoolSliceParams[pCtx->uToggle].tMD.pVirtualAddr;
@@ -264,25 +257,29 @@ static void AL_InitRefBuffers(AL_TDecCtx* pCtx, AL_TDecBuffers* pPicBuffers)
   int32_t iOffset = pCtx->iNumFrmBlk1 % AL_DEC_SW_MAX_STACK_SIZE;
   pCtx->uNumRef[iOffset] = 0;
 
-  uint8_t uNode = 0;
-
-  while(uNode < MAX_DPB_SIZE && pCtx->uNumRef[iOffset] < MAX_REF)
+  if(AL_IS_ITU_CODEC(pCtx->pChanParam->eCodec))
   {
-    AL_EMarkingRef eMarkingRef = AL_Dpb_GetMarkingFlag(&pCtx->PictMngr.DPB, uNode);
-    uint8_t uFrameId = AL_Dpb_GetFrmID_FromNode(&pCtx->PictMngr.DPB, uNode);
-    uint8_t uMvID = AL_Dpb_GetMvID_FromNode(&pCtx->PictMngr.DPB, uNode);
+    AL_TIndex tNodeID = 0;
+    AL_TDpb* pDpb = (AL_TDpb*)pCtx->PictMngr.pRefMngr;
 
-    if((uFrameId != uEndOfList) && (uMvID != uEndOfList) && (eMarkingRef != UNUSED_FOR_REF) && (eMarkingRef != NON_EXISTING_REF))
+    while(tNodeID < AL_REF_MNGR_MAX_BUF_SIZE && pCtx->uNumRef[iOffset] < AL_MAX_REF)
     {
-      pCtx->uFrameIDRefList[iOffset][pCtx->uNumRef[iOffset]] = uFrameId;
-      pCtx->uMvIDRefList[iOffset][pCtx->uNumRef[iOffset]] = uMvID;
-      ++pCtx->uNumRef[iOffset];
+      AL_EMarkingRef eMarkingRef = AL_Dpb_GetMarkingFlag(pDpb, tNodeID);
+      uint8_t uFrameId = AL_Dpb_GetFrmID_FromNode(pDpb, tNodeID);
+      uint8_t tMvID = AL_Dpb_GetMvID_FromNode(pDpb, tNodeID);
+
+      if(IS_NODE_VALID(uFrameId) && IS_NODE_VALID(tMvID) && (eMarkingRef != UNUSED_FOR_REF) && (eMarkingRef != NON_EXISTING_REF))
+      {
+        pCtx->uFrameIDRefList[iOffset][pCtx->uNumRef[iOffset]] = uFrameId;
+        pCtx->uMvIDRefList[iOffset][pCtx->uNumRef[iOffset]] = tMvID;
+        ++pCtx->uNumRef[iOffset];
+      }
+
+      ++tNodeID;
     }
 
-    ++uNode;
+    AL_PictMngr_LockRefID(&pCtx->PictMngr, pCtx->uNumRef[iOffset], pCtx->uFrameIDRefList[iOffset], pCtx->uMvIDRefList[iOffset]);
   }
-
-  AL_PictMngr_LockRefID(&pCtx->PictMngr, pCtx->uNumRef[iOffset], pCtx->uFrameIDRefList[iOffset], pCtx->uMvIDRefList[iOffset]);
 
   // prepare buffers
   AL_sGetToggleBuffers(pCtx, pPicBuffers);
@@ -303,10 +300,13 @@ bool AL_InitFrameBuffers(AL_TDecCtx* pCtx, AL_TDecBuffers* pPicBuffers, bool bSt
     Rtos_ReleaseSemaphore(pCtx->Sem);
     return false;
   }
-  pPicParam->tBufIDs.FrmID = AL_PictMngr_GetCurrentFrmID(&pCtx->PictMngr);
-  pPicParam->tBufIDs.MvID = AL_PictMngr_GetCurrentMvID(&pCtx->PictMngr);
+  pPicParam->tBufIDs.tFrmID = AL_PictMngr_GetCurrentFrmID(&pCtx->PictMngr);
+  pPicParam->tBufIDs.tMvID = AL_PictMngr_GetCurrentAnnexID(&pCtx->PictMngr);
 
   AL_InitRefBuffers(pCtx, pPicBuffers);
+
+  pCtx->tCurrentFrameCtx.eBufStatus = DEC_FRAME_BUF_RESERVED;
+
   return true;
 }
 
@@ -336,8 +336,8 @@ void AL_TerminateCurrentCommand(AL_TDecCtx* pCtx, AL_TDecPicParam const* pPicPar
 /*****************************************************************************/
 void AL_SetConcealParameters(AL_TDecCtx* pCtx, AL_TDecSliceParam* pSliceParam)
 {
-  pSliceParam->uConcealPicID = AL_PictMngr_GetLastPicID(&pCtx->PictMngr);
-  pSliceParam->bValidConceal = (pSliceParam->uConcealPicID == uEndOfList) ? false : true;
+  pSliceParam->tConcealPicID = AL_PictMngr_GetLastPicID(&pCtx->PictMngr);
+  pSliceParam->bValidConceal = IS_NODE_VALID(pSliceParam->tConcealPicID);
 }
 
 /*****************************************************************************/
@@ -370,7 +370,7 @@ void AL_AVC_InitHWCommandBuffers(AL_TDecCtx* pCtx, AL_TDecSliceParam const* pSli
 {
   if(pCtx->tCurrentFrameCtx.eBufStatus == DEC_FRAME_BUF_RESERVED)
   {
-    AL_AVC_PictMngr_GetBuffers(&pCtx->PictMngr, pSliceParam, &pPicBuffers->tListVirtRef, &pPicBuffers->tListRef, &pCtx->POC, &pCtx->MV, &pCtx->pRecs);
+    AL_AVC_PictMngr_GetBuffers(&pCtx->PictMngr, pSliceParam, &pCtx->pRecs, pPicBuffers);
     AL_AVC_InitHWFrameBuffers(pSclLst, eChromaMode, pPicBuffers);
     pCtx->tCurrentFrameCtx.eBufStatus |= DEC_FRAME_BUF_FILLED;
   }
@@ -399,7 +399,7 @@ void AL_AVC_PrepareCommand(AL_TDecCtx* pCtx, AL_TScl* pSCL, AL_TDecPicParam* pPi
 
   // copy collocated info
   if(pSliceParam->uFirstLcuSliceSegment && pSliceParam->eSliceType == AL_SLICE_I)
-    pSliceParam->uColocPicID = pPrevSP->uColocPicID;
+    pSliceParam->tColocPicID = pPrevSP->tColocPicID;
 
   // stock command registers in memory
   AL_TerminatePreviousCommand(pCtx, pPicParam, pSliceParam, pPicBuffers, false, true);
@@ -419,7 +419,7 @@ void AL_HEVC_InitHWCommandBuffers(AL_TDecCtx* pCtx, AL_TDecSliceParam const* pSl
 {
   if(pCtx->tCurrentFrameCtx.eBufStatus == DEC_FRAME_BUF_RESERVED)
   {
-    AL_HEVC_PictMngr_GetBuffers(&pCtx->PictMngr, pSliceParam, &pPicBuffers->tListVirtRef, &pPicBuffers->tListRef, &pCtx->POC, &pCtx->MV, &pCtx->pRecs);
+    AL_ItuPictMngr_GetBuffers(&pCtx->PictMngr, AL_CODEC_HEVC, pSliceParam, &pCtx->pRecs, pPicBuffers);
 
     if(pSlice->first_slice_segment_in_pic_flag)
       AL_HEVC_InitHWFrameBuffers(pSclLst, pPicBuffers);
@@ -444,13 +444,17 @@ void AL_HEVC_PrepareCommand(AL_TDecCtx* pCtx, AL_TScl* pSCL, AL_TDecPicParam* pP
 
   if(pPrevSP && !bIsValid && bIsLastVclNalInAU)
   {
-    AL_TerminatePreviousCommand(pCtx, pPicParam, pSliceParam, pPicBuffers, bIsLastVclNalInAU, true);
+    // Here bNextIsDependent was used to automatically re-use the previous slice header.
+    // But independent slices are forced to be run on the same parser, which is
+    // conflicting with Dec1/Dec2 synchronization constraints in lowlat.
+    bool bNextIsDependent = !(pPicParam->uNumTileRows > 1 && pCtx->pChanParam->bLowLat);
+    AL_TerminatePreviousCommand(pCtx, pPicParam, pSliceParam, pPicBuffers, bIsLastVclNalInAU, bNextIsDependent);
     return;
   }
 
   // copy collocated info
   if(pSliceParam->uFirstLcuSliceSegment && pSliceParam->eSliceType == AL_SLICE_I)
-    pSliceParam->uColocPicID = pPrevSP->uColocPicID;
+    pSliceParam->tColocPicID = pPrevSP->tColocPicID;
 
   // stock command registers in memory
   AL_TerminatePreviousCommand(pCtx, pPicParam, pSliceParam, pPicBuffers, false, pSliceParam->bDependentSlice);

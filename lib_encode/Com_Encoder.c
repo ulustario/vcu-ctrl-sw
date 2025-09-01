@@ -3,11 +3,12 @@
 
 #include "Com_Encoder.h"
 
-#include "lib_common/Profiles.h"
 #include "lib_encode/lib_encoder.h"
 #include "lib_encode/LoadLda.h"
 
+#include "lib_common/Profiles.h"
 #include "lib_common/Utils.h"
+#include "lib_common/Round.h"
 #include "lib_common/PixMapBufferInternal.h"
 #include "lib_common/BufferAPIInternal.h"
 #include "lib_common/StreamSection.h"
@@ -594,6 +595,16 @@ bool AL_Common_Encoder_Process(AL_TEncCtx* pCtx, AL_TBuffer* pFrame, AL_TBuffer*
     {
       iPosX = (iPosX * 4) / 3;
       iPosY *= 2;
+    }
+
+    if(IsTile(tPicFormat.eStorageMode))
+    {
+      int iTileHeight = GetTileHeight(tPicFormat.eStorageMode);
+      int iTileWidth = GetTileWidth(tPicFormat.eStorageMode, tPicFormat.uBitDepth);
+
+      iPosY /= iTileHeight;
+      iPosX /= iTileWidth;
+      iPosX *= GetTileSize(tPicFormat.eStorageMode, tPicFormat.uBitDepth);
     }
 
     addresses.tSrcAddrs.pY += iPosY * addresses.tSrcInfo.uPitch + iPosX;

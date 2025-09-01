@@ -3,10 +3,8 @@
 
 #include "lib_common/PicFormat.h"
 #include "lib_decode/I_DecSchedulerInfo.h"
-#include "lib_decode/lib_decode.h"
 #include "lib_decode/DefaultDecoder.h"
 #include "lib_common_dec/DecOutputSettingsInternal.h"
-#include "lib_rtos/types.h"
 #include "lib_common_dec/I_DecArch.h"
 
 AL_ERR CreateAvcDecoder(AL_TDecoder** hDec, AL_IDecScheduler* pScheduler, AL_TAllocator* pAllocator, AL_TDecSettings* pSettings, AL_TDecCallBacks* pCB);

@@ -3,6 +3,7 @@
 
 #include "lib_common/PicFormat.h"
 #include "lib_common_dec/DecBuffersInternal.h"
+#include "lib_common/Round.h"
 #include "lib_common/Utils.h"
 #include "lib_common/BufferPixMapMeta.h"
 
@@ -10,7 +11,7 @@
 int32_t AL_DecGetLumaPixPlanePitch(int32_t iWidth, AL_TPicFormat const* pPicFormat)
 {
   int32_t const iBurstAlignment = pPicFormat->eStorageMode == AL_FB_RASTER ? AL_DEC_PITCH_ALIGNMENT : HW_IP_BURST_ALIGNMENT;
-  int32_t const iRndWidth = RoundUp(iWidth, 64);
+  int32_t const iRndWidth = AL_RoundUp(iWidth, 64);
   Rtos_Assert((iBurstAlignment % HW_IP_BURST_ALIGNMENT) == 0);
   return AL_GetLumaPixPlanePitch(iRndWidth, pPicFormat, iBurstAlignment);
 }
@@ -20,7 +21,7 @@ int32_t AL_DecGetPixPlaneHeight(int32_t iHeight, AL_TPicFormat const* pPicFormat
 {
   // Height alignment required by customers to the LCU size
   int32_t const iLcuAlignment = 64;
-  return RoundUp(iHeight, iLcuAlignment) / AL_GetNumLinesInPitch(pPicFormat->eStorageMode);
+  return AL_RoundUp(iHeight, iLcuAlignment) / AL_GetNumLinesInPitch(pPicFormat->eStorageMode);
 }
 
 /****************************************************************************/
@@ -89,23 +90,28 @@ int32_t AL_DecGetAllocSize_Frame_UV(AL_EFbStorageMode eFbStorage, AL_TDimension 
 }
 
 /****************************************************************************/
-uint32_t AL_GetRefListOffsets(TRefListOffsets* pOffsets, AL_ECodec eCodec, AL_TPicFormat tPicFormat, uint8_t uAddrSizeInBytes)
+uint32_t AL_GetRefListOffsets(TRefListOffsets* pOffsets, AL_ECodec eCodec, AL_TPicFormat const* pPicFormat, uint8_t uMaxRef, uint8_t uAddrSizeInBytes)
 {
+  uint8_t uOffsetToNextSet = 1 << ceil_log2(uMaxRef);
+
   AL_EPlaneId usedPlanes[AL_MAX_BUFFER_PLANES];
-  const int32_t iNbPixPlanes = Max(2, AL_Plane_GetBufferPixelPlanes(tPicFormat, usedPlanes));
+  const int32_t iNbPixPlanes = Max(2, AL_Plane_GetBufferPixelPlanes(*pPicFormat, usedPlanes));
   TRefListOffsets tOffsets;
   (void)eCodec;
 
-  uint32_t uOffset = uAddrSizeInBytes * MAX_REF * iNbPixPlanes; // size of RefList Buff Addrs
+  uint32_t uOffset = uAddrSizeInBytes * uOffsetToNextSet * iNbPixPlanes; // size of RefList Buff Addrs
 
-  tOffsets.uColocPocOffset = uOffset;
-  uOffset += uAddrSizeInBytes * MAX_REF; // size of coloc POCs Buff Addrs
+  if(AL_IS_ITU_CODEC(eCodec) || eCodec == AL_CODEC_INVALID)
+  {
+    tOffsets.uColocPocOffset = uOffset;
+    uOffset += uAddrSizeInBytes * uOffsetToNextSet; // size of coloc POCs Buff Addrs
 
-  tOffsets.uColocMVOffset = uOffset;
-  uOffset += uAddrSizeInBytes * MAX_REF; // size of coloc MVs Buff Addrs
+    tOffsets.uColocMVOffset = uOffset;
+    uOffset += uAddrSizeInBytes * uOffsetToNextSet; // size of coloc MVs Buff Addrs
+  }
 
   tOffsets.uMapOffset = uOffset;
-  uOffset += uAddrSizeInBytes * MAX_REF * iNbPixPlanes;  // size of RefList Map Addr
+  uOffset += uAddrSizeInBytes * uOffsetToNextSet * iNbPixPlanes;  // size of RefList Map Addr
 
   if(pOffsets)
     *pOffsets = tOffsets;

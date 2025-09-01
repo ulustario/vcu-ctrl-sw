@@ -44,6 +44,12 @@ $(BIN)/%.c.o: %.c
 	@echo "CC $<"
 
 
+$(BIN)/%.c.o: $(GENERATED_FILES_DIR)/%.c
+	@mkdir -p $(dir $@)
+	$(Q)$(CC) $(CFLAGS) -Wstrict-prototypes $(INTROSPECT_FLAGS) $(INCLUDES) -std=gnu11 -fPIC -o $@ -c $<
+	@$(CC) -MP -MM "$<" -MT "$@" -o "$(BIN)/$*_c.deps" $(INCLUDES) $(CFLAGS) -std=gnu11 -fPIC
+	@echo "CC $<"
+
 $(BIN)/%.a:
 	@mkdir -p $(dir $@)
 	$(Q)$(AR) cr $@ $^
@@ -67,7 +73,7 @@ $(BIN)/%.exe: $(BIN)/include/config.h
 	@echo "CXX $@"
 
 clean:
-ifneq ($(ENABLE_CLIENT_FLAG),0)
+ifeq ($(ENABLE_CLIENT_FLAG),1)
 	$(MAKE) clean -C lib_ref_customer
 endif
 	$(Q)rm -rf $(BIN) $(GENERATED_FILES)

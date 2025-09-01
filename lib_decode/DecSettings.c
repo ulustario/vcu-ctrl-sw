@@ -6,6 +6,7 @@
 #include "lib_decode/DecSettingsInternal.h"
 #include "lib_common_dec/StreamSettingsInternal.h"
 #include "lib_common_dec/DecHardwareConfig.h"
+#include "lib_common/Round.h"
 #include "lib_common/Utils.h"
 #include "lib_common/Profiles.h"
 #include "lib_common/BufConst.h"
@@ -149,8 +150,8 @@ int32_t AL_DecSettings_CheckCoherency(AL_TDecSettings* pSettings, FILE* pOut)
       if(((pSettings->tStream.tDim.iWidth % AVC_ROUND_DIM) != 0) || ((pSettings->tStream.tDim.iHeight % AVC_ROUND_DIM) != 0))
       {
         MSG("!! AVC preallocation dimensions must be multiple of 16. Adjusting parameter !!");
-        pSettings->tStream.tDim.iWidth = RoundUp(pSettings->tStream.tDim.iWidth, AVC_ROUND_DIM);
-        pSettings->tStream.tDim.iHeight = RoundUp(pSettings->tStream.tDim.iHeight, AVC_ROUND_DIM);
+        pSettings->tStream.tDim.iWidth = AL_RoundUp(pSettings->tStream.tDim.iWidth, AVC_ROUND_DIM);
+        pSettings->tStream.tDim.iHeight = AL_RoundUp(pSettings->tStream.tDim.iHeight, AVC_ROUND_DIM);
         ++numIncoherency;
       }
     }
@@ -165,7 +166,7 @@ int32_t GetAlignedStreamBufferSize(int32_t iStreamBufferSize)
      codecs, 2048 or 4096 bytes alignment is required for dec1 units (for old or new decoder respectively).
   */
   static int32_t const BITSTREAM_REQUEST_SIZE = 4096;
-  return RoundUp(iStreamBufferSize, BITSTREAM_REQUEST_SIZE);
+  return AL_RoundUp(iStreamBufferSize, BITSTREAM_REQUEST_SIZE);
 }
 
 int32_t AL_DecOutputSettings_CheckValidity(AL_TDecOutputSettings const* pDecOutSettings, AL_ECodec eCodec, FILE* pOut)

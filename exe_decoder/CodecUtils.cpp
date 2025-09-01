@@ -7,10 +7,13 @@
 #include <iomanip>
 #include <iostream>
 
-#include "CodecUtils.h"
+#include "CodecUtils.hpp"
+#include "lib_app/utils.hpp"
+#include "lib_app/BuildInfo.hpp"
+
+extern "C" {
 #include "resource.h"
-#include "lib_app/utils.h"
-#include "lib_app/BuildInfo.h"
+}
 
 /******************************************************************************/
 void DisplayFrameStatus(int32_t iFrameNum)

@@ -14,32 +14,7 @@
 /*****************************************************************************/
 void AL_HEVC_SetDefaultSliceHeader(AL_THevcSliceHdr* pSlice)
 {
-  uint8_t first_slice_segment_in_pic_flag = pSlice->first_slice_segment_in_pic_flag;
-  uint8_t no_output_prior_pics_flag = pSlice->no_output_of_prior_pics_flag;
-  uint8_t pic_parameter_set_id = pSlice->slice_pic_parameter_set_id;
-  uint8_t nal_unit_type = pSlice->nal_unit_type;
-  uint8_t nuh_layer_id = pSlice->nuh_layer_id;
-  uint8_t nuh_temporal_id_plus1 = pSlice->nuh_temporal_id_plus1;
-  uint8_t RapFlag = pSlice->RapPicFlag;
-  uint8_t IdrFlag = pSlice->IdrPicFlag;
-  int32_t SliceSegAddr = pSlice->slice_segment_address;
-  AL_THevcPps const* pPPS = pSlice->pPPS;
-  AL_THevcSps* pSPS = pSlice->pSPS;
-
   Rtos_Memset(pSlice, 0, offsetof(AL_THevcSliceHdr, entry_point_offset_minus1));
-
-  pSlice->first_slice_segment_in_pic_flag = first_slice_segment_in_pic_flag;
-  pSlice->no_output_of_prior_pics_flag = no_output_prior_pics_flag;
-  pSlice->slice_pic_parameter_set_id = pic_parameter_set_id;
-  pSlice->dependent_slice_segment_flag = 0;
-  pSlice->nal_unit_type = nal_unit_type;
-  pSlice->nuh_layer_id = nuh_layer_id;
-  pSlice->nuh_temporal_id_plus1 = nuh_temporal_id_plus1;
-  pSlice->RapPicFlag = RapFlag;
-  pSlice->IdrPicFlag = IdrFlag;
-  pSlice->slice_segment_address = SliceSegAddr;
-  pSlice->pPPS = pPPS;
-  pSlice->pSPS = pSPS;
 
   pSlice->pic_output_flag = 1;
   pSlice->collocated_from_l0_flag = 1;
@@ -70,7 +45,7 @@ static bool AL_HEVC_sReadWPCoeff(AL_TRbspParser* pRP, AL_THevcSliceHdr* pSlice, 
 {
   uint8_t uNumRefIdx = uL0L1 ? pSlice->num_ref_idx_l1_active_minus1 : pSlice->num_ref_idx_l0_active_minus1;
 
-  if(uNumRefIdx >= MAX_REF)
+  if(uNumRefIdx >= AL_MAX_REF)
     return false;
 
   AL_TWPCoeff* pWpCoeff = &pSlice->pred_weight_table.tWpCoeff[uL0L1];
@@ -161,7 +136,7 @@ static void AL_HEVC_sref_pic_list_modification(AL_TRbspParser* pRP, AL_THevcSlic
   pSlice->ref_pic_modif.ref_pic_list_modification_flag_l0 = 0;
   pSlice->ref_pic_modif.ref_pic_list_modification_flag_l1 = 0;
 
-  for(uint8_t i = 0; i < MAX_REF; ++i)
+  for(uint8_t i = 0; i < AL_MAX_REF; ++i)
   {
     pSlice->ref_pic_modif.list_entry_l0[i] = 0;
     pSlice->ref_pic_modif.list_entry_l1[i] = 0;
@@ -251,6 +226,8 @@ static bool isHevcIDR(AL_ENut eNUT)
 /*****************************************************************************/
 bool AL_HEVC_ParseSliceHeader(AL_THevcSliceHdr* pSlice, AL_THevcSliceHdr* pIndSlice, AL_TRbspParser* pRP, AL_TConceal* pConceal, AL_THevcPps pPPSTable[])
 {
+  AL_HEVC_SetDefaultSliceHeader(pSlice);
+
   if(noValidPpsHasEverBeenParsed(pConceal))
     return false;
 
@@ -261,7 +238,7 @@ bool AL_HEVC_ParseSliceHeader(AL_THevcSliceHdr* pSlice, AL_THevcSliceHdr* pIndSl
   pSlice->nuh_layer_id = u(pRP, 6);
   pSlice->nuh_temporal_id_plus1 = u(pRP, 3);
 
-  if(pSlice->nuh_temporal_id_plus1 < 1 || pSlice->nuh_temporal_id_plus1 > MAX_SUB_LAYER)
+  if(pSlice->nuh_temporal_id_plus1 < 1 || pSlice->nuh_temporal_id_plus1 > AL_MAX_SUB_LAYER)
     return false;
 
   pSlice->RapPicFlag = (pSlice->nal_unit_type >= AL_HEVC_NUT_BLA_W_LP && pSlice->nal_unit_type <= AL_HEVC_NUT_RSV_IRAP_VCL23) ? 1 : 0;
@@ -281,10 +258,7 @@ bool AL_HEVC_ParseSliceHeader(AL_THevcSliceHdr* pSlice, AL_THevcSliceHdr* pIndSl
     pConceal->iActivePPS = pSlice->slice_pic_parameter_set_id;
 
   if(pSlice->first_slice_segment_in_pic_flag)
-  {
-    AL_HEVC_SetDefaultSliceHeader(pSlice);
     pSlice->slice_segment_address = 0;
-  }
 
   /* pps_id is invalid */
   if(pSlice->slice_pic_parameter_set_id > pConceal->iLastPPSId ||
@@ -319,8 +293,7 @@ bool AL_HEVC_ParseSliceHeader(AL_THevcSliceHdr* pSlice, AL_THevcSliceHdr* pIndSl
 
     if(pSlice->dependent_slice_segment_flag)
       AL_HEVC_sInitSlice(pSlice, pIndSlice);
-    else
-      AL_HEVC_SetDefaultSliceHeader(pSlice);
+
     TransferRps(pSlice, pIndSlice);
 
     int32_t syntax_size = ceil_log2(uMaxLcu);

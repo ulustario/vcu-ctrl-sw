@@ -122,7 +122,7 @@ static void AL_AVC_UpdateHrdParameters(AL_TAvcSps* pSPS, AL_TSubHrdParam* pSubHr
 
   Rtos_Assert(pSubHrdParam->bit_rate_value_minus1[0] <= (UINT32_MAX - 1));
 
-  pSubHrdParam->cpb_size_value_minus1[0] = iCpbSize >> 4;
+  pSubHrdParam->cpb_size_value_minus1[0] = (iCpbSize + 15) >> 4;
   AL_Decomposition(&(pSubHrdParam->cpb_size_value_minus1[0]), &pSPS->vui_param.hrd_param.cpb_size_scale);
 
   Rtos_Assert(pSubHrdParam->cpb_size_value_minus1[0] <= (UINT32_MAX - 1));
@@ -155,13 +155,16 @@ static void AL_AVC_GenerateSPS_Resolution(AL_TAvcSps* pSPS, uint16_t uWidth, uin
   if(pSettings->tChParam->uOutputCropHeight)
     uHeight = pSettings->tChParam->uOutputCropHeight;
 
+  int32_t iFrameHeightInMbs = (2 - pSPS->frame_mbs_only_flag) * iMBHeight;
+  int32_t iFrameCroppedHeight = (2 - pSPS->frame_mbs_only_flag) * uHeight;
+
   int32_t iCropRight = (iMBWidth << uLog2MaxCuSize) - (iCropLeft + uWidth);
-  int32_t iCropBottom = (iMBHeight << uLog2MaxCuSize) - (iCropTop + uHeight);
+  int32_t iCropBottom = (iFrameHeightInMbs << uLog2MaxCuSize) - (iCropTop + iFrameCroppedHeight);
 
   AL_EChromaMode eChromaMode = AL_GET_CHROMA_MODE(pSettings->tChParam->ePicFormat);
 
   int32_t iCropUnitX = eChromaMode == AL_CHROMA_4_2_0 || eChromaMode == AL_CHROMA_4_2_2 ? 2 : 1;
-  int32_t iCropUnitY = eChromaMode == AL_CHROMA_4_2_0 ? 2 : 1;
+  int32_t iCropUnitY = (eChromaMode == AL_CHROMA_4_2_0 ? 2 : 1) * (2 - pSPS->frame_mbs_only_flag);
 
   pSPS->pic_width_in_mbs_minus1 = iMBWidth - 1;
 
@@ -227,7 +230,10 @@ void AL_AVC_GenerateSPS(AL_TSps* pISPS, AL_TEncSettings const* pSettings, int32_
 
   pSPS->log2_max_frame_num_minus4 = 0;
 
-  if((pChannel->tGopParam.eMode & AL_GOP_FLAG_PYRAMIDAL) && pChannel->tGopParam.uNumB == 15)
+  bool bGopParamModeFlagPyramidal = false;
+  bGopParamModeFlagPyramidal = pChannel->tGopParam.eMode & AL_GOP_FLAG_PYRAMIDAL;
+
+  if(bGopParamModeFlagPyramidal && pChannel->tGopParam.uNumB == 15)
     pSPS->log2_max_frame_num_minus4 = 1;
 
   else if(AL_IsGdrEnabled(&pSettings->tChParam[0]))
@@ -256,6 +262,7 @@ void AL_AVC_GenerateSPS(AL_TSps* pISPS, AL_TEncSettings const* pSettings, int32_
        // | ( pChannel->eProfile == AL_PROFILE_AVC_PROG_HIGH10 )
        | (pChannel->eProfile == AL_PROFILE_AVC_HIGH_422)
        | (pChannel->eProfile == AL_PROFILE_AVC_HIGH_444_PRED)
+       | (pChannel->eProfile == AL_PROFILE_AVC_HIGH_INTRA)
        | (pChannel->eProfile == AL_PROFILE_AVC_HIGH10_INTRA)
        | (pChannel->eProfile == AL_PROFILE_AVC_HIGH_422_INTRA)
        | (pChannel->eProfile == AL_PROFILE_AVC_HIGH_444_INTRA)

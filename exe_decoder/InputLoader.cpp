@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
-#include "InputLoader.h"
+#include "InputLoader.hpp"
 extern "C"
 {
 #include "lib_rtos/lib_rtos.h"
@@ -131,8 +131,7 @@ unique_ptr<INalParser> getParser(AL_ECodec eCodec)
   {
   case AL_CODEC_AVC: return unique_ptr<INalParser>(new AvcParser);
   case AL_CODEC_HEVC: return unique_ptr<INalParser>(new HevcParser);
-  default:
-    throw runtime_error("codec unsupported!");
+  default: return nullptr;
   }
 
   return nullptr;
@@ -265,6 +264,9 @@ static CircBufferFrame SearchStartCodes(CircBuffer Stream, AL_ECodec eCodec, boo
   NalInfo nalCurrent {};
 
   auto parser = getParser(eCodec);
+
+  if(parser == nullptr)
+    throw runtime_error("codec unsupported!");
 
   uint32_t iOffsetNext = Stream.iOffset;
   uint32_t iOffsetNewAU = Stream.iOffset;
@@ -515,7 +517,9 @@ uint32_t SplitInput::ReadStream(istream& ifFileStream, AL_TBuffer* pBufStream, u
       if(bEndOfFileReached && InsertEndOfStreamAud())
         m_bEOF = true;
     }
-    frame = SearchStartCodes(m_CircBuf, m_eCodec, m_bSliceCut);
+    {
+      frame = SearchStartCodes(m_CircBuf, m_eCodec, m_bSliceCut);
+    }
 
     if((frame.offset + frame.numBytes) < m_CircBuf.iAvailSize)
       break;

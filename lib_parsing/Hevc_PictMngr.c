@@ -14,20 +14,14 @@
 /*****************************************************************************/
 void AL_HEVC_PictMngr_UpdateRecInfo(AL_TPictMngrCtx* pCtx, AL_TCropInfo const* pCropInfo, AL_EPicStruct ePicStruct)
 {
-  AL_PictMngr_UpdateDisplayBufferCrop(pCtx, pCtx->uFrameID, pCropInfo);
-  AL_PictMngr_UpdateDisplayBufferPicStruct(pCtx, pCtx->uFrameID, ePicStruct);
-}
-
-/*****************************************************************************/
-bool AL_HEVC_PictMngr_GetBuffers(AL_TPictMngrCtx* pCtx, AL_TDecSliceParam const* pSliceParam, TBuffer* pListVirtAddr, TBuffer* pListAddr, TBufferPOC* pPOC, TBufferMV* pMV, AL_TRecBuffers* pRecs)
-{
-  return AL_PictMngr_GetBuffers(pCtx, pSliceParam, pListVirtAddr, pListAddr, pPOC, pMV, pRecs);
+  AL_PictMngr_UpdateDisplayBufferCrop(pCtx, pCropInfo);
+  AL_PictMngr_UpdateDisplayBufferPicStruct(pCtx, ePicStruct);
 }
 
 /*************************************************************************/
 void AL_HEVC_PictMngr_ClearDPB(AL_TPictMngrCtx* pCtx, AL_THevcSps const* pSPS, bool bClearRef, bool bNoOutputPrior)
 {
-  AL_TDpb* pDpb = &pCtx->DPB;
+  AL_TDpb* pDpb = (AL_TDpb*)pCtx->pRefMngr;
 
   // pre decoding output process
   if(bClearRef)
@@ -38,22 +32,22 @@ void AL_HEVC_PictMngr_ClearDPB(AL_TPictMngrCtx* pCtx, AL_THevcSps const* pSPS, b
   }
 
   AL_Dpb_HEVC_Cleanup(pDpb, pSPS->SpsMaxLatency, pSPS->sps_max_num_reorder_pics[pSPS->sps_max_sub_layers_minus1]);
-  uint8_t uNode = AL_Dpb_GetHeadPOC(pDpb);
+  AL_TIndex tNodeID = AL_Dpb_GetHeadPOC(pDpb);
 
-  while(uNode != uEndOfList && AL_Dpb_GetPicCount(pDpb) >= (pSPS->sps_max_dec_pic_buffering_minus1[pSPS->sps_max_sub_layers_minus1] + 1))
+  while(IS_NODE_VALID(tNodeID) && AL_Dpb_GetPicCount(pDpb) >= (pSPS->sps_max_dec_pic_buffering_minus1[pSPS->sps_max_sub_layers_minus1] + 1))
   {
-    if(AL_Dpb_GetOutputFlag(pDpb, uNode))
-      AL_Dpb_Display(&pCtx->DPB, uNode);
+    if(AL_Dpb_GetOutputFlag(pDpb, tNodeID))
+      AL_Dpb_Display(pDpb, tNodeID);
 
-    if(AL_Dpb_GetMarkingFlag(pDpb, uNode) == UNUSED_FOR_REF && (!AL_Dpb_GetOutputFlag(pDpb, uNode) || AL_HEVC_IsSLNR(pDpb->Nodes[uNode].eNUT)))
+    if(AL_Dpb_GetMarkingFlag(pDpb, tNodeID) == UNUSED_FOR_REF && (!AL_Dpb_GetOutputFlag(pDpb, tNodeID) || AL_HEVC_IsSLNR(pDpb->Nodes[tNodeID].eNUT)))
     {
-      uint8_t uDelete = uNode;
-      uNode = AL_Dpb_GetNextPOC(pDpb, uNode);
+      AL_TIndex tDeleteNodeID = tNodeID;
+      tNodeID = AL_Dpb_GetNextPOC(pDpb, tNodeID);
 
-      AL_Dpb_Remove(pDpb, uDelete);
+      AL_Dpb_Remove(pDpb, tDeleteNodeID);
     }
     else
-      uNode = AL_Dpb_GetNextPOC(pDpb, uNode);
+      tNodeID = AL_Dpb_GetNextPOC(pDpb, tNodeID);
   }
 
   // Compute DPB fullness
@@ -64,38 +58,38 @@ void AL_HEVC_PictMngr_ClearDPB(AL_TPictMngrCtx* pCtx, AL_THevcSps const* pSPS, b
   max_dec_pict_buffering = Min(max_dec_pict_buffering, AL_Dpb_GetNumRef(pDpb) + 1);
 
   // Remove Unused for reference if DBP is Full
-  uNode = AL_Dpb_GetHeadPOC(pDpb);
+  tNodeID = AL_Dpb_GetHeadPOC(pDpb);
 
-  while(uNode != uEndOfList && AL_Dpb_GetPicCount(pDpb) >= max_dec_pict_buffering)
+  while(IS_NODE_VALID(tNodeID) && AL_Dpb_GetPicCount(pDpb) >= max_dec_pict_buffering)
   {
-    if(AL_Dpb_GetOutputFlag(pDpb, uNode))
-      AL_Dpb_Display(&pCtx->DPB, uNode);
+    if(AL_Dpb_GetOutputFlag(pDpb, tNodeID))
+      AL_Dpb_Display(pDpb, tNodeID);
 
-    if(AL_Dpb_GetMarkingFlag(pDpb, uNode) == UNUSED_FOR_REF && pDpb->Nodes[uNode].iFramePOC < pDpb->iLastDisplayedPOC)
+    if(AL_Dpb_GetMarkingFlag(pDpb, tNodeID) == UNUSED_FOR_REF && pDpb->Nodes[tNodeID].iFramePOC < pDpb->iLastDisplayedPOC)
     {
-      uint8_t uDelete = uNode;
-      uNode = AL_Dpb_GetNextPOC(pDpb, uNode);
+      AL_TIndex tDeleteNodeID = tNodeID;
+      tNodeID = AL_Dpb_GetNextPOC(pDpb, tNodeID);
 
-      AL_Dpb_Remove(pDpb, uDelete);
+      AL_Dpb_Remove(pDpb, tDeleteNodeID);
     }
     else
-      uNode = AL_Dpb_GetNextPOC(pDpb, uNode);
+      tNodeID = AL_Dpb_GetNextPOC(pDpb, tNodeID);
   }
 
   // Remove oldest POC if DBP is Full
-  if(uNode == uEndOfList && AL_Dpb_GetPicCount(pDpb) >= max_dec_pict_buffering)
+  if(!IS_NODE_VALID(tNodeID) && AL_Dpb_GetPicCount(pDpb) >= max_dec_pict_buffering)
   {
-    uint8_t uDelete = AL_Dpb_GetHeadPOC(pDpb);
-    uint8_t uCurNode = uDelete;
+    AL_TIndex tDeleteNodeID = AL_Dpb_GetHeadPOC(pDpb);
+    AL_TIndex tCurNodeID = tDeleteNodeID;
 
-    while(uCurNode != uEndOfList)
+    while(IS_NODE_VALID(tCurNodeID))
     {
-      if(pDpb->Nodes[uCurNode].iFramePOC < pDpb->Nodes[uDelete].iFramePOC)
-        uDelete = uCurNode;
-      uCurNode = AL_Dpb_GetNextPOC(pDpb, uCurNode);
+      if(pDpb->Nodes[tCurNodeID].iFramePOC < pDpb->Nodes[tDeleteNodeID].iFramePOC)
+        tDeleteNodeID = tCurNodeID;
+      tCurNodeID = AL_Dpb_GetNextPOC(pDpb, tCurNodeID);
     }
 
-    AL_Dpb_Remove(pDpb, uDelete);
+    AL_Dpb_Remove(pDpb, tDeleteNodeID);
   }
 }
 
@@ -106,63 +100,69 @@ static bool IsShortOrLongTermRef(AL_EMarkingRef eMarking)
 }
 
 /*************************************************************************/
-bool AL_HEVC_PictMngr_HasPictInDPB(AL_TPictMngrCtx const* pCtx)
+bool AL_HEVC_Dpb_HasPictInDPB(AL_TDpb const* pDpb)
 {
-  AL_TDpb const* pDpb = &pCtx->DPB;
-  uint8_t uNode = AL_Dpb_GetHeadPOC(pDpb);
+  AL_TIndex tNodeID = AL_Dpb_GetHeadPOC(pDpb);
 
-  while(uNode != uEndOfList)
+  while(IS_NODE_VALID(tNodeID))
   {
-    if(IsShortOrLongTermRef(AL_Dpb_GetMarkingFlag(pDpb, uNode)))
+    if(IsShortOrLongTermRef(AL_Dpb_GetMarkingFlag(pDpb, tNodeID)))
       return true;
-    uNode = AL_Dpb_GetNextPOC(pDpb, uNode);
+    tNodeID = AL_Dpb_GetNextPOC(pDpb, tNodeID);
   }
 
   return false;
 }
 
 /*************************************************************************/
-void AL_HEVC_PictMngr_RemoveHeadFrame(AL_TPictMngrCtx* pCtx)
+void AL_HEVC_Dpb_RemoveHeadFrame(AL_TDpb* pDpb)
 {
-  AL_TDpb* pDpb = &pCtx->DPB;
-
   if(AL_Dpb_GetPicCount(pDpb) >= AL_Dpb_GetNumRef(pDpb))
     AL_Dpb_RemoveHead(pDpb);
 }
 
 /*************************************************************************/
-void AL_HEVC_PictMngr_EndFrame(AL_TPictMngrCtx* pCtx, uint32_t uPocLsb, AL_ENut eNUT, AL_THevcSliceHdr const* pSlice, uint8_t pic_output_flag)
+void AL_HEVC_PictMngr_EndFrame(AL_TPictMngrCtx* pCtx, uint32_t uPocLsb, AL_ENut eNUT, AL_THevcSliceHdr const* pSlice, bool bPicOutputFlag)
 {
-  AL_TDpb* pDpb = &pCtx->DPB;
+  AL_TDpb* pDpb = (AL_TDpb*)pCtx->pRefMngr;
 
-  AL_HEVC_PictMngr_RemoveHeadFrame(pCtx);
+  AL_HEVC_Dpb_RemoveHeadFrame(pDpb);
 
   // post decoding output process
-  uint8_t uNode = AL_Dpb_GetHeadPOC(pDpb);
+  AL_TIndex tNodeID = AL_Dpb_GetHeadPOC(pDpb);
 
-  if(pic_output_flag)
+  if(bPicOutputFlag)
   {
-    while(uNode != uEndOfList)
+    while(IS_NODE_VALID(tNodeID))
     {
-      AL_Dpb_IncrementPicLatency(pDpb, uNode, pCtx->iCurFramePOC);
-      uNode = AL_Dpb_GetNextPOC(pDpb, uNode);
+      AL_Dpb_IncrementPicLatency(pDpb, tNodeID);
+      tNodeID = AL_Dpb_GetNextPOC(pDpb, tNodeID);
     }
   }
 
-  AL_PictMngr_Insert(pCtx, pCtx->iCurFramePOC, AL_PS_FRM, uPocLsb, pCtx->uFrameID, pCtx->uMvID, pic_output_flag, SHORT_TERM_REF, 0, eNUT, 0);
+  AL_TDpbInsertParam tParam;
+  tParam.iFramePOC = pDpb->iCurFramePOC;
+  tParam.ePicStruct = AL_PS_FRM;
+  tParam.iPocLsb = uPocLsb;
+  tParam.bPicOutputFlag = bPicOutputFlag;
+  tParam.eMarkingFlag = SHORT_TERM_REF;
+  tParam.bNonExisting = 0;
+  tParam.eNUT = eNUT;
+  tParam.bSubpicFlag = 0;
+
+  AL_PictMngr_Insert(pCtx, pCtx->tFrameID, pCtx->tAnnexID, &tParam);
   AL_Dpb_HEVC_Cleanup(pDpb, pSlice->pSPS->SpsMaxLatency, pSlice->pSPS->sps_max_num_reorder_pics[pSlice->pSPS->sps_max_sub_layers_minus1]);
 }
 
 /*****************************************************************************
    \brief Prepares the reference picture set for the current slice reference picture list construction
-   \param[in]  pCtx       Pointer to a Picture manager context object
+   \param[in]  pDpb       Pointer to a DPB context object
    \param[in]  pSlice     Pointer to the slice header of the current slice
 *****************************************************************************/
-void AL_HEVC_PictMngr_InitRefPictSet(AL_TPictMngrCtx* pCtx, AL_THevcSliceHdr const* pSlice)
+void AL_HEVC_Dpb_InitRefPictSet(AL_TDpb* pDpb, AL_THevcSliceHdr const* pSlice)
 {
   uint8_t CurrDeltaPocMsbPresentFlag[16] = { 0 };
   uint8_t FollDeltaPocMsbPresentFlag[16] = { 0 };
-  AL_TDpb* pDpb = &pCtx->DPB;
 
   // Fill the five lists of picture order count values
   if(!AL_HEVC_IsIDR(pSlice->nal_unit_type))
@@ -176,17 +176,17 @@ void AL_HEVC_PictMngr_InitRefPictSet(AL_TPictMngrCtx* pCtx, AL_THevcSliceHdr con
     for(i = 0, j = 0, k = 0; i < pSPS->NumNegativePics[StRpsIdx]; ++i)
     {
       if(pSPS->UsedByCurrPicS0[StRpsIdx][i])
-        pCtx->HevcRef.PocStCurrBefore[j++] = pCtx->iCurFramePOC + pSPS->DeltaPocS0[StRpsIdx][i];
+        pDpb->HevcRef.PocStCurrBefore[j++] = pDpb->iCurFramePOC + pSPS->DeltaPocS0[StRpsIdx][i];
       else
-        pCtx->HevcRef.PocStFoll[k++] = pCtx->iCurFramePOC + pSPS->DeltaPocS0[StRpsIdx][i];
+        pDpb->HevcRef.PocStFoll[k++] = pDpb->iCurFramePOC + pSPS->DeltaPocS0[StRpsIdx][i];
     }
 
     for(i = 0, j = 0; i < pSPS->NumPositivePics[StRpsIdx]; ++i)
     {
       if(pSPS->UsedByCurrPicS1[StRpsIdx][i])
-        pCtx->HevcRef.PocStCurrAfter[j++] = pCtx->iCurFramePOC + pSPS->DeltaPocS1[StRpsIdx][i];
+        pDpb->HevcRef.PocStCurrAfter[j++] = pDpb->iCurFramePOC + pSPS->DeltaPocS1[StRpsIdx][i];
       else
-        pCtx->HevcRef.PocStFoll[k++] = pCtx->iCurFramePOC + pSPS->DeltaPocS1[StRpsIdx][i];
+        pDpb->HevcRef.PocStFoll[k++] = pDpb->iCurFramePOC + pSPS->DeltaPocS1[StRpsIdx][i];
     }
 
     // compute long term reference picture variables
@@ -195,16 +195,16 @@ void AL_HEVC_PictMngr_InitRefPictSet(AL_TPictMngrCtx* pCtx, AL_THevcSliceHdr con
       uint32_t uPocLt = pSlice->PocLsbLt[i];
 
       if(pSlice->delta_poc_msb_present_flag[i])
-        uPocLt += pCtx->iCurFramePOC - (pSlice->DeltaPocMSBCycleLt[i] * pSPS->MaxPicOrderCntLsb) - pSlice->slice_pic_order_cnt_lsb;
+        uPocLt += pDpb->iCurFramePOC - (pSlice->DeltaPocMSBCycleLt[i] * pSPS->MaxPicOrderCntLsb) - pSlice->slice_pic_order_cnt_lsb;
 
       if(pSlice->UsedByCurrPicLt[i])
       {
-        pCtx->HevcRef.PocLtCurr[j] = uPocLt;
+        pDpb->HevcRef.PocLtCurr[j] = uPocLt;
         CurrDeltaPocMsbPresentFlag[j++] = pSlice->delta_poc_msb_present_flag[i];
       }
       else
       {
-        pCtx->HevcRef.PocLtFoll[k] = uPocLt;
+        pDpb->HevcRef.PocLtFoll[k] = uPocLt;
         FollDeltaPocMsbPresentFlag[k++] = pSlice->delta_poc_msb_present_flag[i];
       }
     }
@@ -213,35 +213,35 @@ void AL_HEVC_PictMngr_InitRefPictSet(AL_TPictMngrCtx* pCtx, AL_THevcSliceHdr con
   // Compute long term reference pictures
   for(int32_t i = 0; i < pSlice->NumPocLtCurr; ++i)
   {
-    uint8_t uPos;
+    AL_TIndex tNodeID;
 
     if(!CurrDeltaPocMsbPresentFlag[i])
-      uPos = AL_Dpb_SearchPocLsb(&pCtx->DPB, pCtx->HevcRef.PocLtCurr[i]);
+      tNodeID = AL_Dpb_SearchPocLsb(pDpb, pDpb->HevcRef.PocLtCurr[i]);
     else
-      uPos = AL_Dpb_SearchPOC(&pCtx->DPB, pCtx->HevcRef.PocLtCurr[i]);
-    pCtx->HevcRef.RefPicSetLtCurr[i] = uPos;
+      tNodeID = AL_Dpb_SearchPOC(pDpb, pDpb->HevcRef.PocLtCurr[i]);
+    pDpb->HevcRef.RefPicSetLtCurr[i] = tNodeID;
   }
 
   for(int32_t i = 0; i < pSlice->NumPocLtFoll; ++i)
   {
-    uint8_t uPos;
+    AL_TIndex tNodeID;
 
     if(!FollDeltaPocMsbPresentFlag[i])
-      uPos = AL_Dpb_SearchPocLsb(&pCtx->DPB, pCtx->HevcRef.PocLtFoll[i]);
+      tNodeID = AL_Dpb_SearchPocLsb(pDpb, pDpb->HevcRef.PocLtFoll[i]);
     else
-      uPos = AL_Dpb_SearchPOC(&pCtx->DPB, pCtx->HevcRef.PocLtFoll[i]);
-    pCtx->HevcRef.RefPicSetLtFoll[i] = uPos;
+      tNodeID = AL_Dpb_SearchPOC(pDpb, pDpb->HevcRef.PocLtFoll[i]);
+    pDpb->HevcRef.RefPicSetLtFoll[i] = tNodeID;
   }
 
   // Compute short term reference pictures
   for(int32_t i = 0; i < pSlice->NumPocStCurrBefore; ++i)
-    pCtx->HevcRef.RefPicSetStCurrBefore[i] = AL_Dpb_SearchPOC(&pCtx->DPB, pCtx->HevcRef.PocStCurrBefore[i]);
+    pDpb->HevcRef.RefPicSetStCurrBefore[i] = AL_Dpb_SearchPOC(pDpb, pDpb->HevcRef.PocStCurrBefore[i]);
 
   for(int32_t i = 0; i < pSlice->NumPocStCurrAfter; ++i)
-    pCtx->HevcRef.RefPicSetStCurrAfter[i] = AL_Dpb_SearchPOC(&pCtx->DPB, pCtx->HevcRef.PocStCurrAfter[i]);
+    pDpb->HevcRef.RefPicSetStCurrAfter[i] = AL_Dpb_SearchPOC(pDpb, pDpb->HevcRef.PocStCurrAfter[i]);
 
   for(int32_t i = 0; i < pSlice->NumPocStFoll; ++i)
-    pCtx->HevcRef.RefPicSetStFoll[i] = AL_Dpb_SearchPOC(&pCtx->DPB, pCtx->HevcRef.PocStFoll[i]);
+    pDpb->HevcRef.RefPicSetStFoll[i] = AL_Dpb_SearchPOC(pDpb, pDpb->HevcRef.PocStFoll[i]);
 
   int32_t iNumRefAfterUpdate = pSlice->NumPocLtCurr
                                + pSlice->NumPocLtFoll
@@ -254,64 +254,64 @@ void AL_HEVC_PictMngr_InitRefPictSet(AL_TPictMngrCtx* pCtx, AL_THevcSliceHdr con
     return;
 
   // reset picture marking on all the picture in the dbp
-  uint8_t uNode = AL_Dpb_GetHeadPOC(&pCtx->DPB);
+  AL_TIndex tNodeID = AL_Dpb_GetHeadPOC(pDpb);
 
-  while(uNode != uEndOfList)
+  while(IS_NODE_VALID(tNodeID))
   {
-    AL_Dpb_SetMarkingFlag(pDpb, uNode, UNUSED_FOR_REF);
-    uNode = AL_Dpb_GetNextPOC(pDpb, uNode);
+    AL_Dpb_SetMarkingFlag(pDpb, tNodeID, UNUSED_FOR_REF);
+    tNodeID = AL_Dpb_GetNextPOC(pDpb, tNodeID);
   }
 
   // mark long term reference pictures
   for(int32_t i = 0; i < pSlice->NumPocLtCurr; ++i)
   {
-    uNode = pCtx->HevcRef.RefPicSetLtCurr[i];
+    tNodeID = pDpb->HevcRef.RefPicSetLtCurr[i];
 
-    if(uNode != uEndOfList)
-      AL_Dpb_SetMarkingFlag(pDpb, uNode, LONG_TERM_REF);
+    if(IS_NODE_VALID(tNodeID))
+      AL_Dpb_SetMarkingFlag(pDpb, tNodeID, LONG_TERM_REF);
   }
 
   for(int32_t i = 0; i < pSlice->NumPocLtFoll; ++i)
   {
-    uNode = pCtx->HevcRef.RefPicSetLtFoll[i];
+    tNodeID = pDpb->HevcRef.RefPicSetLtFoll[i];
 
-    if(uNode != uEndOfList)
-      AL_Dpb_SetMarkingFlag(pDpb, uNode, LONG_TERM_REF);
+    if(IS_NODE_VALID(tNodeID))
+      AL_Dpb_SetMarkingFlag(pDpb, tNodeID, LONG_TERM_REF);
   }
 
   // mark short term reference pictures
   for(int32_t i = 0; i < pSlice->NumPocStCurrBefore; ++i)
   {
-    uNode = pCtx->HevcRef.RefPicSetStCurrBefore[i];
+    tNodeID = pDpb->HevcRef.RefPicSetStCurrBefore[i];
 
-    if(uNode != uEndOfList)
-      AL_Dpb_SetMarkingFlag(pDpb, uNode, SHORT_TERM_REF);
+    if(IS_NODE_VALID(tNodeID))
+      AL_Dpb_SetMarkingFlag(pDpb, tNodeID, SHORT_TERM_REF);
   }
 
   for(int32_t i = 0; i < pSlice->NumPocStCurrAfter; ++i)
   {
-    uNode = pCtx->HevcRef.RefPicSetStCurrAfter[i];
+    tNodeID = pDpb->HevcRef.RefPicSetStCurrAfter[i];
 
-    if(uNode != uEndOfList)
-      AL_Dpb_SetMarkingFlag(pDpb, uNode, SHORT_TERM_REF);
+    if(IS_NODE_VALID(tNodeID))
+      AL_Dpb_SetMarkingFlag(pDpb, tNodeID, SHORT_TERM_REF);
   }
 
   for(int32_t i = 0; i < pSlice->NumPocStFoll; ++i)
   {
-    uNode = pCtx->HevcRef.RefPicSetStFoll[i];
+    tNodeID = pDpb->HevcRef.RefPicSetStFoll[i];
 
-    if(uNode != uEndOfList)
-      AL_Dpb_SetMarkingFlag(pDpb, uNode, SHORT_TERM_REF);
+    if(IS_NODE_VALID(tNodeID))
+      AL_Dpb_SetMarkingFlag(pDpb, tNodeID, SHORT_TERM_REF);
   }
 }
 
 /*****************************************************************************
    \brief Builds the reference picture list of the current slice
-   \param[in]  pCtx     Pointer to a Picture manager context object
+   \param[in]  pDpb     Pointer to a Dpb context object
    \param[in]  pSlice   Pointer to the slice header of the current slice
    \param[out] pListRef Pointer to the current reference list
 *****************************************************************************/
-bool AL_HEVC_PictMngr_BuildPictureList(AL_TPictMngrCtx* pCtx, AL_THevcSliceHdr const* pSlice, TBufferListRef* pListRef)
+bool AL_HEVC_Dpb_BuildPictureList(AL_TDpb* pDpb, AL_THevcSliceHdr const* pSlice, TBufferListRef* pListRef)
 {
   uint8_t uRef;
   uint8_t pNumRef[2] =
@@ -321,15 +321,15 @@ bool AL_HEVC_PictMngr_BuildPictureList(AL_TPictMngrCtx* pCtx, AL_THevcSliceHdr c
   uint8_t NumPocTotalCurr = pSlice->NumPocTotalCurr;
 
   // reset reference picture list
-  for(uRef = 0; uRef < MAX_REF; ++uRef)
+  for(uRef = 0; uRef < AL_MAX_REF; ++uRef)
   {
-    (*pListRef)[0][uRef].uNodeID = uEndOfList;
-    (*pListRef)[1][uRef].uNodeID = uEndOfList;
+    (*pListRef)[0][uRef].tNodeID = AL_BAD_INDEX;
+    (*pListRef)[1][uRef].tNodeID = AL_BAD_INDEX;
   }
 
   if(pSlice->slice_type != AL_SLICE_I)
   {
-    uint8_t uNodeList[16];
+    AL_TIndex tNodeList[16];
     uint8_t NumRpsCurrTempList = (NumPocTotalCurr > pSlice->num_ref_idx_l0_active_minus1 + 1) ? NumPocTotalCurr : pSlice->num_ref_idx_l0_active_minus1 + 1;
     // slice P
     uRef = 0;
@@ -339,28 +339,27 @@ bool AL_HEVC_PictMngr_BuildPictureList(AL_TPictMngrCtx* pCtx, AL_THevcSliceHdr c
       while(uRef < NumRpsCurrTempList)
       {
         for(uint8_t i = 0; i < pSlice->NumPocStCurrBefore && uRef < NumRpsCurrTempList; ++uRef, ++i)
-          uNodeList[uRef] = pCtx->HevcRef.RefPicSetStCurrBefore[i];
+          tNodeList[uRef] = pDpb->HevcRef.RefPicSetStCurrBefore[i];
 
         for(uint8_t i = 0; i < pSlice->NumPocStCurrAfter && uRef < NumRpsCurrTempList; ++uRef, ++i)
-          uNodeList[uRef] = pCtx->HevcRef.RefPicSetStCurrAfter[i];
+          tNodeList[uRef] = pDpb->HevcRef.RefPicSetStCurrAfter[i];
 
         for(uint8_t i = 0; i < pSlice->NumPocLtCurr && uRef < NumRpsCurrTempList; ++uRef, ++i)
-          uNodeList[uRef] = pCtx->HevcRef.RefPicSetLtCurr[i];
+          tNodeList[uRef] = pDpb->HevcRef.RefPicSetLtCurr[i];
       }
 
       for(uRef = 0; uRef <= pSlice->num_ref_idx_l0_active_minus1; ++uRef)
       {
-        uint8_t uNode = pSlice->ref_pic_modif.ref_pic_list_modification_flag_l0 ? uNodeList[pSlice->ref_pic_modif.list_entry_l0[uRef]] :
-                        uNodeList[uRef];
+        AL_TIndex tNodeID = pSlice->ref_pic_modif.ref_pic_list_modification_flag_l0 ? tNodeList[pSlice->ref_pic_modif.list_entry_l0[uRef]] :
+                            tNodeList[uRef];
 
-        if((uNode == uEndOfList) || (pCtx->DPB.Nodes[uNode].uFrmID == UndefID))
-          uNode = AL_Dpb_GetHeadPOC(&pCtx->DPB);
+        if((!IS_NODE_VALID(tNodeID)) || (pDpb->Nodes[tNodeID].tFrameID == AL_BAD_INDEX))
+          tNodeID = AL_Dpb_GetHeadPOC(pDpb);
 
-        if((uNode == uEndOfList) || (pCtx->DPB.Nodes[uNode].uFrmID == UndefID))
+        if((!IS_NODE_VALID(tNodeID)) || (pDpb->Nodes[tNodeID].tFrameID == AL_BAD_INDEX))
           return false;
 
-        (*pListRef)[0][uRef].uNodeID = uNode;
-        (*pListRef)[0][uRef].RefBuf = *(AL_PictMngr_GetRecBufferFromID(pCtx, pCtx->DPB.Nodes[uNode].uFrmID));
+        (*pListRef)[0][uRef].tNodeID = tNodeID;
       }
     }
 
@@ -375,28 +374,27 @@ bool AL_HEVC_PictMngr_BuildPictureList(AL_TPictMngrCtx* pCtx, AL_THevcSliceHdr c
         while(uRef < NumRpsCurrTempList)
         {
           for(uint8_t i = 0; i < pSlice->NumPocStCurrAfter && uRef < NumRpsCurrTempList; ++uRef, ++i)
-            uNodeList[uRef] = pCtx->HevcRef.RefPicSetStCurrAfter[i];
+            tNodeList[uRef] = pDpb->HevcRef.RefPicSetStCurrAfter[i];
 
           for(uint8_t i = 0; i < pSlice->NumPocStCurrBefore && uRef < NumRpsCurrTempList; ++uRef, ++i)
-            uNodeList[uRef] = pCtx->HevcRef.RefPicSetStCurrBefore[i];
+            tNodeList[uRef] = pDpb->HevcRef.RefPicSetStCurrBefore[i];
 
           for(uint8_t i = 0; i < pSlice->NumPocLtCurr && uRef < NumRpsCurrTempList; ++uRef, ++i)
-            uNodeList[uRef] = pCtx->HevcRef.RefPicSetLtCurr[i];
+            tNodeList[uRef] = pDpb->HevcRef.RefPicSetLtCurr[i];
         }
 
         for(uRef = 0; uRef <= pSlice->num_ref_idx_l1_active_minus1; ++uRef)
         {
-          uint8_t uNode = pSlice->ref_pic_modif.ref_pic_list_modification_flag_l1 ? uNodeList[pSlice->ref_pic_modif.list_entry_l1[uRef]] :
-                          uNodeList[uRef];
+          AL_TIndex tNodeID = pSlice->ref_pic_modif.ref_pic_list_modification_flag_l1 ? tNodeList[pSlice->ref_pic_modif.list_entry_l1[uRef]] :
+                              tNodeList[uRef];
 
-          if((uNode == uEndOfList) || (pCtx->DPB.Nodes[uNode].uFrmID == UndefID))
-            uNode = AL_Dpb_GetHeadPOC(&pCtx->DPB);
+          if((!IS_NODE_VALID(tNodeID)) || (pDpb->Nodes[tNodeID].tFrameID == AL_BAD_INDEX))
+            tNodeID = AL_Dpb_GetHeadPOC(pDpb);
 
-          if((uNode == uEndOfList) || (pCtx->DPB.Nodes[uNode].uFrmID == UndefID))
+          if((!IS_NODE_VALID(tNodeID)) || (pDpb->Nodes[tNodeID].tFrameID == AL_BAD_INDEX))
             return false;
 
-          (*pListRef)[1][uRef].uNodeID = uNode;
-          (*pListRef)[1][uRef].RefBuf = *(AL_PictMngr_GetRecBufferFromID(pCtx, pCtx->DPB.Nodes[uNode].uFrmID));
+          (*pListRef)[1][uRef].tNodeID = tNodeID;
         }
       }
     }
@@ -404,10 +402,10 @@ bool AL_HEVC_PictMngr_BuildPictureList(AL_TPictMngrCtx* pCtx, AL_THevcSliceHdr c
 
   for(uint8_t i = 0; i < 16; ++i)
   {
-    if((*pListRef)[0][i].uNodeID != uEndOfList)
+    if(IS_NODE_VALID((*pListRef)[0][i].tNodeID))
       pNumRef[0]++;
 
-    if((*pListRef)[1][i].uNodeID != uEndOfList)
+    if(IS_NODE_VALID((*pListRef)[1][i].tNodeID))
       pNumRef[1]++;
   }
 

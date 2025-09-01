@@ -21,6 +21,7 @@ typedef struct AL_IDecArchVtable
   bool (* DecoderPushStreamBuffer)(AL_HDecoder hDec, AL_TBuffer* pBuf, size_t uSize, uint8_t uFlags);
   bool (* DecoderPushBuffer)(AL_HDecoder hDec, AL_TBuffer* pBuf, size_t uSize);
   void (* DecoderFlush)(AL_HDecoder hDec);
+  void (* DecoderForceStop)(AL_HDecoder hDec);
   bool (* DecoderPutDisplayPicture)(AL_HDecoder hDec, AL_TBuffer* pDisplay);
   AL_ECodec (* DecoderGetCodec)(AL_HDecoder hDec);
   int32_t (* DecoderGetMaxBD)(AL_HDecoder hDec);

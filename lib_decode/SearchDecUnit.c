@@ -4,6 +4,7 @@
 #include "SearchDecUnit.h"
 #include "lib_common/Nuts.h"
 #include "lib_common/SEI.h"
+#include "lib_common/Utils.h"
 #include "lib_common/AvcUtils.h"
 #include "lib_common/HevcUtils.h"
 #include "lib_rtos/lib_rtos.h"
@@ -156,7 +157,7 @@ static bool checkSeiUUID(uint8_t const* pBufs, AL_TNal const* pNal, AL_ECodec eC
 
   if(eCodec == AL_CODEC_AVC)
     iStart = 6;
-  int32_t const iSize = sizeof(SEI_PREFIX_USER_DATA_UNREGISTERED_UUID) / sizeof(*SEI_PREFIX_USER_DATA_UNREGISTERED_UUID);
+  int32_t const iSize = ARRAY_SIZE(SEI_PREFIX_USER_DATA_UNREGISTERED_UUID);
 
   for(int32_t i = 0; i < iSize; i++)
   {
@@ -178,7 +179,7 @@ static int32_t getNumSliceInSei(uint8_t const* pBufs, AL_TNal* pNal, AL_ECodec e
 
   if(eCodec == AL_CODEC_AVC)
     iStart = 6;
-  int32_t const iSize = sizeof(SEI_PREFIX_USER_DATA_UNREGISTERED_UUID) / sizeof(*SEI_PREFIX_USER_DATA_UNREGISTERED_UUID);
+  int32_t const iSize = ARRAY_SIZE(SEI_PREFIX_USER_DATA_UNREGISTERED_UUID);
   int32_t iPosition = (pNal->tStartCode.uPosition + iStart + iSize) % iTotalSize;
   return pBufs[iPosition];
 }

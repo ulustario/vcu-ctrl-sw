@@ -4,6 +4,7 @@
 #include "lib_common_enc/QPTableInternal.h"
 #include "lib_common_enc/ParamConstraints.h"
 #include "lib_common/Utils.h"
+#include "lib_common/Round.h"
 #include "lib_common/Error.h"
 
 #define BLOCKSIZE_NO_CONSTRAINT 0
@@ -73,7 +74,7 @@ uint32_t AL_QPTable_GetFlexibleSize(AL_TDimension tDim, AL_ECodec eCodec, uint8_
 
   uint32_t uMaxSize = iMaxLCUs * uLCUSize;
 
-  return (uint32_t)(AL_QPTABLE_SEGMENTS_SIZE) + RoundUp(uMaxSize, 128);
+  return (uint32_t)(AL_QPTABLE_SEGMENTS_SIZE) + AL_RoundUp(uMaxSize, 128);
 }
 
 /****************************************************************************/

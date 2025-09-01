@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
-#include "lib_app/WrapLogger.h"
+#include "lib_app/WrapLogger.hpp"
 
 Logger::Logger(const std::string& outputFile, AL_ITimer* timer) :
   outputFile{outputFile}

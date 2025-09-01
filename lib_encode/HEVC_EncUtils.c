@@ -6,6 +6,7 @@
 #include "EncHwScalingList.h"
 #include "lib_common/SyntaxConversion.h"
 #include "lib_common/Utils.h"
+#include "lib_common/Round.h"
 #include "lib_common_enc/EncBuffersInternal.h"
 #include "lib_common_enc/Itu_Utils.h"
 
@@ -247,8 +248,8 @@ void AL_HEVC_GenerateSPS_Format(AL_THevcSps* pSPS, AL_EChromaMode eChromaMode, u
   }
   pSPS->chroma_format_idc = eChromaMode;
   pSPS->separate_colour_plane_flag = 0;
-  pSPS->pic_width_in_luma_samples = RoundUp(uWidth, 8);
-  pSPS->pic_height_in_luma_samples = RoundUp(uHeight, 8);
+  pSPS->pic_width_in_luma_samples = AL_RoundUp(uWidth, 8);
+  pSPS->pic_height_in_luma_samples = AL_RoundUp(uHeight, 8);
 
   int32_t iCropLeft = 0;
   int32_t iCropTop = 0;

@@ -71,4 +71,3 @@ void AL_LookAheadMetaData_Reset(AL_TLookAheadMetaData* pMeta)
   for(int8_t i = 0; i < 5; i++)
     pMeta->iPercentIntra[i] = -1;
 }
-

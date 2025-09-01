@@ -6,6 +6,9 @@
 #include "lib_common_dec/StreamSettings.h"
 #include <stdbool.h>
 
+#define AL_REF_MNGR_CONCEAL_BUF 1
+#define AL_REF_MNGR_REC_BUF 1
+
 /******************************************************************************/
 int32_t AL_AVC_GetMaxDpbBuffers(AL_TStreamSettings const* pCurrentStreamSettings, int32_t iSPSMaxRefFrames);
 

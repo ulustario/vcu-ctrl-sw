@@ -28,6 +28,7 @@ extern "C" {
 #include "lib_common/BufferSeiMeta.h"
 #include "lib_common/DisplayInfoMeta.h"
 #include "lib_common/Error.h"
+#include "lib_common/Round.h"
 #include "lib_common/PixMapBuffer.h"
 #include "lib_common/StreamBuffer.h"
 #include "lib_common_dec/DecBuffers.h"
@@ -37,29 +38,29 @@ extern "C" {
 #include "lib_common_dec/HDRMeta.h"
 #include "lib_common/BufferPictureDecMeta.h"
 }
-#include "lib_app/BufPool.h"
-#include "lib_app/MD5.h"
-#include "lib_app/PixMapBufPool.h"
-#include "lib_app/SinkFilter.h"
-#include "lib_app/SinkCrop.h"
-#include "lib_app/SinkCrcDump.h"
-#include "lib_app/SinkFrame.h"
-#include "lib_app/SinkYuvMd5.h"
-#include "lib_app/UnCompFrameReader.h"
-#include "lib_app/YuvIO.h"
-#include "lib_app/console.h"
-#include "lib_app/convert.h"
-#include "lib_app/plateform.h"
-#include "lib_app/timing.h"
-#include "lib_app/utils.h"
+#include "lib_app/BufPool.hpp"
+#include "lib_app/MD5.hpp"
+#include "lib_app/PixMapBufPool.hpp"
+#include "lib_app/SinkFilter.hpp"
+#include "lib_app/SinkCrop.hpp"
+#include "lib_app/SinkCrcDump.hpp"
+#include "lib_app/SinkFrame.hpp"
+#include "lib_app/SinkYuvMd5.hpp"
+#include "lib_app/UnCompFrameReader.hpp"
+#include "lib_app/YuvIO.hpp"
+#include "lib_app/console.hpp"
+#include "lib_app/convert.hpp"
+#include "lib_app/plateform.hpp"
+#include "lib_app/timing.hpp"
+#include "lib_app/utils.hpp"
 #include <cassert>
 
-#include "CmdParser.h"
-#include "CodecUtils.h"
-#include "InputLoader.h"
-#include "IpDevice.h"
-#include "SinkYuvCrc.h"
-#include "HDRWriter.h"
+#include "CmdParser.hpp"
+#include "CodecUtils.hpp"
+#include "InputLoader.hpp"
+#include "IpDevice.hpp"
+#include "SinkYuvCrc.hpp"
+#include "HDRWriter.hpp"
 
 using namespace std;
 
@@ -448,6 +449,10 @@ static void ShowStreamInfo(int32_t BufferNumber, int32_t BufferSize, AL_TStreamS
   ss << "Profile: " << AL_GET_PROFILE_IDC(pStreamSettings->eProfile) << endl;
   int32_t iOutBitdepth = AL_GetBitDepth(tFourCC);
 
+  if(AL_IS_AVC(pStreamSettings->eProfile) && pStreamSettings->iLevel == 9)
+    ss << "Level: 1b" << endl;
+  else
+
   if(pStreamSettings->iLevel != -1)
     ss << "Level: " << pStreamSettings->iLevel << endl;
   ss << "Bitdepth: " << iOutBitdepth << endl;
@@ -566,6 +571,7 @@ private:
   bool bAddHDRMetaData = false;
 
   map<AL_TBuffer*, std::vector<AL_TSeiMetaData*>> displaySeis;
+  map<AL_ERR, int32_t> errorCounts;
   EDecErrorLevel eExitCondition = DEC_ERROR;
   AL_EVENT hExitMain = nullptr;
   mutex hDisplayMutex;
@@ -626,13 +632,6 @@ static AL_ERR sBaseResolutionFound(int32_t iBufferNumber, AL_TStreamSettings con
 }
 
 /******************************************************************************/
-/* duplicated from Utils.h as we can't take these from inside the libraries */
-static inline int32_t RoundUp(int32_t iVal, int32_t iRnd)
-{
-  return (iVal + iRnd - 1) / iRnd * iRnd;
-}
-
-/******************************************************************************/
 AL_TDimension DecoderContext::ComputeBaseDecoderFinalResolution(AL_TStreamSettings const* pStreamSettings)
 {
   AL_TDimension tOutputDim = pStreamSettings->tDim;
@@ -640,8 +639,8 @@ AL_TDimension DecoderContext::ComputeBaseDecoderFinalResolution(AL_TStreamSettin
   /* For pre-allocation, we must use 8x8 (HEVC) or MB (AVC) rounded dimensions, like the SPS. */
   /* Actually, round up to the LCU so we're able to support resolution changes with the same LCU sizes. */
   /* And because we don't know the codec here, always use 64 as MB/LCU size. */
-  tOutputDim.iWidth = RoundUp(tOutputDim.iWidth, 64);
-  tOutputDim.iHeight = RoundUp(tOutputDim.iHeight, 64);
+  tOutputDim.iWidth = static_cast<int32_t>(AL_RoundUp(tOutputDim.iWidth, 64));
+  tOutputDim.iHeight = static_cast<int32_t>(AL_RoundUp(tOutputDim.iHeight, 64));
 
   return tOutputDim;
 }
@@ -718,7 +717,9 @@ static void SetDecOutputSettings(AL_TDecOutputSettings& tUserOutputSettings, AL_
     tPicFormat.ePlaneMode = GetInternalBufPlaneMode(tPicFormat.eChromaMode);
 
   if(AL_COMPONENT_ORDER_MAX_ENUM == tPicFormat.eComponentOrder)
+  {
     tPicFormat.eComponentOrder = AL_COMPONENT_ORDER_YUV;
+  }
 
   tUserOutputSettings.tPicFormat.bCompressed = IsOutputStorageModeCompressed(tUserOutputSettings, tDecSettings.bFrameBufferCompression);
 
@@ -806,6 +807,9 @@ void DecoderContext::StoreSeiMetaData(AL_TBuffer* pParsedFrame, int32_t iParsing
 
   AL_TDecMetaHandle* pDecMetaHandle = (AL_TDecMetaHandle*)AL_HandleMetaData_GetHandle(pHandlesMeta, iParsingId);
 
+  if(pDecMetaHandle->eState == AL_DEC_HANDLE_STATE_CONCEALED)
+    return;
+
   if(pDecMetaHandle->eState == AL_DEC_HANDLE_STATE_PROCESSED)
   {
     AL_TBuffer* pStream = pDecMetaHandle->pHandle;
@@ -865,13 +869,15 @@ void DisplayManager::ProcessFrame(AL_TBuffer& tRecBuf, AL_TInfoDecode info, int3
   {
     AL_EPlaneMode ePlaneMode = AL_PLANE_MODE_PLANAR;
 
+    AL_EComponentOrder eConvCompOrder = AL_COMPONENT_ORDER_YUV;
+
     AL_TPicFormat tConvPicFormat = AL_TPicFormat {
       tRecPicFormat.eChromaMode,
       AL_ALPHA_MODE_DISABLED,
       static_cast<uint8_t>(iBdOut),
       AL_FB_RASTER,
       ePlaneMode,
-      AL_COMPONENT_ORDER_YUV,
+      eConvCompOrder,
       AL_SAMPLE_PACK_MODE_BYTE,
       false,
       tRecPicFormat.bMSB
@@ -1017,6 +1023,15 @@ void DecoderContext::CreateBaseDecoder(shared_ptr<I_IpDevice> device)
 /******************************************************************************/
 void DecoderContext::ManageError(AL_ERR eError)
 {
+  auto count = ++errorCounts[eError];
+
+  if(eError == AL_WARN_UNEXPECTED_SLICE_IN_INTRA_PROFILE && count == 1)
+  {
+    SetConsoleColor(CC_YELLOW);
+    cerr << " /!\\ Warning: " << AL_Codec_ErrorToString(eError) << endl;
+    SetConsoleColor(CC_DEFAULT);
+  }
+
   if(AL_IS_ERROR_CODE(eError) || eExitCondition == DEC_WARNING)
     Rtos_SetEvent(hExitMain);
 }
@@ -1073,7 +1088,9 @@ void DecoderContext::ReceiveFrameToDisplayFrom(DeviceType eDevice, AL_TBuffer* p
   bool bJobDone = bLastFrame;
 
   if(bJobDone)
+  {
     Rtos_SetEvent(hExitMain);
+  }
 }
 
 /******************************************************************************/

@@ -1,11 +1,11 @@
 // SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
-#include "IpDevice.h"
+#include "IpDevice.hpp"
 
 #include <stdexcept>
-#include "lib_app/AllocatorHelper.h"
-#include "lib_app/utils.h"
+#include "lib_app/AllocatorHelper.hpp"
+#include "lib_app/utils.hpp"
 #include <algorithm>
 
 extern "C"

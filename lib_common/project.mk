@@ -17,6 +17,8 @@ LIB_COMMON_SRC:=\
   lib_common/DisplayInfoMeta.c\
   lib_common/PicFormat.c\
   lib_common/StaticFifo.c\
+  lib_common/WorkPool.c\
+  lib_common/IntFifo.c\
 
 HAS_COLOR_SPACE_CONVERSION=0
 
@@ -50,11 +52,11 @@ ifneq ($(ENABLE_CODEC),0)
 
 
 
-ifneq ($(ENABLE_MULTIPASS_OR_LOOKAHEAD),0)
+ifneq ($(ENABLE_ENC_SW_MULTIPASS),0)
   LIB_COMMON_SRC+=lib_common/BufferLookAheadMeta.c
 endif
 
-ifneq ($(ENABLE_HIGH_DYNAMIC_RANGE),0)
+ifneq ($(ENABLE_SW_HIGH_DYNAMIC_RANGE),0)
   LIB_COMMON_SRC+=lib_common/HDR.c
 endif
 endif

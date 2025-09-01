@@ -59,5 +59,6 @@ static void AL_AVC_WriteWeightedPredCoeff(uint16_t uSliceIndex, AL_TAvcSliceHdr 
 /*****************************************************************************/
 void AL_AVC_InitHWSliceBuffers(uint16_t uSliceIndex, AL_TAvcSliceHdr const* pSlice, AL_TDecBuffers* pBufs)
 {
-  AL_AVC_WriteWeightedPredCoeff(uSliceIndex, pSlice, &pBufs->tWP);
+  if(pSlice->slice_type != AL_SLICE_I)
+    AL_AVC_WriteWeightedPredCoeff(uSliceIndex, pSlice, &pBufs->tWP);
 }

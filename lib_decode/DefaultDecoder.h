@@ -10,7 +10,7 @@
 #pragma once
 
 #include "lib_decode/lib_decode.h"
-#include "I_DecoderCtx.h"
+#include "DecoderCommon.h"
 #include "lib_common_dec/InternalError.h"
 #include "lib_common_dec/DecInfo.h"
 #include "lib_rtos/types.h"
@@ -19,15 +19,6 @@ typedef struct
 {
   AL_TDecCtx ctx;
 }AL_TDecoder;
-
-typedef struct
-{
-  int32_t iCompDataSize;
-  int32_t iCompMapSize;
-  int32_t iWPSize;
-  int32_t iSPSize;
-
-}AL_TDecoderPoolSizes;
 
 AL_ERR AL_CreateDefaultDecoder(AL_TDecoder** hDec, AL_IDecScheduler* pScheduler, AL_TAllocator* pAllocator, AL_TDecSettings* pSettings, AL_TDecCallBacks* pCB);
 
@@ -44,10 +35,10 @@ UNIT_ERROR AL_Default_Decoder_DecodeOneUnit(AL_TDecoder* pAbsDec, AL_TCircBuffer
 /*****************************************************************************
    \brief This function signal that a buffer as been fully parsed
    \param[in] pUserParam filled with the decoder context
-   \param[in] iFrameID frame id for the picture manager
+   \param[in] tFrameID frame id for the picture manager
    \param[in] iParsingID stream input id in the split input case.
 *****************************************************************************/
-void AL_Default_Decoder_EndParsing(void* pUserParam, int32_t iFrameID, int32_t iParsingID);
+void AL_Default_Decoder_EndParsing(void* pUserParam, AL_TIndex tFrameID, int32_t iParsingID);
 
 /*****************************************************************************
    \brief This function performs DPB operations after frames decoding
@@ -64,38 +55,6 @@ void AL_Default_Decoder_EndDecoding(void* pUserParam, AL_TDecPicStatus const* pS
    \param[in] pBufStream buffer containing input bitstream to decode
 *****************************************************************************/
 void AL_Default_Decoder_ReleaseStreamBuffer(void* pUserParam, AL_TBuffer* pBufStream);
-
-/*****************************************************************************
-   \brief This function allocate memory blocks usable by the decoder
-   \param[in]  pCtx decoder context
-   \param[out] pMD  Pointer to AL_TMemDesc structure that receives allocated
-                  memory information
-   \param[in] uSize Number of bytes to allocate
-   \param[in] name name of the buffer for debug purpose
-   \return If the function succeeds the return value is nonzero (true)
-         If the function fails the return value is zero (false)
-*****************************************************************************/
-bool AL_Default_Decoder_Alloc(AL_TDecCtx* pCtx, AL_TMemDesc* pMD, uint32_t uSize, char const* name);
-
-/*****************************************************************************
-   \brief This function allocate comp memory blocks used by the decoder
-   \param[in] pCtx decoder context
-   \param[in] pSizes Structure of buffer sizes
-   \return If the function succeeds the return value is nonzero (true)
-         If the function fails the return value is zero (false)
-*****************************************************************************/
-bool AL_Default_Decoder_AllocPool(AL_TDecCtx* pCtx, AL_TDecoderPoolSizes const* pSizes);
-
-/*****************************************************************************
-   \brief This function allocate comp memory blocks used by the decoder
-   \param[in] pCtx decoder context
-   \param[in] iMVSize Size of the motion vector data buffer
-   \param[in] iPOCSize Size of the poc buffer
-   \param[in] iNum Number of buffers
-   \return If the function succeeds the return value is nonzero (true)
-         If the function fails the return value is zero (false)
-*****************************************************************************/
-bool AL_Default_Decoder_AllocMv(AL_TDecCtx* pCtx, int32_t iMVSize, int32_t iPOCSize, int32_t iNum);
 
 /*****************************************************************************
    \brief This function sets an error
@@ -121,7 +80,7 @@ AL_EFbStorageMode AL_Default_Decoder_GetDisplayStorageMode(AL_TDecCtx const* pCt
 *****************************************************************************/
 bool AL_Default_Decoder_HasOngoingFrame(AL_TDecCtx* pCtx);
 
-bool AL_Default_Decoder_CreateChannel(AL_TDecCtx* pCtx, void (* pfnEndParsing)(void*, int32_t, int32_t), void (* pfnEndDecoding)(void*, AL_TDecPicStatus const*));
+bool AL_Default_Decoder_CreateChannel(AL_TDecCtx* pCtx, void (* pfnEndParsing)(void*, uint8_t, int32_t), void (* pfnEndDecoding)(void*, AL_TDecPicStatus const*));
 
 void AL_Default_Decoder_Destroy(AL_TDecoder* pAbsDec);
 void AL_Default_Decoder_SetParam(AL_TDecoder* pAbsDec, const char* sPrefix, int32_t iFrmID, int32_t iNumFrm, bool bShouldPrintFrameDelimiter);

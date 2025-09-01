@@ -5,9 +5,9 @@
 #include <string>
 #include <iomanip>
 
-#include "lib_app/SinkCrcDump.h"
-#include "lib_app/Sink.h"
-#include "lib_app/utils.h"
+#include "lib_app/SinkCrcDump.hpp"
+#include "lib_app/Sink.hpp"
+#include "lib_app/utils.hpp"
 
 extern "C"
 {

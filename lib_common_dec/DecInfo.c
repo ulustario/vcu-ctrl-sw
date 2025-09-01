@@ -29,8 +29,8 @@ int32_t AL_AVC_GetMaxDpbBuffers(AL_TStreamSettings const* pCurrentStreamSettings
 /******************************************************************************/
 int32_t AVC_GetMinOutputBuffersNeeded(int32_t iDpbMaxBuf, int32_t iStack, bool bDecodeIntraOnly)
 {
-  int32_t const iRecBuf = REC_BUF;
-  int32_t const iConcealBuf = CONCEAL_BUF;
+  int32_t const iRecBuf = AL_REF_MNGR_REC_BUF;
+  int32_t const iConcealBuf = AL_REF_MNGR_CONCEAL_BUF;
 
   if(bDecodeIntraOnly)
     return iDpbMaxBuf + iRecBuf;
@@ -58,7 +58,7 @@ int32_t AL_HEVC_GetMaxDpbBuffers(AL_TStreamSettings const* pCurrentStreamSetting
 int32_t HEVC_GetMinOutputBuffersNeeded(int32_t iDpbMaxBuf, int32_t iStack, bool bDecodeIntraOnly)
 {
   int32_t const iRecBuf = 0;
-  int32_t const iConcealBuf = CONCEAL_BUF;
+  int32_t const iConcealBuf = AL_REF_MNGR_CONCEAL_BUF;
 
   if(bDecodeIntraOnly)
     return 2 + iRecBuf;

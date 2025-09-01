@@ -1,8 +1,8 @@
 // SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
-#include "lib_app/BaseFrameWriter.h"
-#include "lib_app/CompFrameCommon.h"
+#include "lib_app/BaseFrameWriter.hpp"
+#include "lib_app/CompFrameCommon.hpp"
 
 extern "C"
 {
@@ -31,6 +31,7 @@ void BaseFrameWriter::FactorsCalculus(void)
 
   m_iChromaVertScale = m_tPicFormat.eChromaMode == AL_CHROMA_4_2_0 ? 2 : 1;
   m_iChromaHorzScale = m_tPicFormat.eChromaMode == AL_CHROMA_4_4_4 ? 1 : 2;
+
 }
 
 /****************************************************************************/

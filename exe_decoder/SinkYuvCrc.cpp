@@ -1,8 +1,8 @@
 // SPDX-FileCopyrightText: © 2025 Allegro DVT <github-ip@allegrodvt.com>
 // SPDX-License-Identifier: MIT
 
-#include "SinkYuvCrc.h"
-#include "lib_app/utils.h"
+#include "SinkYuvCrc.hpp"
+#include "lib_app/utils.hpp"
 
 extern "C"
 {

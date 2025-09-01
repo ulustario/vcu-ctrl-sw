@@ -7,8 +7,9 @@
 
 #include "EncUtils.h"
 #include "lib_common/Profiles.h"
-#include "lib_common_enc/SPS.h"
 #include "lib_common/Utils.h"
+#include "lib_common/Round.h"
+#include "lib_common_enc/SPS.h"
 #include "lib_common_enc/EncPicInfo.h"
 
 /****************************************************************************/
@@ -43,7 +44,7 @@ void AL_Reduction(uint32_t* pN, uint32_t* pD)
   {
     2, 3, 5, 7, 11, 13, 17, 19, 23
   };
-  const int32_t iNumPrime = sizeof(Prime) / sizeof(int);
+  const int32_t iNumPrime = ARRAY_SIZE(Prime);
 
   for(int32_t i = 0; i < iNumPrime; i++)
   {
@@ -95,7 +96,7 @@ void AL_UpdateSarAspectRatio(AL_TVuiParam* pVuiParam, uint32_t uWidth, uint32_t 
 void AL_UpdateAspectRatio(AL_TVuiParam* pVuiParam, uint32_t uWidth, uint32_t uHeight, AL_EAspectRatio eAspectRatio)
 {
   bool bAuto = (eAspectRatio == AL_ASPECT_RATIO_AUTO);
-  uint32_t uHeightRnd = RoundUp(uHeight, 16);
+  uint32_t uHeightRnd = AL_RoundUp(uHeight, 16);
 
   pVuiParam->aspect_ratio_info_present_flag = 0;
   pVuiParam->aspect_ratio_idc = 0;
@@ -245,8 +246,10 @@ static bool AreTemporalLevelsHandled(AL_TGopParam const* pGop, AL_ECodec eCodec,
 {
   (void)eCodec;
   (void)eVideoMode;
+  (void)pGop;
 
-  bool bTemporalLevelsHandled = (pGop->eMode & AL_GOP_FLAG_PYRAMIDAL) != 0;
+  bool bTemporalLevelsHandled = false;
+  bTemporalLevelsHandled = (pGop->eMode & AL_GOP_FLAG_PYRAMIDAL) != 0;
   bTemporalLevelsHandled |= pGop->uNumB != 0 && (pGop->eMode & AL_GOP_FLAG_DEFAULT);
   bTemporalLevelsHandled = bTemporalLevelsHandled &&
                            !(eCodec != AL_CODEC_AVC && eVideoMode != AL_VM_PROGRESSIVE);

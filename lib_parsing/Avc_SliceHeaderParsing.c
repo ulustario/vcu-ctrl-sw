@@ -222,25 +222,16 @@ static void ApplyAvcSPS(AL_TAvcSliceHdr* pSlice, AL_TAvcPps const* pPPS)
 /*****************************************************************************/
 static void setAvcSliceHeaderDefaultValues(AL_TAvcSliceHdr* pSlice)
 {
-  pSlice->field_pic_flag = 0;
-  pSlice->redundant_pic_cnt = 0;
-  pSlice->bottom_field_flag = 0;
-  pSlice->num_ref_idx_l0_active_minus1 = 0;
-  pSlice->num_ref_idx_l1_active_minus1 = 0;
-  pSlice->delta_pic_order_cnt_bottom = 0;
-  pSlice->disable_deblocking_filter_idc = 0;
-  pSlice->slice_alpha_c0_offset_div2 = 0;
-  pSlice->slice_beta_offset_div2 = 0;
-  pSlice->direct_spatial_mv_pred_flag = 0;
+  Rtos_Memset(pSlice, 0, sizeof(AL_TAvcSliceHdr));
 }
 
 /*****************************************************************************/
 AL_ERR AL_AVC_ParseSliceHeader(AL_TAvcSliceHdr* pSlice, AL_TRbspParser* pRP, AL_TConceal* pConceal, AL_TAvcPps pPPSTable[])
 {
+  setAvcSliceHeaderDefaultValues(pSlice);
+
   if(!pConceal->bHasPPS)
     return AL_WARN_CONCEAL_DETECT;
-
-  setAvcSliceHeaderDefaultValues(pSlice);
 
   skipAllZerosAndTheNextByte(pRP);
 

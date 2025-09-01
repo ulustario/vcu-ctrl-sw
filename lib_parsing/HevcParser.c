@@ -321,7 +321,7 @@ static bool AL_HEVC_sComputeRefPicSetVariables(AL_THevcSps* pSPS, uint8_t RpsIdx
 
       if(delta_poc < 0 && ref_pic_set.use_delta_flag[pSPS->NumNegativePics[RIdx] + j])
       {
-        if(num_negative >= MAX_REF)
+        if(num_negative >= AL_MAX_REF)
           return false;
 
         pSPS->DeltaPocS0[RpsIdx][num_negative] = delta_poc;
@@ -331,7 +331,7 @@ static bool AL_HEVC_sComputeRefPicSetVariables(AL_THevcSps* pSPS, uint8_t RpsIdx
 
     if(DeltaRPS < 0 && ref_pic_set.use_delta_flag[pSPS->NumDeltaPocs[RIdx]])
     {
-      if(num_negative >= MAX_REF)
+      if(num_negative >= AL_MAX_REF)
         return false;
 
       pSPS->DeltaPocS0[RpsIdx][num_negative] = DeltaRPS;
@@ -344,7 +344,7 @@ static bool AL_HEVC_sComputeRefPicSetVariables(AL_THevcSps* pSPS, uint8_t RpsIdx
 
       if(delta_poc < 0 && ref_pic_set.use_delta_flag[j])
       {
-        if(num_negative >= MAX_REF)
+        if(num_negative >= AL_MAX_REF)
           return false;
 
         pSPS->DeltaPocS0[RpsIdx][num_negative] = delta_poc;
@@ -361,7 +361,7 @@ static bool AL_HEVC_sComputeRefPicSetVariables(AL_THevcSps* pSPS, uint8_t RpsIdx
 
       if(delta_poc > 0 && ref_pic_set.use_delta_flag[j])
       {
-        if(num_negative >= MAX_REF)
+        if(num_negative >= AL_MAX_REF)
           return false;
 
         pSPS->DeltaPocS1[RpsIdx][num_positive] = delta_poc;
@@ -371,7 +371,7 @@ static bool AL_HEVC_sComputeRefPicSetVariables(AL_THevcSps* pSPS, uint8_t RpsIdx
 
     if(DeltaRPS > 0 && ref_pic_set.use_delta_flag[pSPS->NumDeltaPocs[RIdx]])
     {
-      if(num_negative >= MAX_REF)
+      if(num_negative >= AL_MAX_REF)
         return false;
 
       pSPS->DeltaPocS1[RpsIdx][num_positive] = DeltaRPS;
@@ -384,7 +384,7 @@ static bool AL_HEVC_sComputeRefPicSetVariables(AL_THevcSps* pSPS, uint8_t RpsIdx
 
       if(delta_poc > 0 && ref_pic_set.use_delta_flag[pSPS->NumNegativePics[RIdx] + j])
       {
-        if(num_negative >= MAX_REF)
+        if(num_negative >= AL_MAX_REF)
           return false;
 
         pSPS->DeltaPocS1[RpsIdx][num_positive] = delta_poc;
@@ -505,14 +505,14 @@ static void hevc_profile_tier_level(AL_THevcProfilevel* pPrfLvl, int32_t iMaxSub
 
   for(int32_t i = 0; i < iMaxSubLayersMinus1; i++)
   {
-    Rtos_Assert(iMaxSubLayersMinus1 <= MAX_SUB_LAYER);
+    Rtos_Assert(iMaxSubLayersMinus1 <= AL_MAX_SUB_LAYER);
     pPrfLvl->sub_layer_profile_present_flag[i] = u(pRP, 1);
     pPrfLvl->sub_layer_level_present_flag[i] = u(pRP, 1);
   }
 
   if(iMaxSubLayersMinus1 > 0)
   {
-    for(int32_t i = iMaxSubLayersMinus1; i <= MAX_SUB_LAYER; i++)
+    for(int32_t i = iMaxSubLayersMinus1; i <= AL_MAX_SUB_LAYER; i++)
       skip(pRP, 2); // reserved_zero_2_bits
   }
 
@@ -817,7 +817,7 @@ AL_PARSE_RESULT AL_HEVC_ParseSPS(AL_TRbspParser* pRP, AL_THevcSps* pSPS)
   pSPS->sps_video_parameter_set_id = u(pRP, 4);
   COMPLY_ID(pSPS->sps_video_parameter_set_id < AL_HEVC_MAX_VPS);
 
-  int32_t max_sub_layers = Clip3(u(pRP, 3), 0, MAX_SUB_LAYER - 1);
+  int32_t max_sub_layers = Clip3(u(pRP, 3), 0, AL_MAX_SUB_LAYER - 1);
   pSPS->sps_max_sub_layers_minus1 = max_sub_layers;
   pSPS->sps_temporal_id_nesting_flag = u(pRP, 1);
 
@@ -1092,12 +1092,12 @@ bool AL_HEVC_short_term_ref_pic_set(AL_THevcSps* pSPS, uint8_t RpsIdx, AL_TRbspP
   {
     pRefPicSet->num_negative_pics = ue(pRP);
 
-    if(pRefPicSet->num_negative_pics > MAX_REF)
+    if(pRefPicSet->num_negative_pics > AL_MAX_REF)
       return false;
 
     pRefPicSet->num_positive_pics = ue(pRP);
 
-    if(pRefPicSet->num_negative_pics > MAX_REF)
+    if(pRefPicSet->num_negative_pics > AL_MAX_REF)
       return false;
 
     for(uint8_t j = 0; j < pRefPicSet->num_negative_pics; ++j)

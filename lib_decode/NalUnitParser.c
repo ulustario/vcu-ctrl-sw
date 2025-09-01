@@ -9,7 +9,7 @@
 
 #include "I_DecoderCtx.h"
 
-#include "lib_common/Utils.h"
+#include "lib_common/Round.h"
 #include "lib_common/BufferSeiMeta.h"
 
 #include "lib_common_dec/RbspParser.h"
@@ -105,7 +105,7 @@ static void InitNonVclBuf(AL_TDecCtx* pCtx)
 {
   // The anti emulation works on chunks of ANTI_EMUL_GRANULARITY size so we need
   // the size to be aligned to that granularity.
-  uint32_t uLengthNAL = RoundUp(GetNonVclSize(&pCtx->Stream), ANTI_EMUL_GRANULARITY);
+  uint32_t uLengthNAL = AL_RoundUp(GetNonVclSize(&pCtx->Stream), ANTI_EMUL_GRANULARITY);
 
   if(uLengthNAL > pCtx->BufNoAE.tMD.uSize) /* should occurs only on long SEI message */
   {

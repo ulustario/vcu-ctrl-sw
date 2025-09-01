@@ -6,6 +6,7 @@
 #include "lib_rtos/types.h"
 #include "lib_common/BufCommonInternal.h"
 #include "lib_common/SliceConsts.h"
+#include "lib_common_dec/Types.h"
 
 /*****************************************************************************/
 #define AL_DEC_OPT_EnableSclLst 0x00000001
@@ -37,16 +38,18 @@
 #define AL_SET_DEC_OPT(pPictParam, Opt, Val) (pPictParam)->uOptionFlags = (((pPictParam)->uOptionFlags & ~(AL_DEC_OPT_ ## Opt)) | (((Val) * (AL_DEC_OPT_ ## Opt)) & (AL_DEC_OPT_ ## Opt)))
 #define AL_GET_DEC_OPT(pPictParam, Opt) ((pPictParam)->uOptionFlags & (AL_DEC_OPT_ ## Opt))
 
+#define MAX_PLANES 3
+
 /****************************************************************************/
 typedef struct AL_TDecBufIDs
 {
-  uint8_t FrmID;
-  uint8_t MvID;
+  AL_TIndex tFrmID;
+  AL_TIndex tMvID;
 }AL_TDecBufIDs;
 
 static const AL_TDecBufIDs tEmptyBufIDs =
 {
-  0xFF, 0xFF,
+  AL_BAD_INDEX, AL_BAD_INDEX,
 };
 
 /*****************************************************************************
@@ -74,7 +77,7 @@ typedef struct AL_TDecPictParam
   uint8_t uChromaQpOffsetDepth;
   uint8_t uQpOffLstSize;
   uint8_t uParallelMerge;
-  uint8_t uColocPicID;
+  AL_TIndex tColocPicID;
 
   int8_t iPicCbQpOffset;
   int8_t iPicCrQpOffset;

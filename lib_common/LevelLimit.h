@@ -7,7 +7,7 @@
 /*************************************************************************/
 typedef struct AL_TLevelLimit
 {
-  uint64_t uLimit;
+  AL_64U uLimit;
   uint8_t uLevel;
 }AL_TLevelLimit;
 
