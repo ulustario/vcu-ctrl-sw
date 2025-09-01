@@ -208,9 +208,11 @@ install_headers:
 	@echo $(HEADER_DIRS)
 	for dirname in $(HEADER_DIRS); do \
 		$(INSTALL) -d "$(INCLUDE_DIR)/$$dirname" "$(INSTALL_HDR_PATH)/$$dirname"; \
-		$(INSTALL) $(HDR_INSTALL_OPT) "$(INCLUDE_DIR)/$$dirname"/*.h "$(INSTALL_HDR_PATH)/$$dirname"; \
+		$(INSTALL) $(HDR_INSTALL_OPT) "$(INCLUDE_DIR)/$$dirname"/*.h "$(INSTALL_HDR_PATH)/$$dirname" || true; \
+                $(INSTALL) $(HDR_INSTALL_OPT) "$(INCLUDE_DIR)/$$dirname"/*.hpp "$(INSTALL_HDR_PATH)/$$dirname" || true; \
 	done; \
-	$(INSTALL) $(HDR_INSTALL_OPT) "$(INCLUDE_DIR)"/*.h "$(INSTALL_HDR_PATH)/";
+	$(INSTALL) $(HDR_INSTALL_OPT) "$(INCLUDE_DIR)"/*.h "$(INSTALL_HDR_PATH)/" || true;
+	$(INSTALL) $(HDR_INSTALL_OPT) "$(INCLUDE_DIR)"/*.hpp "$(INSTALL_HDR_PATH)/" || true;
 	install -Dm 0755 bin/AL_Encoder.exe ${INSTALL_PATH}/ctrlsw_encoder
 	install -Dm 0755 bin/AL_Decoder.exe ${INSTALL_PATH}/ctrlsw_decoder
 
