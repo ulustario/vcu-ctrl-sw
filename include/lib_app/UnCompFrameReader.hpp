@@ -10,10 +10,10 @@ class UnCompFrameReader : public FrameReader
 {
 public:
   UnCompFrameReader(std::ifstream& File, AL_TYUVFileInfo& tFileInfo, bool bLoopFrames);
-  virtual bool ReadFrame(AL_TBuffer* pFrameBuffer);
+  virtual bool ReadFrame(AL_TBuffer* pFrameBuffer) override;
 
-  void SeekAbsolute(uint32_t uFrameIdx);
-  void SeekRelative(int32_t iFrameIdxDelta);
+  void SeekAbsolute(uint32_t uFrameIdx) override;
+  void SeekRelative(int32_t iFrameIdxDelta) override;
 
   void SetRndDim(uint32_t uRndDim) { m_uRndDim = uRndDim; };
 

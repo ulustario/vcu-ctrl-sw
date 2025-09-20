@@ -671,7 +671,7 @@ static bool AL_DecodeOneNal(AL_TAup* pAUP, AL_TDecCtx* pCtx, AL_ENut nut, uint32
 }
 
 /*****************************************************************************/
-static bool DecodeOneNAL(AL_TDecCtx* pCtx, AL_TNal* pNal, int32_t* pNumSlice, bool bIsLastVclNal)
+static bool DecodeOneNAL(AL_TDecCtx* pCtx, AL_TNal const* pNal, int32_t* pNumSlice, bool bIsLastVclNal)
 {
   if(pCtx->tCurrentFrameCtx.uNumSlice > 0 && *pNumSlice > pCtx->pChanParam->iMaxSlices)
     return false;
@@ -1011,15 +1011,18 @@ static UNIT_ERROR DecodeOneUnit(AL_TDecCtx* pCtx, AL_TCircBuffer* pStream, AL_TN
     AL_TStartCode CurrentStartCode = CurrentNal.tStartCode;
     AL_TStartCode NextStartCode;
 
-    if(iNal + 1 < AL_SearchDecUnit_GetCurrentNalCount(&pCtx->SearchCtx))
+    bool bNextStartCodeIsAvailable = (iNal + 1) < AL_SearchDecUnit_GetCurrentNalCount(&pCtx->SearchCtx);
+
+    if(bNextStartCodeIsAvailable)
     {
       NextStartCode = pNals[iNal + 1].tStartCode;
     }
-    else /* if we didn't wait for the next start code to arrive to decode the current NAL */
+    else
     {
       /* If there isn't a next start code, we take the end of the data processed
        * by the start code detector */
       NextStartCode.uPosition = StartCodeDataEnd;
+
     }
 
     pCtx->Stream.iOffset = CurrentStartCode.uPosition;
@@ -1692,11 +1695,6 @@ static AL_TFeeder* CreateFeeder(AL_TDecoder const* pDec, AL_TDecSettings* pSetti
     bool bForceAccessUnitDestroy = true;
 
     return AL_UnsplitBufferFeeder_Create((AL_HDecoder)pDec, iInputFifoSize, pAllocator, iBufferStreamSize, pCtx->eosBuffer, bForceAccessUnitDestroy);
-  }
-
-  case AL_DEC_SINGLE_INPUT:
-  {
-    return AL_NullBufferFeeder_Create();
   }
 
   default:

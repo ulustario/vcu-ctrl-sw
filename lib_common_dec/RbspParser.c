@@ -401,7 +401,7 @@ void skipAllZerosAndTheNextByte(AL_TRbspParser* pRP)
 }
 
 /*************************************************************************/
-uint32_t offset(AL_TRbspParser* pRP)
+uint32_t offset(AL_TRbspParser const* pRP)
 {
   return pRP->iTotalBitIndex + pRP->iCurrentBitIndex;
 }

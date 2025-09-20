@@ -213,8 +213,8 @@ static uint8_t AL_sSettings_GetMinLevelAVC(AL_TEncChanParam const* pChParam)
   int32_t iMbCountPerFrame = iMbCountPerPic;
   int32_t iBrVclFactor = AL_sSettings_GetCpbVclFactor(pChParam->eProfile);
   int32_t iMaxBR = (pChParam->tRCParam.uMaxBitRate + (iBrVclFactor - 1)) / iBrVclFactor;
-  int32_t iMaxRefFrames = AL_DPBConstraint_GetMaxDPBSize(pChParam);
-  int32_t iDPBSize = iMaxRefFrames * iMbCountPerFrame;
+  int32_t iMaxDPBBuf = AL_DPBConstraint_GetMaxDPBSize(pChParam);
+  int32_t iDPBSize = iMaxDPBBuf * iMbCountPerFrame;
 
   uLevel = AL_AVC_GetLevelFromFrameSize(iMbCountPerFrame);
 

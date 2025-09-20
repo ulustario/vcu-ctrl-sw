@@ -146,7 +146,7 @@ void skipAllZerosAndTheNextByte(AL_TRbspParser* pRP);
    \brief The offset function retrieves the current bit offset in the bitstream buffer
    \param[in] pRP      Pointer to NAL parser
 *****************************************************************************/
-uint32_t offset(AL_TRbspParser* pRP);
+uint32_t offset(AL_TRbspParser const* pRP);
 
 /*****************************************************************************
    \brief The following descriptors specify the parsing process of each syntax element

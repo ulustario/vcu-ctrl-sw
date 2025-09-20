@@ -191,7 +191,7 @@ static void AL_AVC_GenerateSPS_Resolution(AL_TAvcSps* pSPS, uint16_t uWidth, uin
 }
 
 /****************************************************************************/
-void AL_AVC_GenerateSPS(AL_TSps* pISPS, AL_TEncSettings const* pSettings, int32_t iMaxRef, int32_t iCpbSize)
+void AL_AVC_GenerateSPS(AL_TSps* pISPS, AL_TEncSettings const* pSettings, int32_t iMaxRef, int32_t iMaxBuffering, int32_t iMaxReordering, int32_t iCpbSize)
 {
   AL_TAvcSps* pSPS = (AL_TAvcSps*)pISPS;
   AL_TEncChanParam const* pChannel = &pSettings->tChParam[0];
@@ -368,8 +368,8 @@ void AL_AVC_GenerateSPS(AL_TSps* pISPS, AL_TEncSettings const* pSettings, int32_
   pSPS->vui_param.max_bits_per_min_cu_denom = 0; // called max_bits_per_mb_denom in AVC
   pSPS->vui_param.log2_max_mv_length_horizontal = ceil_log2(4 * AL_AVC_GetMaxMotionVectorWidth(pChannel->uLevel));
   pSPS->vui_param.log2_max_mv_length_vertical = ceil_log2(4 * AL_AVC_GetMaxMotionVectorHeight(pChannel->uLevel));
-  pSPS->vui_param.max_num_reorder_frames = pChannel->tGopParam.uNumB;
-  pSPS->vui_param.max_dec_frame_buffering = iMaxRef;
+  pSPS->vui_param.max_num_reorder_frames = iMaxReordering;
+  pSPS->vui_param.max_dec_frame_buffering = iMaxBuffering;
 
   // MVC Extension
 }

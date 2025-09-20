@@ -13,10 +13,9 @@
 
 #include "lib_fpga/DmaAllocLinux.h"
 #include "lib_rtos/types.h"
+#include "lib_rtos/lib_rtos.h"
 #include "allegro_ioctl_reg.h"
 #include "DevicePool.h"
-
-#define LOG_ALLOCATION(p)
 
 struct DmaBuffer
 {
@@ -30,6 +29,8 @@ struct DmaBuffer
 };
 
 #define MAX_DEVICE_FILE_NAME 30
+
+#define LOG_ALLOCATION(p)
 
 struct LinuxDmaCtx
 {

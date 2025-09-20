@@ -2,35 +2,56 @@
 // SPDX-License-Identifier: MIT
 
 #include "lib_app/WrapLogger.hpp"
+#include "lib_app/utils.hpp"
 
-Logger::Logger(const std::string& outputFile, AL_ITimer* timer) :
-  outputFile{outputFile}
+#include <fstream>
+
+using namespace std;
+
+extern "C"
 {
-  if(outputFile.empty())
-    maxCount = 0;
+#include "lib_log/LoggerDefault.h"
+}
 
-  samples.resize(maxCount);
-  events.samples = samples.data();
-  events.max = maxCount;
-  events.count = 0;
+struct Logger::WrapLogger
+{
+  int32_t maxCount = 32000;
+  vector<AL_TDefaultLoggerSample> samples;
+  AL_TDefaultLoggerEvents events;
+  string outputFile;
+  AL_ILogger* logger;
+};
 
-  logger = AL_DefaultLogger_Init(AL_GetDefaultAllocator(), timer, &events);
+Logger::Logger(string outputFile, AL_ITimer* timer) :
+  pWrapLogger{make_unique<Logger::WrapLogger>()}
+{
+  pWrapLogger->outputFile = outputFile;
+
+  if(pWrapLogger->outputFile.empty())
+    pWrapLogger->maxCount = 0;
+
+  pWrapLogger->samples.resize(pWrapLogger->maxCount);
+  pWrapLogger->events.samples = pWrapLogger->samples.data();
+  pWrapLogger->events.max = pWrapLogger->maxCount;
+  pWrapLogger->events.count = 0;
+
+  pWrapLogger->logger = AL_DefaultLogger_Init(AL_GetDefaultAllocator(), timer, &pWrapLogger->events);
 }
 
 Logger::~Logger()
 {
-  AL_ILogger_Deinit(logger);
+  AL_ILogger_Deinit(pWrapLogger->logger);
 
-  if(outputFile.empty())
+  if(pWrapLogger->outputFile.empty())
     return;
 
-  std::ofstream tracer(outputFile);
+  ofstream tracer(pWrapLogger->outputFile);
 
-  for(int32_t i = 0; i < events.count; i++)
-    tracer << std::string(samples[i].label) << " " << samples[i].timestamp << std::endl;
+  for(int32_t i = 0; i < pWrapLogger->events.count; i++)
+    tracer << string(pWrapLogger->samples[i].label) << " " << pWrapLogger->samples[i].timestamp << endl;
 }
 
 AL_ILogger* Logger::GetLogger()
 {
-  return logger;
+  return pWrapLogger->logger;
 }

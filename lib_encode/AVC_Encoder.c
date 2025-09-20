@@ -79,7 +79,7 @@ static void generateNals(AL_TEncCtx* pCtx, int32_t iLayerID, bool bWriteVps)
 
   uint32_t uMaxBitRate = (pChParam->tRCParam.uMaxBitRate >> 6) << 6;
   uint32_t uCpbBitSize = (uint32_t)((uint64_t)pChParam->tRCParam.uCPBSize * (uint64_t)uMaxBitRate / 90000LL);
-  AL_AVC_GenerateSPS(&pCtx->tLayerCtx[0].sps, pCtx->pSettings, pCtx->iMaxNumRef, uCpbBitSize);
+  AL_AVC_GenerateSPS(&pCtx->tLayerCtx[0].sps, pCtx->pSettings, pCtx->iMaxRef, pCtx->iMaxBuffering, pCtx->iMaxReordering, uCpbBitSize);
   AL_AVC_GeneratePPS(&pCtx->tLayerCtx[0].pps, pCtx->pSettings, &pCtx->tLayerCtx[0].sps);
 }
 

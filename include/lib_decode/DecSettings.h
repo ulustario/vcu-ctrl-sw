@@ -26,7 +26,6 @@ typedef enum AL_EDecInputMode
 {
   AL_DEC_UNSPLIT_INPUT, /*!< The input is fed to the decoder without delimitations and the decoder find the decoding unit in the data by himself.*/
   AL_DEC_SPLIT_INPUT, /*!< The input is fed to the decoder with buffers containing one decoding unit each. */
-  AL_DEC_SINGLE_INPUT, /*!< The input is fed to the decoder with a single buffer containing the whole stream. */
 }AL_EDecInputMode;
 
 /*****************************************************************************

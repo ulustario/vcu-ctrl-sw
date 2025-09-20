@@ -115,7 +115,8 @@ static bool init(AL_TEncCtx* pCtx, AL_TEncChanParam* pChParam, AL_TAllocator* pA
 
   pCtx->tLayerCtx[0].iCurStreamSent = 0;
   pCtx->tLayerCtx[0].iCurStreamRecv = 0;
-  pCtx->iFrameCountDone = 0;
+  pCtx->uPushedFrameCount = 0;
+  pCtx->uEncodedFrameCount = 0;
 
   pCtx->eError = AL_SUCCESS;
 
@@ -127,6 +128,27 @@ static bool init(AL_TEncCtx* pCtx, AL_TEncChanParam* pChParam, AL_TAllocator* pA
   return true;
 }
 
+/****************************************************************************/
+static bool IsGopRestartAllowed(AL_TEncCtx const* pCtx, int32_t iGopRestartDelay)
+{
+  (void)iGopRestartDelay;
+
+  AL_TEncChanParam const* pChannelParam = &pCtx->pSettings->tChParam[0];
+
+  if(pChannelParam->tGopParam.eMode == AL_GOP_MODE_ADAPTIVE)
+    return false;
+
+  if(AL_IS_INTERLACED(pChannelParam->eVideoMode))
+  {
+    bool bIsRestartOnOddField = (pCtx->uPushedFrameCount + iGopRestartDelay) & 1;
+
+    if(bIsRestartOnOddField)
+      return false;
+  }
+
+  return true;
+}
+
 /***************************************************************************/
 static AL_TEncRequestInfo* getCurrentCommands(AL_TLayerCtx* pCtx)
 {
@@ -134,8 +156,45 @@ static AL_TEncRequestInfo* getCurrentCommands(AL_TLayerCtx* pCtx)
 }
 
 /***************************************************************************/
+AL_ERR AL_Common_Encoder_GetLastError(AL_TEncCtx* pCtx)
+{
+  Rtos_GetMutex(pCtx->Mutex);
+  AL_ERR eError = pCtx->eError;
+  Rtos_ReleaseMutex(pCtx->Mutex);
+
+  return eError;
+}
+
+/***************************************************************************/
+void AL_Common_SetError(AL_TEncCtx* pCtx, AL_ERR eErrorCode)
+{
+  Rtos_GetMutex(pCtx->Mutex);
+  pCtx->eError = eErrorCode;
+  Rtos_ReleaseMutex(pCtx->Mutex);
+}
+
+#define AL_RETURN_ERROR(e) do \
+  { \
+    AL_Common_SetError(pCtx, e); \
+    return false; \
+  } while(0)
+
+#define AL_CRIT_SECTION_RETURN_ERROR(mutex, e) do \
+  { \
+    Rtos_ReleaseMutex(mutex); \
+    AL_Common_SetError(pCtx, e); \
+    return false;  \
+  } while(0)
+
+/***************************************************************************/
 void AL_Common_Encoder_NotifySceneChange(AL_TEncCtx* pCtx, int32_t iAhead)
 {
+  if(!IsGopRestartAllowed(pCtx, iAhead))
+  {
+    AL_Common_SetError(pCtx, AL_ERR_CMD_NOT_ALLOWED);
+    return;
+  }
+
   AL_TEncRequestInfo* pReqInfo = getCurrentCommands(&pCtx->tLayerCtx[0]);
   pReqInfo->eReqOptions |= AL_OPT_SCENE_CHANGE;
   pReqInfo->uSceneChangeDelay = iAhead;
@@ -145,7 +204,11 @@ void AL_Common_Encoder_NotifySceneChange(AL_TEncCtx* pCtx, int32_t iAhead)
 void AL_Common_Encoder_NotifyIsLongTerm(AL_TEncCtx* pCtx)
 {
   if(!pCtx->pSettings->tChParam[0].tGopParam.bEnableLT)
+  {
+    AL_Common_SetError(pCtx, AL_ERR_CMD_NOT_ALLOWED);
     return;
+  }
+
   AL_TEncRequestInfo* pReqInfo = getCurrentCommands(&pCtx->tLayerCtx[0]);
   pReqInfo->eReqOptions |= AL_OPT_IS_LONG_TERM;
 }
@@ -154,7 +217,11 @@ void AL_Common_Encoder_NotifyIsLongTerm(AL_TEncCtx* pCtx)
 void AL_Common_Encoder_NotifyUseLongTerm(AL_TEncCtx* pCtx)
 {
   if(!pCtx->pSettings->tChParam[0].tGopParam.bEnableLT)
+  {
+    AL_Common_SetError(pCtx, AL_ERR_CMD_NOT_ALLOWED);
     return;
+  }
+
   AL_TEncRequestInfo* pReqInfo = getCurrentCommands(&pCtx->tLayerCtx[0]);
   pReqInfo->eReqOptions |= AL_OPT_USE_LONG_TERM;
 }
@@ -451,24 +518,6 @@ static void SetHLSInfos(AL_TEncCtx* pCtx, AL_TEncRequestInfo* pReqInfo, AL_TFram
 }
 
 /***************************************************************************/
-AL_ERR AL_Common_Encoder_GetLastError(AL_TEncCtx* pCtx)
-{
-  Rtos_GetMutex(pCtx->Mutex);
-  AL_ERR eError = pCtx->eError;
-  Rtos_ReleaseMutex(pCtx->Mutex);
-
-  return eError;
-}
-
-/***************************************************************************/
-void AL_Common_SetError(AL_TEncCtx* pCtx, AL_ERR eErrorCode)
-{
-  Rtos_GetMutex(pCtx->Mutex);
-  pCtx->eError = eErrorCode;
-  Rtos_ReleaseMutex(pCtx->Mutex);
-}
-
-/***************************************************************************/
 bool AL_Common_Encoder_Process(AL_TEncCtx* pCtx, AL_TBuffer* pFrame, AL_TBuffer* pQpTable, int32_t iLayerID)
 {
   if(iLayerID >= MAX_NUM_LAYER)
@@ -506,20 +555,14 @@ bool AL_Common_Encoder_Process(AL_TEncCtx* pCtx, AL_TBuffer* pFrame, AL_TBuffer*
     uint32_t uRealSize = AL_Buffer_GetSize(pQpTable);
 
     if(uRealSize < uExpectedSize)
-    {
-      AL_Common_SetError(pCtx, AL_ERR_QPLOAD_NOT_ENOUGH_DATA);
-      return false;
-    }
+      AL_RETURN_ERROR(AL_ERR_QPLOAD_NOT_ENOUGH_DATA);
 
     uint8_t* pQP = AL_Buffer_GetData(pQpTable) + EP2_BUF_SEG_CTRL.Offset;
     AL_ERR eErr = AL_QPTable_CheckValidity(pQP, tEncDim, AL_GET_CODEC(pCtx->pSettings->tChParam[iLayerID].eProfile), iQPTableDepth,
                                            pCtx->pSettings->tChParam[iLayerID].uLog2MaxCuSize, pCtx->pSettings->bDisIntra, pCtx->pSettings->tChParam[iLayerID].eEncOptions & AL_OPT_QP_TAB_RELATIVE);
 
     if(!AL_IS_SUCCESS_CODE(eErr))
-    {
-      AL_Common_SetError(pCtx, eErr);
-      return false;
-    }
+      AL_RETURN_ERROR(eErr);
   }
 
   AL_Common_Encoder_WaitReadiness(pCtx);
@@ -634,19 +677,14 @@ bool AL_Common_Encoder_Process(AL_TEncCtx* pCtx, AL_TBuffer* pFrame, AL_TBuffer*
 
   bool bRet = AL_IEncScheduler_EncodeOneFrame(pCtx->pScheduler, pCtx->tLayerCtx[iLayerID].hChannel, pEI, pReqInfo, &addresses);
 
-  if(!bRet)
+  if(bRet)
+    pCtx->uPushedFrameCount++;
+  else
     releaseSource(pCtx, pFrame, pFI);
 
   Rtos_Memset(pReqInfo, 0, sizeof(*pReqInfo));
   Rtos_Memset(pEI, 0, sizeof(*pEI));
   return bRet;
-}
-
-static int32_t getMaxNumRef(AL_TEncChanParam* pChParam)
-{
-  if(AL_IS_AVC(pChParam->eProfile) && AL_IS_INTRA_PROFILE(pChParam->eProfile))
-    return 0;
-  return AL_DPBConstraint_GetMaxDPBSize(pChParam);
 }
 
 void AL_Common_Encoder_SetHlsParam(AL_TEncChanParam* pChParam)
@@ -1012,10 +1050,6 @@ bool AL_Common_Encoder_GetInfo(AL_TEncCtx* pCtx, AL_TEncoderInfo* pEncInfo)
   return true;
 }
 
-#define AL_RETURN_ERROR(e) { AL_Common_SetError(pCtx, e); return false; }
-#define AL_CRIT_SECTION_RETURN_ERROR(mutex, e) { Rtos_ReleaseMutex(mutex); \
-                                                 AL_Common_SetError(pCtx, e); \
-                                                 return false; }
 /***************************************************************************/
 bool AL_Common_Encoder_SetCostMode(AL_TEncCtx* pCtx, bool costMode)
 {
@@ -1063,21 +1097,13 @@ bool AL_Common_Encoder_SetMaxPictureSize(AL_TEncCtx* pCtx, uint32_t uMaxPictureS
 }
 
 /****************************************************************************/
-static bool IsGopRestartForbidden(AL_TEncChanParam* pChParam)
-{
-  bool isAdaptive = (pChParam->tGopParam.eMode == AL_GOP_MODE_ADAPTIVE);
-  bool isBypass = (pChParam->tGopParam.eMode == AL_GOP_MODE_BYPASS);
-  return isAdaptive || isBypass;
-}
-
-/****************************************************************************/
 bool AL_Common_Encoder_RestartGop(AL_TEncCtx* pCtx)
 {
+  if(!IsGopRestartAllowed(pCtx, 0))
+    AL_RETURN_ERROR(AL_ERR_CMD_NOT_ALLOWED);
+
   for(int32_t i = 0; i < pCtx->pSettings->NumLayer; ++i)
   {
-    if(IsGopRestartForbidden(&pCtx->pSettings->tChParam[i]))
-      AL_RETURN_ERROR(AL_ERR_CMD_NOT_ALLOWED);
-
     AL_TEncRequestInfo* pReqInfo = getCurrentCommands(&pCtx->tLayerCtx[i]);
     pReqInfo->eReqOptions |= AL_OPT_RESTART_GOP;
   }
@@ -1086,21 +1112,19 @@ bool AL_Common_Encoder_RestartGop(AL_TEncCtx* pCtx)
 }
 
 /****************************************************************************/
-static bool IsGopRestartRecoveryPointForbidden(AL_TEncChanParam* pChParam)
+static bool IsGopRestartRecoveryPointAllowed(AL_TEncChanParam* pChParam)
 {
-  return !(pChParam->tGopParam.eMode & AL_GOP_FLAG_LOW_DELAY);
+  return (pChParam->tGopParam.eMode & AL_GOP_FLAG_LOW_DELAY) != 0;
 }
 
 /****************************************************************************/
 bool AL_Common_Encoder_RestartGopRecoveryPoint(AL_TEncCtx* pCtx)
 {
+  if(!IsGopRestartRecoveryPointAllowed(&pCtx->pSettings->tChParam[0]))
+    AL_RETURN_ERROR(AL_ERR_CMD_NOT_ALLOWED);
+
   for(int32_t i = 0; i < pCtx->pSettings->NumLayer; ++i)
   {
-    if(IsGopRestartRecoveryPointForbidden(&pCtx->pSettings->tChParam[i]))
-    {
-      AL_RETURN_ERROR(AL_ERR_CMD_NOT_ALLOWED);
-    }
-
     AL_TEncRequestInfo* pReqInfo = getCurrentCommands(&pCtx->tLayerCtx[i]);
     pReqInfo->eReqOptions |= AL_OPT_RECOVERY_POINT;
   }
@@ -1109,15 +1133,23 @@ bool AL_Common_Encoder_RestartGopRecoveryPoint(AL_TEncCtx* pCtx)
 }
 
 /****************************************************************************/
+static bool IsGopLengthChangeAllowed(AL_TEncCtx const* pCtx)
+{
+  AL_TEncChanParam const* pChannelParam = &pCtx->pSettings->tChParam[0];
+  bool bCmdValid = (pChannelParam->tGopParam.eMode & AL_GOP_FLAG_DEFAULT) != 0;
+
+  bCmdValid = bCmdValid && !AL_IS_INTERLACED(pChannelParam->eVideoMode);
+
+  return bCmdValid;
+}
+
 bool AL_Common_Encoder_SetGopLength(AL_TEncCtx* pCtx, int32_t iGopLength)
 {
+  if(!IsGopLengthChangeAllowed(pCtx))
+    AL_RETURN_ERROR(AL_ERR_CMD_NOT_ALLOWED);
+
   for(int32_t i = 0; i < pCtx->pSettings->NumLayer; ++i)
   {
-    bool bCmdValid = (pCtx->pSettings->tChParam[i].tGopParam.eMode & AL_GOP_FLAG_DEFAULT) != 0;
-
-    if(!bCmdValid)
-      AL_RETURN_ERROR(AL_ERR_CMD_NOT_ALLOWED);
-
     pCtx->pSettings->tChParam[i].tGopParam.uGopLength = iGopLength;
     setRcGopParams(pCtx, i);
   }
@@ -1126,16 +1158,25 @@ bool AL_Common_Encoder_SetGopLength(AL_TEncCtx* pCtx, int32_t iGopLength)
 }
 
 /****************************************************************************/
+static bool IsGopNumBChangeAllowed(AL_TEncCtx const* pCtx, int32_t iNumB)
+{
+  AL_TEncChanParam const* pChannelParam = &pCtx->pSettings->tChParam[0];
+
+  bool bCmdValid = ((pChannelParam->tGopParam.eMode & AL_GOP_FLAG_DEFAULT) != 0) &&
+                   (iNumB <= pCtx->iInitialNumB);
+
+  bCmdValid = bCmdValid && !AL_IS_INTERLACED(pChannelParam->eVideoMode);
+
+  return bCmdValid;
+}
+
 bool AL_Common_Encoder_SetGopNumB(AL_TEncCtx* pCtx, int32_t iNumB)
 {
+  if(!IsGopNumBChangeAllowed(pCtx, iNumB))
+    AL_RETURN_ERROR(AL_ERR_INVALID_CMD_VALUE);
+
   for(int32_t i = 0; i < pCtx->pSettings->NumLayer; ++i)
   {
-    if((pCtx->pSettings->tChParam[i].tGopParam.eMode & AL_GOP_FLAG_DEFAULT) == 0)
-      AL_RETURN_ERROR(AL_ERR_CMD_NOT_ALLOWED);
-
-    if(iNumB > pCtx->iInitialNumB)
-      AL_RETURN_ERROR(AL_ERR_INVALID_CMD_VALUE);
-
     pCtx->pSettings->tChParam[i].tGopParam.uNumB = iNumB;
     setRcGopParams(pCtx, i);
   }
@@ -1144,18 +1185,26 @@ bool AL_Common_Encoder_SetGopNumB(AL_TEncCtx* pCtx, int32_t iNumB)
 }
 
 /****************************************************************************/
+static bool IsFreqIDRChangeAllowed(AL_TEncCtx const* pCtx, int32_t iFreqIDR)
+{
+  AL_TEncChanParam const* pChannelParam = &pCtx->pSettings->tChParam[0];
+
+  bool bCmdValid = (pChannelParam->tGopParam.eMode & AL_GOP_FLAG_DEFAULT) != 0;
+
+  bCmdValid = bCmdValid && !AL_IS_INTERLACED(pChannelParam->eVideoMode);
+
+  bCmdValid = bCmdValid && (iFreqIDR >= 0);
+
+  return bCmdValid;
+}
+
 bool AL_Common_Encoder_SetFreqIDR(AL_TEncCtx* pCtx, int32_t iFreqIDR)
 {
+  if(!IsFreqIDRChangeAllowed(pCtx, iFreqIDR))
+    AL_RETURN_ERROR(AL_ERR_INVALID_CMD_VALUE);
+
   for(int32_t i = 0; i < pCtx->pSettings->NumLayer; ++i)
   {
-    bool bCmdValid = (pCtx->pSettings->tChParam[i].tGopParam.eMode & AL_GOP_FLAG_DEFAULT) != 0;
-
-    if(!bCmdValid)
-      AL_RETURN_ERROR(AL_ERR_CMD_NOT_ALLOWED);
-
-    if(iFreqIDR < -1)
-      AL_RETURN_ERROR(AL_ERR_INVALID_CMD_VALUE);
-
     pCtx->pSettings->tChParam[i].tGopParam.uFreqIDR = iFreqIDR;
     setRcGopParams(pCtx, i);
   }
@@ -1166,7 +1215,7 @@ bool AL_Common_Encoder_SetFreqIDR(AL_TEncCtx* pCtx, int32_t iFreqIDR)
 /****************************************************************************/
 bool AL_Common_Encoder_SetBitRate(AL_TEncCtx* pCtx, int32_t iBitRate, int32_t iLayerID)
 {
-  if(iLayerID >= MAX_NUM_LAYER)
+  if(iLayerID >= MAX_NUM_LAYER || iBitRate == 0)
     return false;
 
   pCtx->pSettings->tChParam[iLayerID].tRCParam.uTargetBitRate = iBitRate;
@@ -1341,12 +1390,15 @@ bool AL_Common_Encoder_SetInputResolution(AL_TEncCtx* pCtx, AL_TDimension tDim)
 {
   Rtos_GetMutex(pCtx->Mutex);
 
+  if(!IsGopRestartAllowed(pCtx, 0))
+    AL_CRIT_SECTION_RETURN_ERROR(pCtx->Mutex, AL_ERR_CMD_NOT_ALLOWED);
+
   for(int32_t i = 0; i < pCtx->pSettings->NumLayer; ++i)
   {
     AL_TEncChanParam* pChanParam = &pCtx->pSettings->tChParam[i];
     AL_TLayerCtx* pLayerCtx = &pCtx->tLayerCtx[i];
 
-    if((IsGopRestartForbidden(&pCtx->pSettings->tChParam[i])) || (!AL_Common_Encoder_SetChannelResolution(pLayerCtx, pChanParam, tDim)))
+    if(!AL_Common_Encoder_SetChannelResolution(pLayerCtx, pChanParam, tDim))
       AL_CRIT_SECTION_RETURN_ERROR(pCtx->Mutex, AL_ERR_CMD_NOT_ALLOWED);
 
     AL_TEncRequestInfo* pReqInfo = getCurrentCommands(pLayerCtx);
@@ -1609,7 +1661,7 @@ static void EndEncoding(void* pUserParam, AL_TEncPicStatus* pPicStatus, AL_64U s
         releaseSource(pCtx, pSrc, pFI);
 
       Rtos_GetMutex(pCtx->Mutex);
-      ++pCtx->iFrameCountDone;
+      ++pCtx->uEncodedFrameCount;
 
       if(pCtx->encoder.shouldReleaseSource(pPicStatus))
       {
@@ -1695,7 +1747,9 @@ AL_ERR AL_Common_Encoder_CreateChannel(AL_TEncCtx* pCtx, AL_IEncScheduler* pSche
 
   pCtx->PendingEncodings = Rtos_CreateSemaphore(ENC_MAX_CMD - 1);
 
-  pCtx->iMaxNumRef = getMaxNumRef(pChParam);
+  pCtx->iMaxRef = AL_DPBConstraint_GetMaxRef(pChParam);
+  pCtx->iMaxReordering = AL_DPBConstraint_GetMaxReordering(pChParam);
+  pCtx->iMaxBuffering = AL_DPBConstraint_GetMaxDPBSize(pChParam);
   pCtx->encoder.generateNals(pCtx, 0, true);
 
   pCtx->iInitialNumB = pChParam->tGopParam.uNumB;

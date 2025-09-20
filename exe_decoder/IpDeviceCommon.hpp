@@ -26,7 +26,6 @@ struct CIpDeviceParam
   AL_EDeviceType eDeviceType;
   AL_ESchedulerType eSchedulerType;
   AL_ETrackDmaMode eTrackDmaMode = AL_ETrackDmaMode::AL_TRACK_DMA_MODE_NONE;
-  uint8_t uNumCore = 0;
   AL_EIpCtrlMode ipCtrlMode;
   std::string apbFile;
   bool bSelectDeviceWithLowestAvailableResources;

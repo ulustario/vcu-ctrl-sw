@@ -10,7 +10,7 @@ struct UnCompFrameWriter final : IFrameWriter, BaseFrameWriter
 {
   UnCompFrameWriter(std::shared_ptr<std::ostream> recFile, AL_EFbStorageMode eStorageMode);
 
-  void WriteFrame(AL_TBuffer* pBuf, AL_TCropInfo* pCrop = nullptr, AL_EPicStruct ePicStruct = AL_PS_FRM);
+  void WriteFrame(AL_TBuffer* pBuf, AL_TCropInfo* pCrop = nullptr, AL_EPicStruct ePicStruct = AL_PS_FRM) override;
 
 private:
   void DimInTileCalculusRaster();

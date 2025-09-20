@@ -3,8 +3,9 @@
 
 #pragma once
 
-#include "lib_common/Av1Defines.h"
 #include "lib_common/AomDefinesInternal.h"
+#include "lib_common/Av1Defines.h"
+#include "lib_common_dec/Av1Defines.h"
 
 /*****************************************************************************/
 typedef struct
@@ -12,6 +13,13 @@ typedef struct
   bool FeatureEnabled[AV1_SEG_LVL_MAX];
   int16_t FeatureData[AV1_SEG_LVL_MAX];
 }AL_TAv1SegmentationParams;
+
+/*****************************************************************************/
+typedef struct
+{
+  int8_t loop_filter_mode_deltas[AV1_LF_NUM_MODE_DELTA_FRAME];
+  int8_t loop_filter_ref_deltas[AOM_TOTAL_REFS_PER_FRAME];
+}AL_TAv1LoopFilterParams;
 
 /*****************************************************************************/
 typedef struct
@@ -52,4 +60,5 @@ typedef struct
   AL_TAv1GmParams vGmParams[AV1_REFS_PER_FRAME];
   AL_TAv1SegmentationParams vSegmentParams[AOM_MAX_SEGMENTS];
   AL_TAv1FilmGrainParams vFilmGrainParams;
+  AL_TAv1LoopFilterParams tLoopFilterParams;
 }AL_TAv1FrameContext;

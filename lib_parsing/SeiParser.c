@@ -369,7 +369,6 @@ static bool ParseCommonSei(SeiParserParam* pParam, AL_TRbspParser* pRP, AL_ESeiP
   return bParsingOk;
 }
 
-// For tomorow, remove PARSE_OR_SKIP
 /*****************************************************************************/
 bool ParseSeiHeader(AL_TRbspParser* pRP, SeiParserCB* pCB)
 {

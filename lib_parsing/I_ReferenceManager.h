@@ -16,7 +16,7 @@
 #define MAX_BUF_HELD_BY_NEXT_COMPONENT AL_MAX_REF /*!< e.g. display / encoder / .. */
 #define AL_REFMNGR_MAX_POOL_SIZE (AL_REF_MNGR_MAX_BUF_SIZE + MAX_BUF_HELD_BY_NEXT_COMPONENT)
 
-#define AL_REFMNGR_MAX_ANNEX_BUF 7
+#define AL_REFMNGR_MAX_ANNEX_BUF 8
 
 /*************************************************************************/
 typedef struct AL_IReferenceManagerVtable AL_IReferenceManagerVtable;

@@ -97,7 +97,6 @@ uint32_t AL_GetRefListOffsets(TRefListOffsets* pOffsets, AL_ECodec eCodec, AL_TP
   AL_EPlaneId usedPlanes[AL_MAX_BUFFER_PLANES];
   const int32_t iNbPixPlanes = Max(2, AL_Plane_GetBufferPixelPlanes(*pPicFormat, usedPlanes));
   TRefListOffsets tOffsets;
-  (void)eCodec;
 
   uint32_t uOffset = uAddrSizeInBytes * uOffsetToNextSet * iNbPixPlanes; // size of RefList Buff Addrs
 

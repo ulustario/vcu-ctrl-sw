@@ -144,9 +144,12 @@ typedef struct AL_TEncCtx
   int32_t initialCpbRemovalDelay;
   int32_t cpbRemovalDelay;
 
-  int32_t iMaxNumRef;
+  int32_t iMaxRef;
+  int32_t iMaxBuffering;
+  int32_t iMaxReordering;
 
-  int32_t iFrameCountDone;
+  AL_64U uPushedFrameCount;
+  AL_64U uEncodedFrameCount;
   AL_ERR eError;
 
   AL_TFrameInfoPool tFrameInfoPool;

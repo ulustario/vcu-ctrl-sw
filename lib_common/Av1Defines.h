@@ -20,6 +20,8 @@
 #define AV1_FILMGRAIN_MAX_POINTS 14
 #define AV1_RESTORATION_TILESIZE_MAX 256
 
+#define AV1_MAX_TILE_COLS 64
+
 /*****************************************************************************
    \brief AV1 Motion Transformation Type
 *****************************************************************************/

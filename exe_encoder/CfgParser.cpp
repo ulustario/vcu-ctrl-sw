@@ -872,7 +872,7 @@ static void populateLdaCtrlOptions(ConfigParser& parser, ConfigFile& cfg, Tempor
   }, [&]() {
     auto pChan = &cfg.Settings.tChParam[0];
     auto const NumFactors = sizeof(pChan->LdaFactors) / sizeof(*pChan->LdaFactors);
-    return getDefaultArrayValue(pChan->LdaFactors, NumFactors, 256);
+    return getDefaultArrayValue(pChan->LdaFactors, NumFactors, 256, 2);
   }, "Specifies a lambda factor for each pictures. The factors are ordered as: I, P, B(temporalId = 1), B(temporalId = 2), B(temporalId = 3), and B(temporalId = 4). A factor on LOAD_LDA lambdas is available for each picture type and temporal ID with the LambdaFactors table. Example: LambdaFactors = 0.20 0.35 0.59 0.60 1 1", { ParameterType::Array }, toCallbackInfo(ldaFactorsInfo));
 }
 

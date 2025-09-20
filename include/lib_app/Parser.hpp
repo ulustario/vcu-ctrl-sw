@@ -16,6 +16,7 @@
 #include <sstream>
 #include <vector>
 #include <iomanip>
+#include <cmath>
 
 std::deque<Token> toReversePolish(std::deque<Token>& tokens);
 std::string parseString(std::deque<Token>& tokens);
@@ -484,13 +485,22 @@ std::string getDefaultEnumValue(T const& t, std::map<std::string, EnumDescriptio
 }
 
 template<typename T>
-std::string getDefaultArrayValue(T* t, int32_t arraySize, int32_t rescale = 1)
+std::string getDefaultArrayValue(T* t, int32_t arraySize, float rescale = 1.0, int precision = 0)
 {
   std::string s = "";
 
+  float rnd = 0;
+
+  if(precision)
+  {
+    rnd = 0.5 * std::pow(10, -precision);
+    ++precision;
+  }
+
   for(auto i = 0; i < (int)arraySize; ++i)
   {
-    s += std::to_string(t[i] / rescale);
+    auto v = std::to_string(t[i] / rescale + rnd);
+    s += v.substr(0, v.find('.') + precision);
 
     if(i != arraySize - 1)
       s += " ";

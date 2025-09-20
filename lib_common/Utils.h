@@ -11,7 +11,9 @@ static const int32_t NUMCORE_AUTO = 0;
 static const int32_t MAX_BIT_DEPTH_MINUS_8 = 4;
 static const int32_t MAX_POC_LSB_MINUS_4 = 12;
 
+#ifndef ARRAY_SIZE
 #define ARRAY_SIZE(x) (int)(sizeof(x) / sizeof((x)[0]))
+#endif
 
 /***************************************************************************/
 static inline AL_64U BitsToBytes(AL_64U zBits)

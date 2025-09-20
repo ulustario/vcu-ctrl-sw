@@ -153,7 +153,7 @@ void AL_HEVC_PreprocessScalingList(AL_TSCLParam const* pSclLst, TBufferEP* pBufE
 }
 
 /****************************************************************************/
-void AL_HEVC_GenerateVPS(AL_TVps* pIVPS, AL_TEncSettings const* pSettings, int32_t iMaxRef)
+void AL_HEVC_GenerateVPS(AL_TVps* pIVPS, AL_TEncSettings const* pSettings, int32_t iMaxBuffering, int32_t iMaxReordering)
 {
   AL_THevcVps* pVPS = (AL_THevcVps*)pIVPS;
   pVPS->vps_video_parameter_set_id = 0;
@@ -172,10 +172,9 @@ void AL_HEVC_GenerateVPS(AL_TVps* pIVPS, AL_TEncSettings const* pSettings, int32
 
   for(int32_t i = 0; i < iNumTemporalLayer; ++i)
   {
-    int32_t const iNumRef = iMaxRef - (iNumTemporalLayer - 1 - i);
-    pVPS->vps_max_dec_pic_buffering_minus1[i] = iNumRef;
-    bool const bIsLowDelayP = pGopParam->eMode == AL_GOP_MODE_LOW_DELAY_P;
-    pVPS->vps_max_num_reorder_pics[i] = bIsLowDelayP ? 0 : iNumRef;
+    int32_t const iTemporalDecrease = iNumTemporalLayer - 1 - i;
+    pVPS->vps_max_dec_pic_buffering_minus1[i] = iMaxBuffering - iTemporalDecrease;
+    pVPS->vps_max_num_reorder_pics[i] = Max(0, iMaxReordering - iTemporalDecrease);
     pVPS->vps_max_latency_increase_plus1[i] = 0;
   }
 
@@ -289,7 +288,7 @@ bool AL_HEVC_MultiLayerExtSpsFlag(AL_THevcSps* pSPS, int32_t iLayerId)
 }
 
 /****************************************************************************/
-void AL_HEVC_GenerateSPS(AL_TSps* pISPS, AL_TEncSettings const* pSettings, AL_TEncChanParam const* pChParam, int32_t iMaxRef, int32_t iCpbSize, int32_t iLayerId)
+void AL_HEVC_GenerateSPS(AL_TSps* pISPS, AL_TEncSettings const* pSettings, AL_TEncChanParam const* pChParam, int32_t iMaxBuffering, int32_t iMaxReordering, int32_t iCpbSize, int32_t iLayerId)
 {
   AL_THevcSps* pSPS = (AL_THevcSps*)pISPS;
   InitHEVC_Sps(pSPS);
@@ -324,10 +323,9 @@ void AL_HEVC_GenerateSPS(AL_TSps* pISPS, AL_TEncSettings const* pSettings, AL_TE
 
     for(int32_t i = 0; i < iNumTemporalLayer; ++i)
     {
-      int32_t const iNumRef = iMaxRef - (iNumTemporalLayer - 1 - i);
-      pSPS->sps_max_dec_pic_buffering_minus1[i] = iNumRef;
-      bool const bIsLowDelayP = pGopParam->eMode == AL_GOP_MODE_LOW_DELAY_P;
-      pSPS->sps_max_num_reorder_pics[i] = bIsLowDelayP ? 0 : iNumRef;
+      int32_t const iTemporalDecrease = iNumTemporalLayer - 1 - i;
+      pSPS->sps_max_dec_pic_buffering_minus1[i] = iMaxBuffering - iTemporalDecrease;
+      pSPS->sps_max_num_reorder_pics[i] = Max(0, iMaxReordering - iTemporalDecrease);
       pSPS->sps_max_latency_increase_plus1[i] = 0;
     }
   }

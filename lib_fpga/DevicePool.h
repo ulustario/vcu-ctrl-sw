@@ -3,5 +3,5 @@
 
 #pragma once
 
-int32_t AL_DevicePool_Open(const char* filename);
+int32_t AL_DevicePool_Open(char const* filename);
 int32_t AL_DevicePool_Close(int32_t fd);

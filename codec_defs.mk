@@ -19,7 +19,7 @@ INCLUDES+=-I./extra/include
 CFLAGS+=-Wwrite-strings
 CFLAGS+=-Wredundant-decls
 CFLAGS+=-pedantic
-ifneq (,$(filter -fsanitize,$(CFLAGS)))
+ifeq (,$(findstring -fsanitize,$(CFLAGS)))
 CFLAGS+=-pedantic-errors
 CFLAGS+=-Werror=pedantic
 CFLAGS+=-Werror

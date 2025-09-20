@@ -1594,7 +1594,6 @@ static std::shared_ptr<CIpDevice> CreateAndConfigureBaseDecoderIpDevice(Config c
   param.eSchedulerType = pConfig->eSchedulerType;
   param.eDeviceType = pConfig->eDeviceType;
   param.eTrackDmaMode = pConfig->eTrackDmaMode;
-  param.uNumCore = pConfig->tDecSettings.uNumCore;
   param.ipCtrlMode = pConfig->ipCtrlMode;
   param.apbFile = pConfig->apbFile;
   static std::set<std::string> decDevicePath = pConfig->sDecDevicePath;

@@ -110,6 +110,15 @@ typedef struct AL_THevcPicTiming
 }AL_THevcPicTiming;
 
 /*****************************************************************************
+   \brief Mimics structure for VVC picture timing
+*****************************************************************************/
+typedef struct AL_TVvcPicTiming
+{
+  uint32_t pt_cpb_removal_delay_minus1[6]; //// 7.4.3.3 : vps_max_sublayers_minus1 shall be in the range of 0 to 6,
+  uint8_t pt_sublayer_delays_present_flag;
+}AL_TVvcPicTiming;
+
+/*****************************************************************************
    \brief AVC Supplemental enhancement information structure
 *****************************************************************************/
 typedef struct AL_TAvcSei

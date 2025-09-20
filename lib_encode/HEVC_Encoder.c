@@ -89,11 +89,11 @@ static void generateNals(AL_TEncCtx* pCtx, int32_t iLayerID, bool bWriteVps)
   AL_TEncChanParam* pChParam = &pCtx->pSettings->tChParam[iLayerID];
 
   uint32_t uCpbBitSize = (uint32_t)((AL_64U)pChParam->tRCParam.uCPBSize * (AL_64U)pChParam->tRCParam.uMaxBitRate / 90000uLL);
-  AL_HEVC_GenerateSPS(&pCtx->tLayerCtx[iLayerID].sps, pCtx->pSettings, pChParam, pCtx->iMaxNumRef, uCpbBitSize, iLayerID);
+  AL_HEVC_GenerateSPS(&pCtx->tLayerCtx[iLayerID].sps, pCtx->pSettings, pChParam, pCtx->iMaxBuffering, pCtx->iMaxReordering, uCpbBitSize, iLayerID);
   AL_HEVC_GeneratePPS(&pCtx->tLayerCtx[iLayerID].pps, pCtx->pSettings, pChParam, iLayerID);
 
   if(bWriteVps)
-    AL_HEVC_GenerateVPS(&pCtx->vps, pCtx->pSettings, pCtx->iMaxNumRef);
+    AL_HEVC_GenerateVPS(&pCtx->vps, pCtx->pSettings, pCtx->iMaxBuffering, pCtx->iMaxReordering);
 }
 
 static void ConfigureChannel(AL_TEncCtx* pCtx, AL_TEncChanParam* pChParam, AL_TEncSettings const* pSettings)

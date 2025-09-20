@@ -234,13 +234,6 @@ static inline uint32_t AL_GET_PPS_NUM_ACT_REF_L1(uint32_t HlsParam)
   return uNumRefL1Minus1;
 }
 
-static inline uint32_t AL_GetNumberOfRef(uint32_t HlsParam)
-{
-  /* this takes advantage of the fact that the number of L0 ref is always
-   * bigger than the number of L1 refs */
-  return (HlsParam & AL_PPS_NUM_ACT_REF_L0) >> 4;
-}
-
 #define AL_SET_PPS_NUM_ACT_REF_L0(HlsParam, Num) (HlsParam) = ((HlsParam) & ~AL_PPS_NUM_ACT_REF_L0) | ((Num) << 4)
 #define AL_SET_PPS_NUM_ACT_REF_L1(HlsParam, Num) (HlsParam) = ((HlsParam) & ~AL_PPS_NUM_ACT_REF_L1) | ((Num) << 8)
 
@@ -363,8 +356,6 @@ typedef enum AL_EGopCtrlMode
   AL_GOP_MODE_LOW_DELAY_P = AL_GOP_FLAG_LOW_DELAY,
   AL_GOP_MODE_LOW_DELAY_B = AL_GOP_FLAG_LOW_DELAY | AL_GOP_FLAG_B_ONLY,
   AL_GOP_MODE_ADAPTIVE = 0x10,
-
-  AL_GOP_MODE_BYPASS = 0x20,
 
   AL_GOP_MODE_MAX_ENUM,
 }AL_EGopCtrlMode;

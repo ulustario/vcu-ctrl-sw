@@ -58,7 +58,7 @@ static struct FileDesc* DevicePool_FindEntryByFd(struct DevicePool* pDP, int32_t
   return NULL;
 }
 
-static struct FileDesc* DevicePool_FindEntryByName(struct DevicePool* pDP, const char* filename)
+static struct FileDesc* DevicePool_FindEntryByName(struct DevicePool* pDP, char const* filename)
 {
   size_t i;
   struct FileDesc* pCur;
@@ -90,7 +90,7 @@ static struct FileDesc* DevicePool_FindFreeEntry(struct DevicePool* pDP)
   return NULL;
 }
 
-static int32_t DevicePool_Open(struct DevicePool* pDP, const char* filename)
+static int32_t DevicePool_Open(struct DevicePool* pDP, char const* filename)
 {
   int32_t iRet = 0;
   struct FileDesc* pCur;
@@ -177,7 +177,7 @@ bool AL_DevicePool_Init(void)
   return DevicePool_Init(&g_DevicePool);
 }
 
-int32_t AL_DevicePool_Open(const char* filename)
+int32_t AL_DevicePool_Open(char const* filename)
 {
   if(!g_DevicePoolInit)
   {
