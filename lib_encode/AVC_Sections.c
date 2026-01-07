@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright (C) 2018 Allegro DVT2.  All rights reserved.
+* Copyright (C) 2019 Allegro DVT2.  All rights reserved.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -38,6 +38,15 @@
 #include "AVC_Sections.h"
 #include "lib_bitstream/AVC_RbspEncod.h"
 
+NalHeader GetNalHeaderAvc(uint8_t uNUT, uint8_t uNalIdc, uint8_t uTempID)
+{
+  (void)uTempID;
+  NalHeader nh;
+  nh.size = 1;
+  nh.bytes[0] = ((uNalIdc & 0x03) << 5) | (uNUT & 0x1F);
+  return nh;
+}
+
 Nuts CreateAvcNuts(void)
 {
   Nuts nuts =
@@ -48,7 +57,8 @@ Nuts CreateAvcNuts(void)
     AL_AVC_NUT_AUD,
     AL_AVC_NUT_FD,
     AL_AVC_NUT_PREFIX_SEI,
-    AL_AVC_NUT_SUFFIX_SEI,
+    /* sei suffix do not really exist in AVC. use a prefix nut */
+    AL_AVC_NUT_PREFIX_SEI,
   };
   return nuts;
 }
@@ -57,6 +67,6 @@ void AVC_GenerateSections(AL_TEncCtx* pCtx, AL_TBuffer* pStream, AL_TEncPicStatu
 {
   Nuts nuts = CreateAvcNuts();
   NalsData nalsData = AL_ExtractNalsData(pCtx, 0);
-  GenerateSections(AL_GetAvcRbspWriter(), nuts, &nalsData, pStream, pPicStatus, pCtx->Settings.NumLayer);
+  GenerateSections(AL_GetAvcRbspWriter(), nuts, &nalsData, pStream, pPicStatus, pCtx->Settings.NumLayer, pCtx->Settings.tChParam[0].uNumSlices);
 }
 

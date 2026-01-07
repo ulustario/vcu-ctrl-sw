@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright (C) 2018 Allegro DVT2.  All rights reserved.
+* Copyright (C) 2019 Allegro DVT2.  All rights reserved.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -46,25 +46,6 @@
 #include "lib_rtos/lib_rtos.h"
 
 /****************************************************************************/
-NalHeader GetNalHeaderHevc(uint8_t uNUT, uint8_t uNalIdc)
-{
-  NalHeader nh;
-  nh.size = 2;
-  nh.bytes[0] = ((uNalIdc & 0x20) >> 5) | ((uNUT & 0x3F) << 1);
-  nh.bytes[1] = 1 | ((uNalIdc & 0x1F) << 3);
-  return nh;
-}
-
-/****************************************************************************/
-NalHeader GetNalHeaderAvc(uint8_t uNUT, uint8_t uNalIdc)
-{
-  NalHeader nh;
-  nh.size = 1;
-  nh.bytes[0] = ((uNalIdc & 0x03) << 5) | (uNUT & 0x1F);
-  return nh;
-}
-
-/****************************************************************************/
 static void writeByte(AL_TBitStreamLite* pStream, uint8_t uByte)
 {
   AL_BitStreamLite_PutBits(pStream, 8, uByte);
@@ -102,7 +83,7 @@ static void AntiEmul(AL_TBitStreamLite* pStream, uint8_t const* pData, int iNumB
 
 static void writeStartCode(AL_TBitStreamLite* pStream, int nut)
 {
-#if !__ANDROID_API__
+#if !(defined(ANDROID) || defined(__ANDROID_API__))
 
   // If this is a SPS, a PPS, an Access Unit or a SEI, add an extra zero_byte (spec. B.1.2).
   if((nut >= AL_AVC_NUT_PREFIX_SEI && nut <= AL_AVC_NUT_SUB_SPS) ||
@@ -133,7 +114,7 @@ void FlushNAL(AL_TBitStreamLite* pStream, uint8_t uNUT, NalHeader header, uint8_
 }
 
 /****************************************************************************/
-void WriteFillerData(AL_TBitStreamLite* pStream, uint8_t uNUT, NalHeader header, int bytesCount, int iSpaceForSeiSuffix)
+void WriteFillerData(AL_TBitStreamLite* pStream, uint8_t uNUT, NalHeader header, int bytesCount)
 {
   int bookmark = AL_BitStreamLite_GetBitsCount(pStream);
   writeStartCode(pStream, uNUT);
@@ -144,7 +125,6 @@ void WriteFillerData(AL_TBitStreamLite* pStream, uint8_t uNUT, NalHeader header,
   int headerInBytes = (AL_BitStreamLite_GetBitsCount(pStream) - bookmark) / 8;
   int bytesToWrite = bytesCount - headerInBytes;
   int spaceRemainingInBytes = (pStream->iMaxBits / 8) - (AL_BitStreamLite_GetBitsCount(pStream) / 8);
-  spaceRemainingInBytes -= iSpaceForSeiSuffix;
 
   bytesToWrite = Min(spaceRemainingInBytes, bytesToWrite);
   bytesToWrite -= 1; // -1 for the final 0x80

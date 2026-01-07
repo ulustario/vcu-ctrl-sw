@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright (C) 2018 Allegro DVT2.  All rights reserved.
+* Copyright (C) 2019 Allegro DVT2.  All rights reserved.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -47,19 +47,13 @@
 #include "lib_common/BufferSrcMeta.h"
 
 /*****************************************************************************/
-static bool isIDRPicture(int nal_unit_type)
-{
-  return nal_unit_type == 5;
-}
-
-/*****************************************************************************/
 static void AL_sGetPocType0(AL_TPictMngrCtx* pCtx, AL_TAvcSliceHdr* pSlice)
 {
   int iPrevPocMSB = 0;
   uint32_t uPrevPocLSB = 0;
   uint32_t uMaxPocLSB = 1u << (pSlice->pSPS->log2_max_pic_order_cnt_lsb_minus4 + 4);
 
-  if(!isIDRPicture(pSlice->nal_unit_type))
+  if(!AL_AVC_IsIDR(pSlice->nal_unit_type))
   {
     if(AL_Dpb_LastHasMMCO5(&pCtx->DPB))
     {
@@ -96,7 +90,7 @@ static void AL_sGetPocType0(AL_TPictMngrCtx* pCtx, AL_TAvcSliceHdr* pSlice)
 static void AL_sGetPocType1(AL_TPictMngrCtx* pCtx, AL_TAvcSliceHdr* pSlice)
 {
   int iExpectedDeltaPerPicOrderCntCycle = 0;
-  bool bIsIDR = isIDRPicture(pSlice->nal_unit_type);
+  bool bIsIDR = AL_AVC_IsIDR(pSlice->nal_unit_type);
 
   for(int i = 0; i < pSlice->pSPS->num_ref_frames_in_pic_order_cnt_cycle; ++i)
     iExpectedDeltaPerPicOrderCntCycle += pSlice->pSPS->offset_for_ref_frame[i];
@@ -153,7 +147,7 @@ static void AL_sGetPocType1(AL_TPictMngrCtx* pCtx, AL_TAvcSliceHdr* pSlice)
 /*****************************************************************************/
 static void AL_sGetPocType2(AL_TPictMngrCtx* pCtx, AL_TAvcSliceHdr* pSlice)
 {
-  bool bIsIDR = isIDRPicture(pSlice->nal_unit_type);
+  bool bIsIDR = AL_AVC_IsIDR(pSlice->nal_unit_type);
 
   if(!bIsIDR)
   {
@@ -222,12 +216,12 @@ static void AL_sBuildWPCoeff(AL_TPictMngrCtx* pCtx, AL_TAvcSliceHdr* pSlice, TBu
   Rtos_Memset(pDataWP, 0, WP_SLICE_SIZE);
 
   // explicit weighted_pred case
-  if((pSlice->slice_type == SLICE_P && pSlice->pPPS->weighted_pred_flag) ||
-     (pSlice->slice_type == SLICE_B && pSlice->pPPS->weighted_bipred_idc == 1))
+  if((pSlice->slice_type == AL_SLICE_P && pSlice->pPPS->weighted_pred_flag) ||
+     (pSlice->slice_type == AL_SLICE_B && pSlice->pPPS->weighted_bipred_idc == 1))
   {
     AL_AVC_sFillWPCoeff(pDataWP, pSlice, 0);
 
-    if(pSlice->slice_type == SLICE_B)
+    if(pSlice->slice_type == AL_SLICE_B)
       AL_AVC_sFillWPCoeff(pDataWP, pSlice, 1);
   }
 }
@@ -258,15 +252,11 @@ static int32_t AL_sCalculatePOC(AL_TPictMngrCtx* pCtx, AL_TAvcSliceHdr* pSlice)
 }
 
 /*****************************************************************************/
-bool AL_AVC_PictMngr_SetCurrentPOC(AL_TPictMngrCtx* pCtx, AL_TAvcSliceHdr* pSlice)
+void AL_AVC_PictMngr_SetCurrentPOC(AL_TPictMngrCtx* pCtx, AL_TAvcSliceHdr* pSlice)
 {
   int32_t iCurPoc = AL_sCalculatePOC(pCtx, pSlice);
 
-  if(!(pSlice->slice_type == SLICE_I || AL_Dpb_SearchPOC(&pCtx->DPB, iCurPoc) == 0xFF))
-    return false;
-
   pCtx->iCurFramePOC = iCurPoc;
-  return true;
 }
 
 /*****************************************************************************/
@@ -347,9 +337,9 @@ void AL_AVC_PictMngr_CleanDPB(AL_TPictMngrCtx* pCtx)
 }
 
 /***************************************************************************/
-bool AL_AVC_PictMngr_GetBuffers(AL_TPictMngrCtx* pCtx, AL_TDecPicParam* pPP, AL_TDecSliceParam* pSP, AL_TAvcSliceHdr* pSlice, TBufferListRef* pListRef, TBuffer* pListVirtAddr, TBuffer* pListAddr, TBufferPOC* pPOC, TBufferMV* pMV, TBuffer* pWP, AL_TRecBuffers* pRecs)
+bool AL_AVC_PictMngr_GetBuffers(AL_TPictMngrCtx* pCtx, AL_TDecSliceParam* pSP, AL_TAvcSliceHdr* pSlice, TBufferListRef* pListRef, TBuffer* pListVirtAddr, TBuffer* pListAddr, TBufferPOC* pPOC, TBufferMV* pMV, TBuffer* pWP, AL_TRecBuffers* pRecs)
 {
-  if(!AL_PictMngr_GetBuffers(pCtx, pPP, pSP, pListRef, pListVirtAddr, pListAddr, pPOC, pMV, pRecs))
+  if(!AL_PictMngr_GetBuffers(pCtx, pSP, pListRef, pListVirtAddr, pListAddr, pPOC, pMV, pRecs))
     return false;
 
   // Build Weighted Pred Table
@@ -364,7 +354,7 @@ void AL_AVC_PictMngr_Fill_Gap_In_FrameNum(AL_TPictMngrCtx* pCtx, AL_TAvcSliceHdr
   uint32_t uMaxFrameNum = 1 << (pSlice->pSPS->log2_max_frame_num_minus4 + 4);
 
   if(
-    (!isIDRPicture(pSlice->nal_unit_type))
+    (!AL_AVC_IsIDR(pSlice->nal_unit_type))
     && (pSlice->frame_num != pCtx->iPrevFrameNum)
     && (pSlice->frame_num != (int)((pCtx->iPrevFrameNum + 1) % uMaxFrameNum))
     )
@@ -401,9 +391,9 @@ void AL_AVC_PictMngr_InitPictList(AL_TPictMngrCtx* pCtx, AL_TAvcSliceHdr* pSlice
     (*pListRef)[1][uRef].uNodeID = uEndOfList;
   }
 
-  if(pSlice->slice_type == SLICE_P || pSlice->slice_type == SLICE_SP)
+  if(pSlice->slice_type == AL_SLICE_P || pSlice->slice_type == AL_SLICE_SP)
     AL_Dpb_InitPSlice_RefList(&pCtx->DPB, &(*pListRef)[0][0]);
-  else if(pSlice->slice_type == SLICE_B)
+  else if(pSlice->slice_type == AL_SLICE_B)
     AL_Dpb_InitBSlice_RefList(&pCtx->DPB, pCtx->iCurFramePOC, pListRef);
 }
 
@@ -437,7 +427,7 @@ void AL_AVC_PictMngr_ReorderPictList(AL_TPictMngrCtx* pCtx, AL_TAvcSliceHdr* pSl
     }
   }
 
-  if(pSlice->ref_pic_list_reordering_flag_l1 && pSlice->slice_type == SLICE_B)
+  if(pSlice->ref_pic_list_reordering_flag_l1 && pSlice->slice_type == AL_SLICE_B)
   {
     uint8_t uParse = 0;
     uint8_t uRefIdxL1 = 0;

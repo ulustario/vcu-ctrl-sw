@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright (C) 2018 Allegro DVT2.  All rights reserved.
+* Copyright (C) 2019 Allegro DVT2.  All rights reserved.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -55,10 +55,7 @@ typedef struct t_NalHeader
   int size;
 }NalHeader;
 
-NalHeader GetNalHeaderAvc(uint8_t uNUT, uint8_t uNalIdc);
-NalHeader GetNalHeaderHevc(uint8_t uNUT, uint8_t uNalIdc);
-
-void WriteFillerData(AL_TBitStreamLite* pStream, uint8_t uNUT, NalHeader header, int bytesCount, int iSpaceForSeiSuffix);
+void WriteFillerData(AL_TBitStreamLite* pStream, uint8_t uNUT, NalHeader header, int bytesCount);
 void FlushNAL(AL_TBitStreamLite* pStream, uint8_t uNUT, NalHeader header, uint8_t* pDataInNAL, int iBitsInNAL);
 
 void AddFlagsToAllSections(AL_TStreamMetaData* pStreamMeta, uint32_t flags);

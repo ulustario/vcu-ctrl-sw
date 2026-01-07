@@ -9,5 +9,4 @@ LIB_PARSING_SRC:=\
 	lib_parsing/Hevc_PictMngr.c\
 	lib_parsing/Concealment.c\
 
-UNITTEST+=$(shell find lib_parsing/unittests -name "*.cpp")
-UNITTEST+=$(LIB_PARSING_SRC)
+

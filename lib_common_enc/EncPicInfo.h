@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright (C) 2018 Allegro DVT2.  All rights reserved.
+* Copyright (C) 2019 Allegro DVT2.  All rights reserved.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -50,6 +50,19 @@
 #include "lib_common/BufferAPI.h"
 
 /*************************************************************************//*!
+   \brief Segmentation structure
+*****************************************************************************/
+#define MAX_SEGMENTS 8
+typedef struct AL_t_Segmentation
+{
+  bool enable;
+  bool update_map;
+  bool update_data;
+  bool abs_delta;
+  int16_t feature_data[MAX_SEGMENTS];  // only store data for Q
+}AL_TSegmentation;
+
+/*************************************************************************//*!
    \brief Encoding tool enum
 *****************************************************************************/
 typedef enum AL_e_PicEncOption
@@ -66,9 +79,7 @@ typedef struct AL_t_EncInfo
   AL_EPicEncOption eEncOptions;
   int16_t iPpsQP;
 
-#if AL_ENABLE_TWOPASS
   AL_TLookAheadParam tLAParam;
-#endif
 
   AL_64U UserParam;
   AL_64U SrcHandle;
@@ -83,9 +94,16 @@ typedef enum
   AL_OPT_RESTART_GOP = 0x0008,
   AL_OPT_UPDATE_PARAMS = 0x0010,
   AL_OPT_SET_QP = 0x0100,
+  AL_OPT_SET_INPUT_RESOLUTION = 0x200,
 }AL_ERequestEncOption;
 
 
+
+typedef struct
+{
+  AL_TDimension tInputResolution;
+  uint8_t uNewNalsId;
+}AL_TDynResParams;
 
 typedef struct
 {
@@ -99,6 +117,7 @@ typedef struct AL_t_EncRequestInfo
   AL_ERequestEncOption eReqOptions;
   uint32_t uSceneChangeDelay;
   AL_TEncSmartParams smartParams;
+  AL_TDynResParams dynResParams;
 }AL_TEncRequestInfo;
 
 /*************************************************************************//*!
@@ -149,14 +168,13 @@ typedef struct AL_t_EncPicStatus
   bool bIsLastSlice;
   int16_t iPpsQP;
   int iRecoveryCnt;
+  uint8_t uTempId;
 
   uint8_t uCuQpDeltaDepth;
 
-#if AL_ENABLE_TWOPASS
   int32_t iPictureSize;
-  int8_t iPercentIntra;
-  int8_t iPercentSkip;
-#endif
+  int8_t iPercentIntra[5];
+
 }AL_TEncPicStatus;
 
 #define AL_ERR_SRC_BUF_NOT_READY AL_DEF_ERROR(20)

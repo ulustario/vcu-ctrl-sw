@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright (C) 2018 Allegro DVT2.  All rights reserved.
+* Copyright (C) 2019 Allegro DVT2.  All rights reserved.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -56,6 +56,7 @@
 #include "lib_parsing/Hevc_PictMngr.h"
 
 #include "lib_decode/I_DecChannel.h"
+#include "SliceDataParsing.h"
 #include "I_DecoderCtx.h"
 #include "FrameParam.h"
 
@@ -93,15 +94,13 @@ static void pushCommandParameters(AL_TDecCtx* pCtx, AL_TDecSliceParam* pSP, bool
 /******************************************************************************/
 static void AL_sSaveCommandBlk2(AL_TDecCtx* pCtx, AL_TDecPicParam* pPP, AL_TDecPicBuffers* pBufs)
 {
-  AL_TDimension tDim = { pPP->PicWidth * 8, pPP->PicHeight * 8 };
+  (void)pPP;
+
   int const iMaxBitDepth = pCtx->tStreamSettings.iBitDepth;
-  AL_EFbStorageMode const eStorageMode = pCtx->chanParam.eFBStorageMode;
-
   AL_TBuffer* pRec = pCtx->pRecs.pFrame;
-
   AL_TSrcMetaData* pRecMeta = (AL_TSrcMetaData*)AL_Buffer_GetMetaData(pRec, AL_META_TYPE_SOURCE);
   assert(pRecMeta);
-  uint16_t uPitch = pRecMeta->tPitches.iLuma;
+  uint16_t uPitch = pRecMeta->tPlanes[AL_PLANE_Y].iPitch;
 
   uint32_t const u10BitsFlag = (iMaxBitDepth == 8) ? 0x00000000 : 0x80000000;
   pBufs->uPitch = uPitch | u10BitsFlag;
@@ -114,9 +113,9 @@ static void AL_sSaveCommandBlk2(AL_TDecCtx* pCtx, AL_TDecPicParam* pPP, AL_TDecP
   pBufs->tRecY.tMD.uPhysicalAddr = AL_Allocator_GetPhysicalAddr(pRecAllocator, hRecHandle);
   pBufs->tRecY.tMD.pVirtualAddr = pRecData;
 
-  int const iLumaSize = AL_GetAllocSize_DecReference(tDim, uPitch, CHROMA_MONO, eStorageMode);
-  pBufs->tRecC.tMD.uPhysicalAddr = AL_Allocator_GetPhysicalAddr(pRecAllocator, hRecHandle) + iLumaSize;
-  pBufs->tRecC.tMD.pVirtualAddr = pRecData + iLumaSize;
+  int const iOffsetC = pRecMeta->tPlanes[AL_PLANE_UV].iOffset;
+  pBufs->tRecC.tMD.uPhysicalAddr = AL_Allocator_GetPhysicalAddr(pRecAllocator, hRecHandle) + iOffsetC;
+  pBufs->tRecC.tMD.pVirtualAddr = pRecData + iOffsetC;
 
 
 
@@ -187,16 +186,21 @@ void AL_LaunchSliceDecoding(AL_TDecCtx* pCtx, bool bIsLastAUNal, bool hasPreviou
   AL_TDecPicBufferAddrs BufAddrs = AL_SetBufferAddrs(pCtx);
 
   uint16_t uSliceID = pCtx->PictMngr.uNumSlice - 1;
+  AL_TDecSliceParam* pPrevSP = NULL;
 
 
   UpdateStreamOffset(pCtx);
 
   if(hasPreviousSlice && uSliceID)
+  {
+    pPrevSP = &(((AL_TDecSliceParam*)pCtx->PoolSP[pCtx->uToggle].tMD.pVirtualAddr)[uSliceID - 1]);
     decodeOneSlice(pCtx, uSliceID - 1, &BufAddrs);
+  }
 
   if(bIsLastAUNal)
   {
-    decodeOneSlice(pCtx, uSliceID, &BufAddrs);
+    if(pPrevSP == NULL || !pPrevSP->bIsLastSlice)
+      decodeOneSlice(pCtx, uSliceID, &BufAddrs);
     pCtx->uCurTileID = 0;
 
     Rtos_GetMutex(pCtx->DecMutex);
@@ -280,6 +284,7 @@ void AL_CancelFrameBuffers(AL_TDecCtx* pCtx)
 
   int iOffset = pCtx->iNumFrmBlk1 % MAX_STACK_SIZE;
   AL_PictMngr_UnlockRefID(&pCtx->PictMngr, pCtx->uNumRef[iOffset], pCtx->uFrameIDRefList[iOffset], pCtx->uMvIDRefList[iOffset]);
+  UpdateContextAtEndOfFrame(pCtx);
   Rtos_ReleaseSemaphore(pCtx->Sem);
 }
 
@@ -305,27 +310,27 @@ void AL_SetConcealParameters(AL_TDecCtx* pCtx, AL_TDecSliceParam* pSP)
 /*****************************************************************************/
 void AL_TerminatePreviousCommand(AL_TDecCtx* pCtx, AL_TDecPicParam* pPP, AL_TDecSliceParam* pSP, bool bIsLastVclNalInAU, bool bNextIsDependent)
 {
-  if(pCtx->PictMngr.uNumSlice)
+  if(pCtx->PictMngr.uNumSlice == 0)
+    return;
+
+  AL_TDecSliceParam* pPrevSP = &(((AL_TDecSliceParam*)pCtx->PoolSP[pCtx->uToggle].tMD.pVirtualAddr)[pCtx->PictMngr.uNumSlice - 1]);
+  AL_TDecPicBuffers* pBufs = &pCtx->PoolPB[pCtx->uToggle];
+
+  AL_sSaveCommandBlk2(pCtx, pPP, pBufs);
+
+  if(bIsLastVclNalInAU)
+    pPrevSP->NextSliceSegment = pPP->LcuWidth * pPP->LcuHeight;
+  else
+    pPrevSP->NextSliceSegment = pSP->FirstLcuSliceSegment;
+
+  pPrevSP->NextIsDependent = bNextIsDependent;
+
+  if(!pCtx->tConceal.bValidFrame)
   {
-    AL_TDecSliceParam* pPrevSP = &(((AL_TDecSliceParam*)pCtx->PoolSP[pCtx->uToggle].tMD.pVirtualAddr)[pCtx->PictMngr.uNumSlice - 1]);
-    AL_TDecPicBuffers* pBufs = &pCtx->PoolPB[pCtx->uToggle];
-
-    AL_sSaveCommandBlk2(pCtx, pPP, pBufs);
-
-    if(bIsLastVclNalInAU)
-      pPrevSP->NextSliceSegment = pPP->LcuWidth * pPP->LcuHeight;
-    else
-      pPrevSP->NextSliceSegment = pSP->FirstLcuSliceSegment;
-
-    pPrevSP->NextIsDependent = bNextIsDependent;
-
-    if(!pCtx->tConceal.bValidFrame)
-    {
-      pPrevSP->eSliceType = SLICE_CONCEAL;
-      pPrevSP->FirstLCU = 0;
-    }
-    pushCommandParameters(pCtx, pPrevSP, bIsLastVclNalInAU);
+    pPrevSP->eSliceType = AL_SLICE_CONCEAL;
+    pPrevSP->FirstLCU = 0;
   }
+  pushCommandParameters(pCtx, pPrevSP, bIsLastVclNalInAU);
 }
 
 /*****************************************************************************/
@@ -342,29 +347,28 @@ void AL_AVC_PrepareCommand(AL_TDecCtx* pCtx, AL_TScl* pSCL, AL_TDecPicParam* pPP
   if(pPrevSP && !bIsValid && bIsLastVclNalInAU)
   {
     AL_TerminatePreviousCommand(pCtx, pPP, pSP, bIsLastVclNalInAU, true);
+    return;
   }
-  else
+
+  // copy collocated info
+  if(pSP->FirstLcuSliceSegment && pSP->eSliceType == AL_SLICE_I)
+    pSP->ColocPicID = pPrevSP->ColocPicID;
+
+  if(!pSlice->first_mb_in_slice)
+    AL_AVC_WriteDecHwScalingList((AL_TScl const*)pSCL, pBufs->tScl.tMD.pVirtualAddr);
+  AL_AVC_PictMngr_GetBuffers(&pCtx->PictMngr, pSP, pSlice, &pCtx->ListRef, &pBufs->tListVirtRef, &pBufs->tListRef, &pCtx->POC, &pCtx->MV, &pBufs->tWP, &pCtx->pRecs);
+
+  // stock command registers in memory
+  if(pSP->FirstLCU)
   {
-    // copy collocated info
-    if(pSP->FirstLcuSliceSegment && pSP->eSliceType == SLICE_I)
-      pSP->ColocPicID = pPrevSP->ColocPicID;
-
-    if(!pSlice->first_mb_in_slice)
-      AL_AVC_WriteDecHwScalingList((AL_TScl const*)pSCL, pBufs->tScl.tMD.pVirtualAddr);
-    AL_AVC_PictMngr_GetBuffers(&pCtx->PictMngr, pPP, pSP, pSlice, &pCtx->ListRef, &pBufs->tListVirtRef, &pBufs->tListRef, &pCtx->POC, &pCtx->MV, &pBufs->tWP, &pCtx->pRecs);
-
-    // stock command registers in memory
-    if(pSP->FirstLCU)
-    {
-      AL_TerminatePreviousCommand(pCtx, pPP, pSP, false, true);
-      pSP->FirstLcuTileID = pSP->DependentSlice ? pPrevSP->FirstLcuTileID : pCtx->uCurTileID;
-    }
-
-    AL_sSaveNalStreamBlk1(pCtx);
-
-    if(bIsLastVclNalInAU)
-      AL_TerminateCurrentCommand(pCtx, pPP, pSP);
+    AL_TerminatePreviousCommand(pCtx, pPP, pSP, false, true);
+    pSP->FirstLcuTileID = pSP->DependentSlice ? pPrevSP->FirstLcuTileID : pCtx->uCurTileID;
   }
+
+  AL_sSaveNalStreamBlk1(pCtx);
+
+  if(bIsLastVclNalInAU)
+    AL_TerminateCurrentCommand(pCtx, pPP, pSP);
 }
 
 /*****************************************************************************/
@@ -380,31 +384,30 @@ void AL_HEVC_PrepareCommand(AL_TDecCtx* pCtx, AL_TScl* pSCL, AL_TDecPicParam* pP
   if(pPrevSP && !bIsValid && bIsLastVclNalInAU)
   {
     AL_TerminatePreviousCommand(pCtx, pPP, pSP, bIsLastVclNalInAU, true);
+    return;
   }
-  else
+
+  // copy collocated info
+  if(pSP->FirstLcuSliceSegment && pSP->eSliceType == AL_SLICE_I)
+    pSP->ColocPicID = pPrevSP->ColocPicID;
+
+  if(pSlice->first_slice_segment_in_pic_flag)
+    AL_HEVC_WriteDecHwScalingList((const AL_TScl*)pSCL, pBufs->tScl.tMD.pVirtualAddr);
+  AL_HEVC_PictMngr_GetBuffers(&pCtx->PictMngr, pSP, pSlice, &pCtx->ListRef, &pBufs->tListVirtRef, &pBufs->tListRef, &pCtx->POC, &pCtx->MV, &pBufs->tWP, &pCtx->pRecs);
+
+  // stock command registers in memory
+  if(pSP->FirstLcuSliceSegment)
   {
-    // copy collocated info
-    if(pSP->FirstLcuSliceSegment && pSP->eSliceType == SLICE_I)
-      pSP->ColocPicID = pPrevSP->ColocPicID;
+    AL_TerminatePreviousCommand(pCtx, pPP, pSP, false, pSP->DependentSlice);
 
-    if(pSlice->first_slice_segment_in_pic_flag)
-      AL_HEVC_WriteDecHwScalingList((const AL_TScl*)pSCL, pBufs->tScl.tMD.pVirtualAddr);
-    AL_HEVC_PictMngr_GetBuffers(&pCtx->PictMngr, pPP, pSP, pSlice, &pCtx->ListRef, &pBufs->tListVirtRef, &pBufs->tListRef, &pCtx->POC, &pCtx->MV, &pBufs->tWP, &pCtx->pRecs);
-
-    // stock command registers in memory
-    if(pSP->FirstLcuSliceSegment)
-    {
-      AL_TerminatePreviousCommand(pCtx, pPP, pSP, false, pSP->DependentSlice);
-
-      pSP->FirstLcuSlice = pSP->DependentSlice ? pPrevSP->FirstLcuSlice : pSP->FirstLcuSlice;
-      pSP->FirstLcuTileID = pSP->DependentSlice ? pPrevSP->FirstLcuTileID : pCtx->uCurTileID;
-    }
-
-    AL_sSaveNalStreamBlk1(pCtx);
-
-    if(bIsLastVclNalInAU)
-      AL_TerminateCurrentCommand(pCtx, pPP, pSP);
+    pSP->FirstLcuSlice = pSP->DependentSlice ? pPrevSP->FirstLcuSlice : pSP->FirstLcuSlice;
+    pSP->FirstLcuTileID = pSP->DependentSlice ? pPrevSP->FirstLcuTileID : pCtx->uCurTileID;
   }
+
+  AL_sSaveNalStreamBlk1(pCtx);
+
+  if(bIsLastVclNalInAU)
+    AL_TerminateCurrentCommand(pCtx, pPP, pSP);
 }
 
 /*@}*/

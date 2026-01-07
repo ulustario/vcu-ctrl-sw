@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright (C) 2018 Allegro DVT2.  All rights reserved.
+* Copyright (C) 2019 Allegro DVT2.  All rights reserved.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -246,6 +246,8 @@ static Section toSection(std::string const& section)
 {
   if(section == "INPUT")
     return Section::Input;
+  else if(section == "DYNAMIC_INPUT")
+    return Section::DynamicInput;
   else if(section == "OUTPUT")
     return Section::Output;
   else if(section == "SETTINGS")
@@ -268,7 +270,7 @@ void ConfigParser::parseIdentifiers(Token const& ident, std::deque<Token>& token
 {
   try
   {
-    identifiers.at(curSection).at(ident.text).func(tokens);
+    identifiers.at(curSection).at(tolowerStr(ident.text)).func(tokens);
   }
   catch(std::out_of_range &)
   {
@@ -335,16 +337,16 @@ std::string ConfigParser::nearestMatch(std::string const& wrong)
   {
     for(auto section : identifiers)
       for(auto const & right : identifiers.at(section.first))
-        if(wrong == right.first)
+        if(wrong == right.second.showName)
           otherSectionMatch = wrong + " but in section [" + toString(section.first) + "]";
 
     for(auto const& right : identifiers.at(curSection))
     {
-      auto distance = levenshteinDistance(right.first, wrong);
+      auto distance = levenshteinDistance(right.second.showName, wrong);
 
       if(distance < minDistance)
       {
-        match = right.first;
+        match = right.second.showName;
         minDistance = distance;
       }
     }

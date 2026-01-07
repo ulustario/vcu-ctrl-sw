@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright (C) 2018 Allegro DVT2.  All rights reserved.
+* Copyright (C) 2019 Allegro DVT2.  All rights reserved.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -107,12 +107,14 @@ void AL_RbspEncoding_CloseSEI(AL_TBitStreamLite* pBS)
 }
 
 /******************************************************************************/
-void AL_RbspEncoding_WriteUserDataUnregistered(AL_TBitStreamLite* pBS, uint8_t uuid[16])
+void AL_RbspEncoding_WriteUserDataUnregistered(AL_TBitStreamLite* pBS, uint8_t uuid[16], int8_t numSlices)
 {
   int const bookmark = AL_RbspEncoding_BeginSEI(pBS, 5);
 
   for(int i = 0; i < 16; i++)
     AL_BitStreamLite_PutU(pBS, 8, uuid[i]);
+
+  AL_BitStreamLite_PutU(pBS, 8, numSlices);
 
   AL_RbspEncoding_EndSEI(pBS, bookmark);
   AL_RbspEncoding_CloseSEI(pBS);

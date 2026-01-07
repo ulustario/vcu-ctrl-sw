@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright (C) 2018 Allegro DVT2.  All rights reserved.
+* Copyright (C) 2019 Allegro DVT2.  All rights reserved.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -63,12 +63,23 @@
 #define HEVC_PROFILE_IDC_RExt 4
 
 
+/****************************************************************************/
+typedef enum AL_e_Codec
+{
+  AL_CODEC_AVC,
+  AL_CODEC_HEVC,
+  AL_CODEC_JPEG,
+  AL_CODEC_VP9,
+  AL_CODEC_AV1,
+  AL_CODEC_INVALID, /* sentinel */
+}AL_ECodec;
+
 /*************************************************************************//*!
    \brief Profiles identifier
 *****************************************************************************/
 typedef enum __AL_ALIGNED__ (4) AL_e_Profile
 {
-  AL_PROFILE_AVC = 0x01000000,
+  AL_PROFILE_AVC = (AL_CODEC_AVC << 24),
   AL_PROFILE_AVC_CAVLC_444 = AL_PROFILE_AVC | AVC_PROFILE_IDC_CAVLC_444, // not supported
   AL_PROFILE_AVC_BASELINE = AL_PROFILE_AVC | AVC_PROFILE_IDC_BASELINE,
   AL_PROFILE_AVC_MAIN = AL_PROFILE_AVC | AVC_PROFILE_IDC_MAIN,
@@ -85,7 +96,7 @@ typedef enum __AL_ALIGNED__ (4) AL_e_Profile
   AL_PROFILE_AVC_HIGH_422_INTRA = AL_PROFILE_AVC_HIGH_422 | AL_CS_FLAGS(0x0008),
   AL_PROFILE_AVC_HIGH_444_INTRA = AL_PROFILE_AVC_HIGH_444_PRED | AL_CS_FLAGS(0x0008), // not supported
 
-  AL_PROFILE_HEVC = 0x02000000,
+  AL_PROFILE_HEVC = (AL_CODEC_HEVC << 24),
   AL_PROFILE_HEVC_MAIN = AL_PROFILE_HEVC | HEVC_PROFILE_IDC_MAIN,
   AL_PROFILE_HEVC_MAIN10 = AL_PROFILE_HEVC | HEVC_PROFILE_IDC_MAIN10,
   AL_PROFILE_HEVC_MAIN_STILL = AL_PROFILE_HEVC | HEVC_PROFILE_IDC_MAIN_STILL,
@@ -118,99 +129,99 @@ typedef enum __AL_ALIGNED__ (4) AL_e_Profile
 } AL_EProfile;
 
 /****************************************************************************/
-#define AL_GET_PROFILE_CODEC(Prof) (Prof & 0xFF000000)
-#define AL_GET_PROFILE_IDC(Prof) (Prof & 0x000000FF)
-#define AL_GET_PROFILE_CODED_AND_IDC(Prof) (Prof & 0xFF0000FF)
-#define AL_GET_RExt_FLAGS(Prof) ((Prof & 0x00FFFF00) >> 8)
-#define AL_GET_CS_FLAGS(Prof) ((Prof & 0x00FFFF00) >> 8)
-/****************************************************************************/
-#define AL_IS_AVC(Prof) (AL_GET_PROFILE_CODEC(Prof) == AL_PROFILE_AVC)
-#define AL_IS_HEVC(Prof) (AL_GET_PROFILE_CODEC(Prof) == AL_PROFILE_HEVC)
-
-/****************************************************************************/
-static AL_INLINE bool AL_IS_MONO_PROFILE(AL_EProfile eProf)
+static AL_INLINE AL_ECodec AL_GET_PROFILE_CODEC(AL_EProfile eProfile)
 {
-  bool bRes = ((AL_GET_PROFILE_CODED_AND_IDC(eProf) == AL_PROFILE_HEVC_RExt)
-               || (AL_GET_PROFILE_CODED_AND_IDC(eProf) == AL_PROFILE_AVC_HIGH)
-               || (AL_GET_PROFILE_CODED_AND_IDC(eProf) == AL_PROFILE_AVC_HIGH10)
-               || (AL_GET_PROFILE_CODED_AND_IDC(eProf) == AL_PROFILE_AVC_HIGH_422)
-               );
-  return bRes;
+  return (AL_ECodec)((eProfile & 0xFF000000) >> 24);
 }
 
 /****************************************************************************/
-static AL_INLINE bool AL_IS_10BIT_PROFILE(AL_EProfile eProf)
+static AL_INLINE int AL_GET_PROFILE_IDC(AL_EProfile eProfile)
+{
+  return eProfile & 0x000000FF;
+}
+
+#define AL_GET_PROFILE_CODED_AND_IDC(Prof) (Prof & 0xFF0000FF)
+#define AL_GET_RExt_FLAGS(Prof) ((Prof & 0x00FFFF00) >> 8)
+#define AL_GET_CS_FLAGS(Prof) ((Prof & 0x00FFFF00) >> 8)
+
+/****************************************************************************/
+#define AL_IS_AVC(Prof) (AL_GET_PROFILE_CODEC(Prof) == AL_CODEC_AVC)
+#define AL_IS_HEVC(Prof) (AL_GET_PROFILE_CODEC(Prof) == AL_CODEC_HEVC)
+
+/****************************************************************************/
+static AL_INLINE bool AL_IS_MONO_PROFILE(AL_EProfile eProfile)
 {
   bool bRes = (
-    ((AL_GET_PROFILE_CODED_AND_IDC(eProf) == AL_PROFILE_HEVC_RExt) && !(AL_GET_RExt_FLAGS(eProf) & 0x2000))
-    || (AL_GET_PROFILE_CODED_AND_IDC(eProf) == AL_PROFILE_HEVC_MAIN10)
-    || (AL_GET_PROFILE_CODED_AND_IDC(eProf) == AL_PROFILE_AVC_HIGH10)
-    || (AL_GET_PROFILE_CODED_AND_IDC(eProf) == AL_PROFILE_AVC_HIGH_422)
+    (AL_GET_PROFILE_CODED_AND_IDC(eProfile) == AL_PROFILE_HEVC_RExt)
+    || (AL_GET_PROFILE_CODED_AND_IDC(eProfile) == AL_PROFILE_AVC_HIGH)
+    || (AL_GET_PROFILE_CODED_AND_IDC(eProfile) == AL_PROFILE_AVC_HIGH10)
+    || (AL_GET_PROFILE_CODED_AND_IDC(eProfile) == AL_PROFILE_AVC_HIGH_422)
     );
   return bRes;
 }
 
 /****************************************************************************/
-static AL_INLINE bool AL_IS_420_PROFILE(AL_EProfile eProf)
+static AL_INLINE bool AL_IS_10BIT_PROFILE(AL_EProfile eProfile)
+{
+  bool bRes = (
+    ((AL_GET_PROFILE_CODED_AND_IDC(eProfile) == AL_PROFILE_HEVC_RExt) && !(AL_GET_RExt_FLAGS(eProfile) & 0x2000))
+    || (AL_GET_PROFILE_CODED_AND_IDC(eProfile) == AL_PROFILE_HEVC_MAIN10)
+    || (AL_GET_PROFILE_CODED_AND_IDC(eProfile) == AL_PROFILE_AVC_HIGH10)
+    || (AL_GET_PROFILE_CODED_AND_IDC(eProfile) == AL_PROFILE_AVC_HIGH_422)
+    );
+  return bRes;
+}
+
+/****************************************************************************/
+static AL_INLINE bool AL_IS_420_PROFILE(AL_EProfile eProfile)
 {
   /* Only hevc mono doesn't support 420 */
   bool bIsHEVCMono = (
-    ((AL_GET_PROFILE_CODED_AND_IDC(eProf) == AL_PROFILE_HEVC_RExt) && (AL_GET_RExt_FLAGS(eProf) & 0x0400))
+    ((AL_GET_PROFILE_CODED_AND_IDC(eProfile) == AL_PROFILE_HEVC_RExt) && (AL_GET_RExt_FLAGS(eProfile) & 0x0400))
     );
 
   return !bIsHEVCMono;
 }
 
 /****************************************************************************/
-static AL_INLINE bool AL_IS_422_PROFILE(AL_EProfile eProf)
+static AL_INLINE bool AL_IS_422_PROFILE(AL_EProfile eProfile)
 {
   bool bRes = (
-    ((AL_GET_PROFILE_CODED_AND_IDC(eProf) == AL_PROFILE_HEVC_RExt) && !(AL_GET_RExt_FLAGS(eProf) & 0x0C00))
-    || (AL_GET_PROFILE_CODED_AND_IDC(eProf) == AL_PROFILE_AVC_HIGH_422)
+    ((AL_GET_PROFILE_CODED_AND_IDC(eProfile) == AL_PROFILE_HEVC_RExt) && !(AL_GET_RExt_FLAGS(eProfile) & 0x0C00))
+    || (AL_GET_PROFILE_CODED_AND_IDC(eProfile) == AL_PROFILE_AVC_HIGH_422)
     );
 
   return bRes;
 }
 
 /****************************************************************************/
-static AL_INLINE bool AL_IS_STILL_PROFILE(AL_EProfile eProf)
+static AL_INLINE bool AL_IS_STILL_PROFILE(AL_EProfile eProfile)
 {
   bool bRes = (
-    ((AL_GET_PROFILE_CODED_AND_IDC(eProf) == AL_PROFILE_HEVC_RExt) && (AL_GET_RExt_FLAGS(eProf) & 0x0100))
-    || (AL_GET_PROFILE_CODED_AND_IDC(eProf) == AL_PROFILE_HEVC_MAIN_STILL)
+    ((AL_GET_PROFILE_CODED_AND_IDC(eProfile) == AL_PROFILE_HEVC_RExt) && (AL_GET_RExt_FLAGS(eProfile) & 0x0100))
+    || (AL_GET_PROFILE_CODED_AND_IDC(eProfile) == AL_PROFILE_HEVC_MAIN_STILL)
     );
   return bRes;
 }
 
 /****************************************************************************/
-static AL_INLINE bool AL_IS_INTRA_PROFILE(AL_EProfile eProf)
+static AL_INLINE bool AL_IS_INTRA_PROFILE(AL_EProfile eProfile)
 {
   bool bRes = (
-    ((AL_GET_PROFILE_CODED_AND_IDC(eProf) == AL_PROFILE_HEVC_RExt) && (AL_GET_RExt_FLAGS(eProf) & 0x0200))
-    || (AL_IS_AVC(eProf) && (AL_GET_CS_FLAGS(eProf) & 0x0008))
+    ((AL_GET_PROFILE_CODED_AND_IDC(eProfile) == AL_PROFILE_HEVC_RExt) && (AL_GET_RExt_FLAGS(eProfile) & 0x0200))
+    || (AL_IS_AVC(eProfile) && (AL_GET_CS_FLAGS(eProfile) & 0x0008))
     );
   return bRes;
 }
 
 /****************************************************************************/
-static AL_INLINE bool AL_IS_LOW_BITRATE_PROFILE(AL_EProfile eProf)
+static AL_INLINE bool AL_IS_LOW_BITRATE_PROFILE(AL_EProfile eProfile)
 {
   bool bRes = (
-    ((AL_GET_PROFILE_CODED_AND_IDC(eProf) == AL_PROFILE_HEVC_RExt) && (AL_GET_RExt_FLAGS(eProf) & 0x0080))
+    ((AL_GET_PROFILE_CODED_AND_IDC(eProfile) == AL_PROFILE_HEVC_RExt) && (AL_GET_RExt_FLAGS(eProfile) & 0x0080))
     );
   return bRes;
 }
-
-/****************************************************************************/
-typedef enum AL_e_Codec
-{
-  AL_CODEC_AVC,
-  AL_CODEC_HEVC,
-  AL_CODEC_JPEG,
-  AL_CODEC_VP9,
-  AL_CODEC_AV1,
-  AL_CODEC_INVALID, /* sentinel */
-}AL_ECodec;
 
 /*************************************************************************//*!
    \brief Scaling List identifier
@@ -225,31 +236,20 @@ typedef enum e_ScalingList
 }AL_EScalingList;
 
 /*************************************************************************//*!
-   \brief Reference picture status
- ***************************************************************************/
-typedef enum e_MarkingRef
-{
-  SHORT_TERM_REF = 0,
-  LONG_TERM_REF = 1,
-  UNUSED_FOR_REF = 2,
-  NON_EXISTING_REF = 3,
-}AL_EMarkingRef;
-
-/*************************************************************************//*!
    \brief Identifies the slice coding type
 *****************************************************************************/
 typedef enum e_SliceType
 {
-  SLICE_SI = 4, /*!< AVC SI Slice */
-  SLICE_SP = 3, /*!< AVC SP Slice */
-  SLICE_GOLDEN = 3, /*!< Golden Slice */
-  SLICE_I = 2,  /*!< I Slice (can contain I blocks) */
-  SLICE_P = 1,  /*!< P Slice (can contain I and P blocks) */
-  SLICE_B = 0,  /*!< B Slice (can contain I, P and B blocks) */
-  SLICE_CONCEAL = 6, /*!< Conceal Slice (slice was concealed) */
-  SLICE_SKIP = 7, /*!< Skip Slice */
-  SLICE_REPEAT = 8, /*!< VP9 Repeat Slice (repeats the content of its reference) */
-  SLICE_MAX_ENUM, /* sentinel */
+  AL_SLICE_SI = 4, /*!< AVC SI Slice */
+  AL_SLICE_SP = 3, /*!< AVC SP Slice */
+  AL_SLICE_GOLDEN = 3, /*!< Golden Slice */
+  AL_SLICE_I = 2,  /*!< I Slice (can contain I blocks) */
+  AL_SLICE_P = 1,  /*!< P Slice (can contain I and P blocks) */
+  AL_SLICE_B = 0,  /*!< B Slice (can contain I, P and B blocks) */
+  AL_SLICE_CONCEAL = 6, /*!< Conceal Slice (slice was concealed) */
+  AL_SLICE_SKIP = 7, /*!< Skip Slice */
+  AL_SLICE_REPEAT = 8, /*!< VP9 Repeat Slice (repeats the content of its reference) */
+  AL_SLICE_MAX_ENUM, /* sentinel */
 }AL_ESliceType;
 
 /*************************************************************************//*!
@@ -257,21 +257,20 @@ typedef enum e_SliceType
 *****************************************************************************/
 typedef enum e_PicStruct
 {
-  PS_FRM = 0,
-  PS_TOP_FLD = 1,
-  PS_BOT_FLD = 2,
-  PS_TOP_BOT = 3,
-  PS_BOT_TOP = 4,
-  PS_TOP_BOT_TOP = 5,
-  PS_BOT_TOP_BOT = 6,
-  PS_FRM_x2 = 7,
-  PS_FRM_x3 = 8,
-  PS_TOP_FLD_WITH_PREV_BOT = 9,
-  PS_BOT_FLD_WITH_PREV_TOP = 10,
-  PS_TOP_FLD_WITH_NEXT_BOT = 11,
-  PS_BOT_FLD_WITH_NEXT_TOP = 12,
-  /* should always be last */
-  PS_FRM_MAX_ENUM, /* sentinel */
+  AL_PS_FRM = 0,
+  AL_PS_TOP_FLD = 1,
+  AL_PS_BOT_FLD = 2,
+  AL_PS_TOP_BOT = 3,
+  AL_PS_BOT_TOP = 4,
+  AL_PS_TOP_BOT_TOP = 5,
+  AL_PS_BOT_TOP_BOT = 6,
+  AL_PS_FRM_x2 = 7,
+  AL_PS_FRM_x3 = 8,
+  AL_PS_TOP_FLD_WITH_PREV_BOT = 9,
+  AL_PS_BOT_FLD_WITH_PREV_TOP = 10,
+  AL_PS_TOP_FLD_WITH_NEXT_BOT = 11,
+  AL_PS_BOT_FLD_WITH_NEXT_TOP = 12,
+  AL_PS_MAX_ENUM, /* sentinel */
 }AL_EPicStruct;
 
 /*************************************************************************//*!
@@ -279,12 +278,12 @@ typedef enum e_PicStruct
 *****************************************************************************/
 typedef enum e_ChromaMode
 {
-  CHROMA_MONO = 0, /*!< Monochrome */
-  CHROMA_4_0_0 = 0, /*!< 4:0:0 = Monochrome */
-  CHROMA_4_2_0 = 1, /*!< 4:2:0 chroma sampling */
-  CHROMA_4_2_2 = 2, /*!< 4:2:2 chroma sampling : Not supported */
-  CHROMA_4_4_4 = 3, /*!< 4:4:4 chroma sampling : Not supported */
-  CHROMA_MAX_ENUM, /* sentinel */
+  AL_CHROMA_MONO, /*!< Monochrome */
+  AL_CHROMA_4_0_0 = AL_CHROMA_MONO, /*!< 4:0:0 = Monochrome */
+  AL_CHROMA_4_2_0, /*!< 4:2:0 chroma sampling */
+  AL_CHROMA_4_2_2, /*!< 4:2:2 chroma sampling */
+  AL_CHROMA_4_4_4, /*!< 4:4:4 chroma sampling : Not supported */
+  AL_CHROMA_MAX_ENUM, /* sentinel */
 }AL_EChromaMode;
 
 /*************************************************************************//*!
@@ -298,16 +297,6 @@ typedef enum e_EntropyMode
 }AL_EEntropyMode;
 
 /*************************************************************************//*!
-   \brief identifies the deblocking filter mode
-*****************************************************************************/
-typedef enum e_FilterMode
-{
-  FILT_ENABLE,
-  FILT_DISABLE,
-  FILT_DIS_SLICE,
-}AL_EFilterMode;
-
-/*************************************************************************//*!
    \brief Weighted Pred Mode
 *****************************************************************************/
 typedef enum e_WPMode
@@ -315,6 +304,7 @@ typedef enum e_WPMode
   AL_WP_DEFAULT,
   AL_WP_EXPLICIT,
   AL_WP_IMPLICIT,
+  AL_WP_MAX_ENUM, /* sentinel */
 }AL_EWPMode;
 
 /*************************************************************************//*!
@@ -333,6 +323,7 @@ typedef enum e_NalUnitType
   AL_AVC_NUT_EOB = 11,
   AL_AVC_NUT_FD = 12,
   AL_AVC_NUT_SPS_EXT = 13,
+  AL_AVC_NUT_PREFIX = 14,
   AL_AVC_NUT_SUB_SPS = 15,
   AL_AVC_NUT_SUFFIX_SEI = 24, /* nal_unit_type : [24..31] -> Content Unspecified */
   AL_AVC_NUT_ERR = 32,
@@ -381,46 +372,6 @@ typedef enum e_NalUnitType
 }AL_ENut;
 
 /*************************************************************************//*!
-   \brief Color Space
-*****************************************************************************/
-typedef enum e_ColorSpace
-{
-  UNKNOWN = 0,
-  BT_601 = 1,  // YUV
-  BT_709 = 2,  // YUV
-  SMPTE_170 = 3,  // YUV
-  SMPTE_240 = 4,  // YUV
-  RESERVED_1 = 5,
-  RESERVED_2 = 6,
-  SRGB = 7 // RGB
-}AL_EColorSpace;
-
-/*************************************************************************//*!
-   \brief VP9 interpolation filter
-*****************************************************************************/
-typedef enum e_InterP_Filter
-{
-  AL_INTERP_REGULAR,
-  AL_INTERP_SMOOTH,
-  AL_INTERP_SHARP,
-  AL_INTERP_BILINEAR,
-  AL_INTERP_SWITCHABLE,
-}AL_EInterPFilter;
-
-/*************************************************************************//*!
-   \brief Segmentation structure
-*****************************************************************************/
-#define MAX_SEGMENTS 8
-typedef struct AL_t_Segmentation
-{
-  bool enable;
-  bool update_map;
-  bool update_data;
-  bool abs_delta;
-  int16_t feature_data[MAX_SEGMENTS];  // only store data for Q
-}AL_TSegmentation;
-
-/*************************************************************************//*!
    \brief Internal frame buffer storage mode
 *****************************************************************************/
 typedef enum AL_e_FbStorageMode
@@ -436,7 +387,8 @@ typedef enum AL_e_FbStorageMode
 *****************************************************************************/
 typedef enum AL_e_BufferOutputMode
 {
-  AL_OUTPUT_INTERNAL = 0, // Output reconstructed buffers stored as in the encoder
+  AL_OUTPUT_INTERNAL, // Output reconstructed buffers stored as in the encoder
+  AL_OUTPUT_MAX_ENUM, /* sentinel */
 }AL_EBufferOutputMode;
 
 /*************************************************************************//*!
@@ -448,28 +400,58 @@ typedef struct
   int32_t iHeight;
 }AL_TDimension;
 
+/*************************************************************************//*!
+   \brief Struct for offsets
+*****************************************************************************/
+typedef struct
+{
+  int32_t iX;
+  int32_t iY;
+}AL_TOffset;
+
 /****************************************************************************/
 typedef enum e_SeiFlag
 {
-  SEI_NONE = 0x00000000, // no SEI
+  AL_SEI_NONE = 0x00000000, // no SEI
   // prefix
-  SEI_BP = 0x00000001, // Buffering period
-  SEI_PT = 0x00000002, // Picture Timing
-  SEI_RP = 0x00000004, // Recovery Point
+  AL_SEI_BP = 0x00000001, // Buffering period
+  AL_SEI_PT = 0x00000002, // Picture Timing
+  AL_SEI_RP = 0x00000004, // Recovery Point
+  AL_SEI_UDU = 0x00000008, // User Data Unregistered
   // suffix
-  SEI_EOF = 0x00001000, // End of frame
-  SEI_ALL = 0x00FFFFFF, // All supported SEI
+  AL_SEI_ALL = 0x00FFFFFF, // All supported SEI
 }AL_SeiFlag;
 
-inline static bool isSuffix(AL_SeiFlag seiFlag)
+inline static bool AL_IS_SEI_SUFFIX(AL_SeiFlag seiFlag)
 {
   return seiFlag & 0xFFF000;
 }
 
-inline static bool isPrefix(AL_SeiFlag seiFlag)
+inline static bool AL_IS_SEI_PREFIX(AL_SeiFlag seiFlag)
 {
   return seiFlag & 0x000FFF;
 }
+
+/*************************************************************************//*!
+   \brief Colour Description identifer (See ISO/IEC 23091-4 or ITU-T H.273)
+*****************************************************************************/
+typedef enum e_ColourDescription
+{
+  AL_COLOUR_DESC_RESERVED,
+  AL_COLOUR_DESC_UNSPECIFIED,
+  AL_COLOUR_DESC_BT_470_NTSC,
+  AL_COLOUR_DESC_BT_601_NTSC,
+  AL_COLOUR_DESC_BT_601_PAL,
+  AL_COLOUR_DESC_BT_709,
+  AL_COLOUR_DESC_BT_2020,
+  AL_COLOUR_DESC_SMPTE_240M,
+  AL_COLOUR_DESC_SMPTE_ST_428,
+  AL_COLOUR_DESC_SMPTE_RP_431,
+  AL_COLOUR_DESC_SMPTE_EG_432,
+  AL_COLOUR_DESC_EBU_3213,
+  AL_COLOUR_DESC_GENERIC_FILM,
+  AL_COLOUR_DESC_MAX_ENUM,
+}AL_EColourDescription;
 
 /*@}*/
 

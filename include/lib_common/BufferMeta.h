@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright (C) 2018 Allegro DVT2.  All rights reserved.
+* Copyright (C) 2019 Allegro DVT2.  All rights reserved.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -53,15 +53,14 @@ typedef enum
   AL_META_TYPE_STREAM, /*< useful section of the buffer containing the bitstream */
   AL_META_TYPE_CIRCULAR, /*< circular buffer implementation inside the buffer */
   AL_META_TYPE_PICTURE, /*< useful information about the bitstream choices for the frame */
-#if AL_ENABLE_TWOPASS
   AL_META_TYPE_LOOKAHEAD, /*< useful information about the frame for the lookahead*/
-#endif
   AL_META_TYPE_MAX, /* sentinel */
   AL_META_TYPE_EXTENDED = 0x7F000000 /*< user can define their own metadatas after this value. */
 }AL_EMetaType;
 
 typedef struct al_t_MetaData AL_TMetaData;
 typedef bool (* AL_FCN_MetaDestroy) (AL_TMetaData* pMeta);
+typedef AL_TMetaData* (* AL_FCN_MetaClone) (AL_TMetaData* pMeta);
 
 /*************************************************************************//*!
    \brief Metadatas are used to add useful informations to a buffer. The user
@@ -71,7 +70,18 @@ struct al_t_MetaData
 {
   AL_EMetaType eType; /*< tag of the metadata */
   AL_FCN_MetaDestroy MetaDestroy; /*< custom deleter */
+  AL_FCN_MetaClone MetaClone; /*< copy constructor */
 };
+
+static AL_INLINE AL_TMetaData* AL_MetaData_Clone(AL_TMetaData* pMeta)
+{
+  return pMeta->MetaClone(pMeta);
+}
+
+static AL_INLINE bool AL_MetaData_Destroy(AL_TMetaData* pMeta)
+{
+  return pMeta->MetaDestroy(pMeta);
+}
 
 /*@}*/
 

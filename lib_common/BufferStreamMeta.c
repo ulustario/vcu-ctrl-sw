@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright (C) 2018 Allegro DVT2.  All rights reserved.
+* Copyright (C) 2019 Allegro DVT2.  All rights reserved.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -47,21 +47,39 @@ static bool StreamMeta_Destroy(AL_TMetaData* pMeta)
   return true;
 }
 
+AL_TStreamMetaData* AL_StreamMetaData_Clone(AL_TStreamMetaData* pMeta)
+{
+  AL_TStreamMetaData* pNewMeta = AL_StreamMetaData_Create(pMeta->uMaxNumSection);
+  pNewMeta->uTemporalID = pMeta->uTemporalID;
+  pNewMeta->uMaxNumSection = pMeta->uMaxNumSection;
+  pNewMeta->uNumSection = pMeta->uNumSection;
+
+  for(uint16_t i = 0; i < pMeta->uNumSection; ++i)
+    pNewMeta->pSections[i] = pMeta->pSections[i];
+
+  return pNewMeta;
+}
+
+AL_TMetaData* StreamMeta_Clone(AL_TMetaData* pMeta)
+{
+  return (AL_TMetaData*)AL_StreamMetaData_Clone((AL_TStreamMetaData*)pMeta);
+}
+
 AL_TStreamMetaData* AL_StreamMetaData_Create(uint16_t uMaxNumSection)
 {
-  AL_TStreamMetaData* pMeta;
-
   if(uMaxNumSection == 0)
     return NULL;
 
-  pMeta = Rtos_Malloc(sizeof(*pMeta));
+  AL_TStreamMetaData* pMeta = Rtos_Malloc(sizeof(*pMeta));
 
   if(!pMeta)
     return NULL;
 
   pMeta->tMeta.eType = AL_META_TYPE_STREAM;
   pMeta->tMeta.MetaDestroy = StreamMeta_Destroy;
+  pMeta->tMeta.MetaClone = StreamMeta_Clone;
 
+  pMeta->uTemporalID = 0;
   pMeta->uMaxNumSection = uMaxNumSection;
   pMeta->uNumSection = 0;
 
@@ -75,11 +93,6 @@ AL_TStreamMetaData* AL_StreamMetaData_Create(uint16_t uMaxNumSection)
   fail_alloc_section:
   Rtos_Free(pMeta);
   return NULL;
-}
-
-AL_TStreamMetaData* AL_StreamMetaData_Clone(AL_TStreamMetaData* pMeta)
-{
-  return AL_StreamMetaData_Create(pMeta->uMaxNumSection);
 }
 
 static void SetSection(AL_TStreamSection* pSections, uint16_t uSectionID, uint32_t uOffset, uint32_t uLength, uint32_t uFlags)
@@ -125,21 +138,23 @@ void AL_StreamMetaData_ClearAllSections(AL_TStreamMetaData* pMetaData)
   pMetaData->uNumSection = 0;
 }
 
-static int FindLastConfigSection(AL_TStreamMetaData* pMetaData)
+/****************************************************************************/
+int AL_StreamMetaData_GetLastSectionOfFlag(AL_TStreamMetaData* pMetaData, uint32_t flag)
 {
+  assert(pMetaData);
   AL_TStreamSection* pSections = pMetaData->pSections;
-  int configSectionId = pMetaData->uNumSection - 1;
+  int flagSectionId = pMetaData->uNumSection - 1;
 
-  while(configSectionId >= 0)
+  while(flagSectionId >= 0)
   {
-    if(pSections[configSectionId].uFlags & SECTION_CONFIG_FLAG)
+    if(pSections[flagSectionId].uFlags & flag)
       break;
-    --configSectionId;
+    --flagSectionId;
   }
 
-  /* configSectionId == -1 if we didn't find any config sections */
+  /* flagSectionId == -1 if we didn't find any flag sections */
 
-  return configSectionId;
+  return flagSectionId;
 }
 
 static int InsertSectionAtId(AL_TStreamMetaData* pMetaData, uint16_t targetId, uint32_t uOffset, uint32_t uLength, uint32_t uFlags)
@@ -165,8 +180,8 @@ static int InsertSectionAtId(AL_TStreamMetaData* pMetaData, uint16_t targetId, u
 int AddPrefixSei(AL_TStreamMetaData* pMetaData, uint32_t uOffset, uint32_t uLength)
 {
   // the prefix sei needs to be inserted after a config section if it exists
-  int seiSectionId = FindLastConfigSection(pMetaData) + 1;
-  return InsertSectionAtId(pMetaData, seiSectionId, uOffset, uLength, 0);
+  int seiSectionId = AL_StreamMetaData_GetLastSectionOfFlag(pMetaData, SECTION_CONFIG_FLAG) + 1;
+  return InsertSectionAtId(pMetaData, seiSectionId, uOffset, uLength, SECTION_SEI_PREFIX_FLAG);
 }
 
 int AL_StreamMetaData_AddSeiSection(AL_TStreamMetaData* pMetaData, bool isPrefix, uint32_t uOffset, uint32_t uLength)

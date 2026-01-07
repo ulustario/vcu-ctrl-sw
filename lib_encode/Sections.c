@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright (C) 2018 Allegro DVT2.  All rights reserved.
+* Copyright (C) 2019 Allegro DVT2.  All rights reserved.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -38,7 +38,8 @@
 #include "Sections.h"
 #include "NalWriters.h"
 
-#include <lib_common/SEI.h>
+#include "lib_common/SEI.h"
+#include "lib_common/StreamBuffer.h"
 
 #include <assert.h>
 #include <stdio.h>
@@ -59,7 +60,7 @@ static int writeNalInBuffer(IRbspWriter* writer, uint8_t* buffer, int bufSize, A
   AL_TBitStreamLite bitstream;
   AL_BitStreamLite_Init(&bitstream, buffer, bufSize);
 
-  nal->Write(writer, &bitstream, nal->param);
+  nal->Write(writer, &bitstream, nal->param, nal->iLayerId);
 
   if(bitstream.isOverflow)
     return -1;
@@ -67,11 +68,11 @@ static int writeNalInBuffer(IRbspWriter* writer, uint8_t* buffer, int bufSize, A
   return AL_BitStreamLite_GetBitsCount(&bitstream);
 }
 
-int WriteNal(IRbspWriter* writer, AL_TBitStreamLite* bitstream, AL_NalUnit* nal)
+static int WriteNal(IRbspWriter* writer, AL_TBitStreamLite* bitstream, int bitstreamSize, AL_NalUnit* nal)
 {
   uint8_t tmpBuffer[ENC_MAX_HEADER_SIZE];
 
-  int sizeInBits = writeNalInBuffer(writer, tmpBuffer, ENC_MAX_HEADER_SIZE, nal);
+  int sizeInBits = writeNalInBuffer(writer, tmpBuffer, bitstreamSize, nal);
 
   if(sizeInBits < 0)
     return -1;
@@ -85,10 +86,10 @@ int WriteNal(IRbspWriter* writer, AL_TBitStreamLite* bitstream, AL_NalUnit* nal)
   return end - start;
 }
 
-static void GenerateNal(IRbspWriter* writer, AL_TBitStreamLite* bitstream, AL_NalUnit* nal, AL_TStreamMetaData* pMeta, uint32_t uFlags)
+static void GenerateNal(IRbspWriter* writer, AL_TBitStreamLite* bitstream, int bitstreamSize, AL_NalUnit* nal, AL_TStreamMetaData* pMeta, uint32_t uFlags)
 {
   int start = getBytesOffset(bitstream);
-  int size = WriteNal(writer, bitstream, nal);
+  int size = WriteNal(writer, bitstream, bitstreamSize, nal);
   /* we should always be able to write the configuration nals as we reserved
    * enough space for them */
   assert(size >= 0);
@@ -98,11 +99,12 @@ static void GenerateNal(IRbspWriter* writer, AL_TBitStreamLite* bitstream, AL_Na
 static void GenerateConfigNalUnits(IRbspWriter* writer, AL_NalUnit* nals, int nalsCount, AL_TBuffer* pStream)
 {
   AL_TBitStreamLite bitstream;
-  AL_BitStreamLite_Init(&bitstream, AL_Buffer_GetData(pStream), ENC_MAX_HEADER_SIZE);
+  int bitstreamSize = ENC_MAX_CONFIG_HEADER_SIZE;
+  AL_BitStreamLite_Init(&bitstream, AL_Buffer_GetData(pStream), bitstreamSize);
   AL_TStreamMetaData* pMetaData = (AL_TStreamMetaData*)AL_Buffer_GetMetaData(pStream, AL_META_TYPE_STREAM);
 
   for(int i = 0; i < nalsCount; i++)
-    GenerateNal(writer, &bitstream, &nals[i], pMetaData, SECTION_CONFIG_FLAG);
+    GenerateNal(writer, &bitstream, bitstreamSize, &nals[i], pMetaData, SECTION_CONFIG_FLAG);
 }
 
 static SeiPrefixAPSCtx createSeiPrefixAPSCtx(AL_TSps* sps, AL_THevcVps* vps)
@@ -117,10 +119,12 @@ static SeiPrefixCtx createSeiPrefixCtx(AL_TSps* sps, int initialCpbRemovalDelay,
   return ctx;
 }
 
-static SeiSuffixCtx createSeiEOFSuffixCtx()
+static SeiPrefixUDUCtx createSeiPrefixUDUCtx(int8_t iNumSlices)
 {
-  SeiSuffixCtx ctx;
-  Rtos_Memcpy(&ctx.uuid, SEI_SUFFIX_USER_DATA_UNREGISTERED_UUID, 16);
+  SeiPrefixUDUCtx ctx;
+  int iSize = sizeof(SEI_PREFIX_USER_DATA_UNREGISTERED_UUID) / sizeof(*SEI_PREFIX_USER_DATA_UNREGISTERED_UUID);
+  Rtos_Memcpy(&ctx.uuid, SEI_PREFIX_USER_DATA_UNREGISTERED_UUID, iSize);
+  Rtos_Memcpy(&ctx.numSlices, &iNumSlices, sizeof(iNumSlices));
   return ctx;
 }
 
@@ -136,72 +140,82 @@ static int getOffsetAfterLastSection(AL_TStreamMetaData* pMeta)
 
 static uint32_t generateSeiFlags(AL_TEncPicStatus const* pPicStatus)
 {
-  uint32_t uFlags = SEI_PT;
+  uint32_t uFlags = AL_SEI_PT;
 
-  if(pPicStatus->eType == SLICE_I)
+  if(pPicStatus->eType == AL_SLICE_I)
   {
-    uFlags |= SEI_BP;
+    uFlags |= AL_SEI_BP;
 
     if(!pPicStatus->bIsIDR)
-      uFlags |= SEI_RP;
+      uFlags |= AL_SEI_RP;
   }
   else if(pPicStatus->iRecoveryCnt)
-    uFlags |= SEI_RP;
+    uFlags |= AL_SEI_RP;
 
   return uFlags;
 }
 
-void GenerateSections(IRbspWriter* writer, Nuts nuts, const NalsData* nalsData, AL_TBuffer* pStream, AL_TEncPicStatus const* pPicStatus, int iLayersCount)
+void GenerateSections(IRbspWriter* writer, Nuts nuts, const NalsData* nalsData, AL_TBuffer* pStream, AL_TEncPicStatus const* pPicStatus, int iLayersCount, int iNumSlices)
 {
+  (void)iNumSlices;
   AL_TStreamMetaData* pMetaData = (AL_TStreamMetaData*)AL_Buffer_GetMetaData(pStream, AL_META_TYPE_STREAM);
 
   if(pPicStatus->bIsFirstSlice)
   {
-    AL_NalUnit nals[8];
+    AL_NalUnit nals[9];
     int nalsCount = 0;
 
     if(nalsData->shouldWriteAud)
-      nals[nalsCount++] = AL_CreateAud(nuts.audNut, pPicStatus->eType);
+      nals[nalsCount++] = AL_CreateAud(nuts.audNut, pPicStatus->eType, pPicStatus->uTempId);
 
     if(pPicStatus->bIsIDR || pPicStatus->iRecoveryCnt)
     {
       if(writer->WriteVPS)
-        nals[nalsCount++] = AL_CreateVps(nalsData->vps);
+        nals[nalsCount++] = AL_CreateVps(nalsData->vps, pPicStatus->uTempId);
 
       for(int i = 0; i < iLayersCount; i++)
-        nals[nalsCount++] = AL_CreateSps(nuts.spsNut, nalsData->sps[i], i);
+        nals[nalsCount++] = AL_CreateSps(nuts.spsNut, nalsData->sps[i], i, pPicStatus->uTempId);
     }
 
-    if(pPicStatus->eType == SLICE_I || pPicStatus->iRecoveryCnt)
+    if(pPicStatus->eType == AL_SLICE_I || pPicStatus->iRecoveryCnt)
     {
       for(int i = 0; i < iLayersCount; i++)
-        nals[nalsCount++] = AL_CreatePps(nuts.ppsNut, nalsData->pps[i], i);
+        nals[nalsCount++] = AL_CreatePps(nuts.ppsNut, nalsData->pps[i], i, pPicStatus->uTempId);
     }
 
     SeiPrefixAPSCtx seiPrefixAPSCtx;
     SeiPrefixCtx seiPrefixCtx;
+    SeiPrefixUDUCtx seiPrefixUDUCtx;
 
-    if(isPrefix(nalsData->seiFlags))
+    if(AL_IS_SEI_PREFIX(nalsData->seiFlags))
     {
       assert(nalsData != NULL);
-      assert(nalsData->seiFlags != SEI_NONE);
+      assert(nalsData->seiFlags != AL_SEI_NONE);
+
       uint32_t const uFlags = generateSeiFlags(pPicStatus) & nalsData->seiFlags;
 
-      if(uFlags & (SEI_BP | SEI_PT) && writer->WriteSEI_ActiveParameterSets)
+      if(uFlags & (AL_SEI_BP | AL_SEI_PT) && writer->WriteSEI_ActiveParameterSets)
       {
         seiPrefixAPSCtx = createSeiPrefixAPSCtx(nalsData->sps[0], nalsData->vps);
-        nals[nalsCount++] = AL_CreateSeiPrefixAPS(&seiPrefixAPSCtx, nuts.seiPrefixNut);
+        nals[nalsCount++] = AL_CreateSeiPrefixAPS(&seiPrefixAPSCtx, nuts.seiPrefixNut, pPicStatus->uTempId);
       }
 
       if(uFlags)
       {
         seiPrefixCtx = createSeiPrefixCtx(nalsData->sps[0], nalsData->seiData->initialCpbRemovalDelay, nalsData->seiData->cpbRemovalDelay, pPicStatus, uFlags);
-        nals[nalsCount++] = AL_CreateSeiPrefix(&seiPrefixCtx, nuts.seiPrefixNut);
+        nals[nalsCount++] = AL_CreateSeiPrefix(&seiPrefixCtx, nuts.seiPrefixNut, pPicStatus->uTempId);
+      }
+
+
+      if(nalsData->seiFlags & AL_SEI_UDU)
+      {
+        seiPrefixUDUCtx = createSeiPrefixUDUCtx(iNumSlices);
+        nals[nalsCount++] = AL_CreateSeiPrefixUDU(&seiPrefixUDUCtx, nuts.seiPrefixNut, pPicStatus->uTempId);
       }
     }
 
     for(int i = 0; i < nalsCount; i++)
-      nals[i].header = nuts.GetNalHeader(nals[i].nut, nals[i].idc);
+      nals[i].header = nuts.GetNalHeader(nals[i].nut, nals[i].idc, nals[i].tempId);
 
     GenerateConfigNalUnits(writer, nals, nalsCount, pStream);
   }
@@ -216,34 +230,24 @@ void GenerateSections(IRbspWriter* writer, Nuts nuts, const NalsData* nalsData, 
   AL_BitStreamLite_Init(&bs, AL_Buffer_GetData(pStream), pStream->zSize);
   AL_BitStreamLite_SkipBits(&bs, offset * 8);
 
-  if(nalsData->shouldWriteFillerData && pPicStatus->iFiller)
+  bool shouldWriteFiller = nalsData->shouldWriteFillerData && pPicStatus->iFiller;
+
+  if(nalsData->seiFlags & AL_SEI_UDU)
+    shouldWriteFiller |= pPicStatus->bIsLastSlice;
+
+  if(shouldWriteFiller)
   {
     int iBookmark = AL_BitStreamLite_GetBitsCount(&bs);
-    int iSpaceForSeiSuffix = 0;
-    iSpaceForSeiSuffix = (pPicStatus->bIsLastSlice && isSuffix(nalsData->seiFlags) && (nalsData->seiFlags & SEI_EOF)) ? 24 : 0;
-    WriteFillerData(&bs, nuts.fdNut, nuts.GetNalHeader(nuts.fdNut, 0), pPicStatus->iFiller, iSpaceForSeiSuffix);
+    WriteFillerData(&bs, nuts.fdNut, nuts.GetNalHeader(nuts.fdNut, 0, pPicStatus->uTempId), pPicStatus->iFiller);
     int iWritten = (AL_BitStreamLite_GetBitsCount(&bs) - iBookmark) / 8;
 
-    if(iWritten != pPicStatus->iFiller)
+    if(iWritten < pPicStatus->iFiller)
       printf("[WARNING] Filler data (%i) doesn't fit in the current buffer. Clip it to %i !\n", pPicStatus->iFiller, iWritten);
     AddSection(pMetaData, offset, iWritten, 0);
   }
 
   if(pPicStatus->bIsLastSlice)
-  {
-    if(isSuffix(nalsData->seiFlags))
-    {
-
-      if(nalsData->seiFlags & SEI_EOF)
-      {
-        SeiSuffixCtx seiSufficCtx = createSeiEOFSuffixCtx();
-        AL_NalUnit nal = AL_CreateSeiSuffix(&seiSufficCtx, nuts.seiSuffixNut);
-        nal.header = nuts.GetNalHeader(nal.nut, nal.idc);
-        GenerateNal(writer, &bs, &nal, pMetaData, 0);
-      }
-    }
     AddSection(pMetaData, 0, 0, SECTION_END_FRAME_FLAG);
-  }
 
   if(pPicStatus->bIsIDR)
     AddFlagsToAllSections(pMetaData, SECTION_SYNC_FLAG);
@@ -260,26 +264,38 @@ static SeiExternalCtx createExternalSeiCtx(uint8_t* pPayload, int iPayloadType, 
 
 #include "lib_common/Utils.h" // For Min
 
-static int createExternalSei(Nuts nuts, AL_TBuffer* pStream, uint32_t uOffset, bool isPrefix, int iPayloadType, uint8_t* pPayload, int iPayloadSize)
+static int createExternalSei(Nuts nuts, AL_TBuffer* pStream, uint32_t uOffset, bool isPrefix, int iPayloadType, uint8_t* pPayload, int iPayloadSize, int iTempId)
 {
   SeiExternalCtx ctx = createExternalSeiCtx(pPayload, iPayloadType, iPayloadSize);
-  AL_NalUnit nal = AL_CreateExternalSei(&ctx, isPrefix ? nuts.seiPrefixNut : nuts.seiSuffixNut);
-  nal.header = nuts.GetNalHeader(nal.nut, nal.idc);
+  AL_NalUnit nal = AL_CreateExternalSei(&ctx, isPrefix ? nuts.seiPrefixNut : nuts.seiSuffixNut, iTempId);
+  nal.header = nuts.GetNalHeader(nal.nut, nal.idc, nal.tempId);
 
   AL_TBitStreamLite bitstream;
-  AL_BitStreamLite_Init(&bitstream, AL_Buffer_GetData(pStream) + uOffset, Min(ENC_MAX_HEADER_SIZE, pStream->zSize));
-  return WriteNal(NULL, &bitstream, &nal);
+  int bitstreamSize = Min(ENC_MAX_SEI_SIZE, pStream->zSize);
+  AL_BitStreamLite_Init(&bitstream, AL_Buffer_GetData(pStream) + uOffset, bitstreamSize);
+  return WriteNal(NULL, &bitstream, bitstreamSize, &nal);
 }
 
-int AL_WriteSeiSection(Nuts nuts, AL_TBuffer* pStream, bool isPrefix, int iPayloadType, uint8_t* pPayload, int iPayloadSize)
+uint32_t getUserSeiPrefixOffset(AL_TStreamMetaData* pStreamMeta)
+{
+  int iSEIPrefixSectionID = AL_StreamMetaData_GetLastSectionOfFlag(pStreamMeta, SECTION_SEI_PREFIX_FLAG);
+
+  if(iSEIPrefixSectionID == -1)
+    return ENC_MAX_HEADER_SIZE - ENC_MAX_SEI_SIZE;
+
+  AL_TStreamSection lastSeiPrefixSection = pStreamMeta->pSections[iSEIPrefixSectionID];
+  return lastSeiPrefixSection.uOffset + lastSeiPrefixSection.uLength;
+}
+
+int AL_WriteSeiSection(Nuts nuts, AL_TBuffer* pStream, bool isPrefix, int iPayloadType, uint8_t* pPayload, int iPayloadSize, int iTempId)
 {
   AL_TStreamMetaData* pMetaData = (AL_TStreamMetaData*)AL_Buffer_GetMetaData(pStream, AL_META_TYPE_STREAM);
   assert(pMetaData);
   assert(iPayloadType >= 0);
 
-  uint32_t uOffset = AL_StreamMetaData_GetUnusedStreamPart(pMetaData);
+  uint32_t uOffset = isPrefix ? getUserSeiPrefixOffset(pMetaData) : AL_StreamMetaData_GetUnusedStreamPart(pMetaData);
 
-  int iTotalSize = createExternalSei(nuts, pStream, uOffset, isPrefix, iPayloadType, pPayload, iPayloadSize);
+  int iTotalSize = createExternalSei(nuts, pStream, uOffset, isPrefix, iPayloadType, pPayload, iPayloadSize, iTempId);
 
   if(iTotalSize < 0)
     return -1;

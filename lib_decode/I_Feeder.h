@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright (C) 2018 Allegro DVT2.  All rights reserved.
+* Copyright (C) 2019 Allegro DVT2.  All rights reserved.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -35,34 +35,51 @@
 *
 ******************************************************************************/
 
-/****************************************************************************
-   -----------------------------------------------------------------------------
- **************************************************************************//*!
-   \addtogroup lib_base
-   @{
-   \file
- *****************************************************************************/
 #pragma once
 
-#include "lib_rtos/types.h"
+#include "lib_common/BufferAPI.h"
+#include "lib_common/BufCommonInternal.h"
 
-/*************************************************************************//*!
-   \brief reference list reordering parameters
-*****************************************************************************/
-typedef struct AL_t_ReorderInfo
+typedef struct AL_s_TFeeder AL_TFeeder;
+typedef struct
 {
-  uint16_t uModifIdc;
-  uint16_t uAbsDiff;
-}AL_TReorderInfo;
+  void (* pfnFeederDestroy)(AL_TFeeder* pFeeder);
+  bool (* pfnFeederPushBuffer)(AL_TFeeder* pFeeder, AL_TBuffer* pBuf, size_t uSize, bool bLastBuffer);
+  void (* pfnFeederSignal)(AL_TFeeder* pFeeder);
+  void (* pfnFeederFlush)(AL_TFeeder* pFeeder);
+  void (* pfnFeederReset)(AL_TFeeder* pFeeder);
+}AL_TFeederVtable;
 
-typedef AL_TReorderInfo AL_TReorderInfoList[AL_MAX_NUM_REF];
-
-typedef struct AL_t_Reorder
+typedef struct AL_s_TFeeder
 {
-  bool bRefPicListModif;
-  AL_TReorderInfoList tReorderList;
-}AL_TReorder[2];
+  AL_TFeederVtable const* vtable;
+}AL_TFeeder;
 
-/****************************************************************************/
-/*@}*/
+static inline void AL_Feeder_Destroy(AL_TFeeder* pFeeder)
+{
+  return pFeeder->vtable->pfnFeederDestroy(pFeeder);
+}
 
+/* push a buffer in the queue. it will be fed to the decoder when possible */
+static inline bool AL_Feeder_PushBuffer(AL_TFeeder* pFeeder, AL_TBuffer* pBuf, size_t uSize, bool bLastBuffer)
+{
+  return pFeeder->vtable->pfnFeederPushBuffer(pFeeder, pBuf, uSize, bLastBuffer);
+}
+
+/* tell the buffer queue that the decoder finished decoding a frame */
+static inline void AL_Feeder_Signal(AL_TFeeder* pFeeder)
+{
+  return pFeeder->vtable->pfnFeederSignal(pFeeder);
+}
+
+/* flush decoder */
+static inline void AL_Feeder_Flush(AL_TFeeder* pFeeder)
+{
+  return pFeeder->vtable->pfnFeederFlush(pFeeder);
+}
+
+/* make decoder ready for next sequence */
+static inline void AL_Feeder_Reset(AL_TFeeder* pFeeder)
+{
+  return pFeeder->vtable->pfnFeederReset(pFeeder);
+}

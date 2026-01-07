@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright (C) 2018 Allegro DVT2.  All rights reserved.
+* Copyright (C) 2019 Allegro DVT2.  All rights reserved.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -40,15 +40,17 @@
 #include "lib_common/Utils.h"
 #include "lib_common/Error.h"
 
-static void updateHlsAndWriteSections(AL_TEncCtx* pCtx, AL_TEncPicStatus* pPicStatus, AL_TBuffer* pStream, int iLayerID)
+static void updateHlsAndWriteSections(AL_TEncCtx* pCtx, AL_TEncPicStatus* pPicStatus, bool bResolutionChanged, uint8_t uNalID, AL_TBuffer* pStream, int iLayerID)
 {
-  AL_HEVC_UpdatePPS(&pCtx->tLayerCtx[iLayerID].pps, pPicStatus);
+  if(bResolutionChanged)
+    AL_HEVC_UpdateSPS(&pCtx->tLayerCtx[iLayerID].sps, pPicStatus, uNalID, iLayerID);
+  AL_HEVC_UpdatePPS(&pCtx->tLayerCtx[iLayerID].pps, pPicStatus, bResolutionChanged, uNalID);
   HEVC_GenerateSections(pCtx, pStream, pPicStatus, iLayerID);
 
-  if(pPicStatus->eType == SLICE_I)
+  if(pPicStatus->eType == AL_SLICE_I)
     pCtx->seiData.cpbRemovalDelay = 0;
 
-  pCtx->seiData.cpbRemovalDelay += PictureDisplayToFieldNumber[pPicStatus->ePicStruct];
+  pCtx->seiData.cpbRemovalDelay += PicStructToFieldNumber[pPicStatus->ePicStruct];
 }
 
 static bool shouldReleaseSource(AL_TEncPicStatus* p)
@@ -57,24 +59,24 @@ static bool shouldReleaseSource(AL_TEncPicStatus* p)
   return true;
 }
 
-/***************************************************************************/
-static void GenerateSkippedPictureData(AL_TEncCtx* pCtx, AL_TEncChanParam* pChParam, AL_TSkippedPicture* pSkipPicture)
-{
-  AL_Common_Encoder_InitSkippedPicture(pSkipPicture);
-  AL_HEVC_GenerateSkippedPicture(pSkipPicture,
-                                 pChParam->uWidth,
-                                 pChParam->uHeight,
-                                 pChParam->uMaxCuSize,
-                                 pChParam->uMinCuSize,
-                                 pCtx->iNumLCU);
-}
-
 static void initHls(AL_TEncCtx* pCtx, AL_TEncChanParam* pChParam)
 {
   // Update SPS & PPS Flags ------------------------------------------------
-  pChParam->uSpsParam = 0x0A | AL_SPS_TEMPORAL_MVP_EN_FLAG; // TODO
-  pChParam->uSpsParam |= ceil_log2((pChParam->tGopParam.eMode == AL_GOP_MODE_PYRAMIDAL) ? pChParam->tGopParam.uNumB + 1 : pChParam->tGopParam.uNumB > 2 ? AL_NUM_RPS_EXT : AL_NUM_RPS) << 8;
+  uint32_t* pSpsParam = &pChParam->uSpsParam;
+  *pSpsParam = AL_SPS_TEMPORAL_MVP_EN_FLAG; // TODO
 
+  int log2_max_poc = (pChParam->tRCParam.eOptions & AL_RC_OPT_ENABLE_SKIP) ? 16 : 10;
+  AL_SET_SPS_LOG2_MAX_POC(pSpsParam, log2_max_poc);
+
+  int num_short_term_ref_pic_sets_log2 = 0;
+
+  if(pChParam->tGopParam.eMode == AL_GOP_MODE_PYRAMIDAL)
+  {
+    num_short_term_ref_pic_sets_log2 = ceil_log2(pChParam->tGopParam.uNumB + 1);
+    assert(num_short_term_ref_pic_sets_log2 != 0);
+  }
+
+  AL_SET_SPS_LOG2_NUM_SHORT_TERM_RPS(pSpsParam, num_short_term_ref_pic_sets_log2);
   pChParam->uPpsParam |= AL_PPS_ENABLE_REORDERING;
 
   AL_Common_Encoder_SetHlsParam(pChParam);
@@ -82,14 +84,17 @@ static void initHls(AL_TEncCtx* pCtx, AL_TEncChanParam* pChParam)
   if(pCtx->Settings.bDependentSlice)
     pChParam->uPpsParam |= AL_PPS_SLICE_SEG_EN_FLAG;
 
-  if(pChParam->tGopParam.uFreqLT || pChParam->tGopParam.bEnableLT)
+  if(pChParam->tGopParam.bEnableLT)
     pChParam->uSpsParam |= AL_SPS_LOG2_NUM_LONG_TERM_RPS_MASK;
+
+  if((pChParam->tRCParam.eOptions & AL_RC_OPT_ENABLE_SKIP) && (pChParam->eEncTools & AL_OPT_LF))
+    pChParam->uPpsParam |= AL_PPS_OVERRIDE_LF;
 
 
   if(pChParam->tGopParam.eGdrMode != AL_GDR_OFF)
     pChParam->uPpsParam |= AL_PPS_OVERRIDE_LF;
 
-  if(!(pChParam->eOptions & AL_OPT_LF))
+  if(!(pChParam->eEncTools & AL_OPT_LF))
     pChParam->uPpsParam |= AL_PPS_DISABLE_LF;
 }
 
@@ -164,7 +169,7 @@ static void ConfigureChannel(AL_TEncCtx* pCtx, AL_TEncChanParam* pChParam, AL_TE
   ComputeQPInfo(pCtx, pChParam);
 
   if(pSettings->eScalingList != AL_SCL_FLAT)
-    pChParam->eOptions |= AL_OPT_SCL_LST;
+    pChParam->eEncTools |= AL_OPT_SCL_LST;
 }
 
 static void preprocessEp1(AL_TEncCtx* pCtx, TBufferEP* pEp1)
@@ -178,7 +183,6 @@ void AL_CreateHevcEncoder(HighLevelEncoder* pCtx)
   pCtx->shouldReleaseSource = &shouldReleaseSource;
   pCtx->preprocessEp1 = &preprocessEp1;
   pCtx->configureChannel = &ConfigureChannel;
-  pCtx->generateSkippedPictureData = &GenerateSkippedPictureData;
   pCtx->generateNals = &generateNals;
   pCtx->updateHlsAndWriteSections = &updateHlsAndWriteSections;
 }

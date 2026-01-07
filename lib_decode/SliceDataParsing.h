@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright (C) 2018 Allegro DVT2.  All rights reserved.
+* Copyright (C) 2019 Allegro DVT2.  All rights reserved.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -48,8 +48,9 @@
 #include "lib_common/SPS.h"
 #include "lib_common/PPS.h"
 #include "lib_common/SliceHeader.h"
-
 #include "lib_parsing/I_PictMngr.h"
+
+typedef struct t_Dec_Ctx AL_TDecCtx;
 
 /*************************************************************************//*!
    \brief The AL_LaunchDecoding function launch a frame decoding request to the Hardware IP

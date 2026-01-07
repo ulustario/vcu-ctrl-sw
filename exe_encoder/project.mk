@@ -12,10 +12,10 @@ EXE_ENCODER_SRCS:=\
   $(THIS_EXE_ENCODER)/container.cpp\
   $(THIS_EXE_ENCODER)/main.cpp\
   $(THIS_EXE_ENCODER)/sink_bitstream_writer.cpp\
+  $(THIS_EXE_ENCODER)/sink_bitrate.cpp\
   $(THIS_EXE_ENCODER)/sink_frame_writer.cpp\
   $(THIS_EXE_ENCODER)/sink_md5.cpp\
   $(THIS_EXE_ENCODER)/MD5.cpp\
-  $(THIS_EXE_ENCODER)/ROIMngr.cpp\
   $(THIS_EXE_ENCODER)/EncCmdMngr.cpp\
   $(THIS_EXE_ENCODER)/QPGenerator.cpp\
   $(THIS_EXE_ENCODER)/CommandsSender.cpp\
@@ -23,18 +23,17 @@ EXE_ENCODER_SRCS:=\
   $(LIB_CONV_SRC)\
   $(LIB_APP_SRC)\
 
+ifneq ($(ENABLE_ROI),0)
+  EXE_ENCODER_SRCS+=$(THIS_EXE_ENCODER)/ROIMngr.cpp
+endif
+
+
 ifneq ($(ENABLE_TWOPASS),0)
   EXE_ENCODER_SRCS+=$(THIS_EXE_ENCODER)/TwoPassMngr.cpp
 endif
 
 -include $(THIS_EXE_ENCODER)/site.mk
 
-UNITTEST+=$(shell find $(THIS_EXE_ENCODER)/unittests -name "*.cpp")
-UNITTEST+=$(THIS_EXE_ENCODER)/ROIMngr.cpp
-UNITTEST+=$(THIS_EXE_ENCODER)/FileUtils.cpp
-UNITTEST+=$(THIS_EXE_ENCODER)/QPGenerator.cpp
-UNITTEST+=$(THIS_EXE_ENCODER)/EncCmdMngr.cpp
-UNITTEST+=$(PARSER_SRCS)
 
 EXE_ENCODER_OBJ:=$(EXE_ENCODER_SRCS:%=$(BIN)/%.o)
 
@@ -49,15 +48,6 @@ $(BIN)/$(THIS_EXE_ENCODER)/main.cpp.o: INTROSPECT_FLAGS=-DAL_COMPIL_FLAGS='"$(CF
 
 $(BIN)/$(THIS_EXE_ENCODER)/main.cpp.o: INTROSPECT_FLAGS+=-DHAS_COMPIL_FLAGS=1
 
-ifneq ($(ENABLE_INTROSPECTION),0)
-$(BIN)/$(THIS_EXE_ENCODER)/main.cpp.o: generated/Printer.h
-
-$(BIN)/$(THIS_EXE_ENCODER)/ParserMain.cpp.o: generated/Printer.h
-
-generated/Printer.h:
-	@echo "Generate introspection files"
-	./scripts/allegro_introspection.sh
-endif
 
 $(BIN)/ctrlsw_encoder: $(EXE_ENCODER_OBJ) $(LIB_REFENC_A) $(LIB_ENCODER_A)
 
@@ -84,4 +74,9 @@ $(BIN)/AL_CfgParser.exe: $(EXE_CFG_PARSER_OBJ) $(LIB_ENCODER_A)
 
 TARGETS+=$(BIN)/AL_CfgParser.exe
 
+exe_encoder_src: $(EXE_ENCODER_SRCS) $(EXE_CFG_PARSER_SRCS)
+	@echo $(EXE_ENCODER_SRCS) $(EXE_CFG_PARSER_SRCS)
+
 $(BIN)/$(THIS_EXE_ENCODER)/unittests/commandsparser.cpp.o: CFLAGS+=-Wno-missing-field-initializers
+
+.PHONY: exe_encoder_src

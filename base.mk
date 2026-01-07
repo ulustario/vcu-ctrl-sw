@@ -31,7 +31,7 @@ $(BIN)/%.cpp.o: %.cpp
 
 $(BIN)/%.c.o: %.c
 	@mkdir -p $(dir $@)
-	$(Q)$(CC) $(CFLAGS) $(INTROSPECT_FLAGS) $(INCLUDES) -std=gnu99 -o $@ -c $<
+	$(Q)$(CC) $(CFLAGS) -Wstrict-prototypes $(INTROSPECT_FLAGS) $(INCLUDES) -std=gnu99 -o $@ -c $<
 	@$(CC) -MP -MM "$<" -MT "$@" -o "$(BIN)/$*_c.deps" $(INCLUDES) $(CFLAGS)
 	@echo "CC $<"
 
@@ -40,7 +40,7 @@ $(BIN)/%.a:
 	$(Q)$(AR) cr $@ $^
 	@echo "AR $@"
 
-$(BIN)/%:
+$(BIN)/ctrlsw%:
 	@mkdir -p $(dir $@)
 	$(Q)$(CXX) -o $@ $^ $(LINK_COMPAT) $(LDFLAGS)
 	@echo "CXX $@"

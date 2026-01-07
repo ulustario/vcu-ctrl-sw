@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright (C) 2018 Allegro DVT2.  All rights reserved.
+* Copyright (C) 2019 Allegro DVT2.  All rights reserved.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -187,7 +187,7 @@ using namespace std;
 class FrameWriter : public IFrameSink
 {
 public:
-  FrameWriter(string RecFileName, ConfigFile& cfg_, AL_TBuffer* Yuv_, int iLayerID) : m_cfg(cfg_), m_Yuv(Yuv_), m_iLayerID(iLayerID)
+  FrameWriter(string RecFileName, ConfigFile& cfg_, AL_TBuffer* Yuv_, int iLayerID) : m_cfg(cfg_), m_Yuv(Yuv_)
   {
     OpenOutput(m_RecFile, RecFileName);
   }
@@ -200,28 +200,27 @@ public:
       return;
     }
 
-    auto& tChParam = m_cfg.Settings.tChParam[m_iLayerID];
+    AL_TSrcMetaData* pMetaRec = (AL_TSrcMetaData*)AL_Buffer_GetMetaData(pBuf, AL_META_TYPE_SOURCE);
+    AL_TSrcMetaData* pMetaYUV = (AL_TSrcMetaData*)AL_Buffer_GetMetaData(m_Yuv, AL_META_TYPE_SOURCE);
+    pMetaYUV->tDim = pMetaRec->tDim;
+
     {
       RecToYuv(pBuf, m_Yuv, m_cfg.RecFourCC);
-      WriteOneFrame(m_RecFile, m_Yuv, tChParam.uWidth, tChParam.uHeight);
+      WriteOneFrame(m_RecFile, m_Yuv);
     }
   }
-
 
 private:
   ofstream m_RecFile;
   ConfigFile& m_cfg;
   AL_TBuffer* const m_Yuv;
-  int m_iLayerID;
 };
 
 unique_ptr<IFrameSink> createFrameWriter(string path, ConfigFile& cfg_, AL_TBuffer* Yuv_, int iLayerID_)
 {
-#if AL_ENABLE_TWOPASS
 
   if(cfg_.Settings.TwoPass == 1)
     return unique_ptr<IFrameSink>(new NullFrameSink);
-#endif
 
   return unique_ptr<IFrameSink>(new FrameWriter(path, cfg_, Yuv_, iLayerID_));
 }

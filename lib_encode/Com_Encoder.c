@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright (C) 2018 Allegro DVT2.  All rights reserved.
+* Copyright (C) 2019 Allegro DVT2.  All rights reserved.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -41,9 +41,8 @@
 #include "lib_common/StreamSection.h"
 #include "lib_common/BufferStreamMeta.h"
 #include "lib_common/BufferPictureMeta.h"
-#if AL_ENABLE_TWOPASS
+#include "lib_common/StreamBuffer.h"
 #include "lib_common/BufferLookAheadMeta.h"
-#endif
 #include "lib_common_enc/IpEncFourCC.h"
 #include <assert.h>
 #include "lib_common/Utils.h"
@@ -55,18 +54,22 @@
 
 
 /***************************************************************************/
+static bool shouldUseDynamicLambda(AL_TEncChanParam const* pChParam)
+{
+  return pChParam->tRCParam.eRCMode == AL_RC_CONST_QP && ((pChParam->tGopParam.eMode == AL_GOP_MODE_DEFAULT && pChParam->tGopParam.uGopLength > 1 && pChParam->tGopParam.uNumB == 0) ||
+                                                          pChParam->tGopParam.eMode == AL_GOP_MODE_LOW_DELAY_P);
+}
+
+/***************************************************************************/
 static AL_ELdaCtrlMode GetFinalLdaMode(const AL_TEncChanParam* pChParam)
 {
-  if(pChParam->eLdaCtrlMode == AUTO_LDA)
-  {
-    if(pChParam->tRCParam.eRCMode == AL_RC_CONST_QP && ((pChParam->tGopParam.eMode == AL_GOP_MODE_DEFAULT && pChParam->tGopParam.uGopLength > 1 && pChParam->tGopParam.uNumB == 0) ||
-                                                        pChParam->tGopParam.eMode == AL_GOP_MODE_LOW_DELAY_P))
-      return DYNAMIC_LDA;
-    else
-      return DEFAULT_LDA;
-  }
+  if(pChParam->eLdaCtrlMode != AUTO_LDA)
+    return pChParam->eLdaCtrlMode;
 
-  return pChParam->eLdaCtrlMode;
+  if(shouldUseDynamicLambda(pChParam))
+    return DYNAMIC_LDA;
+
+  return DEFAULT_LDA;
 }
 
 /***************************************************************************/
@@ -105,16 +108,6 @@ static void releaseSource(AL_TEncCtx* pCtx, AL_TBuffer* pSrc, AL_TFrameInfo* pFI
 
 }
 
-/***************************************************************************/
-static void AL_sEncoder_DestroySkippedPictureData(AL_TSkippedPicture* pSkipPicture)
-{
-  Rtos_Free(pSkipPicture->pBuffer);
-  pSkipPicture->pBuffer = NULL;
-  pSkipPicture->iBufSize = 0;
-  pSkipPicture->iNumBits = 0;
-  pSkipPicture->iNumBins = 0;
-}
-
 /****************************************************************************/
 static bool AL_Common_Encoder_InitBuffers(AL_TEncCtx* pCtx, AL_TAllocator* pAllocator, TBufferEP* pBufEP1)
 {
@@ -123,6 +116,14 @@ static bool AL_Common_Encoder_InitBuffers(AL_TEncCtx* pCtx, AL_TAllocator* pAllo
   pBufEP1->uFlags = 0;
   pCtx->iCurPool = 0;
   return bRet;
+}
+
+static void AL_Common_Encoder_InitNumLCU(AL_TEncCtx* pCtx, AL_TEncChanParam* pChParam)
+{
+  int const iWidthInLcu = (pChParam->uWidth + ((1 << pChParam->uMaxCuSize) - 1)) >> pChParam->uMaxCuSize;
+  int const iHeightInLcu = (pChParam->uHeight + ((1 << pChParam->uMaxCuSize) - 1)) >> pChParam->uMaxCuSize;
+
+  pCtx->iNumLCU = iWidthInLcu * iHeightInLcu;
 }
 
 static bool init(AL_TEncCtx* pCtx, AL_TEncChanParam* pChParam, AL_TAllocator* pAllocator)
@@ -135,6 +136,9 @@ static bool init(AL_TEncCtx* pCtx, AL_TEncChanParam* pChParam, AL_TAllocator* pA
 
   pCtx->iLastIdrId = 0;
 
+  for(int iLayer = 0; iLayer < MAX_NUM_LAYER; iLayer++)
+    pCtx->bEndOfStreamReceived[iLayer] = false;
+
   pCtx->seiData.initialCpbRemovalDelay = pChParam->tRCParam.uInitialRemDelay;
   pCtx->seiData.cpbRemovalDelay = 0;
 
@@ -144,10 +148,7 @@ static bool init(AL_TEncCtx* pCtx, AL_TEncChanParam* pChParam, AL_TAllocator* pA
 
   pCtx->eError = AL_SUCCESS;
 
-  int const iWidthInLcu = (pChParam->uWidth + ((1 << pChParam->uMaxCuSize) - 1)) >> pChParam->uMaxCuSize;
-  int const iHeightInLcu = (pChParam->uHeight + ((1 << pChParam->uMaxCuSize) - 1)) >> pChParam->uMaxCuSize;
-
-  pCtx->iNumLCU = iWidthInLcu * iHeightInLcu;
+  AL_Common_Encoder_InitNumLCU(pCtx, pChParam);
 
   Rtos_Memset(pCtx->Pool, 0, sizeof pCtx->Pool);
   Rtos_Memset(pCtx->SourceSent, 0, sizeof(pCtx->SourceSent));
@@ -175,15 +176,21 @@ void AL_Common_Encoder_NotifySceneChange(AL_TEncoder* pEnc, int iAhead)
 /***************************************************************************/
 void AL_Common_Encoder_NotifyIsLongTerm(AL_TEncoder* pEnc)
 {
-  AL_TEncRequestInfo* pReqInfo = getCurrentCommands(&pEnc->pCtx->tLayerCtx[0]);
-  pReqInfo->eReqOptions |= AL_OPT_IS_LONG_TERM;
+  if(pEnc->pCtx->Settings.tChParam[0].tGopParam.bEnableLT)
+  {
+    AL_TEncRequestInfo* pReqInfo = getCurrentCommands(&pEnc->pCtx->tLayerCtx[0]);
+    pReqInfo->eReqOptions |= AL_OPT_IS_LONG_TERM;
+  }
 }
 
 /***************************************************************************/
 void AL_Common_Encoder_NotifyUseLongTerm(AL_TEncoder* pEnc)
 {
-  AL_TEncRequestInfo* pReqInfo = getCurrentCommands(&pEnc->pCtx->tLayerCtx[0]);
-  pReqInfo->eReqOptions |= AL_OPT_USE_LONG_TERM;
+  if(pEnc->pCtx->Settings.tChParam[0].tGopParam.bEnableLT)
+  {
+    AL_TEncRequestInfo* pReqInfo = getCurrentCommands(&pEnc->pCtx->tLayerCtx[0]);
+    pReqInfo->eReqOptions |= AL_OPT_USE_LONG_TERM;
+  }
 }
 
 
@@ -205,7 +212,8 @@ bool AL_Common_Encoder_PutStreamBuffer(AL_TEncoder* pEnc, AL_TBuffer* pStream, i
   AL_Buffer_Ref(pStream);
 
   /* Can call AL_Common_Encoder_PutStreamBuffer again */
-  AL_ISchedulerEnc_PutStreamBuffer(pCtx->pScheduler, pCtx->tLayerCtx[iLayerID].hChannel, pStream, curStreamSent, ENC_MAX_HEADER_SIZE);
+  int iOffset = ENC_MAX_HEADER_SIZE;
+  AL_ISchedulerEnc_PutStreamBuffer(pCtx->pScheduler, pCtx->tLayerCtx[iLayerID].hChannel, pStream, curStreamSent, iOffset);
   Rtos_ReleaseMutex(pCtx->Mutex);
 
   return true;
@@ -227,6 +235,8 @@ void AL_Common_Encoder_ReleaseRecPicture(AL_TEncoder* pEnc, TRecPic* pRecPic, in
   assert(pCtx);
 
   AL_ISchedulerEnc_ReleaseRecPicture(pCtx->pScheduler, pCtx->tLayerCtx[iLayerID].hChannel, pRecPic);
+  pRecPic->pBuf->hBuf = 0;
+  AL_Buffer_Destroy(pRecPic->pBuf);
 }
 
 void AL_Common_Encoder_ConfigureZapper(AL_TEncCtx* pCtx, AL_TEncInfo* pEncInfo);
@@ -291,6 +301,7 @@ static void AddSourceSent(AL_TEncCtx* pCtx, AL_TBuffer* pSrc, AL_TFrameInfo* pFI
 /****************************************************************************/
 void AL_Common_Encoder_SetEncodingOptions(AL_TEncCtx* pCtx, AL_TFrameInfo* pFI, int iLayerID)
 {
+  (void)iLayerID;
   AL_TEncInfo* pEncInfo = &pFI->tEncInfo;
 
   if(pCtx->Settings.bForceLoad)
@@ -307,36 +318,54 @@ void AL_Common_Encoder_SetEncodingOptions(AL_TEncCtx* pCtx, AL_TFrameInfo* pFI, 
 
 }
 
-#if AL_ENABLE_TWOPASS
 /****************************************************************************/
 void AL_Common_Encoder_ProcessLookAheadParam(AL_TEncoder* pEnc, AL_TEncInfo* pEI, AL_TBuffer* pFrame)
 {
   // Process first pass informations from the metadata, notifies scene changes and transmits parameters for the RateCtrl
   AL_TLookAheadMetaData* pMetaDataLA = (AL_TLookAheadMetaData*)AL_Buffer_GetMetaData(pFrame, AL_META_TYPE_LOOKAHEAD);
 
-  if(pMetaDataLA && pMetaDataLA->bNextSceneChange)
+  if(pMetaDataLA && pMetaDataLA->eSceneChange == AL_SC_NEXT)
     AL_Common_Encoder_NotifySceneChange(pEnc, 1);
-
+  else if(pMetaDataLA && pMetaDataLA->eSceneChange == AL_SC_CURRENT)
+    AL_Common_Encoder_NotifySceneChange(pEnc, 0);
 
   if(pMetaDataLA && pMetaDataLA->iPictureSize != -1)
   {
     pEI->tLAParam.iSCPictureSize = pMetaDataLA->iPictureSize;
     pEI->tLAParam.iSCIPRatio = pMetaDataLA->iIPRatio;
     pEI->tLAParam.iComplexity = pMetaDataLA->iComplexity;
+    pEI->tLAParam.iTargetLevel = pMetaDataLA->iTargetLevel;
   }
 }
 
-#endif
+
+/***************************************************************************/
+static bool CheckQPTable(AL_TEncCtx* pCtx, AL_TBuffer* pQpTable)
+{
+  if(pCtx->Settings.eQpCtrlMode & MASK_QP_TABLE_EXT)
+    return NULL != pQpTable;
+
+  return true;
+}
 
 /***************************************************************************/
 bool AL_Common_Encoder_Process(AL_TEncoder* pEnc, AL_TBuffer* pFrame, AL_TBuffer* pQpTable, int iLayerID)
 {
   AL_TEncCtx* pCtx = pEnc->pCtx;
 
+  if(pCtx->bEndOfStreamReceived[iLayerID])
+    return false;
+
   if(!pFrame)
+  {
+    pCtx->bEndOfStreamReceived[iLayerID] = true;
     return EndOfStream(pEnc, iLayerID);
+  }
 
   if(!AL_SrcBuffersChecker_CanBeUsed(&pCtx->tLayerCtx[iLayerID].srcBufferChecker, pFrame))
+    return false;
+
+  if(!CheckQPTable(pCtx, pQpTable))
     return false;
 
   AL_Common_Encoder_WaitReadiness(pCtx);
@@ -370,9 +399,9 @@ bool AL_Common_Encoder_Process(AL_TEncoder* pEnc, AL_TBuffer* pFrame, AL_TBuffer
     addresses.pEP2 = 0;
   }
 
-  addresses.pSrc_Y = AL_Allocator_GetPhysicalAddr(pFrame->pAllocator, pFrame->hBuf);
-  addresses.pSrc_UV = AL_Allocator_GetPhysicalAddr(pFrame->pAllocator, pFrame->hBuf) + AL_SrcMetaData_GetOffsetC(pMetaData);
-  addresses.uPitchSrc = pMetaData->tPitches.iLuma;
+  addresses.pSrc_Y = AL_Allocator_GetPhysicalAddr(pFrame->pAllocator, pFrame->hBuf) + AL_SrcMetaData_GetOffsetY(pMetaData);
+  addresses.pSrc_UV = AL_Allocator_GetPhysicalAddr(pFrame->pAllocator, pFrame->hBuf) + AL_SrcMetaData_GetOffsetUV(pMetaData);
+  addresses.uPitchSrc = pMetaData->tPlanes[AL_PLANE_Y].iPitch;
 
   AL_TEncChanParam* pChParam = &pCtx->Settings.tChParam[iLayerID];
 
@@ -388,12 +417,15 @@ bool AL_Common_Encoder_Process(AL_TEncoder* pEnc, AL_TBuffer* pFrame, AL_TBuffer
 
   AL_TEncRequestInfo* pReqInfo = getCurrentCommands(&pCtx->tLayerCtx[iLayerID]);
 
-#if AL_ENABLE_TWOPASS
 
   if(pCtx->Settings.LookAhead > 0 || pCtx->Settings.TwoPass == 2)
     AL_Common_Encoder_ProcessLookAheadParam(pEnc, pEI, pFrame);
-#endif
 
+
+  pFI->bResolutionChanged = pReqInfo->eReqOptions & AL_OPT_SET_INPUT_RESOLUTION;
+
+  if(pFI->bResolutionChanged)
+    pFI->uNewNalsId = pReqInfo->dynResParams.uNewNalsId;
 
   bool bRet = AL_ISchedulerEnc_EncodeOneFrame(pCtx->pScheduler, pCtx->tLayerCtx[iLayerID].hChannel, pEI, pReqInfo, &addresses);
 
@@ -419,10 +451,7 @@ AL_ERR AL_Common_Encoder_GetLastError(AL_TEncoder* pEnc)
 
 static void setMaxNumRef(AL_TEncCtx* pCtx, AL_TEncChanParam* pChParam)
 {
-  pCtx->iMaxNumRef = AL_GET_PPS_NUM_ACT_REF_L0(pChParam->uPpsParam);
-
-  if(pCtx->iMaxNumRef)
-    pCtx->iMaxNumRef += 1;
+  pCtx->iMaxNumRef = AL_GetNumberOfRef(pChParam->uPpsParam);
 }
 
 void AL_Common_Encoder_SetHlsParam(AL_TEncChanParam* pChParam)
@@ -507,8 +536,8 @@ static void SetGoldenRefFrequency(AL_TEncChanParam* pChParam)
 static AL_TEncChanParam* TransferChannelParameters(AL_TEncSettings const* pSettings, AL_TEncChanParam* pChParamOut)
 {
 
-  pChParamOut->uClipHrzRange = (pChParamOut->eOptions & AL_OPT_FORCE_MV_CLIP) ? pSettings->uClipHrzRange : 0;
-  pChParamOut->uClipVrtRange = (pChParamOut->eOptions & AL_OPT_FORCE_MV_CLIP) ? pSettings->uClipVrtRange : 0;
+  pChParamOut->uClipHrzRange = (pChParamOut->eEncOptions & AL_OPT_FORCE_MV_CLIP) ? pSettings->uClipHrzRange : 0;
+  pChParamOut->uClipVrtRange = (pChParamOut->eEncOptions & AL_OPT_FORCE_MV_CLIP) ? pSettings->uClipVrtRange : 0;
 
   pChParamOut->uL2PrefetchMemSize = pSettings->iPrefetchLevel2;
   pChParamOut->uL2PrefetchMemOffset = 0;
@@ -516,18 +545,18 @@ static AL_TEncChanParam* TransferChannelParameters(AL_TEncSettings const* pSetti
   // Update Auto QP param -------------------------------------------
   if(pSettings->eQpCtrlMode & MASK_AUTO_QP)
   {
-    pChParamOut->eOptions |= AL_OPT_ENABLE_AUTO_QP;
+    pChParamOut->eEncOptions |= AL_OPT_ENABLE_AUTO_QP;
 
     if(pSettings->eQpCtrlMode & ADAPTIVE_AUTO_QP)
-      pChParamOut->eOptions |= AL_OPT_ADAPT_AUTO_QP;
+      pChParamOut->eEncOptions |= AL_OPT_ADAPT_AUTO_QP;
   }
 
   // Update QP table param -------------------------------------------
   if(pSettings->eQpCtrlMode & RELATIVE_QP)
-    pChParamOut->eOptions |= AL_OPT_QP_TAB_RELATIVE;
+    pChParamOut->eEncOptions |= AL_OPT_QP_TAB_RELATIVE;
 
   pChParamOut->eLdaCtrlMode = GetFinalLdaMode(pChParamOut);
-  pChParamOut->eOptions |= AL_OPT_CUSTOM_LDA;
+  pChParamOut->eEncOptions |= AL_OPT_CUSTOM_LDA;
 
   SetGoldenRefFrequency(pChParamOut);
   return pChParamOut;
@@ -544,17 +573,17 @@ static AL_TEncChanParam* initChannelParam(AL_TEncCtx* pCtx, AL_TEncSettings cons
 /****************************************************************************/
 void AL_Common_Encoder_SetME(int iHrzRange_P, int iVrtRange_P, int iHrzRange_B, int iVrtRange_B, AL_TEncChanParam* pChParam)
 {
-  if(pChParam->pMeRange[SLICE_P][0] < 0)
-    pChParam->pMeRange[SLICE_P][0] = iHrzRange_P;
+  if(pChParam->pMeRange[AL_SLICE_P][0] < 0)
+    pChParam->pMeRange[AL_SLICE_P][0] = iHrzRange_P;
 
-  if(pChParam->pMeRange[SLICE_P][1] < 0)
-    pChParam->pMeRange[SLICE_P][1] = iVrtRange_P;
+  if(pChParam->pMeRange[AL_SLICE_P][1] < 0)
+    pChParam->pMeRange[AL_SLICE_P][1] = iVrtRange_P;
 
-  if(pChParam->pMeRange[SLICE_B][0] < 0)
-    pChParam->pMeRange[SLICE_B][0] = iHrzRange_B;
+  if(pChParam->pMeRange[AL_SLICE_B][0] < 0)
+    pChParam->pMeRange[AL_SLICE_B][0] = iHrzRange_B;
 
-  if(pChParam->pMeRange[SLICE_B][1] < 0)
-    pChParam->pMeRange[SLICE_B][1] = iVrtRange_B;
+  if(pChParam->pMeRange[AL_SLICE_B][1] < 0)
+    pChParam->pMeRange[AL_SLICE_B][1] = iVrtRange_B;
 }
 
 static void AL_Common_Encoder_DeinitBuffers(AL_TLayerCtx* pCtx)
@@ -633,10 +662,7 @@ static void destroy(AL_TEncCtx* pCtx)
   Rtos_DeleteSemaphore(pCtx->PendingEncodings);
 
   for(int i = 0; i < pCtx->Settings.NumLayer; ++i)
-  {
-    AL_sEncoder_DestroySkippedPictureData(&pCtx->tLayerCtx[i].pSkippedPicture);
     AL_Common_Encoder_DeinitBuffers(&pCtx->tLayerCtx[i]);
-  }
 
   DeinitPoolIds(pCtx);
 }
@@ -649,7 +675,33 @@ void AL_Common_Encoder_Destroy(AL_TEncoder* pEnc)
   Rtos_Free(pCtx);
 }
 
+/***************************************************************************/
+static int GetNalID(AL_TEncCtx* pCtx, uint16_t uWidth, uint16_t uHeight)
+{
+  AL_TDimension tDim = { uWidth, uHeight };
+  int i = 0;
+
+  while(i < MAX_NAL_IDS && (pCtx->nalResolutionsPerID[i].iWidth != 0))
+  {
+    if(pCtx->nalResolutionsPerID[i].iWidth == uWidth && pCtx->nalResolutionsPerID[i].iHeight == uHeight)
+      return i;
+    i++;
+  }
+
+  i = i % MAX_NAL_IDS;
+  pCtx->nalResolutionsPerID[i] = tDim;
+  return i;
+}
+
 #define AL_RETURN_ERROR(e) { AL_Common_SetError(pCtx, e); return false; }
+
+/****************************************************************************/
+static bool IsGopRestartForbidden(AL_TEncChanParam* pChParam)
+{
+  bool isAdaptive = (pChParam->tGopParam.eMode == AL_GOP_MODE_ADAPTIVE);
+  bool isBypass = (pChParam->tGopParam.eMode == AL_GOP_MODE_BYPASS);
+  return isAdaptive || isBypass;
+}
 
 /****************************************************************************/
 bool AL_Common_Encoder_RestartGop(AL_TEncoder* pEnc)
@@ -658,9 +710,7 @@ bool AL_Common_Encoder_RestartGop(AL_TEncoder* pEnc)
 
   for(int i = 0; i < pCtx->Settings.NumLayer; ++i)
   {
-    if(pCtx->Settings.tChParam[i].tGopParam.eMode != AL_GOP_MODE_DEFAULT &&
-       pCtx->Settings.tChParam[i].tGopParam.eMode != AL_GOP_MODE_LOW_DELAY_P &&
-       pCtx->Settings.tChParam[i].tGopParam.eMode != AL_GOP_MODE_LOW_DELAY_B)
+    if(IsGopRestartForbidden(&pCtx->Settings.tChParam[i]))
       AL_RETURN_ERROR(AL_ERR_CMD_NOT_ALLOWED);
 
     AL_TEncRequestInfo* pReqInfo = getCurrentCommands(&pCtx->tLayerCtx[i]);
@@ -776,10 +826,45 @@ bool AL_Common_Encoder_SetQP(AL_TEncoder* pEnc, int16_t iQP)
   return true;
 }
 
+static bool AL_Common_Encoder_SetChannelResolution(AL_TLayerCtx* pLayerCtx, AL_TEncChanParam* pChanParam, AL_TDimension tDim)
+{
+  if(AL_SrcBuffersChecker_UpdateResolution(&pLayerCtx->srcBufferChecker, tDim))
+  {
+    pChanParam->uWidth = tDim.iWidth;
+    pChanParam->uHeight = tDim.iHeight;
+    return true;
+  }
+  return false;
+}
+
+bool AL_Common_Encoder_SetInputResolution(AL_TEncoder* pEnc, AL_TDimension tDim)
+{
+  AL_TEncCtx* pCtx = pEnc->pCtx;
+
+  for(int i = 0; i < pCtx->Settings.NumLayer; ++i)
+  {
+    AL_TEncChanParam* pChanParam = &pCtx->Settings.tChParam[i];
+    AL_TLayerCtx* pLayerCtx = &pCtx->tLayerCtx[i];
+
+    if((IsGopRestartForbidden(&pCtx->Settings.tChParam[i])) || (!AL_Common_Encoder_SetChannelResolution(pLayerCtx, pChanParam, tDim)))
+      AL_RETURN_ERROR(AL_ERR_CMD_NOT_ALLOWED);
+
+    AL_TEncRequestInfo* pReqInfo = getCurrentCommands(pLayerCtx);
+    pReqInfo->eReqOptions |= AL_OPT_SET_INPUT_RESOLUTION;
+    pReqInfo->eReqOptions |= AL_OPT_RESTART_GOP;
+    pReqInfo->dynResParams.tInputResolution = tDim;
+    pReqInfo->dynResParams.uNewNalsId = GetNalID(pCtx, tDim.iWidth, tDim.iHeight);
+  }
+
+  AL_Common_Encoder_InitNumLCU(pCtx, &pCtx->Settings.tChParam[0]);
+
+  return true;
+}
+
 
 static bool isSeiEnable(uint32_t uFlags)
 {
-  return uFlags != SEI_NONE;
+  return uFlags != AL_SEI_NONE;
 }
 
 static bool isBaseLayer(int iLayer)
@@ -802,24 +887,15 @@ NalsData AL_ExtractNalsData(AL_TEncCtx* pCtx, int iLayerID)
 
 
   if(pSettings->tChParam[0].bSubframeLatency)
-    data.seiFlags |= SEI_EOF;
+  {
+    data.seiFlags |= AL_SEI_UDU;
+    data.shouldWriteFillerData = true;
+  }
 
   if(isSeiEnable(data.seiFlags))
     data.seiData = &pCtx->seiData;
 
   return data;
-}
-
-/****************************************************************************/
-void AL_Common_Encoder_InitSkippedPicture(AL_TSkippedPicture* pSkipPicture)
-{
-  pSkipPicture->pBuffer = (uint8_t*)Rtos_Malloc(2 * 1024);
-
-  assert(pSkipPicture->pBuffer);
-
-  pSkipPicture->iBufSize = 2 * 1024;
-  pSkipPicture->iNumBits = 0;
-  pSkipPicture->iNumBins = 0;
 }
 
 /****************************************************************************/
@@ -846,20 +922,28 @@ static void EndEncoding(void* pUserParam, AL_TEncPicStatus* pPicStatus, AL_64U s
 
   AL_TBuffer* pStream = pCtx->tLayerCtx[iLayerID].StreamSent[streamId];
 
-  if(!(pPicStatus->eErrorCode & AL_ERROR || pPicStatus->bSkip))
-    pCtx->encoder.updateHlsAndWriteSections(pCtx, pPicStatus, pStream, iLayerID);
+  int iPoolID = pPicStatus->UserParam;
+  AL_TFrameInfo* pFI = &pCtx->Pool[iPoolID];
+
+  bool bResolutionChanged = false;
+  uint8_t uNewNalsId = 0;
+  bResolutionChanged = pFI->bResolutionChanged;
+  uNewNalsId = pFI->uNewNalsId;
+
+  if(!AL_IS_ERROR_CODE(pPicStatus->eErrorCode))
+    pCtx->encoder.updateHlsAndWriteSections(pCtx, pPicStatus, bResolutionChanged, uNewNalsId, pStream, iLayerID);
 
   AL_TPictureMetaData* pPictureMeta = (AL_TPictureMetaData*)AL_Buffer_GetMetaData(pStream, AL_META_TYPE_PICTURE);
 
   if(pPictureMeta)
     pPictureMeta->eType = pPicStatus->eType;
 
-  int iPoolID = pPicStatus->UserParam;
-  AL_TFrameInfo* pFI = &pCtx->Pool[iPoolID];
+  AL_TStreamMetaData* pStreamMeta = (AL_TStreamMetaData*)AL_Buffer_GetMetaData(pStream, AL_META_TYPE_STREAM);
+  assert(pStreamMeta);
+  pStreamMeta->uTemporalID = pPicStatus->uTempId;
 
   AL_TBuffer* pSrc = (AL_TBuffer*)(uintptr_t)pPicStatus->SrcHandle;
 
-#if AL_ENABLE_TWOPASS
 
   if(pCtx->Settings.LookAhead > 0 || pCtx->Settings.TwoPass == 1)
   {
@@ -869,11 +953,11 @@ static void EndEncoding(void* pUserParam, AL_TEncPicStatus* pPicStatus, AL_64U s
     if(pPictureMetaLA)
     {
       pPictureMetaLA->iPictureSize = pPicStatus->iPictureSize;
-      pPictureMetaLA->iPercentIntra = pPicStatus->iPercentIntra;
-      pPictureMetaLA->iPercentSkip = pPicStatus->iPercentSkip;
+
+      for(int8_t i = 0; i < 5; i++)
+        pPictureMetaLA->iPercentIntra[i] = pPicStatus->iPercentIntra[i];
     }
   }
-#endif
 
   pCtx->tLayerCtx[iLayerID].callback.func(pCtx->tLayerCtx[iLayerID].callback.userParam, pStream, pSrc, iLayerID);
 
@@ -926,6 +1010,7 @@ AL_ERR AL_Common_Encoder_CreateChannel(AL_TEncCtx* pCtx, TScheduler* pScheduler,
   CBs.pfnEndEncodingCallBack = EndEncoding;
   CBs.pEndEncodingCBParam = &pCtx->tLayerCtx[0].callback_user_param;
 
+  (void)GetNalID(pCtx, pChParam->uWidth, pChParam->uHeight);
   // HACK: needed to preprocess scaling list, but doesn't generate the good nals
   // because we are missing some value populated by AL_ISchedulerEnc_CreateChannel
   pCtx->encoder.generateNals(pCtx, 0, true);
@@ -933,16 +1018,12 @@ AL_ERR AL_Common_Encoder_CreateChannel(AL_TEncCtx* pCtx, TScheduler* pScheduler,
   if(!PreprocessEncoderParam(pCtx, &pCtx->tLayerCtx[0].tBufEP1, 0))
     goto fail;
 
-  AL_ERR chanError = AL_ISchedulerEnc_CreateChannel(&pCtx->tLayerCtx[0].hChannel, pCtx->pScheduler, pChParam, &pCtx->tLayerCtx[0].tBufEP1.tMD, &CBs);
+  errorCode = AL_ISchedulerEnc_CreateChannel(&pCtx->tLayerCtx[0].hChannel, pCtx->pScheduler, pChParam, &pCtx->tLayerCtx[0].tBufEP1.tMD, &CBs);
 
-  if(chanError != AL_SUCCESS)
-  {
-    errorCode = chanError;
+  if(AL_IS_ERROR_CODE(errorCode))
     goto fail;
-  }
 
 
-  pCtx->encoder.generateSkippedPictureData(pCtx, pChParam, &pCtx->tLayerCtx[0].pSkippedPicture);
   pCtx->PendingEncodings = Rtos_CreateSemaphore(ENC_MAX_CMD - 1);
 
   setMaxNumRef(pCtx, pChParam);
@@ -951,7 +1032,7 @@ AL_ERR AL_Common_Encoder_CreateChannel(AL_TEncCtx* pCtx, TScheduler* pScheduler,
   pCtx->iInitialNumB = pChParam->tGopParam.uNumB;
   pCtx->uInitialFrameRate = pChParam->tRCParam.uFrameRate;
 
-  return AL_SUCCESS;
+  return errorCode;
 
   fail:
   destroy(pCtx);
@@ -966,19 +1047,21 @@ bool CreateNuts(Nuts* nuts, AL_EProfile eProfile)
   if(AL_IS_AVC(eProfile))
   {
     *nuts = CreateAvcNuts();
-    /* sei suffix do not really exist in AVC. use a prefix nut */
-    nuts->seiSuffixNut = nuts->seiPrefixNut;
+    return true;
   }
-  else if(AL_IS_HEVC(eProfile))
+
+  if(AL_IS_HEVC(eProfile))
+  {
     *nuts = CreateHevcNuts();
-  else
-    return false;
-  return true;
+    return true;
+  }
+
+  return false;
 }
 
 #include "lib_encode/Sections.h"
 
-int AL_Encoder_AddSei(AL_HEncoder hEnc, AL_TBuffer* pStream, bool isPrefix, int iPayloadType, uint8_t* pPayload, int iPayloadSize)
+int AL_Encoder_AddSei(AL_HEncoder hEnc, AL_TBuffer* pStream, bool isPrefix, int iPayloadType, uint8_t* pPayload, int iPayloadSize, int iTempId)
 {
   AL_TEncoder* pEnc = (AL_TEncoder*)hEnc;
   AL_TEncCtx* pCtx = pEnc->pCtx;
@@ -988,6 +1071,6 @@ int AL_Encoder_AddSei(AL_HEncoder hEnc, AL_TBuffer* pStream, bool isPrefix, int 
 
   if(!exists)
     return -1;
-  return AL_WriteSeiSection(nuts, pStream, isPrefix, iPayloadType, pPayload, iPayloadSize);
+  return AL_WriteSeiSection(nuts, pStream, isPrefix, iPayloadType, pPayload, iPayloadSize, iTempId);
 }
 

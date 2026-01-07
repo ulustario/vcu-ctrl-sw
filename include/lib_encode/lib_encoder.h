@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright (C) 2018 Allegro DVT2.  All rights reserved.
+* Copyright (C) 2019 Allegro DVT2.  All rights reserved.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -197,9 +197,10 @@ bool AL_Encoder_Process(AL_HEncoder hEnc, AL_TBuffer* pFrame, AL_TBuffer* pQpTab
    \param[in] iPayloadType SEI payload type. See Annex D.3 of ITU-T
    \param[in] pPayload Raw data of the SEI payload
    \param[in] iPayloadSize Size of the raw data payload
+   \param[in] iTempId Temporal id of the raw data payload
    \return returns the section id
 *****************************************************************************/
-int AL_Encoder_AddSei(AL_HEncoder hEnc, AL_TBuffer* pStream, bool isPrefix, int iPayloadType, uint8_t* pPayload, int iPayloadSize);
+int AL_Encoder_AddSei(AL_HEncoder hEnc, AL_TBuffer* pStream, bool isPrefix, int iPayloadType, uint8_t* pPayload, int iPayloadSize, int iTempId);
 
 
 /*************************************************************************//*!
@@ -269,6 +270,16 @@ bool AL_Encoder_SetFrameRate(AL_HEncoder hEnc, uint16_t uFrameRate, uint16_t uCl
    retrieve the error code
 *****************************************************************************/
 bool AL_Encoder_SetQP(AL_HEncoder hEnc, int16_t iQP);
+
+/*************************************************************************//*!
+   \brief Changes the resolution of the input frames to encode from the next
+   pushed frame
+   \param[in] hEnc Handle to an encoder object
+   \param[in] tDim The new dimension of pushed frames
+   \return true on success, false on error : call AL_Encoder_GetLastError to
+   retrieve the error code
+*****************************************************************************/
+bool AL_Encoder_SetInputResolution(AL_HEncoder hEnc, AL_TDimension tDim);
 
 
 

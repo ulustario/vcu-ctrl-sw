@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright (C) 2018 Allegro DVT2.  All rights reserved.
+* Copyright (C) 2019 Allegro DVT2.  All rights reserved.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -80,10 +80,10 @@ static const AL_TBufInfo EP2_BUF_QP_BY_MB =
 /*************************************************************************//*!
    \brief Retrieves the size of a Encoder parameters buffer 2 (QP Ctrl)
    \param[in] tDim Frame size in pixels
-   \param[in] uMaxCuSize Maximum Size of a Coding Unit
+   \param[in] eCodec Codec
    \return maximum size (in bytes) needed to store
 *****************************************************************************/
-uint32_t AL_GetAllocSizeEP2(AL_TDimension tDim, uint8_t uMaxCuSize);
+uint32_t AL_GetAllocSizeEP2(AL_TDimension tDim, AL_ECodec eCodec);
 
 // AL_DEPRECATED("Doesn't support pitch different of AL_EncGetMinPitch. Use AL_GetAllocSizeSrc(). Will be removed in 0.9")
 uint32_t AL_GetAllocSize_Src(AL_TDimension tDim, uint8_t uBitDepth, AL_EChromaMode eChromaMode, AL_ESrcMode eSrcFmt);

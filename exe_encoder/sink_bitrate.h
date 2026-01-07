@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright (C) 2018 Allegro DVT2.  All rights reserved.
+* Copyright (C) 2019 Allegro DVT2.  All rights reserved.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -35,36 +35,12 @@
 *
 ******************************************************************************/
 
-/*************************************************************************//*!
-   \addtogroup Traces
-   @{
-   \file
-*****************************************************************************/
 #pragma once
 
-/*************************************************************************//*!
-   \brief Trace type enum
-*****************************************************************************/
-typedef enum e_TraceType
-{
-  PARSING_INPUT_TRACE = 0,
-  DECODING_INPUT_TRACE = 1,
-  PARSING_OUTPUT_TRACE = 2,
-  DECODING_OUTPUT_TRACE = 3,
-}AL_ETraceType;
+#include <string>
+#include <memory>
+#include "sink.h"
+#include "CfgParser.h"
 
-/*************************************************************************//*!
-   \brief Output trace mode
-*****************************************************************************/
-typedef enum e_TraceMode
-{
-  AL_TRACE_NONE = 0,
-  AL_TRACE_ON_ERR = 1,
-  AL_TRACE_LATEST = 2,
-  AL_TRACE_ALL = 3,
-  AL_TRACE_FRAME = 4,
-  AL_TRACE_STATUS = 5,
-}AL_ETraceMode;
-
-/*@}*/
+std::unique_ptr<IFrameSink> createBitrateWriter(std::string path, ConfigFile const& cfg);
 

@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright (C) 2018 Allegro DVT2.  All rights reserved.
+* Copyright (C) 2019 Allegro DVT2.  All rights reserved.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -107,7 +107,7 @@ typedef struct
 *****************************************************************************/
 typedef struct
 {
-  void (* func)(int iPayloadType, uint8_t* pPayload, int iPayloadSize, void* pUserParam);
+  void (* func)(bool bIsPrefix, int iPayloadType, uint8_t* pPayload, int iPayloadSize, void* pUserParam);
   void* userParam;
 }AL_CB_ParsedSei;
 
@@ -142,6 +142,7 @@ typedef struct
   AL_TStreamSettings tStream; /*!< Stream's settings. These need to be set if you want to preallocate the buffer. memset to 0 otherwise */
   AL_EBufferOutputMode eBufferOutputMode; /*!< Reconstructed buffers output mode */
   bool bUseIFramesAsSyncPoint; /*!< Allow decoder to sync on I frames if configurations' nals are presents */
+  bool bUseEarlyCallback; /*< Lowlat phase 2. This only makes sense with special support for hw synchro */
 }AL_TDecSettings;
 
 /*************************************************************************//*!

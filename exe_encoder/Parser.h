@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright (C) 2018 Allegro DVT2.  All rights reserved.
+* Copyright (C) 2019 Allegro DVT2.  All rights reserved.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -45,6 +45,7 @@
 #include <string>
 #include <stdexcept>
 #include <vector>
+#include <algorithm>
 
 std::deque<Token> toReversePolish(std::deque<Token>& tokens);
 std::string parseString(std::deque<Token>& tokens);
@@ -74,6 +75,7 @@ enum class Section
   Global,
   Unknown,
   Input,
+  DynamicInput,
   Output,
   Settings,
   Run,
@@ -89,6 +91,8 @@ static inline std::string toString(Section section)
   {
   case Section::Input:
     return "INPUT";
+  case Section::DynamicInput:
+    return "DYNAMIC_INPUT";
   case Section::Output:
     return "OUTPUT";
   case Section::Settings:
@@ -254,6 +258,31 @@ static T parseArithmetic(std::deque<Token>& tokens)
 }
 
 template<typename T>
+std::vector<T> parseArray(std::deque<Token>& tokens, size_t expectedSize)
+{
+  std::vector<T> array;
+  int sign = 1;
+
+  for(auto& token : tokens)
+  {
+    if(token.type == TokenType::Minus)
+      sign = -1;
+
+    else if(isNumber(token))
+    {
+      array.push_back(sign * get<T>(createArithToken(token, T {}, false)));
+      sign = 1;
+    }
+    else
+      throw TokenError(token, "Array doesn't support special character " + toString(token.type));
+  }
+
+  if(array.size() != expectedSize)
+    throw std::runtime_error("Array doesn't fit expected size, require " + std::to_string(expectedSize) + " elements");
+  return array;
+}
+
+template<typename T>
 static void resetFlag(T* bitfield, uint32_t uFlag)
 {
   *bitfield = (T)((uint32_t)*bitfield & ~uFlag);
@@ -289,8 +318,22 @@ static inline std::string describeArithExpr()
 struct Callback
 {
   std::function<void(std::deque<Token> &)> func;
+  std::string showName;
   std::string desc;
 };
+
+static int safeToLower(int c)
+{
+  if(c < 0 && c != EOF)
+    throw std::runtime_error("Character is not ASCII");
+  return ::tolower(c);
+}
+
+static inline std::string tolowerStr(std::string name)
+{
+  std::transform(name.begin(), name.end(), name.begin(), safeToLower);
+  return name;
+}
 
 struct ConfigParser
 {
@@ -304,12 +347,12 @@ struct ConfigParser
   void addArith(Section section, char const* name, T& t, std::string desc = "no description")
   {
     desc += startValueDesc() + describeArithExpr();
-    identifiers[section][name] =
+    identifiers[section][tolowerStr(name)] =
     {
       [&](std::deque<Token>& tokens)
       {
         t = parseArithmetic<U>(tokens);
-      }, desc
+      }, name, desc
     };
   };
 
@@ -317,12 +360,12 @@ struct ConfigParser
   void addArithFunc(Section section, char const* name, T& t, Func f, std::string desc = "no description")
   {
     desc += startValueDesc() + describeArithExpr();
-    identifiers[section][name] =
+    identifiers[section][tolowerStr(name)] =
     {
       [&](std::deque<Token>& tokens)
       {
         t = f(parseArithmetic<U>(tokens));
-      }, desc
+      }, name, desc
     };
   };
 
@@ -331,12 +374,12 @@ struct ConfigParser
   void addArithMultipliedByConstant(Section section, char const* name, T& t, U const& u, std::string desc = "no description")
   {
     desc += startValueDesc() + describeArithExpr();
-    identifiers[section][name] =
+    identifiers[section][tolowerStr(name)] =
     {
       [&t, u](std::deque<Token>& tokens)
       {
         t = parseArithmetic<V>(tokens) * u;
-      }, desc
+      }, name, desc
     };
   }
 
@@ -345,12 +388,12 @@ struct ConfigParser
   void addEnum(Section section, char const* name, T& t, std::map<std::string, int> availableEnums, std::string desc = "no description")
   {
     desc += startValueDesc() + describeEnum(availableEnums);
-    identifiers[section][name] =
+    identifiers[section][tolowerStr(name)] =
     {
       [&t, availableEnums](std::deque<Token>& tokens)
       {
         t = static_cast<T>(parseEnum(tokens, availableEnums));
-      }, desc
+      }, name, desc
     };
   };
 
@@ -358,7 +401,7 @@ struct ConfigParser
   void addArithOrEnum(Section section, char const* name, T& t, std::map<std::string, int> availableEnums, std::string desc = "no description")
   {
     desc += startValueDesc() + describeArithExpr() + " or " + describeEnum(availableEnums);
-    identifiers[section][name] =
+    identifiers[section][tolowerStr(name)] =
     {
       [&t, availableEnums](std::deque<Token>& tokens)
       {
@@ -369,7 +412,7 @@ struct ConfigParser
         }
 
         t = parseArithmetic<U>(tokens);
-      }, desc
+      }, name, desc
     };
   }
 
@@ -377,7 +420,7 @@ struct ConfigParser
   void addArithFuncOrEnum(Section section, char const* name, T& t, Func f, std::map<std::string, int> availableEnums, std::string desc = "no description")
   {
     desc += startValueDesc() + describeArithExpr() + " or " + describeEnum(availableEnums);
-    identifiers[section][name] =
+    identifiers[section][tolowerStr(name)] =
     {
       [&t, &f, availableEnums](std::deque<Token>& tokens)
       {
@@ -388,7 +431,7 @@ struct ConfigParser
         }
 
         t = static_cast<T>(f(parseArithmetic<U>(tokens)));
-      }, desc
+      }, name, desc
     };
   }
 
@@ -397,12 +440,12 @@ struct ConfigParser
   {
     std::map<std::string, int> availableEnums = createBoolEnums();
     desc += startValueDesc() + describeEnum(availableEnums);
-    identifiers[section][name] =
+    identifiers[section][tolowerStr(name)] =
     {
       [&t, availableEnums](std::deque<Token>& tokens)
       {
         t = static_cast<T>(parseBoolEnum(tokens, availableEnums));
-      }, desc
+      }, name, desc
     };
   }
 
@@ -411,9 +454,9 @@ struct ConfigParser
   {
     std::map<std::string, int> availableEnums = createBoolEnums();
     desc += startValueDesc() + describeEnum(availableEnums);
-    identifiers[section][name] =
+    identifiers[section][tolowerStr(name)] =
     {
-      [&t, name, uFlag, availableEnums](std::deque<Token>& tokens)
+      [&t, uFlag, availableEnums](std::deque<Token>& tokens)
       {
         /* T needs to be able to translate to an uint32_t (like an enum) */
         bool hasFlag = parseBoolEnum(tokens, availableEnums);
@@ -421,36 +464,51 @@ struct ConfigParser
 
         if(hasFlag)
           setFlag(&t, uFlag);
-      }, desc
+      }, name, desc
     };
   }
 
   void addString(Section section, char const* name, std::string& t, std::string desc = "no description")
   {
-    identifiers[section][name] =
+    identifiers[section][tolowerStr(name)] =
     {
       [&](std::deque<Token>& tokens)
       {
         t = parseString(tokens);
-      }, desc
+      }, name, desc
     };
   }
 
   void addPath(Section section, char const* name, std::string& t, std::string desc = "no description")
   {
-    identifiers[section][name] =
+    identifiers[section][tolowerStr(name)] =
     {
       [&](std::deque<Token>& tokens)
       {
         t = parsePath(tokens);
-      }, desc
+      }, name, desc
+    };
+  }
+
+  template<typename T, size_t arraySize>
+  void addArray(Section section, char const* name, T(&t)[arraySize], std::string desc = "no description")
+  {
+    identifiers[section][tolowerStr(name)] =
+    {
+      [&](std::deque<Token>& tokens)
+      {
+        auto array = parseArray<T>(tokens, arraySize);
+
+        for(auto i = 0; i < (int)arraySize; ++i)
+          t[i] = array[i];
+      }, name, desc
     };
   }
 
   template<typename Func>
   void addCustom(Section section, char const* name, Func func, std::string desc = "no description")
   {
-    identifiers[section][name] = { func, desc };
+    identifiers[section][tolowerStr(name)] = { func, name, desc };
   }
 
   std::string nearestMatch(std::string const& wrong);

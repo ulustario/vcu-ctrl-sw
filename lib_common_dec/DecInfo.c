@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright (C) 2018 Allegro DVT2.  All rights reserved.
+* Copyright (C) 2019 Allegro DVT2.  All rights reserved.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -54,6 +54,7 @@ bool AL_NeedsCropping(AL_TCropInfo const* pInfo)
   return false;
 }
 
+/******************************************************************************/
 int AVC_GetMinOutputBuffersNeeded(int iDpbMaxBuf, int iStack)
 {
   int const iRecBuf = REC_BUF;
@@ -68,7 +69,6 @@ int AL_AVC_GetMinOutputBuffersNeeded(AL_TStreamSettings tStreamSettings, int iSt
   return AVC_GetMinOutputBuffersNeeded(iDpbMaxBuf, iStack);
 }
 
-/******************************************************************************/
 int HEVC_GetMinOutputBuffersNeeded(int iDpbMaxBuf, int iStack)
 {
   int const iRecBuf = 0;

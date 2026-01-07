@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright (C) 2018 Allegro DVT2.  All rights reserved.
+* Copyright (C) 2019 Allegro DVT2.  All rights reserved.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -41,73 +41,244 @@
 static AL_TGopFrm PYRAMIDAL_GOP_3[] =
 {
   {
-    SLICE_P, 0, 1, 0, 4, -4, 0, 0, { -4, 0, 0, 0, 0 }
+    AL_SLICE_P, 0, 1, 4, -4, 0, 0, { -4, 0, 0, 0, 0 }
   },
   {
-    SLICE_B, 0, 1, 1, 2, -2, 2, 0, { -2, 2, 0, 0, 0 }
+    AL_SLICE_B, 1, 1, 2, -2, 2, 0, { -2, 2, 0, 0, 0 }
   },
   {
-    SLICE_B, 0, 0, 2, 1, -1, 1, 0, { -1, 1, 3, 0, 0 }
+    AL_SLICE_B, 2, 0, 1, -1, 1, 0, { -1, 1, 3, 0, 0 }
   },
   {
-    SLICE_B, 0, 0, 2, 3, -1, 1, 0, { -1, 1, 0, 0, 0 }
+    AL_SLICE_B, 2, 0, 3, -1, 1, 0, { -1, 1, 0, 0, 0 }
   }
 };
 
 static AL_TGopFrm PYRAMIDAL_GOP_5[] =
 {
   {
-    SLICE_P, 0, 1, 0, 6, -6, 0, 0, { -6, 0, 0, 0, 0 }
+    AL_SLICE_P, 0, 1, 6, -6, 0, 0, { -6, 0, 0, 0, 0 }
   },
   {
-    SLICE_B, 0, 1, 1, 3, -3, 3, 0, { -3, 3, 0, 0, 0 }
+    AL_SLICE_B, 1, 1, 3, -3, 3, 0, { -3, 3, 0, 0, 0 }
   },
   {
-    SLICE_B, 0, 0, 2, 1, -1, 2, 0, { -1, 2, 5, 0, 0 }
+    AL_SLICE_B, 2, 0, 1, -1, 2, 0, { -1, 2, 5, 0, 0 }
   },
   {
-    SLICE_B, 0, 0, 2, 2, -2, 1, 0, { -2, 1, 4, 0, 0 }
+    AL_SLICE_B, 2, 0, 2, -2, 1, 0, { -2, 1, 4, 0, 0 }
   },
   {
-    SLICE_B, 0, 0, 2, 4, -1, 2, 0, { -1, 2, 0, 0, 0 }
+    AL_SLICE_B, 2, 0, 4, -1, 2, 0, { -1, 2, 0, 0, 0 }
   },
   {
-    SLICE_B, 0, 0, 2, 5, -2, 1, 0, { -2, 1, 0, 0, 0 }
+    AL_SLICE_B, 2, 0, 5, -2, 1, 0, { -2, 1, 0, 0, 0 }
   }
 };
 
 static AL_TGopFrm PYRAMIDAL_GOP_7[] =
 {
   {
-    SLICE_P, 0, 1, 0, 8, -8, 0, 0, { -8, 0, 0, 0, 0 }
+    AL_SLICE_P, 0, 1, 8, -8, 0, 0, { -8, 0, 0, 0, 0 }
   },
   {
-    SLICE_B, 0, 1, 1, 4, -4, 4, 0, { -4, 4, 0, 0, 0 }
+    AL_SLICE_B, 1, 1, 4, -4, 4, 0, { -4, 4, 0, 0, 0 }
   },
   {
-    SLICE_B, 0, 1, 1, 2, -2, 2, 0, { -2, 2, 6, 0, 0 }
+    AL_SLICE_B, 2, 1, 2, -2, 2, 0, { -2, 2, 6, 0, 0 }
   },
   {
-    SLICE_B, 0, 0, 2, 1, -1, 1, 0, { -1, 1, 3, 7, 0 }
+    AL_SLICE_B, 3, 0, 1, -1, 1, 0, { -1, 1, 3, 7, 0 }
   },
   {
-    SLICE_B, 0, 0, 2, 3, -1, 1, 0, { -1, 1, 5, 0, 0 }
+    AL_SLICE_B, 3, 0, 3, -1, 1, 0, { -1, 1, 5, 0, 0 }
   },
   {
-    SLICE_B, 0, 1, 1, 6, -2, 2, 0, { -2, 2, 0, 0, 0 }
+    AL_SLICE_B, 2, 1, 6, -2, 2, 0, { -2, 2, 0, 0, 0 }
   },
   {
-    SLICE_B, 0, 0, 2, 5, -1, 1, 0, { -1, 1, 3, 0, 0 }
+    AL_SLICE_B, 3, 0, 5, -1, 1, 0, { -1, 1, 3, 0, 0 }
   },
   {
-    SLICE_B, 0, 0, 2, 7, -1, 1, 0, { -1, 1, 0, 0, 0 }
+    AL_SLICE_B, 3, 0, 7, -1, 1, 0, { -1, 1, 0, 0, 0 }
   }
 };
 
-static AL_TGopFrm* getPyramidalFrames(int numB)
+static AL_TGopFrm PYRAMIDAL_GOP_15[] =
+{
+  {
+    AL_SLICE_P, 0, 1, 16, -16, 0, 0, { -16, 0, 0, 0, 0 }
+  },
+  {
+    AL_SLICE_B, 1, 1, 8, -8, 8, 0, { -8, 8, 0, 0, 0 }
+  },
+  {
+    AL_SLICE_B, 2, 1, 4, -4, 4, 0, { -4, 4, 12, 0, 0 }
+  },
+  {
+    AL_SLICE_B, 3, 1, 2, -2, 2, 0, { -2, 2, 6, 14, 0 }
+  },
+  {
+    AL_SLICE_B, 4, 0, 1, -1, 1, 0, { -1, 1, 3, 7, 15 }
+  },
+  {
+    AL_SLICE_B, 4, 0, 3, -1, 1, 0, { -1, 1, 5, 13, 0 }
+  },
+  {
+    AL_SLICE_B, 3, 1, 6, -2, 2, 0, { -2, 2, 10, 0, 0 }
+  },
+  {
+    AL_SLICE_B, 4, 0, 5, -1, 1, 0, { -1, 1, 3, 11, 0 }
+  },
+  {
+    AL_SLICE_B, 4, 0, 7, -1, 1, 0, { -1, 1, 9, 0, 0 }
+  },
+  {
+    AL_SLICE_B, 2, 1, 12, -4, 4, 0, { -4, 4, 0, 0, 0 }
+  },
+  {
+    AL_SLICE_B, 3, 1, 10, -2, 2, 0, { -2, 2, 6, 0, 0 }
+  },
+  {
+    AL_SLICE_B, 4, 0, 9, -1, 1, 0, { -1, 1, 3, 7, 0 }
+  },
+  {
+    AL_SLICE_B, 4, 0, 11, -1, 1, 0, { -1, 1, 5, 0, 0 }
+  },
+  {
+    AL_SLICE_B, 3, 1, 14, -2, 2, 0, { -2, 2, 0, 0, 0 }
+  },
+  {
+    AL_SLICE_B, 4, 0, 13, -1, 1, 0, { -1, 1, 3, 0, 0 }
+  },
+  {
+    AL_SLICE_B, 4, 0, 15, -1, 1, 0, { -1, 1, 0, 0, 0 }
+  }
+};
+
+static AL_TGopFrm PYRAMIDAL_GOP_3_AVC[] =
+{
+  {
+    AL_SLICE_P, 0, 1, 4, -4, 0, 0, { -4, 0, 0, 0, 0 }
+  },
+  {
+    AL_SLICE_B, 1, 1, 2, -2, 2, 0, { -2, 2, 0, 0, 0 }
+  },
+  {
+    AL_SLICE_B, 2, 0, 1, -1, 1, 0, { -1, 1, 3, 0, 0 }
+  },
+  {
+    AL_SLICE_B, 2, 0, 3, -3, 1, 0, { -3, 1, 0, 0, 0 }
+  }
+};
+
+static AL_TGopFrm PYRAMIDAL_GOP_5_AVC[] =
+{
+  {
+    AL_SLICE_P, 0, 1, 6, -6, 0, 0, { -6, 0, 0, 0, 0 }
+  },
+  {
+    AL_SLICE_B, 1, 1, 3, -3, 3, 0, { -3, 3, 0, 0, 0 }
+  },
+  {
+    AL_SLICE_B, 2, 0, 1, -1, 2, 0, { -1, 2, 5, 0, 0 }
+  },
+  {
+    AL_SLICE_B, 2, 0, 2, -2, 1, 0, { -2, 1, 4, 0, 0 }
+  },
+  {
+    AL_SLICE_B, 2, 0, 4, -4, 2, 0, { -4, 2, 0, 0, 0 }
+  },
+  {
+    AL_SLICE_B, 2, 0, 5, -5, 1, 0, { -5, 1, 0, 0, 0 }
+  }
+};
+static AL_TGopFrm PYRAMIDAL_GOP_7_AVC[] =
+{
+  {
+    AL_SLICE_P, 0, 1, 8, -8, 0, 0, { -8, 0, 0, 0, 0 }
+  },
+  {
+    AL_SLICE_B, 1, 1, 4, -4, 4, 0, { -4, 4, 0, 0, 0 }
+  },
+  {
+    AL_SLICE_B, 2, 1, 2, -2, 2, 0, { -2, 2, 6, 0, 0 }
+  },
+  {
+    AL_SLICE_B, 3, 0, 1, -1, 1, 0, { -1, 1, 3, 7, 0 }
+  },
+  {
+    AL_SLICE_B, 3, 0, 3, -3, 1, 0, { -3, 1, 5, 0, 0 }
+  },
+  {
+    AL_SLICE_B, 2, 1, 6, -6, 2, 0, { -6, 2, 0, 0, 0 }
+  },
+  {
+    AL_SLICE_B, 3, 0, 5, -5, 1, 0, { -5, 1, 3, 0, 0 }
+  },
+  {
+    AL_SLICE_B, 3, 0, 7, -7, 1, 0, { -7, 1, 0, 0, 0 }
+  }
+};
+
+static AL_TGopFrm PYRAMIDAL_GOP_15_AVC[] =
+{
+  {
+    AL_SLICE_P, 0, 1, 16, -16, 0, 0, { -16, 0, 0, 0, 0 }
+  },
+  {
+    AL_SLICE_B, 1, 1, 8, -8, 8, 0, { -8, 8, 0, 0, 0 }
+  },
+  {
+    AL_SLICE_B, 2, 1, 4, -4, 4, 0, { -4, 4, 12, 0, 0 }
+  },
+  {
+    AL_SLICE_B, 3, 1, 2, -2, 2, 0, { -2, 2, 6, 14, 0 }
+  },
+  {
+    AL_SLICE_B, 4, 0, 1, -1, 1, 0, { -1, 1, 3, 7, 15 }
+  },
+  {
+    AL_SLICE_B, 4, 0, 3, -3, 1, 0, { -3, 1, 5, 13, 0 }
+  },
+  {
+    AL_SLICE_B, 3, 1, 6, -6, 2, 0, { -6, 2, 10, 0, 0 }
+  },
+  {
+    AL_SLICE_B, 4, 0, 5, -5, 1, 0, { -5, 1, 3, 11, 0 }
+  },
+  {
+    AL_SLICE_B, 4, 0, 7, -7, 1, 0, { -7, 1, 9, 0, 0 }
+  },
+  {
+    AL_SLICE_B, 2, 1, 12, -12, 4, 0, { -12, 4, 0, 0, 0 }
+  },
+  {
+    AL_SLICE_B, 3, 1, 10, -10, 2, 0, { -10, 2, 6, 0, 0 }
+  },
+  {
+    AL_SLICE_B, 4, 0, 9, -9, 1, 0, { -9, 1, 3, 7, 0 }
+  },
+  {
+    AL_SLICE_B, 4, 0, 11, -11, 1, 0, { -11, 1, 5, 0, 0 }
+  },
+  {
+    AL_SLICE_B, 3, 1, 14, -14, 2, 0, { -14, 2, 0, 0, 0 }
+  },
+  {
+    AL_SLICE_B, 4, 0, 13, -13, 1, 0, { -13, 1, 3, 0, 0 }
+  },
+  {
+    AL_SLICE_B, 4, 0, 15, -15, 1, 0, { -15, 1, 0, 0, 0 }
+  }
+};
+
+static inline AL_TGopFrm* getPyramidalFrames(int numB)
 {
   switch(numB)
   {
+  case 15:
+    return PYRAMIDAL_GOP_15;
   case 7:
     return PYRAMIDAL_GOP_7;
   case 5:
@@ -117,6 +288,24 @@ static AL_TGopFrm* getPyramidalFrames(int numB)
   default:
     assert(false);
     return PYRAMIDAL_GOP_3;
+  }
+}
+
+static inline AL_TGopFrm* getPyramidalFrames_AVC(int numB)
+{
+  switch(numB)
+  {
+  case 15:
+    return PYRAMIDAL_GOP_15_AVC;
+  case 7:
+    return PYRAMIDAL_GOP_7_AVC;
+  case 5:
+    return PYRAMIDAL_GOP_5_AVC;
+  case 3:
+    return PYRAMIDAL_GOP_3_AVC;
+  default:
+    assert(false);
+    return PYRAMIDAL_GOP_3_AVC;
   }
 }
 

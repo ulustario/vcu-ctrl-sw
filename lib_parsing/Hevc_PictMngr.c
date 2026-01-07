@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright (C) 2018 Allegro DVT2.  All rights reserved.
+* Copyright (C) 2019 Allegro DVT2.  All rights reserved.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -83,12 +83,12 @@ static void AL_HEVC_sBuildWPCoeff(AL_TPictMngrCtx* pCtx, AL_THevcSliceHdr* pSlic
   Rtos_Memset(pDataWP, 0, WP_SLICE_SIZE);
 
   // weighted pred case
-  if((pSlice->pPPS->weighted_bipred_flag && pSlice->slice_type == SLICE_B) ||
-     (pSlice->pPPS->weighted_pred_flag && pSlice->slice_type == SLICE_P))
+  if((pSlice->pPPS->weighted_bipred_flag && pSlice->slice_type == AL_SLICE_B) ||
+     (pSlice->pPPS->weighted_pred_flag && pSlice->slice_type == AL_SLICE_P))
   {
     AL_HEVC_sFillWPCoeff(pDataWP, pSlice, 0);
 
-    if(pSlice->slice_type == SLICE_B)
+    if(pSlice->slice_type == AL_SLICE_B)
       AL_HEVC_sFillWPCoeff(pDataWP, pSlice, 1);
   }
 }
@@ -137,9 +137,9 @@ void AL_HEVC_PictMngr_UpdateRecInfo(AL_TPictMngrCtx* pCtx, AL_THevcSps* pSPS, AL
 }
 
 /*****************************************************************************/
-bool AL_HEVC_PictMngr_GetBuffers(AL_TPictMngrCtx* pCtx, AL_TDecPicParam* pPP, AL_TDecSliceParam* pSP, AL_THevcSliceHdr* pSlice, TBufferListRef* pListRef, TBuffer* pListVirtAddr, TBuffer* pListAddr, TBufferPOC* pPOC, TBufferMV* pMV, TBuffer* pWP, AL_TRecBuffers* pRecs)
+bool AL_HEVC_PictMngr_GetBuffers(AL_TPictMngrCtx* pCtx, AL_TDecSliceParam* pSP, AL_THevcSliceHdr* pSlice, TBufferListRef* pListRef, TBuffer* pListVirtAddr, TBuffer* pListAddr, TBufferPOC* pPOC, TBufferMV* pMV, TBuffer* pWP, AL_TRecBuffers* pRecs)
 {
-  if(!AL_PictMngr_GetBuffers(pCtx, pPP, pSP, pListRef, pListVirtAddr, pListAddr, pPOC, pMV, pRecs))
+  if(!AL_PictMngr_GetBuffers(pCtx, pSP, pListRef, pListVirtAddr, pListAddr, pPOC, pMV, pRecs))
     return false;
 
   // Build Weighted Pred Table
@@ -151,7 +151,6 @@ bool AL_HEVC_PictMngr_GetBuffers(AL_TPictMngrCtx* pCtx, AL_TDecPicParam* pPP, AL
 /*************************************************************************/
 void AL_HEVC_PictMngr_ClearDPB(AL_TPictMngrCtx* pCtx, AL_THevcSps* pSPS, bool bClearRef, bool bNoOutputPrior)
 {
-  uint8_t uNode;
   AL_TDpb* pDpb = &pCtx->DPB;
 
   // pre decoding output process
@@ -163,7 +162,7 @@ void AL_HEVC_PictMngr_ClearDPB(AL_TPictMngrCtx* pCtx, AL_THevcSps* pSPS, bool bC
   }
 
   AL_Dpb_HEVC_Cleanup(pDpb, pSPS->SpsMaxLatency, pSPS->sps_num_reorder_pics[pSPS->sps_max_sub_layers_minus1]);
-  uNode = AL_Dpb_GetHeadPOC(pDpb);
+  uint8_t uNode = AL_Dpb_GetHeadPOC(pDpb);
 
   while(uNode != uEndOfList && AL_Dpb_GetPicCount(pDpb) >= (pSPS->sps_max_dec_pic_buffering_minus1[pSPS->sps_max_sub_layers_minus1] + 1))
   {
@@ -245,13 +244,12 @@ void AL_HEVC_PictMngr_RemoveHeadFrame(AL_TPictMngrCtx* pCtx)
 /*************************************************************************/
 void AL_HEVC_PictMngr_EndFrame(AL_TPictMngrCtx* pCtx, uint32_t uPocLsb, AL_ENut eNUT, AL_THevcSliceHdr* pSlice, uint8_t pic_output_flag)
 {
-  uint8_t uNode;
   AL_TDpb* pDpb = &pCtx->DPB;
 
   AL_HEVC_PictMngr_RemoveHeadFrame(pCtx);
 
   // post decoding output process
-  uNode = AL_Dpb_GetHeadPOC(pDpb);
+  uint8_t uNode = AL_Dpb_GetHeadPOC(pDpb);
 
   if(pic_output_flag)
   {
@@ -273,9 +271,8 @@ void AL_HEVC_PictMngr_EndFrame(AL_TPictMngrCtx* pCtx, uint32_t uPocLsb, AL_ENut 
 *****************************************************************************/
 void AL_HEVC_PictMngr_InitRefPictSet(AL_TPictMngrCtx* pCtx, AL_THevcSliceHdr* pSlice)
 {
-  uint8_t CurrDeltaPocMsbPresentFlag[16];
-  uint8_t FollDeltaPocMsbPresentFlag[16];
-  uint8_t uNode;
+  uint8_t CurrDeltaPocMsbPresentFlag[16] = { 0 };
+  uint8_t FollDeltaPocMsbPresentFlag[16] = { 0 };
   AL_TDpb* pDpb = &pCtx->DPB;
 
   // Fill the five lists of picture order count values
@@ -358,7 +355,7 @@ void AL_HEVC_PictMngr_InitRefPictSet(AL_TPictMngrCtx* pCtx, AL_THevcSliceHdr* pS
     pCtx->RefPicSetStFoll[i] = AL_Dpb_SearchPOC(&pCtx->DPB, pCtx->PocStFoll[i]);
 
   // reset picture marking on all the picture in the dbp
-  uNode = AL_Dpb_GetHeadPOC(&pCtx->DPB);
+  uint8_t uNode = AL_Dpb_GetHeadPOC(&pCtx->DPB);
 
   while(uNode != uEndOfList)
   {
@@ -431,7 +428,7 @@ bool AL_HEVC_PictMngr_BuildPictureList(AL_TPictMngrCtx* pCtx, AL_THevcSliceHdr* 
     (*pListRef)[1][uRef].uNodeID = uEndOfList;
   }
 
-  if(pSlice->slice_type != SLICE_I)
+  if(pSlice->slice_type != AL_SLICE_I)
   {
     uint8_t uNodeList[16];
     uint8_t NumRpsCurrTempList = (NumPocTotalCurr > pSlice->num_ref_idx_l0_active_minus1 + 1) ? NumPocTotalCurr : pSlice->num_ref_idx_l0_active_minus1 + 1;
@@ -464,7 +461,7 @@ bool AL_HEVC_PictMngr_BuildPictureList(AL_TPictMngrCtx* pCtx, AL_THevcSliceHdr* 
     }
 
     // slice B
-    if(pSlice->slice_type == SLICE_B)
+    if(pSlice->slice_type == AL_SLICE_B)
     {
       NumRpsCurrTempList = (NumPocTotalCurr > pSlice->num_ref_idx_l1_active_minus1 + 1) ? NumPocTotalCurr : pSlice->num_ref_idx_l1_active_minus1 + 1;
       uRef = 0;
@@ -505,8 +502,8 @@ bool AL_HEVC_PictMngr_BuildPictureList(AL_TPictMngrCtx* pCtx, AL_THevcSliceHdr* 
       pNumRef[1]++;
   }
 
-  if((pSlice->slice_type != SLICE_I && pNumRef[0] < pSlice->num_ref_idx_l0_active_minus1 + 1) ||
-     (pSlice->slice_type == SLICE_B && pNumRef[1] < pSlice->num_ref_idx_l1_active_minus1 + 1))
+  if((pSlice->slice_type != AL_SLICE_I && pNumRef[0] < pSlice->num_ref_idx_l0_active_minus1 + 1) ||
+     (pSlice->slice_type == AL_SLICE_B && pNumRef[1] < pSlice->num_ref_idx_l1_active_minus1 + 1))
     return false;
 
   return true;

@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright (C) 2018 Allegro DVT2.  All rights reserved.
+* Copyright (C) 2019 Allegro DVT2.  All rights reserved.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -40,29 +40,24 @@
 #include "lib_common/Utils.h"
 #include "lib_common/Error.h"
 
-static void updateHlsAndWriteSections(AL_TEncCtx* pCtx, AL_TEncPicStatus* pPicStatus, AL_TBuffer* pStream, int iLayerID)
+static void updateHlsAndWriteSections(AL_TEncCtx* pCtx, AL_TEncPicStatus* pPicStatus, bool bResolutionChanged, uint8_t uNalID, AL_TBuffer* pStream, int iLayerID)
 {
-  AL_AVC_UpdatePPS(&pCtx->tLayerCtx[iLayerID].pps, pPicStatus);
+  if(bResolutionChanged)
+    AL_AVC_UpdateSPS(&pCtx->tLayerCtx[iLayerID].sps, &pCtx->Settings, pPicStatus, uNalID);
+
+  AL_AVC_UpdatePPS(&pCtx->tLayerCtx[iLayerID].pps, pPicStatus, bResolutionChanged, uNalID);
   AVC_GenerateSections(pCtx, pStream, pPicStatus);
 
-  if(pPicStatus->eType == SLICE_I)
+  if(pPicStatus->eType == AL_SLICE_I)
     pCtx->seiData.cpbRemovalDelay = 0;
 
-  pCtx->seiData.cpbRemovalDelay += PictureDisplayToFieldNumber[pPicStatus->ePicStruct];
+  pCtx->seiData.cpbRemovalDelay += PicStructToFieldNumber[pPicStatus->ePicStruct];
 }
 
 static bool shouldReleaseSource(AL_TEncPicStatus* p)
 {
   (void)p;
   return true;
-}
-
-/***************************************************************************/
-static void GenerateSkippedPictureData(AL_TEncCtx* pCtx, AL_TEncChanParam* pChParam, AL_TSkippedPicture* pSkipPicture)
-{
-  (void)pChParam;
-  AL_Common_Encoder_InitSkippedPicture(pSkipPicture);
-  AL_AVC_GenerateSkippedPicture(pSkipPicture, pCtx->iNumLCU, true, 0);
 }
 
 /****************************************************************************/
@@ -72,13 +67,21 @@ static bool isGdrEnabled(AL_TEncChanParam const* pChParam)
   return (pGop->eGdrMode & AL_GDR_ON) != 0;
 }
 
+
 static void initHlsSps(AL_TEncChanParam* pChParam, uint32_t* pSpsParam)
 {
+  (void)pChParam;
   *pSpsParam = AL_SPS_TEMPORAL_MVP_EN_FLAG; // TODO
-  AL_SET_SPS_LOG2_MAX_POC(pSpsParam, 10);
+
+  int log2_max_poc = (pChParam->tRCParam.eOptions & AL_RC_OPT_ENABLE_SKIP) ? 16 : 10;
+  AL_SET_SPS_LOG2_MAX_POC(pSpsParam, log2_max_poc);
+
   int log2_max_frame_num_minus4 = 0; // This value SHOULD be equals to IP_Utils SPS
 
-  if(isGdrEnabled(pChParam))
+  if(pChParam->tGopParam.eMode == AL_GOP_MODE_PYRAMIDAL && pChParam->tGopParam.uNumB == 15)
+    log2_max_frame_num_minus4 = 1;
+
+  else if(isGdrEnabled(pChParam))
     log2_max_frame_num_minus4 = 6; // 6 is to support AVC 8K GDR.
 
   AL_SET_SPS_LOG2_MAX_FRAME_NUM(pSpsParam, log2_max_frame_num_minus4 + 4);
@@ -128,6 +131,12 @@ static void ComputeQPInfo(AL_TEncCtx* pCtx, AL_TEncChanParam* pChParam)
   pChParam->tRCParam.iInitialQP = Clip3(pChParam->tRCParam.iInitialQP,
                                         pChParam->tRCParam.iMinQP,
                                         pChParam->tRCParam.iMaxQP);
+
+  if(pChParam->tRCParam.eRCMode == AL_RC_CAPPED_VBR)
+  {
+    pChParam->tRCParam.uMaxPelVal = AL_GET_BITDEPTH(pChParam->ePicFormat) == 8 ? 255 : 1023;
+    pChParam->tRCParam.uNumPel = pChParam->uWidth * pChParam->uHeight;
+  }
 }
 
 static void generateNals(AL_TEncCtx* pCtx, int iLayerID, bool bWriteVps)
@@ -147,7 +156,7 @@ static void ConfigureChannel(AL_TEncCtx* pCtx, AL_TEncChanParam* pChParam, AL_TE
   ComputeQPInfo(pCtx, pChParam);
 
   if(pSettings->eScalingList != AL_SCL_FLAT)
-    pChParam->eOptions |= AL_OPT_SCL_LST;
+    pChParam->eEncTools |= AL_OPT_SCL_LST;
 
 }
 
@@ -162,7 +171,6 @@ void AL_CreateAvcEncoder(HighLevelEncoder* pCtx)
   pCtx->shouldReleaseSource = &shouldReleaseSource;
   pCtx->preprocessEp1 = &preprocessEp1;
   pCtx->configureChannel = &ConfigureChannel;
-  pCtx->generateSkippedPictureData = &GenerateSkippedPictureData;
   pCtx->generateNals = &generateNals;
   pCtx->updateHlsAndWriteSections = &updateHlsAndWriteSections;
 }

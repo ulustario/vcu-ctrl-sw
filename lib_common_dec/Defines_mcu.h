@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright (C) 2018 Allegro DVT2.  All rights reserved.
+* Copyright (C) 2019 Allegro DVT2.  All rights reserved.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -35,28 +35,19 @@
 *
 ******************************************************************************/
 
-#include "BufferMetaFactory.h"
+#pragma once
 
-#include "lib_common/BufferSrcMeta.h"
-#include "lib_common/BufferStreamMeta.h"
-#if AL_ENABLE_TWOPASS
-#include "lib_common/BufferLookAheadMeta.h"
-#endif
+#define BAD_CHAN_ID 0xFF
+#define DESTROY_WHEN_IDLE 0xFE
 
-AL_TMetaData* AL_MetaData_Clone(AL_TMetaData* pMeta)
-{
-  switch(pMeta->eType)
-  {
-  case AL_META_TYPE_SOURCE:
-    return (AL_TMetaData*)AL_SrcMetaData_Clone((AL_TSrcMetaData*)pMeta);
-  case AL_META_TYPE_STREAM:
-    return (AL_TMetaData*)AL_StreamMetaData_Clone((AL_TStreamMetaData*)pMeta);
-#if AL_ENABLE_TWOPASS
-  case AL_META_TYPE_LOOKAHEAD:
-    return (AL_TMetaData*)AL_LookAheadMetaData_Clone((AL_TLookAheadMetaData*)pMeta);
-#endif
-  default:
-    return NULL;
-  }
-}
+#define AL_SCHEDULER_MAX_CHANNEL 32
+#define AL_MAX_SC_REQUEST 16
+#define NUM_PARSER 2
+
+#define DECODER_CORE_FREQUENCY 666666666
+#define DECODER_CORE_FREQUENCY_MARGIN 10
+#define DECODER_CYCLES_FOR_BLK_32x32 2450
+
+#define AL_CORE_HEVC_MIN_WIDTH 128
+#define AL_CORE_AVC_MIN_WIDTH 32
 

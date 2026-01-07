@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright (C) 2018 Allegro DVT2.  All rights reserved.
+* Copyright (C) 2019 Allegro DVT2.  All rights reserved.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -60,6 +60,9 @@
 #include "lib_common/Fifo.h"
 
 
+
+#define MAX_NAL_IDS 15
+
 typedef struct t_Scheduler TScheduler;
 
 /*************************************************************************//*!
@@ -69,6 +72,8 @@ typedef struct AL_t_FrameInfo
 {
   AL_TEncInfo tEncInfo;
   AL_TBuffer* pQpTable;
+  bool bResolutionChanged;
+  uint8_t uNewNalsId;
 }AL_TFrameInfo;
 
 
@@ -81,9 +86,8 @@ typedef struct
   bool (* shouldReleaseSource)(AL_TEncPicStatus* pPicStatus);
   void (* preprocessEp1)(AL_TEncCtx* pCtx, TBufferEP* pEP1);
   void (* configureChannel)(AL_TEncCtx* pCtx, AL_TEncChanParam* pChParam, AL_TEncSettings const* pSettings);
-  void (* generateSkippedPictureData)(AL_TEncCtx* pCtx, AL_TEncChanParam* pChParam, AL_TSkippedPicture* pSkipPicture);
   void (* generateNals)(AL_TEncCtx* pCtx, int iLayerID, bool bWriteVps);
-  void (* updateHlsAndWriteSections)(AL_TEncCtx* pCtx, AL_TEncPicStatus* pPicStatus, AL_TBuffer* pStream, int iLayerID);
+  void (* updateHlsAndWriteSections)(AL_TEncCtx* pCtx, AL_TEncPicStatus* pPicStatus, bool bResolutionChanged, uint8_t uNalID, AL_TBuffer* pStream, int iLayerID);
 }HighLevelEncoder;
 
 typedef struct
@@ -100,7 +104,6 @@ typedef struct
   AL_TPps pps;
 
   AL_TSrcBufferChecker srcBufferChecker;
-  AL_TSkippedPicture pSkippedPicture;
   AL_TEncRequestInfo currentRequestInfo;
   TBufferEP tBufEP1;
 
@@ -127,10 +130,11 @@ typedef struct AL_t_EncCtx
   AL_TEncSettings Settings;
   AL_TLayerCtx tLayerCtx[MAX_NUM_LAYER];
 
+  AL_TDimension nalResolutionsPerID[MAX_NAL_IDS];
   AL_THevcVps vps;
 
   TStreamInfo StreamInfo;
-
+  bool bEndOfStreamReceived[MAX_NUM_LAYER];
   int iLastIdrId;
 
   AL_SeiData seiData;

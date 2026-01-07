@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright (C) 2018 Allegro DVT2.  All rights reserved.
+* Copyright (C) 2019 Allegro DVT2.  All rights reserved.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -118,7 +118,6 @@ typedef struct AL_t_DecPictParam
   uint16_t row_height[AL_MAX_ROWS_TILE];
   uint16_t num_tile_columns;
   uint16_t num_tile_rows;
-  uint16_t num_slice;
 
   int32_t CurrentPOC;
   AL_EPicStruct ePicStruct;
@@ -186,6 +185,7 @@ typedef struct AL_t_DecPicStatus
   uint32_t uCRC;
   bool bConceal;
   bool bHanged;
+  bool bNotFinishedYet; /* LLP2: the frame is not finished yet */
 }AL_TDecPicStatus;
 
 /*****************************************************************************/

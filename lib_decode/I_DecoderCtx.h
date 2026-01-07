@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright (C) 2018 Allegro DVT2.  All rights reserved.
+* Copyright (C) 2019 Allegro DVT2.  All rights reserved.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -53,7 +53,7 @@
 #include "NalUnitParser.h"
 #include "lib_decode/I_DecChannel.h"
 #include "lib_decode/lib_decode.h"
-#include "BufferFeeder.h"
+#include "I_Feeder.h"
 
 typedef enum AL_e_ChanState
 {
@@ -67,7 +67,7 @@ typedef enum AL_e_ChanState
 *****************************************************************************/
 typedef struct t_Dec_Ctx
 {
-  AL_TBufferFeeder* Feeder;
+  AL_TFeeder* Feeder;
 
   TBuffer BufNoAE;            // Deanti-Emulated buffer used for high level syntax parsing
   TCircBuffer Stream;             // Input stream buffer
@@ -170,6 +170,7 @@ typedef struct t_Dec_Ctx
   AL_TBuffer* eosBuffer;
 
   TCircBuffer circularBuf;
+  int iNumSlicesRemaining;
 }AL_TDecCtx;
 
 /****************************************************************************/

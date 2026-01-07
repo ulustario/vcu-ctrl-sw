@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright (C) 2018 Allegro DVT2.  All rights reserved.
+* Copyright (C) 2019 Allegro DVT2.  All rights reserved.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -49,13 +49,14 @@ void AL_DecodeOneNal(AL_NonVclNuts nuts, AL_NalParser parser, AL_TAup* pAUP, AL_
   if((nut == nuts.seiPrefix || nut == nuts.seiSuffix) && parser.parseSei)
   {
     AL_TRbspParser rp = getParserOnNonVclNal(pCtx);
-    parser.parseSei(pAUP, &rp, &pCtx->parsedSeiCB);
+    bool bIsPrefix = (nut == nuts.seiPrefix);
+    parser.parseSei(pAUP, &rp, bIsPrefix, &pCtx->parsedSeiCB);
   }
 
   if(nut == nuts.sps)
   {
     AL_TRbspParser rp = getParserOnNonVclNal(pCtx);
-    parser.parseSps(pAUP, &rp);
+    parser.parseSps(pAUP, &rp, pCtx);
   }
 
   if(nut == nuts.pps)

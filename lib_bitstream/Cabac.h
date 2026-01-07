@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright (C) 2018 Allegro DVT2.  All rights reserved.
+* Copyright (C) 2019 Allegro DVT2.  All rights reserved.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -35,20 +35,33 @@
 *
 ******************************************************************************/
 
+/****************************************************************************
+   -----------------------------------------------------------------------------
+ **************************************************************************//*!
+   \addtogroup lib_bitstream
+   @{
+   \file
+ *****************************************************************************/
 #pragma once
 
-#include <unistd.h>
-#include <stdio.h>
+#include "BitStreamLite.h"
 
-#include "lib_rtos/types.h"
-
-#define TIMER_SENTINEL 0xdeaddead
-
-typedef struct
+/******************************************************************************/
+typedef struct AL_t_CabacCtx
 {
-  uint32_t id;
-  uint32_t value;
-}timerData;
+  unsigned int uLow;
+  unsigned int uRange;
+  unsigned int uOut;
+  unsigned int uFirst;
+}AL_TCabacCtx;
 
-bool McuTimers_Write(FILE* perfsFile, timerData* timerValues);
+/****************************************************************************/
+void AL_Cabac_Init(AL_TCabacCtx* pCtx);
+void AL_Cabac_WriteBin(AL_TBitStreamLite* pBS, AL_TCabacCtx* pCtx, uint8_t* pState, uint8_t* pValMPS, uint8_t iBinVal);
+void AL_Cabac_Terminate(AL_TBitStreamLite* pBS, AL_TCabacCtx* pCtx, int iBinVal);
+void AL_Cabac_Finish(AL_TBitStreamLite* pBS, AL_TCabacCtx* pCtx);
+
+/****************************************************************************/
+
+/*@}*/
 

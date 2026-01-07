@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright (C) 2018 Allegro DVT2.  All rights reserved.
+* Copyright (C) 2019 Allegro DVT2.  All rights reserved.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -55,7 +55,7 @@ struct BitstreamWriter : IFrameSink
   {
     OpenOutput(m_file, path);
 
-    WriteContainerHeader(m_file, cfg.Settings, cfg.FileInfo, -1);
+    WriteContainerHeader(m_file, cfg.Settings, cfg.MainInput.FileInfo, -1);
   }
 
   void ProcessFrame(AL_TBuffer* pStream)
@@ -64,13 +64,12 @@ struct BitstreamWriter : IFrameSink
     {
       printBitrate();
       // update container header
-      WriteContainerHeader(m_file, cfg.Settings, cfg.FileInfo, m_frameCount);
+      WriteContainerHeader(m_file, cfg.Settings, cfg.MainInput.FileInfo, m_frameCount);
       return;
     }
 
-    m_frameCount += WriteStream(m_file, pStream, &cfg.Settings.tChParam[0]);
+    m_frameCount += WriteStream(m_file, pStream, &cfg.Settings);
   }
-
 
   void printBitrate()
   {
@@ -88,11 +87,9 @@ struct BitstreamWriter : IFrameSink
 
 unique_ptr<IFrameSink> createBitstreamWriter(string path, ConfigFile const& cfg)
 {
-#if AL_ENABLE_TWOPASS
 
   if(cfg.Settings.TwoPass == 1)
     return unique_ptr<IFrameSink>(new NullFrameSink);
-#endif
 
   return unique_ptr<IFrameSink>(new BitstreamWriter(path, cfg));
 }

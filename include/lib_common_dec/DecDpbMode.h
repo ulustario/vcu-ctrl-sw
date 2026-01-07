@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright (C) 2018 Allegro DVT2.  All rights reserved.
+* Copyright (C) 2019 Allegro DVT2.  All rights reserved.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -47,7 +47,7 @@
 typedef enum AL_e_DpbMode
 {
   AL_DPB_NORMAL, /*< Follow DPB specification */
-  AL_DPB_LOW_REF, /*< Assume there is no reordering in the stream */
+  AL_DPB_NO_REORDERING, /*< Assume there is no reordering in the stream */
   AL_DPB_MAX_ENUM, /* sentinel */
 }AL_EDpbMode;
 

@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright (C) 2018 Allegro DVT2.  All rights reserved.
+* Copyright (C) 2019 Allegro DVT2.  All rights reserved.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -48,7 +48,7 @@ int AL_GetCompLcuSize(uint8_t uLcuSize, uint8_t uBitDepth, AL_EChromaMode eChrom
 
 
 #define AL_MAX_SUPPORTED_LCU_SIZE 6
-#define AL_MIN_SUPPORTED_LCU_SIZE 4
+#define AL_MIN_SUPPORTED_LCU_SIZE 3
 
 #define AL_MAX_FIXED_SLICE_HEADER_SIZE 32
 #define QP_CTRL_TABLE_SIZE 48

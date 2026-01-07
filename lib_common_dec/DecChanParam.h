@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright (C) 2018 Allegro DVT2.  All rights reserved.
+* Copyright (C) 2019 Allegro DVT2.  All rights reserved.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -62,6 +62,7 @@ typedef struct AL_t_DecChannelParam
   bool bParallelWPP;
   bool bDisableCache;
   bool bFrameBufferCompression;
+  bool bUseEarlyCallback; /*< LLP2: this only makes sense with special support for hw synchro */
   AL_EFbStorageMode eFBStorageMode;
   AL_ECodec eCodec;
   int32_t iMaxSlices;

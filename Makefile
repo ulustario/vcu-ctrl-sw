@@ -3,11 +3,8 @@ CFLAGS+=-g0
 
 include config.mk
 
-##############################################################
-# cross build
-##############################################################
+# Cross build support
 CROSS_COMPILE?=
-
 CXX:=$(CROSS_COMPILE)g++
 CC:=$(CROSS_COMPILE)gcc
 AS:=$(CROSS_COMPILE)as
@@ -24,17 +21,13 @@ TARGET:=$(shell $(CC) -dumpmachine)
 
 all: true_all
 
-##############################################################
-# basic build rules and external variables
-##############################################################
+# Basic build rules and external variables
 include ctrlsw_version.mk
 include encoder_defs.mk
 include base.mk
 -include compiler.mk
 
-##############################################################
 # Libraries
-##############################################################
 -include lib_fpga/project.mk
 include lib_app/project.mk
 -include lib_common/project.mk
@@ -42,9 +35,6 @@ include lib_app/project.mk
 -include lib_scheduler/project.mk
 -include lib_perfs/project.mk
 
-ifneq ($(ENABLE_TRACES),0)
--include lib_trace/project.mk
-endif
 ifneq ($(ENABLE_ENCODER),0)
 -include lib_common_enc/project.mk
 -include lib_buf_mngt/project.mk
@@ -52,9 +42,6 @@ ifneq ($(ENABLE_ENCODER),0)
 -include lib_bitstream/project.mk
 -include lib_scheduler_enc/project.mk
 -include lib_encode/project.mk
-ifneq ($(ENABLE_TILE_SRC),0)
-  -include lib_fbc_standalone/project.mk
-endif
 -include lib_conv_yuv/project.mk
 endif
 
@@ -64,49 +51,24 @@ endif
 
 -include ref.mk
 
-##############################################################
-# ctrlsw_decoder
-##############################################################
 ifneq ($(ENABLE_DECODER),0)
+  # ctrlsw_decoder
   -include lib_parsing/project.mk
   -include lib_scheduler_dec/project.mk
   -include lib_decode/project.mk
   include exe_decoder/project.mk
 endif
 
-##############################################################
-# ctrlsw_encoder
-##############################################################
 ifneq ($(ENABLE_ENCODER),0)
+  # ctrlsw_encoder
   -include exe_encoder/project.mk
 endif
 
-##############################################################
-# AL_Compress
-##############################################################
-ifneq ($(ENABLE_COMP),0)
-  -include lib_fbc_standalone/project.mk
-  -include exe_compress/project.mk
-endif
 
-##############################################################
-# AL_Decompress
-##############################################################
-ifneq ($(ENABLE_COMP),0)
-  -include exe_decompress/project.mk
-endif
 
-##############################################################
-# AL_Resize
-##############################################################
-ifneq ($(ENABLE_RESIZE),0)
-  -include exe_resize/project.mk
-endif
 
-##############################################################
-# AL_PerfMonitor
-##############################################################
 ifneq ($(ENABLE_PERF),0)
+  # AL_PerfMonitor
   -include exe_perf_monitor/project.mk
 endif
 
@@ -114,19 +76,12 @@ ifeq ($(findstring linux,$(TARGET)),linux)
   -include exe_sync_ip/project.mk
 endif
 
-##############################################################
+
 # Unit tests
-##############################################################
--include test/test.mk
+-include test/project.mk
 
-##############################################################
 # Environment tests
-##############################################################
 -include exe_test_env/project.mk
-
-##############################################################
-# tools
-##############################################################
 -include app_mcu/integration_tests.mk
 -include exe_vip/project.mk
 

@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright (C) 2018 Allegro DVT2.  All rights reserved.
+* Copyright (C) 2019 Allegro DVT2.  All rights reserved.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -35,14 +35,26 @@
 *
 ******************************************************************************/
 
-#include <assert.h>
+#include "ROIMngr.h"
+#include <cassert>
 
 extern "C"
 {
 #include "lib_rtos/lib_rtos.h"
 }
 
-#include "ROIMngr.h"
+struct AL_TRoiNode
+{
+  AL_TRoiNode* pPrev;
+  AL_TRoiNode* pNext;
+
+  int iPosX;
+  int iPosY;
+  int iWidth;
+  int iHeight;
+
+  int8_t iDeltaQP;
+};
 
 /****************************************************************************/
 static AL_INLINE int RoundUp(int iVal, int iRnd)
@@ -95,8 +107,11 @@ static void PushBack(AL_TRoiMngrCtx* pCtx, AL_TRoiNode* pNode)
 /****************************************************************************/
 static uint8_t GetNewDeltaQP(AL_ERoiQuality eQuality)
 {
-  if(eQuality == MASK_FORCE_MV0)
-    return MASK_FORCE_MV0;
+
+
+  if(eQuality == AL_ROI_QUALITY_INTRA)
+    return MASK_FORCE_INTRA;
+
   return ToInt(eQuality) & MASK_QP;
 }
 
@@ -107,11 +122,21 @@ static int8_t GetDQp(uint8_t iDeltaQP)
 }
 
 /****************************************************************************/
+static bool ShouldInsertAfter(int8_t iCurrentQP, int8_t iQPToInsert)
+{
+
+  if(iQPToInsert & MASK_FORCE_INTRA)
+    return true;
+
+  return GetDQp(iCurrentQP) > GetDQp(iQPToInsert);
+}
+
+/****************************************************************************/
 static void Insert(AL_TRoiMngrCtx* pCtx, AL_TRoiNode* pNode)
 {
   AL_TRoiNode* pCur = pCtx->pFirstNode;
 
-  while(pCur && GetDQp(pCur->iDeltaQP) > GetDQp(pNode->iDeltaQP))
+  while(pCur && ShouldInsertAfter(pCur->iDeltaQP, pNode->iDeltaQP))
     pCur = pCur->pNext;
 
   if(pCur)
@@ -128,12 +153,12 @@ static void Insert(AL_TRoiMngrCtx* pCtx, AL_TRoiNode* pNode)
 }
 
 /****************************************************************************/
-static int8_t MeanQuality(AL_TRoiMngrCtx* pCtx, uint8_t iDQp1, uint8_t iDQp2)
+static void MeanQuality(AL_TRoiMngrCtx* pCtx, uint8_t* pTargetQP, uint8_t iDQp1, uint8_t iDQp2)
 {
-  auto eMask = (iDQp1 & MASK_FORCE_MV0) | (iDQp2 & MASK_FORCE_MV0);
+  auto eMask = (*pTargetQP & MASK_FORCE);
 
   int8_t iQP = Clip3((GetDQp(iDQp1) + GetDQp(iDQp2)) / 2, pCtx->iMinQP, pCtx->iMaxQP) & MASK_QP;
-  return iQP | eMask;
+  *pTargetQP = iQP | eMask;
 }
 
 /****************************************************************************/
@@ -141,19 +166,19 @@ static void UpdateTransitionHorz(AL_TRoiMngrCtx* pCtx, uint8_t* pLcu1, uint8_t* 
 {
   // left corner
   if(iPosX > 1)
-    pLcu1[-iNumBytesPerLCU] = MeanQuality(pCtx, pLcu2[-2 * iNumBytesPerLCU], iQP);
+    MeanQuality(pCtx, &pLcu1[-iNumBytesPerLCU], pLcu2[-2 * iNumBytesPerLCU], iQP);
   else if(iPosX > 0)
-    pLcu1[-iNumBytesPerLCU] = MeanQuality(pCtx, pLcu2[-iNumBytesPerLCU], iQP);
+    MeanQuality(pCtx, &pLcu1[-iNumBytesPerLCU], pLcu2[-iNumBytesPerLCU], iQP);
 
   // width
   for(int w = 0; w < iWidth; ++w)
-    pLcu1[w * iNumBytesPerLCU] = MeanQuality(pCtx, pLcu2[w * iNumBytesPerLCU], iQP);
+    MeanQuality(pCtx, &pLcu1[w * iNumBytesPerLCU], pLcu2[w * iNumBytesPerLCU], iQP);
 
   // right corner
   if(iPosX + iWidth + 2 < iLcuWidth)
-    pLcu1[iWidth * iNumBytesPerLCU] = MeanQuality(pCtx, pLcu2[(iWidth + 1) * iNumBytesPerLCU], iQP);
+    MeanQuality(pCtx, &pLcu1[iWidth * iNumBytesPerLCU], pLcu2[(iWidth + 1) * iNumBytesPerLCU], iQP);
   else if(iPosX + iWidth + 1 < iLcuWidth)
-    pLcu1[iWidth * iNumBytesPerLCU] = MeanQuality(pCtx, pLcu2[iWidth * iNumBytesPerLCU], iQP);
+    MeanQuality(pCtx, &pLcu1[iWidth * iNumBytesPerLCU], pLcu2[iWidth * iNumBytesPerLCU], iQP);
 }
 
 /****************************************************************************/
@@ -161,7 +186,7 @@ static void UpdateTransitionVert(AL_TRoiMngrCtx* pCtx, uint8_t* pLcu1, uint8_t* 
 {
   for(int h = 0; h < iHeight; ++h)
   {
-    *pLcu1 = MeanQuality(pCtx, *pLcu2, iQP);
+    MeanQuality(pCtx, pLcu1, *pLcu2, iQP);
     pLcu1 += (iLcuWidth * iNumBytesPerLCU);
     pLcu2 += (iLcuWidth * iNumBytesPerLCU);
   }
@@ -175,6 +200,22 @@ static uint32_t GetNodePosInBuf(AL_TRoiMngrCtx* pCtx, uint32_t uLcuX, uint32_t u
 }
 
 /****************************************************************************/
+static inline void SetLCUQuality(uint8_t* pLCUQP, uint8_t uROIQP)
+{
+
+  if(uROIQP & MASK_FORCE_INTRA)
+    *pLCUQP = (*pLCUQP & MASK_QP) | MASK_FORCE_INTRA;
+  else if((*pLCUQP & MASK_FORCE_INTRA) && !(uROIQP & MASK_FORCE_MV0))
+  {
+    *pLCUQP = uROIQP | MASK_FORCE_INTRA;
+  }
+  else
+  {
+    *pLCUQP = uROIQP;
+  }
+}
+
+/****************************************************************************/
 static void ComputeROI(AL_TRoiMngrCtx* pCtx, int iNumQPPerLCU, int iNumBytesPerLCU, uint8_t* pBuf, AL_TRoiNode* pNode)
 {
   auto* pLCU = pBuf + GetNodePosInBuf(pCtx, pNode->iPosX, pNode->iPosY, iNumBytesPerLCU);
@@ -185,13 +226,13 @@ static void ComputeROI(AL_TRoiMngrCtx* pCtx, int iNumQPPerLCU, int iNumBytesPerL
     for(int w = 0; w < pNode->iWidth; ++w)
     {
       for(int i = 0; i < iNumQPPerLCU; ++i)
-        pLCU[w * iNumBytesPerLCU + i] = pNode->iDeltaQP;
+        SetLCUQuality(&pLCU[w * iNumBytesPerLCU + i], pNode->iDeltaQP);
     }
 
     pLCU += iNumBytesPerLCU * pCtx->iLcuWidth;
   }
 
-  if(!(pNode->iDeltaQP & MASK_FORCE_MV0))
+  if(!(pNode->iDeltaQP & MASK_FORCE))
   {
     // Update above transition
     if(pNode->iPosY)

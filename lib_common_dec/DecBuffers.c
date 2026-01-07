@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright (C) 2018 Allegro DVT2.  All rights reserved.
+* Copyright (C) 2019 Allegro DVT2.  All rights reserved.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -46,6 +46,7 @@
 #include <assert.h>
 #include "lib_common_dec/DecBuffers.h"
 #include "lib_common/Utils.h"
+#include "lib_common/BufferSrcMeta.h"
 
 
 #include "lib_common/StreamBuffer.h"
@@ -137,15 +138,15 @@ int AL_GetAllocSize_DecReference(AL_TDimension tDim, int iPitch, AL_EChromaMode 
   int iSize = iPitch * RndHeight(tDim.iHeight) / AL_GetNumLinesInPitch(eFbStorageMode);
   switch(eChromaMode)
   {
-  case CHROMA_4_2_0:
+  case AL_CHROMA_4_2_0:
     iSize += (iSize / 2);
     break;
 
-  case CHROMA_4_2_2:
+  case AL_CHROMA_4_2_2:
     iSize += iSize;
     break;
 
-  case CHROMA_4_4_4:
+  case AL_CHROMA_4_4_4:
     iSize += (iSize * 2);
     break;
 
@@ -157,6 +158,17 @@ int AL_GetAllocSize_DecReference(AL_TDimension tDim, int iPitch, AL_EChromaMode 
 }
 
 /*****************************************************************************/
+/*****************************************************************************/
+AL_TMetaData* AL_CreateRecBufMetaData(AL_TDimension tDim, int iMinPitch, TFourCC tFourCC)
+{
+  AL_EFbStorageMode eStorageMode = AL_GetStorageMode(tFourCC);
+  AL_TPlane tPlaneY = { 0, iMinPitch };
+  int iOffsetC = AL_GetAllocSize_DecReference(tDim, iMinPitch, AL_CHROMA_MONO, eStorageMode);
+  AL_TPlane tPlaneUV = { iOffsetC, iMinPitch };
+  AL_TSrcMetaData* pSrcMeta = AL_SrcMetaData_Create(tDim, tPlaneY, tPlaneUV, tFourCC);
+
+  return (AL_TMetaData*)pSrcMeta;
+}
 
 /*!@}*/
 

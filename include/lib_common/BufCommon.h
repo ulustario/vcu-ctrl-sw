@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright (C) 2018 Allegro DVT2.  All rights reserved.
+* Copyright (C) 2019 Allegro DVT2.  All rights reserved.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -44,28 +44,7 @@
 
 #include "lib_rtos/types.h"
 #include "lib_common/MemDesc.h"
-#include "lib_common/FourCC.h"
-#include "lib_common/OffsetYC.h"
-
-/*************************************************************************//*!
-   \brief Frame buffer stored as IYUV planar format (also called I420)
-   old interface. will soon be deprecated.
-*****************************************************************************/
-typedef struct t_BufferYuv
-{
-  TMemDesc tMD; /*!< Memory descriptor associated to the buffer */
-
-  int iWidth; /*!< Width in pixel of the frame */
-  int iHeight; /*!< Height in pixel of the frame */
-
-  int iPitchY; /*!< offset in bytes between a Luma pixel and the Luma
-                     pixel on the next line with same horizontal position*/
-  int iPitchC; /*!< offset in bytes between a chroma pixel and the chroma
-                     pixel on the next line with same horizontal position*/
-  AL_TOffsetYC tOffsetYC; /*< offset for luma and chroma addresses */
-
-  TFourCC tFourCC; /*!< FOURCC identifier */
-}TBufferYuv;
+#include "lib_common/SliceConsts.h"
 
 /*************************************************************************//*!
    If the framebuffer is stored in raster, the pitch represents the number of bytes

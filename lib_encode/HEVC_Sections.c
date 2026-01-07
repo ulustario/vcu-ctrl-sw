@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright (C) 2018 Allegro DVT2.  All rights reserved.
+* Copyright (C) 2019 Allegro DVT2.  All rights reserved.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -38,6 +38,15 @@
 #include "HEVC_Sections.h"
 #include "lib_bitstream/HEVC_RbspEncod.h"
 
+static NalHeader GetNalHeaderHevc(uint8_t uNUT, uint8_t uNalIdc, uint8_t uTempID)
+{
+  NalHeader nh;
+  nh.size = 2;
+  nh.bytes[0] = ((uNalIdc & 0x20) >> 5) | ((uNUT & 0x3F) << 1);
+  nh.bytes[1] = (uTempID + 1) | ((uNalIdc & 0x1F) << 3);
+  return nh;
+}
+
 Nuts CreateHevcNuts(void)
 {
   Nuts nuts =
@@ -57,6 +66,6 @@ void HEVC_GenerateSections(AL_TEncCtx* pCtx, AL_TBuffer* pStream, AL_TEncPicStat
 {
   Nuts nuts = CreateHevcNuts();
   NalsData nalsData = AL_ExtractNalsData(pCtx, iLayerID);
-  GenerateSections(AL_GetHevcRbspWriter(), nuts, &nalsData, pStream, pPicStatus, pCtx->Settings.NumLayer);
+  GenerateSections(AL_GetHevcRbspWriter(), nuts, &nalsData, pStream, pPicStatus, pCtx->Settings.NumLayer, pCtx->Settings.tChParam[0].uNumSlices);
 }
 

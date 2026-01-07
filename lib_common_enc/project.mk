@@ -5,6 +5,6 @@ LIB_COMMON_ENC_SRC:=\
 	lib_common_enc/EncSize.c\
 	lib_common_enc/EncHwScalingList.c\
 	lib_common_enc/Settings.c\
+	lib_common_enc/DPBConstraints.c\
 
-UNITTEST+=$(shell find lib_common_enc/unittests -name "*.cpp")
-UNITTEST+=$(LIB_COMMON_ENC_SRC)
+

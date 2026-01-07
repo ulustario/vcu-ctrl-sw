@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright (C) 2018 Allegro DVT2.  All rights reserved.
+* Copyright (C) 2019 Allegro DVT2.  All rights reserved.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -46,23 +46,6 @@ static bool PictureMeta_Destroy(AL_TMetaData* pMeta)
   return true;
 }
 
-AL_TPictureMetaData* AL_PictureMetaData_Create()
-{
-  AL_TPictureMetaData* pMeta;
-
-  pMeta = Rtos_Malloc(sizeof(*pMeta));
-
-  if(!pMeta)
-    return NULL;
-
-  pMeta->tMeta.eType = AL_META_TYPE_PICTURE;
-  pMeta->tMeta.MetaDestroy = PictureMeta_Destroy;
-
-  pMeta->eType = SLICE_MAX_ENUM;
-
-  return pMeta;
-}
-
 AL_TPictureMetaData* AL_PictureMetaData_Clone(AL_TPictureMetaData* pMeta)
 {
   if(!pMeta)
@@ -74,5 +57,28 @@ AL_TPictureMetaData* AL_PictureMetaData_Clone(AL_TPictureMetaData* pMeta)
     return NULL;
   pPictureMeta->eType = pMeta->eType;
   return pPictureMeta;
+}
+
+static AL_TMetaData* PictureMeta_Clone(AL_TMetaData* pMeta)
+{
+  return (AL_TMetaData*)AL_PictureMetaData_Clone((AL_TPictureMetaData*)pMeta);
+}
+
+AL_TPictureMetaData* AL_PictureMetaData_Create()
+{
+  AL_TPictureMetaData* pMeta;
+
+  pMeta = Rtos_Malloc(sizeof(*pMeta));
+
+  if(!pMeta)
+    return NULL;
+
+  pMeta->tMeta.eType = AL_META_TYPE_PICTURE;
+  pMeta->tMeta.MetaDestroy = PictureMeta_Destroy;
+  pMeta->tMeta.MetaClone = PictureMeta_Clone;
+
+  pMeta->eType = AL_SLICE_MAX_ENUM;
+
+  return pMeta;
 }
 

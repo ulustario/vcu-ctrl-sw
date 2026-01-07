@@ -17,6 +17,5 @@ LIB_COMMON_SRC:=\
 	lib_common/FourCC.c\
 	lib_common/HardwareDriver.c\
 
-UNITTEST+=$(shell find lib_common/unittests -name "*.cpp")
-UNITTEST+=$(LIB_COMMON_SRC)
+
 

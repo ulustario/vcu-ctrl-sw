@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright (C) 2018 Allegro DVT2.  All rights reserved.
+* Copyright (C) 2019 Allegro DVT2.  All rights reserved.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -85,7 +85,7 @@ typedef void* AL_HANDLE;
 #define AL_MAX_NUM_CPB 32
 #define AL_MAX_NUM_VIEW 1
 #define AL_MAX_NUM_REF 16
-#define AL_MAX_NUM_B_PICT 7
+#define AL_MAX_NUM_B_PICT 15
 
 /*@}*/
 

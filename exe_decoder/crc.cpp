@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright (C) 2018 Allegro DVT2.  All rights reserved.
+* Copyright (C) 2019 Allegro DVT2.  All rights reserved.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -83,14 +83,14 @@ void CRC32(int iBdIn, int iBdOut, uint32_t& crc, T* pBuffer)
 template<typename T>
 void Compute_CRC(int iBdInY, int iBdInC, int iBdOut, int iNumPix, int iNumPixC, AL_EChromaMode eMode, T* pBuf, ofstream& ofCrcFile)
 {
-  uint32_t crc_luma = 0xFFFFFFFF;
-  uint32_t crc_cb = 0xFFFFFFFF;
-  uint32_t crc_cr = 0xFFFFFFFF;
+  uint32_t crc_luma = UINT32_MAX;
+  uint32_t crc_cb = UINT32_MAX;
+  uint32_t crc_cr = UINT32_MAX;
 
   for(int iPix = 0; iPix < iNumPix; ++iPix)
     CRC32(iBdOut, iBdInY, crc_luma, pBuf++);
 
-  if(eMode != CHROMA_MONO)
+  if(eMode != AL_CHROMA_MONO)
   {
     for(int iPix = 0; iPix < iNumPixC; ++iPix)
       CRC32(iBdOut, iBdInC, crc_cb, pBuf++);

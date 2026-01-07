@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright (C) 2018 Allegro DVT2.  All rights reserved.
+* Copyright (C) 2019 Allegro DVT2.  All rights reserved.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -72,30 +72,26 @@ uint32_t AL_GetAllocSizeEP1()
 }
 
 /****************************************************************************/
-uint32_t AL_GetAllocSizeEP2(AL_TDimension tDim, uint8_t uMaxCuSize)
+uint32_t AL_GetAllocSizeEP2(AL_TDimension tDim, AL_ECodec eCodec)
 {
-  uint32_t uMaxLCUs = 0, uMaxSize = 0;
-  switch(uMaxCuSize)
+  uint32_t uMaxSize = 0;
+  switch(eCodec)
   {
-  case 6: // VP9
-    uMaxLCUs = GetBlk64x64(tDim);
-    uMaxSize = uMaxLCUs + 16;
-    break;
-
-  case 5: // HEVC
-    uMaxLCUs = GetBlk32x32(tDim);
+  case AL_CODEC_HEVC:
+  {
+    int iMaxLCUs = GetBlk32x32(tDim);
 #if AL_BLK16X16_QP_TABLE
-    uMaxSize = 8 * uMaxLCUs;
-#else
-    uMaxSize = uMaxLCUs;
+    iMaxLCUs *= 8;
 #endif
+    uMaxSize = iMaxLCUs;
     break;
-
-  case 4: // AVC
-    uMaxLCUs = GetBlk16x16(tDim);
-    uMaxSize = uMaxLCUs;
-    break;
-
+  }
+  case AL_CODEC_AVC:
+    {
+      int iMaxLCUs = GetBlk16x16(tDim);
+      uMaxSize = iMaxLCUs;
+      break;
+    }
   default:
     assert(0);
   }
@@ -103,26 +99,34 @@ uint32_t AL_GetAllocSizeEP2(AL_TDimension tDim, uint8_t uMaxCuSize)
   return (uint32_t)(EP2_BUF_QP_CTRL.Size + EP2_BUF_SEG_CTRL.Size) + RoundUp(uMaxSize, 128);
 }
 
+
+/****************************************************************************/
+uint32_t AL_GetAllocSizeEP3PerCore()
+{
+  return (uint32_t)(EP3_BUF_RC_TABLE1.Size + EP3_BUF_RC_TABLE2.Size + EP3_BUF_RC_CTX.Size + EP3_BUF_RC_LVL.Size);
+  ;
+}
+
 /****************************************************************************/
 uint32_t AL_GetAllocSizeEP3()
 {
-  uint32_t uHwRCSize = (uint32_t)(EP3_BUF_RC_TABLE1.Size + EP3_BUF_RC_TABLE2.Size + EP3_BUF_RC_CTX.Size + EP3_BUF_RC_LVL.Size);
-  uint32_t uMaxSize = uHwRCSize * AL_ENC_NUM_CORES;
-
+  uint32_t uMaxSize = AL_GetAllocSizeEP3PerCore() * AL_ENC_NUM_CORES;
   return RoundUp(uMaxSize, 128);
 }
 
 
+
+/****************************************************************************/
 static uint32_t ConsiderChromaForAllocSize(AL_EChromaMode eChromaMode, uint32_t uSize)
 {
   switch(eChromaMode)
   {
-  case CHROMA_MONO: break;
-  case CHROMA_4_2_0: uSize += uSize >> 1;
+  case AL_CHROMA_MONO: break;
+  case AL_CHROMA_4_2_0: uSize += uSize >> 1;
     break;
-  case CHROMA_4_2_2: uSize += uSize;
+  case AL_CHROMA_4_2_2: uSize += uSize;
     break;
-  case CHROMA_4_4_4:
+  case AL_CHROMA_4_4_4:
   default: assert(0);
     break;
   }
@@ -203,13 +207,13 @@ static uint32_t GetAllocSize_Ref(AL_TDimension tRoundedDim, uint8_t uBitDepth, A
   uint32_t uSizeDiv = 1;
   switch(eChromaMode)
   {
-  case CHROMA_MONO:
+  case AL_CHROMA_MONO:
     break;
-  case CHROMA_4_2_0:
+  case AL_CHROMA_4_2_0:
     uSize *= 3;
     uSizeDiv *= 2;
     break;
-  case CHROMA_4_2_2:
+  case AL_CHROMA_4_2_2:
     uSize *= 2;
     break;
   default:
@@ -243,11 +247,8 @@ static int AL_RndUpPow2(int iVal)
 #endif
 
 /****************************************************************************/
-uint32_t AL_GetAllocSize_EncReference(AL_TDimension tDim, uint8_t uBitDepth, AL_EChromaMode eChromaMode, AL_EChEncOption eEncOption)
+uint32_t AL_GetAllocSize_EncReference(AL_TDimension tDim, uint8_t uBitDepth, AL_EChromaMode eChromaMode, bool bComp)
 {
-  (void)eEncOption;
-  bool bComp = false;
-
   AL_TDimension RoundedDim;
   RoundedDim.iHeight = RoundUp(tDim.iHeight, 64);
   RoundedDim.iWidth = RoundUp(tDim.iWidth, 64);

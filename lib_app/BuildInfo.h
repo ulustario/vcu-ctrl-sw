@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright (C) 2018 Allegro DVT2.  All rights reserved.
+* Copyright (C) 2019 Allegro DVT2.  All rights reserved.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -73,6 +73,8 @@ struct BuildInfoDisplay
     if(strcmp(compilationFlags, ""))
       Message(CC_DEFAULT, "\nUsing compilation options:\n%s\n", compilationFlags);
 #endif
+
+    Message(CC_DEFAULT, "\nUsing allegro library version: %d.%d.%d\n", AL_VERSION_MAJOR, AL_VERSION_MINOR, AL_VERSION_STEP);
   }
 
   char const* svnRevision;

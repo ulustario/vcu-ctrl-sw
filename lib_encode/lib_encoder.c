@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright (C) 2018 Allegro DVT2.  All rights reserved.
+* Copyright (C) 2019 Allegro DVT2.  All rights reserved.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -42,6 +42,7 @@
 #include "lib_encode/lib_encoder.h"
 #include "IP_EncoderCtx.h"
 
+
 void AL_CreateHevcEncoder(HighLevelEncoder* pCtx);
 void AL_CreateAvcEncoder(HighLevelEncoder* pCtx);
 
@@ -82,7 +83,7 @@ AL_ERR AL_Encoder_Create(AL_HEncoder* hEnc, TScheduler* pScheduler, AL_TAllocato
 
   errorCode = AL_Common_Encoder_CreateChannel(pCtx, pScheduler, pAlloc, pSettings);
 
-  if(errorCode != AL_SUCCESS)
+  if(AL_IS_ERROR_CODE(errorCode))
     goto fail;
 
   if(callback.func)
@@ -90,7 +91,7 @@ AL_ERR AL_Encoder_Create(AL_HEncoder* hEnc, TScheduler* pScheduler, AL_TAllocato
 
   pEncoder->pCtx = pCtx;
 
-  return AL_SUCCESS;
+  return errorCode;
 
   fail:
   Rtos_Free(pCtx);
@@ -209,6 +210,13 @@ bool AL_Encoder_SetQP(AL_HEncoder hEnc, int16_t iQP)
 {
   AL_TEncoder* pEnc = (AL_TEncoder*)hEnc;
   return AL_Common_Encoder_SetQP(pEnc, iQP);
+}
+
+/****************************************************************************/
+bool AL_Encoder_SetInputResolution(AL_HEncoder hEnc, AL_TDimension tDim)
+{
+  AL_TEncoder* pEnc = (AL_TEncoder*)hEnc;
+  return AL_Common_Encoder_SetInputResolution(pEnc, tDim);
 }
 
 

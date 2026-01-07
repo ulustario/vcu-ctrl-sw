@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright (C) 2018 Allegro DVT2.  All rights reserved.
+* Copyright (C) 2019 Allegro DVT2.  All rights reserved.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -53,6 +53,7 @@
 typedef struct AL_t_StreamMetaData
 {
   AL_TMetaData tMeta;
+  uint8_t uTemporalID; /*!< Temporal ID */
   AL_TStreamSection* pSections;  /*!< Array of sections */
   uint16_t uNumSection; /*!< number of sections inside the buffer */
   uint16_t uMaxNumSection /*!< maximum number of sections available */;
@@ -120,6 +121,14 @@ int AL_StreamMetaData_AddSeiSection(AL_TStreamMetaData* pMetaData, bool isPrefix
    \return returns an offset where the section data can be inserted in the stream.
 *****************************************************************************/
 uint32_t AL_StreamMetaData_GetUnusedStreamPart(AL_TStreamMetaData* pMetaData);
+
+/*************************************************************************//*!
+   \brief Get an the last section in the stream buffer of containing the provided flag
+   \param[in] pMetaData Pointer to the stream metadata
+   \param[in] uFlag Section's flag
+   \return returns the section id, -1 on failure
+*****************************************************************************/
+int AL_StreamMetaData_GetLastSectionOfFlag(AL_TStreamMetaData* pMetaData, uint32_t uFlag);
 
 /*@}*/
 

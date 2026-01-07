@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright (C) 2018 Allegro DVT2.  All rights reserved.
+* Copyright (C) 2019 Allegro DVT2.  All rights reserved.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -36,8 +36,8 @@
 ******************************************************************************/
 
 #include "MD5.h"
-#include "string.h"
-#include <assert.h>
+#include <cstring>
+#include <cassert>
 
 // mix functions for processBlock()
 inline uint32_t F(uint32_t X, uint32_t Y, uint32_t Z)

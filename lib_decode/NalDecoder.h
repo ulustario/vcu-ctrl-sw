@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright (C) 2018 Allegro DVT2.  All rights reserved.
+* Copyright (C) 2019 Allegro DVT2.  All rights reserved.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -50,10 +50,10 @@ typedef struct
 
 typedef struct
 {
-  AL_PARSE_RESULT (* parseSps)(AL_TAup*, AL_TRbspParser*);
+  AL_PARSE_RESULT (* parseSps)(AL_TAup*, AL_TRbspParser*, AL_TDecCtx*);
   AL_PARSE_RESULT (* parsePps)(AL_TAup*, AL_TRbspParser*, AL_TDecCtx*);
   void (* parseVps)(AL_TAup*, AL_TRbspParser*);
-  bool (* parseSei)(AL_TAup*, AL_TRbspParser*, AL_CB_ParsedSei* cb);
+  bool (* parseSei)(AL_TAup*, AL_TRbspParser*, bool, AL_CB_ParsedSei*);
   void (* decodeSliceData)(AL_TAup*, AL_TDecCtx*, AL_ENut, bool, int*);
   bool (* isSliceData)(AL_ENut nut);
 }AL_NalParser;

@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright (C) 2018 Allegro DVT2.  All rights reserved.
+* Copyright (C) 2019 Allegro DVT2.  All rights reserved.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -50,16 +50,6 @@
 #include "lib_common/FourCC.h"
 #include "EncChanParam.h"
 
-#define VP9_AUTO_FILT_LEVEL -1
-
-/*************************************************************************//*!
-   \brief Enable/Disable flag identifier
-*****************************************************************************/
-typedef enum e_OptionFlag
-{
-  DISABLE = 0,
-  ENABLE = 1,
-}EOptionFlag;
 
 /*************************************************************************//*!
    \brief Aspect Ratio identifer
@@ -72,15 +62,6 @@ typedef enum e_AspectRatio
   AL_ASPECT_RATIO_NONE = 0x03,
   AL_ASPECT_RATIO_MAX_ENUM,
 }AL_EAspectRatio;
-
-/*************************************************************************//*!
-   \brief Colour Description identifer (See Hevc Spec Table E.3)
-*****************************************************************************/
-typedef enum e_ColourDescription
-{
-  COLOUR_DESC_BT_709 = 1,
-  COLOUR_DESC_BT_470_PAL = 5
-}AL_EColourDescription;
 
 /*************************************************************************//*!
    \brief QP Control Mode
@@ -117,6 +98,7 @@ typedef enum e_QPCtrlMode
 }AL_EQpCtrlMode;
 
 
+
 /*************************************************************************//*!
    \brief Encoder Parameters
 *****************************************************************************/
@@ -146,10 +128,9 @@ typedef AL_INTROSPECT (category = "debug") struct t_EncSettings
   uint8_t DcCoeff[8];
   uint8_t DcCoeffFlag[8];
   bool bEnableWatchdog;
-#if AL_ENABLE_TWOPASS
   int LookAhead;
   int TwoPass;
-#endif
+  bool bEnableFirstPassSceneChangeDetection;
 }AL_TEncSettings;
 
 /*************************************************************************//*!

@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright (C) 2018 Allegro DVT2.  All rights reserved.
+* Copyright (C) 2019 Allegro DVT2.  All rights reserved.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -45,7 +45,8 @@
 #pragma once
 
 #include "lib_common_enc/EncChanParam.h"
-#include "lib_common/SliceConsts.h"
+#include "lib_common_enc/EncPicInfo.h"
+#include "lib_common/Utils.h"
 
 /****************************************************************************/
 static const int PicStructInfo[3] =
@@ -53,6 +54,15 @@ static const int PicStructInfo[3] =
   2, // 0:frame
   4, // 1:frame doubling
   6  // 2:frame tripling
+};
+
+/*****************************************************************************/
+static const uint8_t PicStructToFieldNumber[] =
+{
+  2,
+  1, 1, 2, 2, 3, 3,
+  4, 6,
+  1, 1, 1, 1,
 };
 
 /****************************************************************************/
@@ -87,6 +97,7 @@ typedef struct AL_t_PictureInfo
   AL_ESliceType eType;
   AL_EPicStruct ePicStruct;
   AL_EMarkingRef eMarking;
+  uint8_t uTempId;
 
   bool bForceLT[2]; /*!< Specifies if a following reference picture need to be markes as long-term */
 
@@ -102,9 +113,7 @@ typedef struct AL_t_PictureInfo
   AL_EGdrMode eGdrMode; /*!< Gradual Refresh Mode */
 
 
-#if AL_ENABLE_TWOPASS
   AL_TLookAheadParam tLAParam;
-#endif
 }AL_TPictureInfo;
 
 /*@}*/

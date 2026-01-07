@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright (C) 2018 Allegro DVT2.  All rights reserved.
+* Copyright (C) 2019 Allegro DVT2.  All rights reserved.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -64,11 +64,25 @@ typedef enum e_LdaCtrlMode
 {
   DEFAULT_LDA = 0x00, /*!< default behaviour */
   CUSTOM_LDA = 0x01, /*!< used for test purpose */
-  AUTO_LDA = 0x02, /*!< used for test purpose */
-  TEST_LDA = 0x03, /*!< used for test purpose */
-  DYNAMIC_LDA = 0x04, /*!< used for test purpose */
+  DYNAMIC_LDA = 0x02, /*!< select lambda values according to the GOP pattern */
+  AUTO_LDA = 0x03, /*!< automatically select betxeen DEFAULT_LDA and DYNAMIC_LDA */
   LOAD_LDA = 0x80, /*!< used for test purpose */
 }AL_ELdaCtrlMode;
+
+static inline bool AL_LdaIsSane(AL_ELdaCtrlMode lda)
+{
+  switch(lda)
+  {
+  case DEFAULT_LDA: // fallthrough
+  case CUSTOM_LDA: // fallthrough
+  case DYNAMIC_LDA: // fallthrough
+  case AUTO_LDA: // fallthrough
+  case LOAD_LDA: // fallthrough
+    return true;
+  default:
+    return false;
+  }
+}
 
 /*************************************************************************//*!
    \brief GDR Mode
@@ -131,14 +145,14 @@ typedef enum __AL_ALIGNED__ (4) AL_e_HlsFlag
 
 static inline uint32_t AL_GET_SPS_LOG2_MAX_POC(uint32_t uHlsParam)
 {
-  return uHlsParam & AL_SPS_LOG2_MAX_POC_MASK;
+  return (uHlsParam & AL_SPS_LOG2_MAX_POC_MASK) + 1;
 }
 
 static inline void AL_SET_SPS_LOG2_MAX_POC(uint32_t* pHlsParam, int iLog2MaxPoc)
 {
   assert(pHlsParam);
-  assert(iLog2MaxPoc < 0xF);
-  *pHlsParam = ((*pHlsParam & ~AL_SPS_LOG2_MAX_POC_MASK) | iLog2MaxPoc);
+  assert(iLog2MaxPoc <= 16);
+  *pHlsParam = ((*pHlsParam & ~AL_SPS_LOG2_MAX_POC_MASK) | (iLog2MaxPoc - 1));
 }
 
 static inline uint32_t AL_GET_SPS_LOG2_MAX_FRAME_NUM(uint32_t uHlsParam)
@@ -183,10 +197,33 @@ static inline void AL_SET_SPS_LOG2_NUM_LONG_TERM_RPS(uint32_t* pHlsParam, int iL
 #define AL_GET_PPS_CABAC_INIT_PRES_FLAG(HlsParam) (((HlsParam) & AL_PPS_CABAC_INIT_PRES_FLAG) >> 1)
 #define AL_GET_PPS_DBF_OVR_EN_FLAG(HlsParam) (((HlsParam) & AL_PPS_DBF_OVR_EN_FLAG) >> 2)
 #define AL_GET_PPS_SLICE_SEG_EN_FLAG(HlsParam) (((HlsParam) & AL_PPS_SLICE_SEG_EN_FLAG) >> 3)
-#define AL_GET_PPS_NUM_ACT_REF_L0(HlsParam) (((HlsParam) & AL_PPS_NUM_ACT_REF_L0) >> 4)
-#define AL_GET_PPS_NUM_ACT_REF_L1(HlsParam) (((HlsParam) & AL_PPS_NUM_ACT_REF_L1) >> 8)
 #define AL_GET_PPS_OVERRIDE_LF(HlsParam) (((HlsParam) & AL_PPS_OVERRIDE_LF) >> 12)
 #define AL_GET_PPS_DISABLE_LF(HlsParam) (((HlsParam) & AL_PPS_DISABLE_LF) >> 13)
+
+static inline uint32_t AL_GET_PPS_NUM_ACT_REF_L0(uint32_t HlsParam)
+{
+  uint32_t uNumRefL0Minus1 = (HlsParam & AL_PPS_NUM_ACT_REF_L0) >> 4;
+
+  if(uNumRefL0Minus1 > 0)
+    --uNumRefL0Minus1;
+  return uNumRefL0Minus1;
+}
+
+static inline uint32_t AL_GET_PPS_NUM_ACT_REF_L1(uint32_t HlsParam)
+{
+  uint32_t uNumRefL1Minus1 = (HlsParam & AL_PPS_NUM_ACT_REF_L1) >> 8;
+
+  if(uNumRefL1Minus1 > 0)
+    --uNumRefL1Minus1;
+  return uNumRefL1Minus1;
+}
+
+static inline uint32_t AL_GetNumberOfRef(uint32_t HlsParam)
+{
+  /* this takes advantage of the fact that the number of L0 ref is always
+   * bigger than the number of L1 refs */
+  return (HlsParam & AL_PPS_NUM_ACT_REF_L0) >> 4;
+}
 
 #define AL_SET_PPS_NUM_ACT_REF_L0(HlsParam, Num) (HlsParam) = ((HlsParam) & ~AL_PPS_NUM_ACT_REF_L0) | ((Num) << 4)
 #define AL_SET_PPS_NUM_ACT_REF_L1(HlsParam, Num) (HlsParam) = ((HlsParam) & ~AL_PPS_NUM_ACT_REF_L1) | ((Num) << 8)
@@ -196,6 +233,26 @@ static inline void AL_SET_SPS_LOG2_NUM_LONG_TERM_RPS(uint32_t* pHlsParam, int iL
 *****************************************************************************/
 typedef enum __AL_ALIGNED__ (4) AL_e_ChEncOptions
 {
+  AL_OPT_QP_TAB_RELATIVE = 0x00000001,
+  AL_OPT_FIX_PREDICTOR = 0x00000002,
+  AL_OPT_CUSTOM_LDA = 0x00000004,
+  AL_OPT_ENABLE_AUTO_QP = 0x00000008,
+  AL_OPT_ADAPT_AUTO_QP = 0x00000010,
+  AL_OPT_FORCE_REC = 0x00000040,
+  AL_OPT_FORCE_MV_OUT = 0x00000080,
+  AL_OPT_LOWLAT_SYNC = 0x00000100,
+  AL_OPT_LOWLAT_INT = 0x00000200,
+  AL_OPT_HIGH_FREQ = 0x00002000,
+  AL_OPT_SCENE_CHANGE_DETECTION = 0x00004000,
+  AL_OPT_FORCE_MV_CLIP = 0x00020000,
+  AL_OPT_RDO_COST_MODE = 0x00040000,
+} AL_EChEncOption;
+
+/*************************************************************************//*!
+   \brief Encoding tools enum
+*****************************************************************************/
+typedef enum __AL_ALIGNED__ (4) AL_e_ChEncTools
+{
   AL_OPT_WPP = 0x00000001,
   AL_OPT_TILE = 0x00000002,
   AL_OPT_LF = 0x00000004,
@@ -203,20 +260,8 @@ typedef enum __AL_ALIGNED__ (4) AL_e_ChEncOptions
   AL_OPT_LF_X_TILE = 0x00000010,
   AL_OPT_SCL_LST = 0x00000020,
   AL_OPT_CONST_INTRA_PRED = 0x00000040,
-  AL_OPT_QP_TAB_RELATIVE = 0x00000080,
-  AL_OPT_FIX_PREDICTOR = 0x00000100,
-  AL_OPT_CUSTOM_LDA = 0x00000200,
-  AL_OPT_ENABLE_AUTO_QP = 0x00000400,
-  AL_OPT_ADAPT_AUTO_QP = 0x00000800,
-  AL_OPT_TRANSFO_SKIP = 0x00002000,
-  AL_OPT_FORCE_REC = 0x00008000,
-  AL_OPT_FORCE_MV_OUT = 0x00010000,
-  AL_OPT_FORCE_MV_CLIP = 0x00020000,
-  AL_OPT_LOWLAT_SYNC = 0x00040000,
-  AL_OPT_LOWLAT_INT = 0x00080000,
-  AL_OPT_RDO_COST_MODE = 0x00100000,
-  AL_OPT_HIGH_FREQ = 0x08000000,
-} AL_EChEncOption;
+  AL_OPT_TRANSFO_SKIP = 0x00000080,
+} AL_EChEncTool;
 
 /*************************************************************************//*!
    \brief Rate Control Mode
@@ -241,6 +286,9 @@ typedef enum __AL_ALIGNED__ (4) AL_e_RateCtrlOption
 {
   AL_RC_OPT_NONE = 0x00000000,
   AL_RC_OPT_SCN_CHG_RES = 0x00000001,
+  AL_RC_OPT_DELAYED = 0x00000002,
+  AL_RC_OPT_STATIC_SCENE = 0x00000004,
+  AL_RC_OPT_ENABLE_SKIP = 0x00000008,
   AL_RC_OPT_MAX_ENUM,
 } AL_ERateCtrlOption;
 
@@ -267,7 +315,7 @@ typedef AL_INTROSPECT (category = "debug") struct __AL_ALIGNED__ (4) AL_t_RCPara
   AL_ERateCtrlOption eOptions;
   uint32_t uNumPel;
   uint16_t uMaxPSNR;
-  uint8_t uMaxPelVal;
+  uint16_t uMaxPelVal;
   uint32_t uMaxPictureSize;
 } AL_TRCParam;
 
@@ -300,7 +348,6 @@ typedef struct AL_t_GopFrm
   uint8_t uType;
   uint8_t uTempId;
   uint8_t uIsRef;
-  int8_t iQpOffset;
   int16_t iPOC;
   int16_t iRefA;
   int16_t iRefB;
@@ -321,9 +368,9 @@ typedef AL_INTROSPECT (category = "debug") struct AL_t_GopParam
   bool bEnableLT;
   uint32_t uFreqLT;
   AL_EGdrMode eGdrMode;
+  int8_t tempDQP[4];
 }AL_TGopParam;
 
-#if AL_ENABLE_TWOPASS
 /*************************************************************************//*!
    \brief First Pass infos parameters
 *****************************************************************************/
@@ -332,8 +379,8 @@ typedef struct AL_t_LookAheadParam
   int32_t iSCPictureSize;
   int32_t iSCIPRatio;
   int16_t iComplexity;
+  int16_t iTargetLevel;
 }AL_TLookAheadParam;
-#endif
 
 /*************************************************************************//*!
    \brief Max burst size
@@ -370,6 +417,20 @@ typedef enum e_SrcConvMode // [0] : CompMode | [3:1] : SourceFormat
 
 #define AL_IS_L2P_DISABLED(iPrefetchLevel2) (iPrefetchLevel2 == 0)
 
+
+/*************************************************************************//*!
+   \brief AOM interpolation filter
+*****************************************************************************/
+typedef enum e_InterP_Filter
+{
+  AL_INTERP_REGULAR,
+  AL_INTERP_SMOOTH,
+  AL_INTERP_SHARP,
+  AL_INTERP_BILINEAR,
+  AL_INTERP_SWITCHABLE,
+  AL_INTERP_MAX_ENUM, /* sentinel */
+}AL_EInterPFilter;
+
 /*************************************************************************//*!
    \brief Channel parameters structure
 *****************************************************************************/
@@ -385,7 +446,6 @@ typedef AL_INTROSPECT (category = "debug") struct __AL_ALIGNED__ (4) AL_t_EncCha
   AL_EVideoMode eVideoMode;
   /* Encoding picture format */
   AL_EPicFormat ePicFormat;
-  AL_EColorSpace eColorSpace;
   AL_ESrcMode eSrcMode;
   /* Input picture bitdepth */
   uint8_t uSrcBitDepth;
@@ -399,7 +459,8 @@ typedef AL_INTROSPECT (category = "debug") struct __AL_ALIGNED__ (4) AL_t_EncCha
   uint32_t uPpsParam;
 
   /* Encoding tools parameters */
-  AL_EChEncOption eOptions;
+  AL_EChEncOption eEncOptions;
+  AL_EChEncTool eEncTools;
   int8_t iBetaOffset;
   int8_t iTcOffset;
 
@@ -442,16 +503,21 @@ typedef AL_INTROSPECT (category = "debug") struct __AL_ALIGNED__ (4) AL_t_EncCha
 
 
 
+
   /* Gop & Rate control parameters */
   AL_TRCParam tRCParam;
   AL_TGopParam tGopParam;
   bool bSubframeLatency;
   AL_ELdaCtrlMode eLdaCtrlMode;
+  int LdaFactors[6];
 
 } AL_TEncChanParam;
 
-#define AL_GetWidthInLCU(tChParam) (((tChParam).uWidth + (1 << (tChParam).uMaxCuSize) - 1) >> (tChParam).uMaxCuSize)
-#define AL_GetHeightInLCU(tChParam) (((tChParam).uHeight + (1 << (tChParam).uMaxCuSize) - 1) >> (tChParam).uMaxCuSize)
+/***************************************************************************/
+#define ROUND_POWER_OF_TWO(value, n) (((value) + (1 << ((n) - 1))) >> (n))
+#define ROUND_UP_POWER_OF_TWO(value, n) (((value) + (1 << (n)) - 1) >> (n))
+#define AL_GetWidthInLCU(tChParam) (ROUND_UP_POWER_OF_TWO((tChParam).uWidth, (tChParam).uMaxCuSize))
+#define AL_GetHeightInLCU(tChParam) (ROUND_UP_POWER_OF_TWO((tChParam).uHeight, (tChParam).uMaxCuSize))
 
 #define AL_ENTCOMP(tChParam) false
 

@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright (C) 2018 Allegro DVT2.  All rights reserved.
+* Copyright (C) 2019 Allegro DVT2.  All rights reserved.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -39,6 +39,7 @@
 #include "lib_encode/SchedulerMcu.h"
 #include "lib_encode/ISchedulerCommon.h"
 #include "lib_common/IDriver.h"
+#include "lib_common/Error.h"
 
 #include "lib_rtos/lib_rtos.h"
 #include "lib_fpga/DmaAlloc.h"
@@ -79,7 +80,8 @@ static void* WaitForStatus(void* p);
 
 static void setChannelFeedback(AL_TEncChanParam* pChParam, struct al5_channel_status* msg)
 {
-  pChParam->eOptions = msg->options;
+  pChParam->eEncOptions = msg->options;
+  pChParam->eEncTools = msg->tools;
   pChParam->uNumCore = msg->num_core;
   pChParam->uPpsParam = msg->pps_param;
 }
@@ -116,7 +118,7 @@ static AL_ERR createChannel(AL_HANDLE* hChannel, TScheduler* pScheduler, AL_TEnc
 
   struct al5_channel_config msg = { 0 };
   setChannelParam(&msg.param, pChParam, pEP1);
-  chan->outputRec = pChParam->eOptions & AL_OPT_FORCE_REC;
+  chan->outputRec = pChParam->eEncOptions & AL_OPT_FORCE_REC;
 
   AL_EDriverError errdrv = AL_Driver_PostMessage(chan->driver, chan->fd, AL_MCU_CONFIG_CHANNEL, &msg);
 
@@ -133,7 +135,7 @@ static AL_ERR createChannel(AL_HANDLE* hChannel, TScheduler* pScheduler, AL_TEnc
     goto fail;
   }
 
-  assert(msg.status.error_code == 0);
+  assert(!AL_IS_ERROR_CODE(msg.status.error_code));
 
   setChannelFeedback(pChParam, &msg.status);
   setCallbacks(chan, pCBs);
@@ -228,6 +230,9 @@ static bool getRecPicture(TScheduler* pScheduler, AL_HANDLE hChannel, TRecPic* p
   recInfo.ePicStruct = msg.pic_struct;
   recInfo.iPOC = msg.poc;
 
+  recInfo.tPicDim.iWidth = msg.width;
+  recInfo.tPicDim.iHeight = msg.height;
+
   SetRecPic(pRecPic, pAllocator, hRecBuf, &chan->info, &recInfo);
 
   return true;
@@ -237,11 +242,11 @@ static bool releaseRecPicture(TScheduler* pScheduler, AL_HANDLE hChannel, TRecPi
 {
   AL_TSchedulerMcu* schedulerMcu = (AL_TSchedulerMcu*)pScheduler;
   Channel* chan = hChannel;
-  AL_HANDLE hRecBuf = pRecPic->tBuf.tMD.hAllocBuf;
 
-  if(!hRecBuf || !chan->outputRec)
+  if(!pRecPic->pBuf || !chan->outputRec)
     return false;
 
+  AL_HANDLE hRecBuf = pRecPic->pBuf->hBuf;
   AL_TAllocator* pAllocator = schedulerMcu->allocator;
   __u32 fd = AL_LinuxDmaAllocator_GetFd((AL_TLinuxDmaAllocator*)pAllocator, hRecBuf);
 
