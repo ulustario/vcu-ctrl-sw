@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright (C) 2018 Allegro DVT2.  All rights reserved.
+* Copyright (C) 2008-2022 Allegro DVT2.  All rights reserved.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -41,8 +41,7 @@
 #include <string>
 #include <map>
 #include <vector>
-
-#include <assert.h>
+#include <cassert>
 
 using namespace std;
 
@@ -67,7 +66,7 @@ static bool destroy(AL_TAllocator* handle)
 {
   auto self = (AllocatorTracker*)handle;
   bool success = AL_Allocator_Destroy(self->realAllocator);
-  cout << "total dma used : " << bytes_to_megabytes(self->size) << "MB" << endl;
+  cout << "total dma used : " << self->size << " bytes, " << bytes_to_megabytes(self->size) << "MB" << endl;
 
   if(self->mode == detailedMode)
   {
@@ -78,12 +77,35 @@ static bool destroy(AL_TAllocator* handle)
       auto totalSize = 0;
 
       /* buffer with the same name should have the same size */
+      if(alloc.first != "unknown")
+      {
+        for(auto& size : sizes)
+          assert(size == firstSize);
+      }
+
+      cout << setfill(' ') << setw(24) << left << alloc.first;
+      size_t curSize = 0;
+      auto numElem = 0;
+
       for(auto& size : sizes)
-        assert(size == firstSize);
+      {
+        if(curSize != size)
+        {
+          if(numElem != 0)
+            cout << numElem << " * " << curSize << ", ";
 
-      totalSize = firstSize * sizes.size();
+          curSize = size;
+          numElem = 0;
+        }
 
-      cout << setfill(' ') << setw(24) << left << alloc.first << sizes.size() << " * " << firstSize << " (total: ~" << bytes_to_megabytes(totalSize) << "MB" << ")" << endl;
+        ++numElem;
+        totalSize += size;
+      }
+
+      if(numElem != 0)
+        cout << numElem << " * " << curSize << " ";
+
+      cout << "(total: ~" << bytes_to_megabytes(totalSize) << "MB" << ")" << endl;
     }
   }
 
@@ -122,6 +144,18 @@ static AL_PADDR getPhysicalAddr(AL_TAllocator* handle, AL_HANDLE buf)
   return AL_Allocator_GetPhysicalAddr(self->realAllocator, buf);
 }
 
+static void syncForCpu(AL_TAllocator* handle, AL_VADDR pVirtualAddr, size_t zSize)
+{
+  auto self = (AllocatorTracker*)handle;
+  return AL_Allocator_SyncForCpu(self->realAllocator, pVirtualAddr, zSize);
+}
+
+static void syncForDevice(AL_TAllocator* handle, AL_VADDR pVirtualAddr, size_t zSize)
+{
+  auto self = (AllocatorTracker*)handle;
+  return AL_Allocator_SyncForDevice(self->realAllocator, pVirtualAddr, zSize);
+}
+
 const AL_AllocatorVtable trackerVtable =
 {
   destroy,
@@ -130,6 +164,8 @@ const AL_AllocatorVtable trackerVtable =
   getVirtualAddr,
   getPhysicalAddr,
   allocNamed,
+  syncForCpu,
+  syncForDevice,
 };
 
 AL_TAllocator* createAllocatorTracker(AL_TAllocator* pAllocator)

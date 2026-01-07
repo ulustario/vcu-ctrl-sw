@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright (C) 2018 Allegro DVT2.  All rights reserved.
+* Copyright (C) 2008-2022 Allegro DVT2.  All rights reserved.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -42,7 +42,6 @@
 #include "lib_app/console.h"
 #include "lib_app/utils.h"
 
-
 extern "C"
 {
 #include "lib_fpga/DmaAlloc.h"
@@ -60,39 +59,52 @@ AL_TAllocator* createDmaAllocator(const char* deviceName)
   return h;
 }
 
+std::string g_DecDevicePath = "/dev/allegroDecodeIP";
 
 extern "C"
 {
-#include "lib_common/HardwareDriver.h"
-AL_TIDecChannel* AL_DecChannelMcu_Create(AL_TDriver*);
+#include "lib_decode/DecSchedulerMcu.h"
 }
 
-static unique_ptr<CIpDevice> createMcuIpDevice()
+AL_TAllocator* CreateProxyAllocator(char const*)
 {
-  auto device = make_unique<CIpDevice>();
+  // support for the proxy allocator isn't compiled in.
+  return nullptr;
+}
 
-  device->m_pAllocator.reset(createDmaAllocator("/dev/allegroDecodeIP"), &AL_Allocator_Destroy);
+void CIpDevice::ConfigureMcu(AL_TDriver* driver, bool useProxy)
+{
+  if(useProxy)
+    m_pAllocator = CreateProxyAllocator(g_DecDevicePath.c_str());
+  else
+    m_pAllocator = createDmaAllocator(g_DecDevicePath.c_str());
 
-  if(!device->m_pAllocator)
+  if(!m_pAllocator)
     throw runtime_error("Can't open DMA allocator");
 
-  device->m_pDecChannel = AL_DecChannelMcu_Create(AL_GetHardwareDriver());
+  m_pScheduler = AL_DecSchedulerMcu_Create(driver, g_DecDevicePath.c_str());
 
-  if(!device->m_pDecChannel)
+  if(!m_pScheduler)
     throw runtime_error("Failed to create MCU scheduler");
-
-  return device;
 }
 
-
-shared_ptr<CIpDevice> CreateIpDevice(int* iUseBoard, int iSchedulerType, function<AL_TIpCtrl* (AL_TIpCtrl*)> wrapIpCtrl, bool trackDma, int uNumCore, int hangers)
+CIpDevice::~CIpDevice()
 {
-  (void)iUseBoard, (void)wrapIpCtrl, (void)uNumCore, (void)trackDma, (void)hangers;
+  if(m_pScheduler)
+    AL_IDecScheduler_Destroy(m_pScheduler);
 
+  if(m_pAllocator)
+    AL_Allocator_Destroy(m_pAllocator);
+}
 
+void CIpDevice::Configure(CIpDeviceParam& param)
+{
 
-  if(iSchedulerType == SCHEDULER_TYPE_MCU)
-    return createMcuIpDevice();
+  if(param.iSchedulerType == AL_SCHEDULER_TYPE_MCU)
+  {
+    ConfigureMcu(AL_GetHardwareDriver(), false);
+    return;
+  }
 
   throw runtime_error("No support for this scheduling type");
 }

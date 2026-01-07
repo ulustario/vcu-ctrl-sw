@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright (C) 2018 Allegro DVT2.  All rights reserved.
+* Copyright (C) 2008-2022 Allegro DVT2.  All rights reserved.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -35,9 +35,9 @@
 *
 ******************************************************************************/
 
-#include <assert.h>
 #include "lib_common/Allocator.h"
 #include "lib_rtos/lib_rtos.h"
+#include "lib_assert/al_assert.h"
 
 /*****************************************************************************/
 static AL_HANDLE AL_sDefaultAllocator_Alloc(AL_TAllocator* pAllocator, size_t zSize)
@@ -66,7 +66,8 @@ static AL_PADDR AL_sDefaultAllocator_GetPhysicalAddr(AL_TAllocator* pAllocator, 
 {
   (void)pAllocator;
   (void)hBuf;
-  return (AL_PADDR)0;
+  /* 32 is an ugly hack: we do not want to have 0 for an address */
+  return (AL_PADDR)32;
 }
 
 /*****************************************************************************/
@@ -77,6 +78,8 @@ static const AL_AllocatorVtable s_DefaultAllocatorVtable =
   AL_sDefaultAllocator_Free,
   AL_sDefaultAllocator_GetVirtualAddr,
   AL_sDefaultAllocator_GetPhysicalAddr,
+  NULL,
+  NULL,
   NULL,
 };
 
@@ -90,7 +93,7 @@ typedef struct
 static AL_HANDLE WrapData(AL_TAllocator* pAllocator, uint8_t* pData, void (* destructor)(void* pUserData, uint8_t* pData), void* pUserData)
 {
   (void)pAllocator;
-  AL_TWrapperHandle* h = Rtos_Malloc(sizeof(*h));
+  AL_TWrapperHandle* h = (AL_TWrapperHandle*)Rtos_Malloc(sizeof(*h));
 
   if(!h)
     return NULL;
@@ -108,7 +111,7 @@ static void WrapperFree(void* pUserParam, uint8_t* pData)
 
 static AL_HANDLE AL_sWrapperAllocator_Alloc(AL_TAllocator* pAllocator, size_t zSize)
 {
-  uint8_t* pData = Rtos_Malloc(zSize);
+  uint8_t* pData = (uint8_t*)Rtos_Malloc(zSize);
 
   if(!pData)
     return NULL;
@@ -137,7 +140,7 @@ static AL_PADDR AL_sWrapperAllocator_GetPhysicalAddr(AL_TAllocator* pAllocator, 
 {
   /* The wrapped data doesn't have a physical address */
   (void)pAllocator, (void)hBuf;
-  assert(0);
+  AL_Assert(0);
   return (AL_PADDR)0xdeaddead;
 }
 
@@ -148,6 +151,8 @@ static const AL_AllocatorVtable s_WrapperAllocatorVtable =
   AL_sWrapperAllocator_Free,
   AL_sWrapperAllocator_GetVirtualAddr,
   AL_sWrapperAllocator_GetPhysicalAddr,
+  NULL,
+  NULL,
   NULL,
 };
 

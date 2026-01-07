@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright (C) 2018 Allegro DVT2.  All rights reserved.
+* Copyright (C) 2008-2022 Allegro DVT2.  All rights reserved.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -36,24 +36,41 @@
 ******************************************************************************/
 
 #include "lib_common_enc/EncRecBuffer.h"
-/****************************************************************************/
-void ResetBufferRec(TBufferRec* pBufRec)
-{
-  MemDesc_Init(&pBufRec->tMD);
-  pBufRec->iWidth = pBufRec->iHeight = 0;
-  pBufRec->iPitchY = pBufRec->iPitchC = 0;
-}
+#include "lib_common_enc/EncBuffers.h"
+#include "lib_common_enc/EncBuffersInternal.h"
+#include "lib_common/Utils.h"
 
 /****************************************************************************/
 uint32_t AL_GetRecPitch(uint32_t uBitDepth, uint32_t uWidth)
 {
-  if(uBitDepth > 8)
+  int iTileWidth = 64;
+  int iTileHeight = 4;
+
+  if(uBitDepth == 8)
+    return UnsignedRoundUp(uWidth, iTileWidth) * iTileHeight;
+
+  return UnsignedRoundUp(uWidth, iTileWidth) * iTileHeight * uBitDepth / 8;
+}
+
+void AL_EncRecBuffer_FillPlaneDesc(AL_TPlaneDescription* pPlaneDesc, AL_TDimension tDim, AL_EChromaMode eChromaMode, uint8_t uBitDepth, bool bIsAvc, uint8_t uLCUSize, uint16_t uMVVRange, AL_EChEncOption eOptions)
+{
+  (void)eChromaMode, (void)bIsAvc; // if no fbc support
+  AL_EChEncOption eTmpOption = eOptions;
+
+  if(AL_Plane_IsPixelPlane(pPlaneDesc->ePlaneId))
   {
-    return ((uWidth + 63) >> 6) * 320;
+    pPlaneDesc->iPitch = AL_GetRecPitch(uBitDepth, tDim.iWidth);
+    pPlaneDesc->iOffset = 0;
+
+    if(pPlaneDesc->ePlaneId != AL_PLANE_Y)
+    {
+      int iPlaneOrder = pPlaneDesc->ePlaneId == AL_PLANE_V ? 2 : 1;
+      pPlaneDesc->iOffset = iPlaneOrder * AL_GetAllocSize_EncReference(tDim, uBitDepth, uLCUSize, AL_CHROMA_MONO, eTmpOption, uMVVRange);
+    }
+
+    return;
   }
-  else
-  {
-    return ((uWidth + 63) >> 6) * 256;
-  }
+
+  assert(0);
 }
 

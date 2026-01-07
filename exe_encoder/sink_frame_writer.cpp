@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright (C) 2018 Allegro DVT2.  All rights reserved.
+* Copyright (C) 2008-2022 Allegro DVT2.  All rights reserved.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -36,163 +36,49 @@
 ******************************************************************************/
 
 #include "sink_frame_writer.h"
-#include "CodecUtils.h"
-#include "lib_app/utils.h"
+
 #include <cassert>
 
+#include "CodecUtils.h"
+
+#include "lib_app/YuvIO.h"
+#include "lib_app/convert.h"
+#include "lib_app/utils.h"
 
 extern "C"
 {
 #include "lib_encode/lib_encoder.h"
-#include "lib_common/BufferSrcMeta.h"
+#include "lib_common/PixMapBuffer.h"
 #include "lib_common_enc/IpEncFourCC.h"
-}
-#include "lib_app/convert.h"
-
-/****************************************************************************/
-void RecToYuv(AL_TBuffer const* pRec, AL_TBuffer* pYuv, TFourCC tFourCC)
-{
-  AL_TSrcMetaData* pRecMeta = (AL_TSrcMetaData*)AL_Buffer_GetMetaData(pRec, AL_META_TYPE_SOURCE);
-
-  if(pRecMeta->tFourCC == FOURCC(Y800))
-  {
-    if(tFourCC == FOURCC(I420))
-      Y800_To_I420(pRec, pYuv);
-    else if(tFourCC == FOURCC(IYUV))
-      Y800_To_IYUV(pRec, pYuv);
-    else if(tFourCC == FOURCC(YV12))
-      Y800_To_YV12(pRec, pYuv);
-    else if(tFourCC == FOURCC(NV12))
-      Y800_To_NV12(pRec, pYuv);
-    else if(tFourCC == FOURCC(Y800))
-      AL_CopyYuv(pRec, pYuv);
-    else if(tFourCC == FOURCC(P010))
-      Y800_To_P010(pRec, pYuv);
-    else if(tFourCC == FOURCC(I0AL))
-      Y800_To_I0AL(pRec, pYuv);
-    // else if(tFourCC == FOURCC(Y010)) Y800_To_Y010(pRec, pYuv);
-    else
-      assert(0);
-  }
-  else if(pRecMeta->tFourCC == FOURCC(T60A))
-  {
-    if(tFourCC == FOURCC(Y800))
-      T60A_To_Y800(pRec, pYuv);
-    else if(tFourCC == FOURCC(I420))
-      T60A_To_I420(pRec, pYuv);
-    else if(tFourCC == FOURCC(IYUV))
-      T60A_To_IYUV(pRec, pYuv);
-    else if(tFourCC == FOURCC(YV12))
-      T60A_To_YV12(pRec, pYuv);
-    else if(tFourCC == FOURCC(NV12))
-      T60A_To_NV12(pRec, pYuv);
-    else if(tFourCC == FOURCC(P010))
-      T60A_To_P010(pRec, pYuv);
-    else if(tFourCC == FOURCC(I0AL))
-      T60A_To_I0AL(pRec, pYuv);
-    else if(tFourCC == FOURCC(Y010))
-      T60A_To_Y010(pRec, pYuv);
-    else if(tFourCC == FOURCC(XV15))
-      T60A_To_XV15(pRec, pYuv);
-  }
-  else if(pRecMeta->tFourCC == FOURCC(T62A))
-  {
-    if(tFourCC == FOURCC(Y800))
-      T62A_To_Y800(pRec, pYuv);
-    else if(tFourCC == FOURCC(Y010))
-      T62A_To_Y010(pRec, pYuv);
-    else if(tFourCC == FOURCC(I422))
-      T62A_To_I422(pRec, pYuv);
-    else if(tFourCC == FOURCC(NV16))
-      T62A_To_NV16(pRec, pYuv);
-    else if(tFourCC == FOURCC(I2AL))
-      T62A_To_I2AL(pRec, pYuv);
-    else if(tFourCC == FOURCC(P210))
-      T62A_To_P210(pRec, pYuv);
-    else if(tFourCC == FOURCC(Y010))
-      T62A_To_Y010(pRec, pYuv);
-    else if(tFourCC == FOURCC(XV20))
-      T62A_To_XV20(pRec, pYuv);
-    else
-      assert(0);
-  }
-  else if(pRecMeta->tFourCC == FOURCC(T608))
-  {
-    if(tFourCC == FOURCC(Y800))
-      T608_To_Y800(pRec, pYuv);
-    else if(tFourCC == FOURCC(Y010))
-      T608_To_Y010(pRec, pYuv);
-    else if(tFourCC == FOURCC(I420))
-      T608_To_I420(pRec, pYuv);
-    else if(tFourCC == FOURCC(IYUV))
-      T608_To_IYUV(pRec, pYuv);
-    else if(tFourCC == FOURCC(YV12))
-      T608_To_YV12(pRec, pYuv);
-    else if(tFourCC == FOURCC(NV12))
-      T608_To_NV12(pRec, pYuv);
-    else if(tFourCC == FOURCC(P010))
-      T608_To_P010(pRec, pYuv);
-    else if(tFourCC == FOURCC(I0AL))
-      T608_To_I0AL(pRec, pYuv);
-    else if(tFourCC == FOURCC(Y010))
-      T608_To_Y010(pRec, pYuv);
-  }
-  else if(pRecMeta->tFourCC == FOURCC(T628))
-  {
-    if(tFourCC == FOURCC(Y800))
-      T628_To_Y800(pRec, pYuv);
-    else if(tFourCC == FOURCC(Y010))
-      T628_To_Y010(pRec, pYuv);
-    else if(tFourCC == FOURCC(I422))
-      T628_To_I422(pRec, pYuv);
-    else if(tFourCC == FOURCC(NV16))
-      T628_To_NV16(pRec, pYuv);
-    else if(tFourCC == FOURCC(I2AL))
-      T628_To_I2AL(pRec, pYuv);
-    else if(tFourCC == FOURCC(P210))
-      T628_To_P210(pRec, pYuv);
-    else if(tFourCC == FOURCC(Y010))
-      T628_To_Y010(pRec, pYuv);
-    else
-      assert(0);
-  }
-  else if(pRecMeta->tFourCC == FOURCC(T6m8))
-  {
-    if(tFourCC == FOURCC(Y800))
-      T608_To_Y800(pRec, pYuv);
-    else if(tFourCC == FOURCC(Y010))
-      T608_To_Y010(pRec, pYuv);
-    else if(tFourCC == FOURCC(I420))
-      T6m8_To_I420(pRec, pYuv);
-    else
-      assert(0);
-  }
-  else if(pRecMeta->tFourCC == FOURCC(T6mA))
-  {
-    if(tFourCC == FOURCC(Y800))
-      T60A_To_Y800(pRec, pYuv);
-    else if(tFourCC == FOURCC(Y010))
-      T60A_To_Y010(pRec, pYuv);
-    else if(tFourCC == FOURCC(XV10))
-      T60A_To_XV10(pRec, pYuv);
-    else
-      assert(0);
-  }
-  else
-    assert(0);
 }
 
 using namespace std;
 
+/****************************************************************************/
+void RecToYuv(AL_TBuffer const* pRec, AL_TBuffer* pYuv, TFourCC tYuvFourCC)
+{
+  TFourCC tRecFourCC = AL_PixMapBuffer_GetFourCC(pRec);
+  tConvFourCCFunc pFunc = GetConvFourCCFunc(tRecFourCC, tYuvFourCC);
+
+  AL_PixMapBuffer_SetDimension(pYuv, AL_PixMapBuffer_GetDimension(pRec));
+
+  if(!pFunc)
+    assert(false && "Can't find a conversion function suitable for format");
+
+  assert(AL_IsTiled(tRecFourCC));
+  return pFunc(pRec, pYuv);
+}
+
 class FrameWriter : public IFrameSink
 {
 public:
-  FrameWriter(string RecFileName, ConfigFile& cfg_, AL_TBuffer* Yuv_, int iLayerID) : m_cfg(cfg_), m_Yuv(Yuv_), m_iLayerID(iLayerID)
+  FrameWriter(string RecFileName, ConfigFile& cfg_, int iLayerID) : m_cfg(cfg_)
   {
+    (void)iLayerID; // if no fbc support
     OpenOutput(m_RecFile, RecFileName);
   }
 
-  void ProcessFrame(AL_TBuffer* pBuf)
+  void ProcessFrame(AL_TBuffer* pBuf) override
   {
     if(pBuf == EndOfStream)
     {
@@ -200,29 +86,46 @@ public:
       return;
     }
 
-    auto& tChParam = m_cfg.Settings.tChParam[m_iLayerID];
     {
-      RecToYuv(pBuf, m_Yuv, m_cfg.RecFourCC);
-      WriteOneFrame(m_RecFile, m_Yuv, tChParam.uWidth, tChParam.uHeight);
+      CheckAndAllocateConversionBuffer(pBuf);
+      RecToYuv(pBuf, m_convYUV.get(), m_cfg.RecFourCC);
+      WriteOneFrame(m_RecFile, m_convYUV.get());
     }
   }
-
 
 private:
   ofstream m_RecFile;
   ConfigFile& m_cfg;
-  AL_TBuffer* const m_Yuv;
-  int m_iLayerID;
+  std::shared_ptr<AL_TBuffer> m_convYUV;
+
+  void CheckAndAllocateConversionBuffer(AL_TBuffer* pBuf)
+  {
+    AL_TDimension tOutputDim = AL_PixMapBuffer_GetDimension(pBuf);
+
+    if(m_convYUV != nullptr)
+    {
+      AL_TDimension tConvDim = AL_PixMapBuffer_GetDimension(m_convYUV.get());
+
+      if(tConvDim.iHeight >= tOutputDim.iHeight && tConvDim.iWidth >= tOutputDim.iWidth)
+        return;
+    }
+
+    AL_TBuffer* pYuv = AllocateDefaultYuvIOBuffer(tOutputDim, m_cfg.RecFourCC);
+
+    if(pYuv == nullptr)
+      throw runtime_error("Couldn't allocate reconstruct conversion buffer");
+
+    m_convYUV = shared_ptr<AL_TBuffer>(pYuv, &AL_Buffer_Destroy);
+
+  }
 };
 
-unique_ptr<IFrameSink> createFrameWriter(string path, ConfigFile& cfg_, AL_TBuffer* Yuv_, int iLayerID_)
+unique_ptr<IFrameSink> createFrameWriter(string path, ConfigFile& cfg_, int iLayerID_)
 {
-#if AL_ENABLE_TWOPASS
 
   if(cfg_.Settings.TwoPass == 1)
     return unique_ptr<IFrameSink>(new NullFrameSink);
-#endif
 
-  return unique_ptr<IFrameSink>(new FrameWriter(path, cfg_, Yuv_, iLayerID_));
+  return unique_ptr<IFrameSink>(new FrameWriter(path, cfg_, iLayerID_));
 }
 

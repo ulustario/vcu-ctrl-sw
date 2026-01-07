@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright (C) 2018 Allegro DVT2.  All rights reserved.
+* Copyright (C) 2008-2022 Allegro DVT2.  All rights reserved.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -44,7 +44,7 @@
 #include <cassert>
 
 #include "CodecUtils.h"
-#include "al_resource.h"
+#include "resource.h"
 #include "lib_app/utils.h"
 #include "lib_app/BuildInfo.h"
 
@@ -52,9 +52,9 @@
 void DisplayFrameStatus(int iFrameNum)
 {
 #if VERBOSE_MODE
-  Message("\n\n> % 3d", iFrameNum);
+  LogVerbose("\n\n> % 3d", iFrameNum);
 #else
-  Message("\r  Displayed picture #%-6d - ", iFrameNum);
+  LogVerbose("\r  Displayed picture #%-6d - ", iFrameNum);
 #endif
 }
 
@@ -65,7 +65,7 @@ void DisplayFrameStatus(int iFrameNum)
 void DisplayBuildInfo()
 {
   BuildInfoDisplay displayBuildInfo {
-    SVN_REV, AL_CONFIGURE_COMMANDLINE, AL_COMPIL_FLAGS
+    SCM_REV, SCM_BRANCH, AL_CONFIGURE_COMMANDLINE, AL_COMPIL_FLAGS, DELIVERY_BUILD_NUMBER, DELIVERY_SCM_REV, DELIVERY_DATE
   };
   displayBuildInfo();
 }

@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright (C) 2018 Allegro DVT2.  All rights reserved.
+* Copyright (C) 2008-2022 Allegro DVT2.  All rights reserved.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -58,9 +58,25 @@
 #include "lib_common_enc/EncSize.h"
 #include "lib_encode/lib_encoder.h"
 #include "lib_common/Fifo.h"
+#include "lib_encode/EncUtils.h"
 
+typedef struct AL_i_EncScheduler AL_IEncScheduler;
 
-typedef struct t_Scheduler TScheduler;
+/*************************************************************************//*!
+   \brief Structure containing infos for non-vcl nals generation
+*****************************************************************************/
+typedef struct AL_t_HLSInfo
+{
+  uint8_t uSpsId;
+  uint8_t uPpsId;
+  bool bLFOffsetChanged;
+  int8_t iLFBetaOffset;
+  int8_t iLFTcOffset;
+  int8_t iCbPicQpOffset;
+  int8_t iCrPicQpOffset;
+  bool bHDRChanged;
+  int8_t iHDRID;
+}AL_HLSInfo;
 
 /*************************************************************************//*!
    \brief Frame encoding info structure
@@ -69,8 +85,8 @@ typedef struct AL_t_FrameInfo
 {
   AL_TEncInfo tEncInfo;
   AL_TBuffer* pQpTable;
+  AL_HLSInfo tHLSUpdateInfo;
 }AL_TFrameInfo;
-
 
 typedef AL_TEncSliceStatus TStreamInfo;
 
@@ -81,9 +97,8 @@ typedef struct
   bool (* shouldReleaseSource)(AL_TEncPicStatus* pPicStatus);
   void (* preprocessEp1)(AL_TEncCtx* pCtx, TBufferEP* pEP1);
   void (* configureChannel)(AL_TEncCtx* pCtx, AL_TEncChanParam* pChParam, AL_TEncSettings const* pSettings);
-  void (* generateSkippedPictureData)(AL_TEncCtx* pCtx, AL_TEncChanParam* pChParam, AL_TSkippedPicture* pSkipPicture);
   void (* generateNals)(AL_TEncCtx* pCtx, int iLayerID, bool bWriteVps);
-  void (* updateHlsAndWriteSections)(AL_TEncCtx* pCtx, AL_TEncPicStatus* pPicStatus, AL_TBuffer* pStream, int iLayerID);
+  void (* updateHlsAndWriteSections)(AL_TEncCtx* pCtx, AL_TEncPicStatus* pPicStatus, AL_TBuffer* pStream, int iLayerID, int iPicID);
 }HighLevelEncoder;
 
 typedef struct
@@ -98,15 +113,17 @@ typedef struct
 
   AL_TSps sps;
   AL_TPps pps;
+  AL_TAud aud;
 
   AL_TSrcBufferChecker srcBufferChecker;
-  AL_TSkippedPicture pSkippedPicture;
   AL_TEncRequestInfo currentRequestInfo;
   TBufferEP tBufEP1;
 
   int iCurStreamSent;
   int iCurStreamRecv;
   AL_TBuffer* StreamSent[AL_MAX_STREAM_BUFFER];
+
+  TMemDesc tMDChParam;
 
   AL_TCbUserParam callback_user_param;
   AL_CB_EndEncoding callback;
@@ -119,49 +136,76 @@ typedef struct
 }AL_TFrameCtx;
 
 /*************************************************************************//*!
+   \brief Pool of FrameInfos
+*****************************************************************************/
+#define INVALID_POOL_ID -1
+typedef struct AL_t_IDPool
+{
+  AL_TFifo tFreeIDs;
+  int iCurID;
+}AL_TIDPool;
+
+typedef struct AL_t_FrameInfoPool
+{
+  /* O(1) access to a frame info */
+  AL_TIDPool tIDPool;
+  AL_TFrameInfo FrameInfos[MAX_NUM_LAYER * ENC_MAX_CMD];
+}AL_TFrameInfoPool;
+
+/*************************************************************************//*!
+   \brief Pool of HDR SEIs
+*****************************************************************************/
+typedef struct AL_t_HDRPool
+{
+  AL_TIDPool tIDPool;
+  AL_THDRSEIs HDRSEIs[ENC_MAX_CMD];
+  uint8_t uRefCount[ENC_MAX_CMD];
+  bool bHDRChanged;
+}AL_THDRPool;
+
+/*************************************************************************//*!
    \brief Encoder Context structure
 *****************************************************************************/
 typedef struct AL_t_EncCtx
 {
   HighLevelEncoder encoder;
-  AL_TEncSettings Settings;
+
+  AL_TEncSettings* pSettings;
+
   AL_TLayerCtx tLayerCtx[MAX_NUM_LAYER];
 
-  AL_THevcVps vps;
+  AL_THeadersCtx tHeadersCtx[MAX_NUM_LAYER];
+  AL_TVps vps;
+  bool bEndOfStreamReceived[MAX_NUM_LAYER];
 
-  TStreamInfo StreamInfo;
-
-  int iLastIdrId;
-
-  AL_SeiData seiData;
+  int initialCpbRemovalDelay;
+  int cpbRemovalDelay;
 
   int iMaxNumRef;
 
   int iFrameCountDone;
   AL_ERR eError;
-  int iNumLCU;
-  int iMinQP;
-  int iMaxQP;
 
-  /* O(1) access to a frame info */
-  AL_TFrameInfo Pool[MAX_NUM_LAYER * ENC_MAX_CMD];
-  AL_TFifo iPoolIds;
-  int iCurPool;
+  AL_TFrameInfoPool tFrameInfoPool;
 
   /* O(n) as you need to search for the source inside */
   AL_TFrameCtx SourceSent[AL_MAX_SOURCE_BUFFER];
 
+  AL_THDRPool tHDRPool;
 
   AL_MUTEX Mutex;
   AL_SEMAPHORE PendingEncodings; // tracks the count of jobs sent to the scheduler
 
-  TScheduler* pScheduler;
+  AL_IEncScheduler* pScheduler;
 
   int iInitialNumB;
   uint16_t uInitialFrameRate;
+
+  TMemDesc tMDSettings;
 }AL_TEncCtx;
 
-NalsData AL_ExtractNalsData(AL_TEncCtx* pCtx, int iLayerID);
+AL_HLSInfo* AL_GetHLSInfo(AL_TEncCtx* pCtx, int iPicID);
+AL_TNalsData AL_ExtractNalsData(AL_TEncCtx* pCtx, int iLayerID, int iPicID);
 
 /*@}*/
 

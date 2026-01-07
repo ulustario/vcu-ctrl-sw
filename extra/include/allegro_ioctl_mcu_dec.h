@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright (C) 2018 Allegro DVT2.  All rights reserved.
+* Copyright (C) 2008-2022 Allegro DVT2.  All rights reserved.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -61,14 +61,15 @@ struct al5_dma_info
 
 struct al5_channel_status
 {
-	__u8 num_core;
-        __u32 error_code;
+  __u32 error_code;
 };
+
+#define OPAQUE_SIZE 128
 
 struct al5_params
 {
 	__u32 size;
-	__u32 opaque[128];
+	__u32 opaque[OPAQUE_SIZE];
 };
 
 struct al5_channel_config

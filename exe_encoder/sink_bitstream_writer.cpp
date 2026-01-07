@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright (C) 2018 Allegro DVT2.  All rights reserved.
+* Copyright (C) 2008-2022 Allegro DVT2.  All rights reserved.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -54,31 +54,29 @@ struct BitstreamWriter : IFrameSink
   BitstreamWriter(string path, ConfigFile const& cfg_) : cfg(cfg_)
   {
     OpenOutput(m_file, path);
-
-    WriteContainerHeader(m_file, cfg.Settings, cfg.FileInfo, -1);
+    WriteContainerHeader(m_file, cfg.Settings, cfg.MainInput.FileInfo, -1);
   }
 
-  void ProcessFrame(AL_TBuffer* pStream)
+  void ProcessFrame(AL_TBuffer* pStream) override
   {
     if(pStream == EndOfStream)
     {
       printBitrate();
       // update container header
-      WriteContainerHeader(m_file, cfg.Settings, cfg.FileInfo, m_frameCount);
+      WriteContainerHeader(m_file, cfg.Settings, cfg.MainInput.FileInfo, m_frameCount);
       return;
     }
 
-    m_frameCount += WriteStream(m_file, pStream, &cfg.Settings.tChParam[0]);
+    m_frameCount += WriteStream(m_file, pStream, &cfg.Settings);
   }
-
 
   void printBitrate()
   {
     auto const outputSizeInBits = m_file.tellp() * 8;
     auto const frameRate = (float)cfg.Settings.tChParam[0].tRCParam.uFrameRate / cfg.Settings.tChParam[0].tRCParam.uClkRatio;
-    auto const durationInSeconds = m_frameCount / frameRate;
+    auto const durationInSeconds = m_frameCount / (frameRate * cfg.Settings.NumLayer);
     auto bitrate = outputSizeInBits / durationInSeconds;
-    Message(CC_DEFAULT, "\nAchieved bitrate = %.4f Kbps\n", (float)bitrate);
+    LogInfo("Achieved bitrate = %.4f Kbps\n", (float)bitrate);
   }
 
   int m_frameCount = 0;
@@ -88,12 +86,10 @@ struct BitstreamWriter : IFrameSink
 
 unique_ptr<IFrameSink> createBitstreamWriter(string path, ConfigFile const& cfg)
 {
-#if AL_ENABLE_TWOPASS
 
   if(cfg.Settings.TwoPass == 1)
     return unique_ptr<IFrameSink>(new NullFrameSink);
-#endif
 
-  return unique_ptr<IFrameSink>(new BitstreamWriter(path, cfg));
+  return make_unique<BitstreamWriter>(path, cfg);
 }
 

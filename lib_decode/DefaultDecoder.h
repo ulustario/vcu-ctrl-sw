@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright (C) 2018 Allegro DVT2.  All rights reserved.
+* Copyright (C) 2008-2022 Allegro DVT2.  All rights reserved.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -47,25 +47,48 @@
 
 #include "lib_decode/lib_decode.h"
 #include "I_DecoderCtx.h"
-#include "I_Decoder.h"
 #include "InternalError.h"
-
+#include "lib_common_dec/DecInfo.h"
+#include "lib_rtos/types.h"
 
 typedef struct
 {
-  const AL_TDecoderVtable* vtable;
-  AL_TDecCtx ctx;
-}AL_TDefaultDecoder;
+  AL_ENut dps;
+  AL_ENut vps;
+  AL_ENut sps;
+  AL_ENut pps;
+  AL_ENut fd;
+  AL_ENut apsPrefix;
+  AL_ENut apsSuffix;
+  AL_ENut ph;
+  AL_ENut seiPrefix;
+  AL_ENut seiSuffix;
+  AL_ENut eos;
+  AL_ENut eob;
+}AL_NonVclNuts;
 
-AL_ERR AL_CreateDefaultDecoder(AL_TDecoder** hDec, AL_TIDecChannel* pDecChannel, AL_TAllocator* pAllocator, AL_TDecSettings* pSettings, AL_TDecCallBacks* pCB);
+typedef struct
+{
+  AL_TDecCtx ctx;
+}AL_TDecoder;
+
+AL_ERR AL_CreateDefaultDecoder(AL_TDecoder** hDec, AL_IDecScheduler* pScheduler, AL_TAllocator* pAllocator, AL_TDecSettings* pSettings, AL_TDecCallBacks* pCB);
 
 /*************************************************************************//*!
    \brief This function performs the decoding of one unit
    \param[in] pAbsDec decoder handle
-   \param[in] pBufStream circular buffer containing input bitstream to decode
+   \param[in] pBufStream buffer containing input bitstream to decode
    \return if the function succeeds the return valis is ERR_UNIT_NONE
 *****************************************************************************/
-UNIT_ERROR AL_Default_Decoder_TryDecodeOneUnit(AL_TDecoder* pAbsDec, TCircBuffer* pBufStream);
+UNIT_ERROR AL_Default_Decoder_TryDecodeOneUnit(AL_TDecoder* pAbsDec, AL_TBuffer* pBufStream);
+
+/*************************************************************************//*!
+   \brief This function signal that a buffer as been fully parsed
+   \param[in] pUserParam filled with the decoder context
+   \param[in] iFrameID frame id for the picture manager
+   \param[in] iParsingID stream input id in the split input case.
+*****************************************************************************/
+void AL_Default_Decoder_EndParsing(void* pUserParam, int iFrameID, int iParsingID);
 
 /*************************************************************************//*!
    \brief This function performs DPB operations after frames decoding
@@ -73,6 +96,15 @@ UNIT_ERROR AL_Default_Decoder_TryDecodeOneUnit(AL_TDecoder* pAbsDec, TCircBuffer
    \param[in] pStatus Current frame decoded status
 *****************************************************************************/
 void AL_Default_Decoder_EndDecoding(void* pUserParam, AL_TDecPicStatus* pStatus);
+
+/*************************************************************************//*!
+   \brief This function signal that a buffer as been fully parsed and force
+          its release. Function meant to be used for buffers that haven't
+          been freed through a endparsing nor enddecoding call.
+   \param[in] pUserParam filled with the decoder context
+   \param[in] pBufStream buffer containing input bitstream to decode
+*****************************************************************************/
+void AL_Default_Decoder_ReleaseStreamBuffer(void* pUserParam, AL_TBuffer* pBufStream);
 
 /*************************************************************************//*!
    \brief This function allocate memory blocks usable by the decoder
@@ -89,14 +121,17 @@ bool AL_Default_Decoder_Alloc(AL_TDecCtx* pCtx, TMemDesc* pMD, uint32_t uSize, c
 /*************************************************************************//*!
    \brief This function allocate comp memory blocks used by the decoder
    \param[in] pCtx decoder context
+   \param[in] iALFSize Size of the ALF filter sets buffer
+   \param[in] iLmcsSize Size of the LMCS coeffs buffer
    \param[in] iWPSize Size of the weighted pred buffer
    \param[in] iSPSize Size of the slice param buffer
    \param[in] iCompDataSize Size of the comp data buffer
    \param[in] iCompMapSize Size of the comp map buffer
+   \param[in] iCQpSize Size of the chroma qp tables
    \return If the function succeeds the return value is nonzero (true)
          If the function fails the return value is zero (false)
 *****************************************************************************/
-bool AL_Default_Decoder_AllocPool(AL_TDecCtx* pCtx, int iWPSize, int iSPSize, int iCompDataSize, int iCompMapSize);
+bool AL_Default_Decoder_AllocPool(AL_TDecCtx* pCtx, int iALFSize, int iLmcsSize, int iWPSize, int iSPSize, int iCompDataSize, int iCompMapSize, int iCQpSize);
 
 /*************************************************************************//*!
    \brief This function allocate comp memory blocks used by the decoder
@@ -114,16 +149,34 @@ bool AL_Default_Decoder_AllocMv(AL_TDecCtx* pCtx, int iMVSize, int iPOCSize, int
    \param[in] pCtx decoder context
    \param[in] eError Error to set
    \param[in] iFrameID Id of the erronous frame, -1 if error is not frame-related
+   \param[in] bTriggerCB Specifies if we must trigger the error CB
 *****************************************************************************/
-void AL_Default_Decoder_SetError(AL_TDecCtx* pCtx, AL_ERR eError, int iFrameID);
-
+void AL_Default_Decoder_SetError(AL_TDecCtx* pCtx, AL_ERR eError, int iFrameID, bool bTriggerCB);
 
 /*************************************************************************//*!
    \brief This function indicates the storage mode of displayed reconstructed frames
    \param[in] pCtx decoder context
+   \param[in] iBitDepth stream bitdepth
    \param[out] pEnableCompression indicates if FBC in enabled for output frames
    \return the output storage mode
 *****************************************************************************/
-AL_EFbStorageMode AL_Default_Decoder_GetDisplayStorageMode(AL_TDecCtx* pCtx, bool* pEnableCompression);
+AL_EFbStorageMode AL_Default_Decoder_GetDisplayStorageMode(AL_TDecCtx* pCtx, int iBitDepth, bool* pEnableCompression);
+
+void AL_Default_Decoder_Destroy(AL_TDecoder* pAbsDec);
+void AL_Default_Decoder_SetParam(AL_TDecoder* pAbsDec, const char* sPrefix, int iFrmID, int iNumFrm, bool bForceCleanBuffers, bool bShouldPrintFrameDelimiter);
+bool AL_Default_Decoder_PushStreamBuffer(AL_TDecoder* pAbsDec, AL_TBuffer* pBuf, size_t uSize, uint8_t uFlags);
+bool AL_Default_Decoder_PushBuffer(AL_TDecoder* pAbsDec, AL_TBuffer* pBuf, size_t uSize);
+void AL_Default_Decoder_Flush(AL_TDecoder* pAbsDec);
+bool AL_Default_Decoder_PutDecPict(AL_TDecoder* pAbsDec, AL_TBuffer* pDecPict);
+int AL_Default_Decoder_GetMaxBD(AL_TDecoder* pAbsDec);
+AL_ERR AL_Default_Decoder_GetLastError(AL_TDecoder* pAbsDec);
+AL_ERR AL_Default_Decoder_GetFrameError(AL_TDecoder* pAbsDec, AL_TBuffer* pBuf);
+bool AL_Default_Decoder_PreallocateBuffers(AL_TDecoder* pAbsDec);
+
+int AL_Default_Decoder_GetStrOffset(AL_TDecoder* pAbsDec);
+int AL_Default_Decoder_SkipParsedNals(AL_TDecoder* pAbsDec);
+void AL_Default_Decoder_InternalFlush(AL_TDecoder* pAbsDec);
+void AL_Default_Decoder_FlushInput(AL_TDecoder* pAbsDec);
+
 /*@}*/
 

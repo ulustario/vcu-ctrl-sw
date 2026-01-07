@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright (C) 2018 Allegro DVT2.  All rights reserved.
+* Copyright (C) 2008-2022 Allegro DVT2.  All rights reserved.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -36,6 +36,7 @@
 ******************************************************************************/
 
 #if __linux__
+#pragma once
 
 #include "allegro_ioctl_mcu_enc.h"
 #include "lib_common_enc/EncPicInfo.h"
@@ -45,7 +46,7 @@
 
 #define DCACHE_OFFSET 0x80000000
 
-void setChannelParam(struct al5_params* msg, AL_TEncChanParam* pChParam, TMemDesc* pEP1);
+void setChannelParam(struct al5_params* msg, TMemDesc* pMDChParam, TMemDesc* pEP1);
 void setEncodeMsg(struct al5_encode_msg* msg, AL_TEncInfo* encInfo, AL_TEncRequestInfo* reqInfo, AL_TEncPicBufAddrs* bufAddrs);
 
 #endif

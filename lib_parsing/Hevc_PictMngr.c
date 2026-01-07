@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright (C) 2018 Allegro DVT2.  All rights reserved.
+* Copyright (C) 2008-2022 Allegro DVT2.  All rights reserved.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -44,13 +44,14 @@
  *****************************************************************************/
 
 #include "Hevc_PictMngr.h"
-#include "lib_common/BufferSrcMeta.h"
+#include "lib_common/BufferPixMapMeta.h"
+#include "lib_common/HevcUtils.h"
 
 /*****************************************************************************/
 static void AL_HEVC_sFillWPCoeff(AL_VADDR pDataWP, AL_THevcSliceHdr* pSlice, uint8_t uL0L1)
 {
   uint8_t uNumRefIdx = (uL0L1 ? pSlice->num_ref_idx_l1_active_minus1 : pSlice->num_ref_idx_l0_active_minus1) + 1;
-  uint32_t* pWP = (uint32_t*)(pDataWP + (uL0L1 * 8));
+  uint32_t* pWP = (uint32_t*)(pDataWP + uL0L1 * WP_ONE_SET_SIZE);
 
   AL_TWPCoeff* pWpCoeff = &pSlice->pred_weight_table.tWpCoeff[uL0L1];
 
@@ -65,30 +66,29 @@ static void AL_HEVC_sFillWPCoeff(AL_VADDR pDataWP, AL_THevcSliceHdr* pSlice, uin
              ((pWpCoeff->chroma_delta_weight[i][1] & 0xFF) << 16) |
              ((pSlice->pred_weight_table.luma_log2_weight_denom & 0x0F) << 24) |
              ((pSlice->pred_weight_table.chroma_log2_weight_denom & 0x0F) << 28);
-
-    pWP += 4;
+    pWP += 2 * WP_ONE_SET_SIZE / 4;
   }
 }
 
 /*************************************************************************//*!
    \brief this function writes in the motion vector buffer the weighted pred coefficient
    \param[in]  pCtx     Pointer to a Picture manager context object
-   \param[in]  pListRef Pointer to the current reference list
    \param[in]  pSlice   Pointer to the slice header of the current slice
    \param[out] pWP      Pointer to the weighted pred tables buffer
 *****************************************************************************/
 static void AL_HEVC_sBuildWPCoeff(AL_TPictMngrCtx* pCtx, AL_THevcSliceHdr* pSlice, TBuffer* pWP)
 {
   AL_VADDR pDataWP = pWP->tMD.pVirtualAddr + (pCtx->uNumSlice * WP_SLICE_SIZE);
-  Rtos_Memset(pDataWP, 0, WP_SLICE_SIZE);
 
   // weighted pred case
-  if((pSlice->pPPS->weighted_bipred_flag && pSlice->slice_type == SLICE_B) ||
-     (pSlice->pPPS->weighted_pred_flag && pSlice->slice_type == SLICE_P))
+  if((pSlice->pPPS->weighted_bipred_flag && pSlice->slice_type == AL_SLICE_B) ||
+     (pSlice->pPPS->weighted_pred_flag && pSlice->slice_type == AL_SLICE_P))
   {
+    Rtos_Memset(pDataWP, 0, WP_SLICE_SIZE);
+
     AL_HEVC_sFillWPCoeff(pDataWP, pSlice, 0);
 
-    if(pSlice->slice_type == SLICE_B)
+    if(pSlice->slice_type == AL_SLICE_B)
       AL_HEVC_sFillWPCoeff(pDataWP, pSlice, 1);
   }
 }
@@ -98,7 +98,7 @@ static void AL_HEVC_sBuildWPCoeff(AL_TPictMngrCtx* pCtx, AL_THevcSliceHdr* pSlic
 /***************************************************************************/
 
 /*****************************************************************************/
-void AL_HEVC_PictMngr_UpdateRecInfo(AL_TPictMngrCtx* pCtx, AL_THevcSps* pSPS, AL_TDecPicParam* pPP)
+void AL_HEVC_PictMngr_UpdateRecInfo(AL_TPictMngrCtx* pCtx, AL_THevcSps* pSPS, AL_EPicStruct ePicStruct)
 {
   // update cropping information
   AL_TCropInfo cropInfo =
@@ -133,13 +133,13 @@ void AL_HEVC_PictMngr_UpdateRecInfo(AL_TPictMngrCtx* pCtx, AL_THevcSps* pSPS, AL
   }
 
   AL_PictMngr_UpdateDisplayBufferCrop(pCtx, pCtx->uRecID, cropInfo);
-  AL_PictMngr_UpdateDisplayBufferPicStruct(pCtx, pCtx->uRecID, pPP->ePicStruct);
+  AL_PictMngr_UpdateDisplayBufferPicStruct(pCtx, pCtx->uRecID, ePicStruct);
 }
 
 /*****************************************************************************/
-bool AL_HEVC_PictMngr_GetBuffers(AL_TPictMngrCtx* pCtx, AL_TDecPicParam* pPP, AL_TDecSliceParam* pSP, AL_THevcSliceHdr* pSlice, TBufferListRef* pListRef, TBuffer* pListVirtAddr, TBuffer* pListAddr, TBufferPOC* pPOC, TBufferMV* pMV, TBuffer* pWP, AL_TRecBuffers* pRecs)
+bool AL_HEVC_PictMngr_GetBuffers(AL_TPictMngrCtx* pCtx, AL_TDecSliceParam* pSP, AL_THevcSliceHdr* pSlice, TBufferListRef* pListRef, TBuffer* pListVirtAddr, TBuffer* pListAddr, TBufferPOC* pPOC, TBufferMV* pMV, TBuffer* pWP, AL_TRecBuffers* pRecs)
 {
-  if(!AL_PictMngr_GetBuffers(pCtx, pPP, pSP, pListRef, pListVirtAddr, pListAddr, pPOC, pMV, pRecs))
+  if(!AL_PictMngr_GetBuffers(pCtx, pSP, pListRef, pListVirtAddr, pListAddr, pPOC, pMV, pRecs))
     return false;
 
   // Build Weighted Pred Table
@@ -151,7 +151,6 @@ bool AL_HEVC_PictMngr_GetBuffers(AL_TPictMngrCtx* pCtx, AL_TDecPicParam* pPP, AL
 /*************************************************************************/
 void AL_HEVC_PictMngr_ClearDPB(AL_TPictMngrCtx* pCtx, AL_THevcSps* pSPS, bool bClearRef, bool bNoOutputPrior)
 {
-  uint8_t uNode;
   AL_TDpb* pDpb = &pCtx->DPB;
 
   // pre decoding output process
@@ -162,8 +161,8 @@ void AL_HEVC_PictMngr_ClearDPB(AL_TPictMngrCtx* pCtx, AL_THevcSps* pSPS, bool bC
     AL_PictMngr_Flush(pCtx);
   }
 
-  AL_Dpb_HEVC_Cleanup(pDpb, pSPS->SpsMaxLatency, pSPS->sps_num_reorder_pics[pSPS->sps_max_sub_layers_minus1]);
-  uNode = AL_Dpb_GetHeadPOC(pDpb);
+  AL_Dpb_HEVC_Cleanup(pDpb, pSPS->SpsMaxLatency, pSPS->sps_max_num_reorder_pics[pSPS->sps_max_sub_layers_minus1]);
+  uint8_t uNode = AL_Dpb_GetHeadPOC(pDpb);
 
   while(uNode != uEndOfList && AL_Dpb_GetPicCount(pDpb) >= (pSPS->sps_max_dec_pic_buffering_minus1[pSPS->sps_max_sub_layers_minus1] + 1))
   {
@@ -218,6 +217,12 @@ void AL_HEVC_PictMngr_ClearDPB(AL_TPictMngrCtx* pCtx, AL_THevcSps* pSPS, bool bC
 }
 
 /*************************************************************************/
+bool isShortOrLongTermRef(AL_EMarkingRef eMarking)
+{
+  return (eMarking == SHORT_TERM_REF) || (eMarking == LONG_TERM_REF);
+}
+
+/*************************************************************************/
 bool AL_HEVC_PictMngr_HasPictInDPB(AL_TPictMngrCtx* pCtx)
 {
   AL_TDpb* pDpb = &pCtx->DPB;
@@ -225,7 +230,7 @@ bool AL_HEVC_PictMngr_HasPictInDPB(AL_TPictMngrCtx* pCtx)
 
   while(uNode != uEndOfList)
   {
-    if(AL_Dpb_GetMarkingFlag(pDpb, uNode) < UNUSED_FOR_REF)
+    if(isShortOrLongTermRef(AL_Dpb_GetMarkingFlag(pDpb, uNode)))
       return true;
     uNode = AL_Dpb_GetNextPOC(pDpb, uNode);
   }
@@ -245,13 +250,12 @@ void AL_HEVC_PictMngr_RemoveHeadFrame(AL_TPictMngrCtx* pCtx)
 /*************************************************************************/
 void AL_HEVC_PictMngr_EndFrame(AL_TPictMngrCtx* pCtx, uint32_t uPocLsb, AL_ENut eNUT, AL_THevcSliceHdr* pSlice, uint8_t pic_output_flag)
 {
-  uint8_t uNode;
   AL_TDpb* pDpb = &pCtx->DPB;
 
   AL_HEVC_PictMngr_RemoveHeadFrame(pCtx);
 
   // post decoding output process
-  uNode = AL_Dpb_GetHeadPOC(pDpb);
+  uint8_t uNode = AL_Dpb_GetHeadPOC(pDpb);
 
   if(pic_output_flag)
   {
@@ -262,8 +266,8 @@ void AL_HEVC_PictMngr_EndFrame(AL_TPictMngrCtx* pCtx, uint32_t uPocLsb, AL_ENut 
     }
   }
 
-  AL_PictMngr_Insert(pCtx, pCtx->iCurFramePOC, uPocLsb, pCtx->uRecID, pCtx->uMvID, pic_output_flag, SHORT_TERM_REF, 0, eNUT);
-  AL_Dpb_HEVC_Cleanup(pDpb, pSlice->pSPS->SpsMaxLatency, pSlice->pSPS->sps_num_reorder_pics[pSlice->pSPS->sps_max_sub_layers_minus1]);
+  AL_PictMngr_Insert(pCtx, pCtx->iCurFramePOC, AL_PS_FRM, uPocLsb, pCtx->uRecID, pCtx->uMvID, pic_output_flag, SHORT_TERM_REF, 0, eNUT, 0);
+  AL_Dpb_HEVC_Cleanup(pDpb, pSlice->pSPS->SpsMaxLatency, pSlice->pSPS->sps_max_num_reorder_pics[pSlice->pSPS->sps_max_sub_layers_minus1]);
 }
 
 /*************************************************************************//*!
@@ -273,9 +277,8 @@ void AL_HEVC_PictMngr_EndFrame(AL_TPictMngrCtx* pCtx, uint32_t uPocLsb, AL_ENut 
 *****************************************************************************/
 void AL_HEVC_PictMngr_InitRefPictSet(AL_TPictMngrCtx* pCtx, AL_THevcSliceHdr* pSlice)
 {
-  uint8_t CurrDeltaPocMsbPresentFlag[16];
-  uint8_t FollDeltaPocMsbPresentFlag[16];
-  uint8_t uNode;
+  uint8_t CurrDeltaPocMsbPresentFlag[16] = { 0 };
+  uint8_t FollDeltaPocMsbPresentFlag[16] = { 0 };
   AL_TDpb* pDpb = &pCtx->DPB;
 
   // Fill the five lists of picture order count values
@@ -290,17 +293,17 @@ void AL_HEVC_PictMngr_InitRefPictSet(AL_TPictMngrCtx* pCtx, AL_THevcSliceHdr* pS
     for(i = 0, j = 0, k = 0; i < pSPS->NumNegativePics[StRpsIdx]; ++i)
     {
       if(pSPS->UsedByCurrPicS0[StRpsIdx][i])
-        pCtx->PocStCurrBefore[j++] = pCtx->iCurFramePOC + pSPS->DeltaPocS0[StRpsIdx][i];
+        pCtx->HevcRef.PocStCurrBefore[j++] = pCtx->iCurFramePOC + pSPS->DeltaPocS0[StRpsIdx][i];
       else
-        pCtx->PocStFoll[k++] = pCtx->iCurFramePOC + pSPS->DeltaPocS0[StRpsIdx][i];
+        pCtx->HevcRef.PocStFoll[k++] = pCtx->iCurFramePOC + pSPS->DeltaPocS0[StRpsIdx][i];
     }
 
     for(i = 0, j = 0; i < pSPS->NumPositivePics[StRpsIdx]; ++i)
     {
       if(pSPS->UsedByCurrPicS1[StRpsIdx][i])
-        pCtx->PocStCurrAfter[j++] = pCtx->iCurFramePOC + pSPS->DeltaPocS1[StRpsIdx][i];
+        pCtx->HevcRef.PocStCurrAfter[j++] = pCtx->iCurFramePOC + pSPS->DeltaPocS1[StRpsIdx][i];
       else
-        pCtx->PocStFoll[k++] = pCtx->iCurFramePOC + pSPS->DeltaPocS1[StRpsIdx][i];
+        pCtx->HevcRef.PocStFoll[k++] = pCtx->iCurFramePOC + pSPS->DeltaPocS1[StRpsIdx][i];
     }
 
     // compute long term reference picture variables
@@ -313,12 +316,12 @@ void AL_HEVC_PictMngr_InitRefPictSet(AL_TPictMngrCtx* pCtx, AL_THevcSliceHdr* pS
 
       if(pSlice->UsedByCurrPicLt[i])
       {
-        pCtx->PocLtCurr[j] = uPocLt;
+        pCtx->HevcRef.PocLtCurr[j] = uPocLt;
         CurrDeltaPocMsbPresentFlag[j++] = pSlice->delta_poc_msb_present_flag[i];
       }
       else
       {
-        pCtx->PocLtFoll[k] = uPocLt;
+        pCtx->HevcRef.PocLtFoll[k] = uPocLt;
         FollDeltaPocMsbPresentFlag[k++] = pSlice->delta_poc_msb_present_flag[i];
       }
     }
@@ -330,10 +333,10 @@ void AL_HEVC_PictMngr_InitRefPictSet(AL_TPictMngrCtx* pCtx, AL_THevcSliceHdr* pS
     uint8_t uPos;
 
     if(!CurrDeltaPocMsbPresentFlag[i])
-      uPos = AL_Dpb_SearchPocLsb(&pCtx->DPB, pCtx->PocLtCurr[i]);
+      uPos = AL_Dpb_SearchPocLsb(&pCtx->DPB, pCtx->HevcRef.PocLtCurr[i]);
     else
-      uPos = AL_Dpb_SearchPOC(&pCtx->DPB, pCtx->PocLtCurr[i]);
-    pCtx->RefPicSetLtCurr[i] = uPos;
+      uPos = AL_Dpb_SearchPOC(&pCtx->DPB, pCtx->HevcRef.PocLtCurr[i]);
+    pCtx->HevcRef.RefPicSetLtCurr[i] = uPos;
   }
 
   for(int i = 0; i < pSlice->NumPocLtFoll; ++i)
@@ -341,24 +344,34 @@ void AL_HEVC_PictMngr_InitRefPictSet(AL_TPictMngrCtx* pCtx, AL_THevcSliceHdr* pS
     uint8_t uPos;
 
     if(!FollDeltaPocMsbPresentFlag[i])
-      uPos = AL_Dpb_SearchPocLsb(&pCtx->DPB, pCtx->PocLtFoll[i]);
+      uPos = AL_Dpb_SearchPocLsb(&pCtx->DPB, pCtx->HevcRef.PocLtFoll[i]);
     else
-      uPos = AL_Dpb_SearchPOC(&pCtx->DPB, pCtx->PocLtFoll[i]);
-    pCtx->RefPicSetLtFoll[i] = uPos;
+      uPos = AL_Dpb_SearchPOC(&pCtx->DPB, pCtx->HevcRef.PocLtFoll[i]);
+    pCtx->HevcRef.RefPicSetLtFoll[i] = uPos;
   }
 
   // Compute short term reference pictures
   for(int i = 0; i < pSlice->NumPocStCurrBefore; ++i)
-    pCtx->RefPicSetStCurrBefore[i] = AL_Dpb_SearchPOC(&pCtx->DPB, pCtx->PocStCurrBefore[i]);
+    pCtx->HevcRef.RefPicSetStCurrBefore[i] = AL_Dpb_SearchPOC(&pCtx->DPB, pCtx->HevcRef.PocStCurrBefore[i]);
 
   for(int i = 0; i < pSlice->NumPocStCurrAfter; ++i)
-    pCtx->RefPicSetStCurrAfter[i] = AL_Dpb_SearchPOC(&pCtx->DPB, pCtx->PocStCurrAfter[i]);
+    pCtx->HevcRef.RefPicSetStCurrAfter[i] = AL_Dpb_SearchPOC(&pCtx->DPB, pCtx->HevcRef.PocStCurrAfter[i]);
 
   for(int i = 0; i < pSlice->NumPocStFoll; ++i)
-    pCtx->RefPicSetStFoll[i] = AL_Dpb_SearchPOC(&pCtx->DPB, pCtx->PocStFoll[i]);
+    pCtx->HevcRef.RefPicSetStFoll[i] = AL_Dpb_SearchPOC(&pCtx->DPB, pCtx->HevcRef.PocStFoll[i]);
+
+  int iNumRefAfterUpdate = pSlice->NumPocLtCurr
+                           + pSlice->NumPocLtFoll
+                           + pSlice->NumPocStCurrBefore
+                           + pSlice->NumPocStCurrAfter
+                           + pSlice->NumPocStFoll;
+
+  // Error Concealment : do not change anything if there is no reference after RPS update
+  if(pSlice->slice_type != AL_SLICE_I && iNumRefAfterUpdate == 0)
+    return;
 
   // reset picture marking on all the picture in the dbp
-  uNode = AL_Dpb_GetHeadPOC(&pCtx->DPB);
+  uint8_t uNode = AL_Dpb_GetHeadPOC(&pCtx->DPB);
 
   while(uNode != uEndOfList)
   {
@@ -369,7 +382,7 @@ void AL_HEVC_PictMngr_InitRefPictSet(AL_TPictMngrCtx* pCtx, AL_THevcSliceHdr* pS
   // mark long term reference pictures
   for(int i = 0; i < pSlice->NumPocLtCurr; ++i)
   {
-    uNode = pCtx->RefPicSetLtCurr[i];
+    uNode = pCtx->HevcRef.RefPicSetLtCurr[i];
 
     if(uNode != uEndOfList)
       AL_Dpb_SetMarkingFlag(pDpb, uNode, LONG_TERM_REF);
@@ -377,7 +390,7 @@ void AL_HEVC_PictMngr_InitRefPictSet(AL_TPictMngrCtx* pCtx, AL_THevcSliceHdr* pS
 
   for(int i = 0; i < pSlice->NumPocLtFoll; ++i)
   {
-    uNode = pCtx->RefPicSetLtFoll[i];
+    uNode = pCtx->HevcRef.RefPicSetLtFoll[i];
 
     if(uNode != uEndOfList)
       AL_Dpb_SetMarkingFlag(pDpb, uNode, LONG_TERM_REF);
@@ -386,7 +399,7 @@ void AL_HEVC_PictMngr_InitRefPictSet(AL_TPictMngrCtx* pCtx, AL_THevcSliceHdr* pS
   // mark short term reference pictures
   for(int i = 0; i < pSlice->NumPocStCurrBefore; ++i)
   {
-    uNode = pCtx->RefPicSetStCurrBefore[i];
+    uNode = pCtx->HevcRef.RefPicSetStCurrBefore[i];
 
     if(uNode != uEndOfList)
       AL_Dpb_SetMarkingFlag(pDpb, uNode, SHORT_TERM_REF);
@@ -394,7 +407,7 @@ void AL_HEVC_PictMngr_InitRefPictSet(AL_TPictMngrCtx* pCtx, AL_THevcSliceHdr* pS
 
   for(int i = 0; i < pSlice->NumPocStCurrAfter; ++i)
   {
-    uNode = pCtx->RefPicSetStCurrAfter[i];
+    uNode = pCtx->HevcRef.RefPicSetStCurrAfter[i];
 
     if(uNode != uEndOfList)
       AL_Dpb_SetMarkingFlag(pDpb, uNode, SHORT_TERM_REF);
@@ -402,7 +415,7 @@ void AL_HEVC_PictMngr_InitRefPictSet(AL_TPictMngrCtx* pCtx, AL_THevcSliceHdr* pS
 
   for(int i = 0; i < pSlice->NumPocStFoll; ++i)
   {
-    uNode = pCtx->RefPicSetStFoll[i];
+    uNode = pCtx->HevcRef.RefPicSetStFoll[i];
 
     if(uNode != uEndOfList)
       AL_Dpb_SetMarkingFlag(pDpb, uNode, SHORT_TERM_REF);
@@ -431,7 +444,7 @@ bool AL_HEVC_PictMngr_BuildPictureList(AL_TPictMngrCtx* pCtx, AL_THevcSliceHdr* 
     (*pListRef)[1][uRef].uNodeID = uEndOfList;
   }
 
-  if(pSlice->slice_type != SLICE_I)
+  if(pSlice->slice_type != AL_SLICE_I)
   {
     uint8_t uNodeList[16];
     uint8_t NumRpsCurrTempList = (NumPocTotalCurr > pSlice->num_ref_idx_l0_active_minus1 + 1) ? NumPocTotalCurr : pSlice->num_ref_idx_l0_active_minus1 + 1;
@@ -443,13 +456,13 @@ bool AL_HEVC_PictMngr_BuildPictureList(AL_TPictMngrCtx* pCtx, AL_THevcSliceHdr* 
       while(uRef < NumRpsCurrTempList)
       {
         for(uint8_t i = 0; i < pSlice->NumPocStCurrBefore && uRef < NumRpsCurrTempList; ++uRef, ++i)
-          uNodeList[uRef] = pCtx->RefPicSetStCurrBefore[i];
+          uNodeList[uRef] = pCtx->HevcRef.RefPicSetStCurrBefore[i];
 
         for(uint8_t i = 0; i < pSlice->NumPocStCurrAfter && uRef < NumRpsCurrTempList; ++uRef, ++i)
-          uNodeList[uRef] = pCtx->RefPicSetStCurrAfter[i];
+          uNodeList[uRef] = pCtx->HevcRef.RefPicSetStCurrAfter[i];
 
         for(uint8_t i = 0; i < pSlice->NumPocLtCurr && uRef < NumRpsCurrTempList; ++uRef, ++i)
-          uNodeList[uRef] = pCtx->RefPicSetLtCurr[i];
+          uNodeList[uRef] = pCtx->HevcRef.RefPicSetLtCurr[i];
       }
 
       for(uRef = 0; uRef <= pSlice->num_ref_idx_l0_active_minus1; ++uRef)
@@ -464,7 +477,7 @@ bool AL_HEVC_PictMngr_BuildPictureList(AL_TPictMngrCtx* pCtx, AL_THevcSliceHdr* 
     }
 
     // slice B
-    if(pSlice->slice_type == SLICE_B)
+    if(pSlice->slice_type == AL_SLICE_B)
     {
       NumRpsCurrTempList = (NumPocTotalCurr > pSlice->num_ref_idx_l1_active_minus1 + 1) ? NumPocTotalCurr : pSlice->num_ref_idx_l1_active_minus1 + 1;
       uRef = 0;
@@ -474,13 +487,13 @@ bool AL_HEVC_PictMngr_BuildPictureList(AL_TPictMngrCtx* pCtx, AL_THevcSliceHdr* 
         while(uRef < NumRpsCurrTempList)
         {
           for(uint8_t i = 0; i < pSlice->NumPocStCurrAfter && uRef < NumRpsCurrTempList; ++uRef, ++i)
-            uNodeList[uRef] = pCtx->RefPicSetStCurrAfter[i];
+            uNodeList[uRef] = pCtx->HevcRef.RefPicSetStCurrAfter[i];
 
           for(uint8_t i = 0; i < pSlice->NumPocStCurrBefore && uRef < NumRpsCurrTempList; ++uRef, ++i)
-            uNodeList[uRef] = pCtx->RefPicSetStCurrBefore[i];
+            uNodeList[uRef] = pCtx->HevcRef.RefPicSetStCurrBefore[i];
 
           for(uint8_t i = 0; i < pSlice->NumPocLtCurr && uRef < NumRpsCurrTempList; ++uRef, ++i)
-            uNodeList[uRef] = pCtx->RefPicSetLtCurr[i];
+            uNodeList[uRef] = pCtx->HevcRef.RefPicSetLtCurr[i];
         }
 
         for(uRef = 0; uRef <= pSlice->num_ref_idx_l1_active_minus1; ++uRef)
@@ -505,8 +518,8 @@ bool AL_HEVC_PictMngr_BuildPictureList(AL_TPictMngrCtx* pCtx, AL_THevcSliceHdr* 
       pNumRef[1]++;
   }
 
-  if((pSlice->slice_type != SLICE_I && pNumRef[0] < pSlice->num_ref_idx_l0_active_minus1 + 1) ||
-     (pSlice->slice_type == SLICE_B && pNumRef[1] < pSlice->num_ref_idx_l1_active_minus1 + 1))
+  if((pSlice->slice_type != AL_SLICE_I && pNumRef[0] < pSlice->num_ref_idx_l0_active_minus1 + 1) ||
+     (pSlice->slice_type == AL_SLICE_B && pNumRef[1] < pSlice->num_ref_idx_l1_active_minus1 + 1))
     return false;
 
   return true;

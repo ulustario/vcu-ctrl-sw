@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright (C) 2018 Allegro DVT2.  All rights reserved.
+* Copyright (C) 2008-2022 Allegro DVT2.  All rights reserved.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -36,8 +36,12 @@
 ******************************************************************************/
 
 #pragma once
+#include "lib_common/BufferAPI.h"
+#include "lib_common/BufferCircMeta.h"
 #include "lib_common/BufCommon.h"
 #include "lib_common/BufConst.h"
+#include "lib_common/MemDesc.h"
+#include "lib_assert/al_assert.h"
 
 /*************************************************************************//*!
    \brief Generic Buffer
@@ -63,19 +67,20 @@ typedef struct t_CircBuffer
   int32_t iAvailSize; /*!< Avail Space in Circular Buffer */
 }TCircBuffer;
 
-#include <assert.h>
-static AL_INLINE void CircBuffer_ConsumeUpToOffset(TCircBuffer* stream, int32_t iNewOffset)
+static inline void CircBuffer_ConsumeUpToOffset(AL_TBuffer* stream, int32_t iNewOffset)
 {
-  if(iNewOffset < stream->iOffset)
-    stream->iAvailSize -= iNewOffset + stream->tMD.uSize - stream->iOffset;
-  else
-    stream->iAvailSize -= iNewOffset - stream->iOffset;
-  stream->iOffset = iNewOffset;
+  AL_TCircMetaData* pCircMeta = (AL_TCircMetaData*)AL_Buffer_GetMetaData(stream, AL_META_TYPE_CIRCULAR);
 
-  assert(stream->iAvailSize >= 0);
+  if(iNewOffset < pCircMeta->iOffset)
+    pCircMeta->iAvailSize -= iNewOffset + AL_Buffer_GetSize(stream) - pCircMeta->iOffset;
+  else
+    pCircMeta->iAvailSize -= iNewOffset - pCircMeta->iOffset;
+  pCircMeta->iOffset = iNewOffset;
+
+  AL_Assert(pCircMeta->iAvailSize >= 0);
 }
 
-static AL_INLINE void CircBuffer_Init(TCircBuffer* pBuf)
+static inline void CircBuffer_Init(TCircBuffer* pBuf)
 {
   pBuf->iOffset = 0;
   pBuf->iAvailSize = 0;

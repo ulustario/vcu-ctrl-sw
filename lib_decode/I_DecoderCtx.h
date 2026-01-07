@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright (C) 2018 Allegro DVT2.  All rights reserved.
+* Copyright (C) 2008-2022 Allegro DVT2.  All rights reserved.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -49,17 +49,19 @@
 
 #include "lib_parsing/I_PictMngr.h"
 #include "lib_parsing/Concealment.h"
+#include "lib_parsing/Aup.h"
 
 #include "NalUnitParser.h"
-#include "lib_decode/I_DecChannel.h"
+#include "lib_decode/I_DecScheduler.h"
 #include "lib_decode/lib_decode.h"
-#include "BufferFeeder.h"
+#include "I_Feeder.h"
 
 typedef enum AL_e_ChanState
 {
   CHAN_UNINITIALIZED,
   CHAN_CONFIGURED,
   CHAN_INVALID,
+  CHAN_DESTROYING,
 }AL_EChanState;
 
 /*************************************************************************//*!
@@ -67,22 +69,22 @@ typedef enum AL_e_ChanState
 *****************************************************************************/
 typedef struct t_Dec_Ctx
 {
-  AL_TBufferFeeder* Feeder;
+  AL_TFeeder* Feeder;
+  AL_EDecInputMode eInputMode;
 
   TBuffer BufNoAE;            // Deanti-Emulated buffer used for high level syntax parsing
   TCircBuffer Stream;             // Input stream buffer
   TCircBuffer NalStream;
+  AL_TBuffer* pInputBuffer;     // keep a refence to input buffer and its meta data
 
   // decoder IP handle
-  AL_TIDecChannel* pDecChannel;
+  AL_IDecScheduler* pScheduler;
+  AL_HANDLE hChannel;
+  AL_HANDLE hStartCodeChannel;
   AL_TAllocator* pAllocator;
-
   AL_EChanState eChanState;
 
-  AL_CB_EndDecoding decodeCB;
-  AL_CB_Display displayCB;
-  AL_CB_ResolutionFound resolutionFoundCB;
-  AL_CB_ParsedSei parsedSeiCB;
+  AL_TDecCallBacks tDecCB;
 
   AL_SEMAPHORE Sem;
   AL_EVENT ScDetectionComplete;
@@ -95,6 +97,7 @@ typedef struct t_Dec_Ctx
   uint16_t uNumSC;             //
   AL_TScStatus ScdStatus;
 
+  AL_TDecPicBufferAddrs BufAddrs;
   // decoder pool buffer
   TBuffer PoolSclLst[MAX_STACK_SIZE];      // Scaling List pool buffer
   TBuffer PoolCompData[MAX_STACK_SIZE];    // compressed MVDs + header + residuals pool buffer
@@ -111,28 +114,34 @@ typedef struct t_Dec_Ctx
   AL_TDecPicBuffers PoolPB[MAX_STACK_SIZE]; // Picture Buffers
   uint8_t uCurID; // ID of the last independent slice
 
-  AL_TDecChanParam chanParam;
+  AL_TDecChanParam* pChanParam;
   AL_EDpbMode eDpbMode;
-  bool bUseBoard;
-  bool bConceal;
   int iStackSize;
   bool bForceFrameRate;
+  bool bIntraOnlyProfile;
+  bool bStillPictureProfile;
 
   // Trace stuff
+  char sTracePrefix[8];
   int iTraceFirstFrame;
   int iTraceLastFrame;
   int iTraceCounter;
+  bool bShouldPrintFrameDelimiter;
 
   // stream context status
   bool bFirstIsValid;
   bool bFirstSliceInFrameIsValid;
   bool bBeginFrameIsValid;
   bool bIsFirstPicture;
-  bool bLastIsEOS;
   int iStreamOffset[MAX_STACK_SIZE];
   int iCurOffset;
+  int iCurNalStreamOffset;
   uint32_t uCurPocLsb;
-  uint8_t uNoRaslOutputFlag;
+  union
+  {
+    uint8_t uNoRaslOutputFlag;
+    uint8_t uNoIncorrectPicOutputFlag;
+  };
   uint8_t uFrameIDRefList[MAX_STACK_SIZE][AL_MAX_NUM_REF];
   uint8_t uMvIDRefList[MAX_STACK_SIZE][AL_MAX_NUM_REF];
   uint8_t uNumRef[MAX_STACK_SIZE];
@@ -159,7 +168,7 @@ typedef struct t_Dec_Ctx
   AL_TAup aup;
   union
   {
-    AL_TAvcSliceHdr AvcSliceHdr[2]; // Slice header
+    AL_TAvcSliceHdr AvcSliceHdr[2]; // Slice headers
     AL_THevcSliceHdr HevcSliceHdr[2]; // Slice headers
   };
   AL_ERR error;
@@ -169,7 +178,11 @@ typedef struct t_Dec_Ctx
   AL_TStreamSettings tStreamSettings;
   AL_TBuffer* eosBuffer;
 
-  TCircBuffer circularBuf;
+  int iNumSlicesRemaining;
+
+  AL_TPosition tOutputPosition;
+
+  TMemDesc tMDChanParam;
 }AL_TDecCtx;
 
 /****************************************************************************/

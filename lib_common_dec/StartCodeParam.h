@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright (C) 2018 Allegro DVT2.  All rights reserved.
+* Copyright (C) 2008-2022 Allegro DVT2.  All rights reserved.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -45,20 +45,21 @@
 #pragma once
 
 #include "lib_rtos/types.h"
+#include "lib_common/Profiles.h"
 
 /*************************************************************************//*!
    \brief Start Code Detector Parameters : Mimics structure for IP registers
 *****************************************************************************/
 typedef struct AL_t_SCParam
 {
-  int AVC;             /*!< Specifies whether the ES is AVC(non-zero) or HEVC(zero) */
+  AL_ECodec eCodec;    /*!< Specifies the stream format */
   uint8_t StopParam;   /*!< Parameter used to stop the start code detecting >!*/
   uint8_t StopCondIdc; /*!< Specifies the start code detector stopping mode :
                           0 -> no condition
                           1 -> stop on NUT equal to StopParam
                           2 -> stop after finding a NAL with temporal ID equal to StopParam
                           3 -> stop after finding StopParam number of entire Access Unit >!*/
-  uint16_t MaxSize;     /*!< Size of the output start code buffer (in bytes) */
+  uint16_t MaxSize;    /*!< Size of the output start code buffer (in bytes) */
 }AL_TScParam;
 
 /*************************************************************************//*!

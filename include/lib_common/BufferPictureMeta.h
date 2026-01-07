@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright (C) 2018 Allegro DVT2.  All rights reserved.
+* Copyright (C) 2008-2022 Allegro DVT2.  All rights reserved.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -53,13 +53,14 @@ typedef struct AL_t_PictureMetaData
 {
   AL_TMetaData tMeta;
   AL_ESliceType eType; /*< slice type chosen to encode the picture */
+  bool bSkipped; /*< picture contains skip-only MBs */
 }AL_TPictureMetaData;
 
 /*************************************************************************//*!
    \brief Create a picture metadata.
    The slice type is initialized to an invalid value (SLICE_MAX_ENUM) by default.
 *****************************************************************************/
-AL_TPictureMetaData* AL_PictureMetaData_Create();
+AL_TPictureMetaData* AL_PictureMetaData_Create(void);
 AL_TPictureMetaData* AL_PictureMetaData_Clone(AL_TPictureMetaData* pMeta);
 
 /*@}*/

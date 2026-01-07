@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright (C) 2018 Allegro DVT2.  All rights reserved.
+* Copyright (C) 2008-2022 Allegro DVT2.  All rights reserved.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -37,17 +37,15 @@
 
 #include "lib_rtos/lib_rtos.h"
 
-#ifndef ENABLE_RTOS_SYNC
-#define ENABLE_RTOS_SYNC 1
-#endif
-
 /****************************************************************************/
-/*** W i n 3 2  &  L i n u x c o m m o n ***/
+/*** W i n 3 2  &  L i n u x  c o m m o n ***/
 /****************************************************************************/
 #if defined _WIN32 || defined __linux__
 
 #include <string.h>
 #include <malloc.h>
+#include <stdio.h>
+#include <stdarg.h>
 
 /****************************************************************************/
 void* Rtos_Malloc(size_t zSize)
@@ -85,6 +83,21 @@ int Rtos_Memcmp(void const* pBuf1, void const* pBuf2, size_t zSize)
   return memcmp(pBuf1, pBuf2, zSize);
 }
 
+/****************************************************************************/
+int Rtos_Log(int iLogLevel, char const* const sMsg, ...)
+{
+  int iRes = 0;
+
+  if(iLogLevel <= AL_LOG_LEVEL)
+  {
+    va_list args;
+    va_start(args, sMsg);
+    iRes = vprintf(sMsg, args);
+    va_end(args);
+  }
+  return iRes;
+}
+
 #else
 
 /****************************************************************************/
@@ -93,7 +106,7 @@ int Rtos_Memcmp(void const* pBuf1, void const* pBuf2, size_t zSize)
 
 #include <string.h>
 
-/* no implementation of malloc, free, memmove and memcmp */
+/* no implementation of malloc, free, memmove nor printf */
 
 /****************************************************************************/
 void* Rtos_Memcpy(void* pDst, void const* pSrc, size_t zSize)
@@ -107,9 +120,21 @@ void* Rtos_Memset(void* pDst, int iVal, size_t zSize)
   return memset(pDst, iVal, zSize);
 }
 
-#endif
+/****************************************************************************/
+int Rtos_Memcmp(void const* pBuf1, void const* pBuf2, size_t zSize)
+{
+  return memcmp(pBuf1, pBuf2, zSize);
+}
 
-#if ENABLE_RTOS_SYNC
+/****************************************************************************/
+int Rtos_Log(int iLogLevel, char const* const sMsg, ...)
+{
+  (void)iLogLevel;
+  (void)sMsg;
+  return 0;
+}
+
+#endif
 
 /****************************************************************************/
 /*** W i n 3 2 ***/
@@ -210,21 +235,46 @@ bool Rtos_SetEvent(AL_EVENT Event)
   return SetEvent((HANDLE)Event);
 }
 
+struct AL_WindowsThread
+{
+  HANDLE handle;
+  void* (* func)(void*);
+  void* param;
+};
+
 /****************************************************************************/
 static HANDLE GetNative(AL_THREAD Thread)
 {
-  return *((HANDLE*)Thread);
+  struct AL_WindowsThread* pThread = (struct AL_WindowsThread*)Thread;
+  return pThread->handle;
+}
+
+static DWORD WINAPI WindowsCallback(void* p)
+{
+  struct AL_WindowsThread* pThread = (struct AL_WindowsThread*)p;
+  pThread->func(pThread->param);
+  return 0;
 }
 
 /****************************************************************************/
 AL_THREAD Rtos_CreateThread(void* (*pFunc)(void* pParam), void* pParam)
 {
-  HANDLE* pThread = Rtos_Malloc(sizeof(HANDLE));
+  struct AL_WindowsThread* pThread = Rtos_Malloc(sizeof(*pThread));
   DWORD id;
 
+  pThread->func = pFunc;
+  pThread->param = pParam;
+
   if(pThread)
-    *pThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)pFunc, pParam, 0, &id);
+    pThread->handle = CreateThread(NULL, 0, WindowsCallback, pThread, 0, &id);
   return pThread;
+}
+
+/****************************************************************************/
+
+void Rtos_SetCurrentThreadName(const char* pThreadName)
+{
+  (void)pThreadName;
 }
 
 /****************************************************************************/
@@ -261,9 +311,9 @@ int Rtos_DriverIoctl(void* drv, unsigned long int req, void* data)
   return -1; // not implemented
 }
 
-int Rtos_DriverPoll(void* drv, int timeout)
+int Rtos_DriverPoll(void* drv, Rtos_PollCtx* ctx)
 {
-  (void)drv, (void)timeout;
+  (void)drv, (void)ctx;
   return -1; // not implemented
 }
 
@@ -273,6 +323,7 @@ int Rtos_DriverPoll(void* drv, int timeout)
 #elif defined __linux__
 
 #include <sys/time.h>
+#include <sys/prctl.h>
 #include <errno.h>
 #include <unistd.h>
 
@@ -472,14 +523,14 @@ bool Rtos_WaitEvent(AL_EVENT Event, uint32_t Wait)
   if(!pEvt)
     return false;
 
-  bool bRet = true;
+  bool reachedDeadline = false;
 
   pthread_mutex_lock(&pEvt->Mutex);
 
   if(Wait == AL_WAIT_FOREVER)
   {
-    while(bRet && !pEvt->bSignaled)
-      bRet = (pthread_cond_wait(&pEvt->Cond, &pEvt->Mutex) == 0);
+    while(!pEvt->bSignaled)
+      pthread_cond_wait(&pEvt->Cond, &pEvt->Mutex);
   }
   else
   {
@@ -487,17 +538,19 @@ bool Rtos_WaitEvent(AL_EVENT Event, uint32_t Wait)
     gettimeofday(&now, NULL);
 
     struct timespec deadline;
-    deadline.tv_sec = now.tv_sec + Wait / 1000;
-    deadline.tv_nsec = (now.tv_usec + 1000UL * (Wait % 1000)) * 1000UL;
+    uint64_t uWaitNsec = (now.tv_usec + 1000ULL * Wait) * 1000ULL;
+    deadline.tv_sec = (uWaitNsec / 1000000000ULL) + now.tv_sec;
+    deadline.tv_nsec = uWaitNsec % 1000000000ULL;
 
-    while(bRet && !pEvt->bSignaled)
-      bRet = (pthread_cond_timedwait(&pEvt->Cond, &pEvt->Mutex, &deadline) == 0);
+    while(!reachedDeadline && !pEvt->bSignaled)
+      reachedDeadline = (pthread_cond_timedwait(&pEvt->Cond, &pEvt->Mutex, &deadline) == ETIMEDOUT);
   }
 
-  if(bRet)
+  if(!reachedDeadline)
     pEvt->bSignaled = false;
+
   pthread_mutex_unlock(&pEvt->Mutex);
-  return bRet;
+  return !reachedDeadline;
 }
 
 /****************************************************************************/
@@ -528,6 +581,12 @@ AL_THREAD Rtos_CreateThread(void* (*pFunc)(void* pParam), void* pParam)
 }
 
 /****************************************************************************/
+void Rtos_SetCurrentThreadName(const char* pThreadName)
+{
+  prctl(PR_SET_NAME, (unsigned long)pThreadName, 0, 0, 0);
+}
+
+/****************************************************************************/
 bool Rtos_JoinThread(AL_THREAD Thread)
 {
   int iRet;
@@ -546,7 +605,7 @@ void Rtos_DeleteThread(AL_THREAD Thread)
 
 void* Rtos_DriverOpen(char const* name)
 {
-  int fd = open(name, O_RDWR);
+  int fd = open(name, O_RDWR | O_NONBLOCK);
 
   if(fd == -1)
     return NULL;
@@ -566,12 +625,20 @@ int Rtos_DriverIoctl(void* drv, unsigned long int req, void* data)
 }
 
 #include <poll.h>
-int Rtos_DriverPoll(void* drv, int timeout)
+int Rtos_DriverPoll(void* drv, Rtos_PollCtx* ctx)
 {
   struct pollfd pollData;
+  /* bitfield are bit compatible */
+  pollData.events = ctx->events;
   pollData.fd = (int)(intptr_t)drv;
-  pollData.events = POLLPRI | POLLIN;
-  return poll(&pollData, 1, timeout);
+
+  int err = poll(&pollData, 1, ctx->timeout);
+
+  if(err == -1 || err == 0)
+    return err;
+
+  ctx->revents = pollData.revents;
+  return 1;
 }
 
 /****************************************************************************/
@@ -638,78 +705,6 @@ bool Rtos_ReleaseSemaphore(AL_SEMAPHORE Semaphore)
 
 #endif
 
-#else
-
-/* big lock instead of mutexes */
-
-typedef struct
-{
-  int iCount;
-  int iMaxBeforeWait;
-}SyncCtx;
-
-/****************************************************************************/
-AL_MUTEX Rtos_CreateMutex()
-{
-  /* do not fail the creation: return a non NULL handle */
-  return (AL_MUTEX)1;
-}
-
-/****************************************************************************/
-void Rtos_DeleteMutex(AL_MUTEX Mutex)
-{
-}
-
-/****************************************************************************/
-bool Rtos_GetMutex(AL_MUTEX Mutex)
-{
-  return true;
-}
-
-/****************************************************************************/
-bool Rtos_ReleaseMutex(AL_MUTEX Mutex)
-{
-  return true;
-}
-
-/****************************************************************************/
-AL_SEMAPHORE Rtos_CreateSemaphore(int iInitialCount)
-{
-  SyncCtx* pCtx = Rtos_Malloc(sizeof(SyncCtx));
-  pCtx->iCount = iInitialCount;
-  pCtx->iMaxBeforeWait = iMaxCount;
-  return (AL_SEMAPHORE)pCtx;
-}
-
-/****************************************************************************/
-void Rtos_DeleteSemaphore(AL_SEMAPHORE Semaphore)
-{
-  Rtos_Free(Semaphore);
-}
-
-/****************************************************************************/
-bool Rtos_GetSemaphore(AL_SEMAPHORE Semaphore, uint32_t Wait)
-{
-  SyncCtx* pCtx = (SyncCtx*)Semaphore;
-
-  while(pCtx->iCount >= pCtx->iMaxBeforeWait)
-  {
-  }
-
-  ++pCtx->iCount;
-  return true;
-}
-
-/****************************************************************************/
-bool Rtos_ReleaseSemaphore(AL_SEMAPHORE Semaphore)
-{
-  SyncCtx* pCtx = (SyncCtx*)Semaphore;
-  --pCtx->iCount;
-  return true;
-}
-
-#endif
-
 #ifdef _MSC_VER
 int32_t Rtos_AtomicIncrement(int32_t* iVal)
 {
@@ -735,3 +730,51 @@ int32_t Rtos_AtomicDecrement(int32_t* iVal)
 
 #endif
 
+#if __MICROBLAZE__
+#include "McuSys.h"
+
+void Rtos_InitCacheCB(void* ctx, Rtos_MemoryFnCB pfnInvalCB, Rtos_MemoryFnCB pfnFlushCB)
+{
+  (void)ctx;
+  (void)pfnInvalCB;
+  (void)pfnFlushCB;
+}
+
+void Rtos_InvalidateCacheMemory(void* pMem, size_t zSize)
+{
+  Mcu_ClearDcache((uint32_t)((uintptr_t)pMem), zSize);
+}
+
+void Rtos_FlushCacheMemory(void* pMem, size_t zSize)
+{
+  (void)pMem;
+  (void)zSize;
+  /* Not needed as microblaze use write through access */
+}
+
+#else
+
+static void* pCacheCBCtx;
+static Rtos_MemoryFnCB pfnInvalMemoryCB = NULL;
+static Rtos_MemoryFnCB pfnFlushMemoryCB = NULL;
+
+void Rtos_InitCacheCB(void* ctx, Rtos_MemoryFnCB pfnInvalCB, Rtos_MemoryFnCB pfnFlushCB)
+{
+  pCacheCBCtx = ctx;
+  pfnInvalMemoryCB = pfnInvalCB;
+  pfnFlushMemoryCB = pfnFlushCB;
+}
+
+void Rtos_InvalidateCacheMemory(void* pMem, size_t zSize)
+{
+  if(pfnInvalMemoryCB)
+    pfnInvalMemoryCB(pCacheCBCtx, pMem, zSize);
+}
+
+void Rtos_FlushCacheMemory(void* pMem, size_t zSize)
+{
+  if(pfnFlushMemoryCB)
+    pfnFlushMemoryCB(pCacheCBCtx, pMem, zSize);
+}
+
+#endif

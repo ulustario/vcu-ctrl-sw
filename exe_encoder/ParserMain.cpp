@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright (C) 2018 Allegro DVT2.  All rights reserved.
+* Copyright (C) 2008-2022 Allegro DVT2.  All rights reserved.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -43,8 +43,8 @@
 using std::cout;
 using std::endl;
 
-
 using std::cerr;
+using std::cout;
 using std::string;
 
 struct Config
@@ -53,24 +53,21 @@ struct Config
   bool strict_mode = true;
   bool debug_token = false;
   bool dump_cfg = false;
+  bool show_cfg = false;
 };
 
 static void Usage(CommandLineParser const& opt, char* ExeName)
 {
-  cerr << "Usage: " << ExeName << " -cfg <configfile> [options]" << endl;
-  cerr << "Options:" << endl;
+  cout << "Usage: " << ExeName << " -cfg <configfile> [options]" << endl;
+  cout << "Options:" << endl;
 
-  for(auto& name : opt.displayOrder)
-  {
-    auto& o = opt.options.at(name);
-    cerr << "  " << o.desc << endl;
-  }
+  opt.usage();
 
-  cerr << "Examples:" << endl;
-  cerr << "  " << ExeName << " -cfg test/config/encode_simple.cfg" << endl;
+  cout << "Examples:" << endl;
+  cout << "  " << ExeName << " -cfg test/config/encode_simple.cfg" << endl;
 }
 
-Config parseCommandLine(int argc, char* argv[])
+Config parseCommandLine(int argc, char* argv[], CfgParser& cfgParser)
 {
   bool help = false;
   bool help_cfg = false;
@@ -79,6 +76,7 @@ Config parseCommandLine(int argc, char* argv[])
   opt.addFlag("--help,-h", &help, "Show this help");
   opt.addFlag("--help-cfg", &help_cfg, "Show all options available in the cfg");
   opt.addFlag("--dump-cfg", &config.dump_cfg, "Dump the cfg structure");
+  opt.addFlag("--show-cfg", &config.show_cfg, "show the cfg values");
   opt.addString("-cfg", &config.configFile, "configuration file to parse");
   opt.addFlag("--relax", &config.strict_mode, "errors become warnings", false);
   opt.addFlag("--debug", &config.debug_token, "debug token parsing");
@@ -92,7 +90,7 @@ Config parseCommandLine(int argc, char* argv[])
 
   if(help_cfg)
   {
-    PrintConfigFileUsage();
+    cfgParser.PrintConfigFileUsage();
     exit(0);
   }
 
@@ -101,14 +99,22 @@ Config parseCommandLine(int argc, char* argv[])
 
 void SafeMain(int argc, char* argv[])
 {
-  auto config = parseCommandLine(argc, argv);
+  CfgParser cfgParser;
+  auto config = parseCommandLine(argc, argv, cfgParser);
   ConfigFile cfg {};
   cfg.strict_mode = config.strict_mode;
-  ParseConfigFile(config.configFile, cfg, cerr, config.debug_token);
+  cfgParser.ParseConfigFile(config.configFile, cfg, cerr, config.debug_token);
+  cfgParser.PostParsingConfiguration(cfg, cerr);
 
   if(config.dump_cfg)
   {
     throw std::runtime_error("introspection is not compiled in");
+    exit(0);
+  }
+
+  if(config.show_cfg)
+  {
+    cfgParser.PrintConfig(cfg);
     exit(0);
   }
 }

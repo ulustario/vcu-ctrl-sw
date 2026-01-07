@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright (C) 2018 Allegro DVT2.  All rights reserved.
+* Copyright (C) 2008-2022 Allegro DVT2.  All rights reserved.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -48,11 +48,6 @@
 #include "common_syntax_elements.h"
 #include "SPS.h"
 
-#define AL_AVC_MAX_PPS 256
-#define AL_AVC_MAX_REF_IDX 15
-#define AL_HEVC_MAX_PPS 64
-#define AL_HEVC_MAX_REF_IDX 14
-
 #define AL_MAX_WP_IDC 2
 #define AL_MIN_INIT_QP -26
 #define AL_MAX_INIT_QP 25
@@ -60,6 +55,10 @@
 #define AL_MAX_QP_OFFSET 12
 #define AL_MIN_DBF_PARAM -6
 #define AL_MAX_DBF_PARAM 6
+
+/*****************************************************************************/
+#define AL_AVC_MAX_PPS 256
+#define AL_AVC_MAX_REF_IDX 15
 
 /*************************************************************************//*!
    \brief Mimics structure described in spec sec. 7.3.2.2.
@@ -99,17 +98,21 @@ typedef struct t_Avc_Pps
   uint8_t transform_8x8_mode_flag;
 
   uint8_t pic_scaling_matrix_present_flag;
-  uint8_t pic_scaling_list_present_flag[8];
+  uint8_t pic_scaling_list_present_flag[12];
   uint8_t ScalingList4x4[6][16];
-  uint8_t ScalingList8x8[2][64];
+  uint8_t ScalingList8x8[6][64];
   uint8_t UseDefaultScalingMatrix4x4Flag[6];
-  uint8_t UseDefaultScalingMatrix8x8Flag[2];
+  uint8_t UseDefaultScalingMatrix8x8Flag[6];
 
   AL_TAvcSps* pSPS;
 
   // concealment flag
   bool bConceal;
 }AL_TAvcPps;
+
+/*****************************************************************************/
+#define AL_HEVC_MAX_PPS 64
+#define AL_HEVC_MAX_REF_IDX 14
 
 /*************************************************************************//*!
    \brief Mimics structure described in spec sec. 7.3.2.3.
@@ -148,9 +151,9 @@ typedef struct t_Hevc_Pps
   uint16_t num_tile_rows_minus1;
 
   uint8_t uniform_spacing_flag;
-  uint16_t column_width[AL_MAX_COLUMNS_TILE];
-  uint16_t row_height[AL_MAX_ROWS_TILE];
-  uint32_t TileTopology[AL_MAX_ROWS_TILE * AL_MAX_COLUMNS_TILE];
+  uint16_t tile_column_width[AL_MAX_COLUMNS_TILE];
+  uint16_t tile_row_height[AL_MAX_ROWS_TILE];
+  uint32_t TileTopology[AL_MAX_NUM_TILE];
   uint8_t loop_filter_across_tiles_enabled_flag;
 
   uint8_t loop_filter_across_slices_enabled_flag;
@@ -198,13 +201,11 @@ typedef struct t_Hevc_Pps
   bool bConceal;
 }AL_THevcPps;
 
-typedef struct
+/****************************************************************************/
+typedef union
 {
-  union
-  {
-    AL_THevcPps HevcPPS;
-    AL_TAvcPps AvcPPS;
-  };
+  AL_TAvcPps AvcPPS;
+  AL_THevcPps HevcPPS;
 }AL_TPps;
 
 /****************************************************************************/

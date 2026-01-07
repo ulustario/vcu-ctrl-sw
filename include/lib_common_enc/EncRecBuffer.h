@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright (C) 2018 Allegro DVT2.  All rights reserved.
+* Copyright (C) 2008-2022 Allegro DVT2.  All rights reserved.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -43,30 +43,28 @@
 
 #pragma once
 
-#include "lib_common/BufCommon.h"
 #include "lib_common/SliceConsts.h"
-
-typedef TBufferYuv TBufferRec;
+#include "lib_common/PixMapBuffer.h"
+#include "EncChanParam.h"
 
 /*************************************************************************//*!
    \brief Reconstructed picture information
 *****************************************************************************/
-typedef struct t_RecPic
-{
-  TBufferRec tBuf; /*!< the reconstructed frame buffer itself*/
-  AL_EPicStruct ePicStruct; /*!< Specifies the pic_struct : subset of table D-1 */
-  uint32_t iPOC; /*!< the Picture Order Count of the frame buffer */
-}TRecPic;
-
 typedef struct
 {
   uint32_t uID;
-  AL_EPicStruct ePicStruct;
-  uint32_t iPOC;
+  AL_EPicStruct ePicStruct; /*!< Specifies the pic_struct: subset of table D-1 */
+  uint32_t iPOC; /*!< the Picture Order Count of the frame buffer */
+  AL_TDimension tPicDim; /*!< The dimension of the reconstructed frame buffer */
 }AL_TReconstructedInfo;
 
-void ResetBufferRec(TBufferRec* pBufRec);
-uint32_t AL_GetRecPitch(uint32_t uBitDepth, uint32_t uWidth);
+typedef struct t_RecPic
+{
+  AL_TBuffer* pBuf;
+  AL_TReconstructedInfo tInfo;
+}AL_TRecPic;
 
+uint32_t AL_GetRecPitch(uint32_t uBitDepth, uint32_t uWidth);
+void AL_EncRecBuffer_FillPlaneDesc(AL_TPlaneDescription* pPlaneDesc, AL_TDimension tDim, AL_EChromaMode eChromaMode, uint8_t uBitDepth, bool bIsAvc, uint8_t uLCUSize, uint16_t uMVVRange, AL_EChEncOption eOptions);
 /*@}*/
 

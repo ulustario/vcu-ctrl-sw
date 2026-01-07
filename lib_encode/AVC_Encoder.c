@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright (C) 2018 Allegro DVT2.  All rights reserved.
+* Copyright (C) 2008-2022 Allegro DVT2.  All rights reserved.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -40,15 +40,23 @@
 #include "lib_common/Utils.h"
 #include "lib_common/Error.h"
 
-static void updateHlsAndWriteSections(AL_TEncCtx* pCtx, AL_TEncPicStatus* pPicStatus, AL_TBuffer* pStream, int iLayerID)
+static void updateHlsAndWriteSections(AL_TEncCtx* pCtx, AL_TEncPicStatus* pPicStatus, AL_TBuffer* pStream, int iLayerID, int iPicID)
 {
-  AL_AVC_UpdatePPS(&pCtx->tLayerCtx[iLayerID].pps, pPicStatus);
-  AVC_GenerateSections(pCtx, pStream, pPicStatus);
+  AL_UpdateVuiTimingInfo(&pCtx->tLayerCtx[iLayerID].sps.AvcSPS.vui_param, iLayerID, &pCtx->pSettings->tChParam[iLayerID].tRCParam, 2);
+  AL_HLSInfo* pHLSInfo = AL_GetHLSInfo(pCtx, iPicID);
+  AL_AVC_UpdateSPS(&pCtx->tLayerCtx[iLayerID].sps, pCtx->pSettings, pPicStatus, pHLSInfo, &pCtx->tHeadersCtx[iLayerID]);
+  bool bMustWritePPS = AL_AVC_UpdatePPS(&pCtx->tLayerCtx[iLayerID].pps, pPicStatus, pHLSInfo, &pCtx->tHeadersCtx[iLayerID]);
+  bool bMustWriteAUD = AL_AVC_UpdateAUD(&pCtx->tLayerCtx[iLayerID].aud, pCtx->pSettings, pPicStatus, iLayerID);
+  AVC_GenerateSections(pCtx, pStream, pPicStatus, iPicID, bMustWritePPS, bMustWriteAUD);
 
-  if(pPicStatus->eType == SLICE_I)
-    pCtx->seiData.cpbRemovalDelay = 0;
+  pCtx->initialCpbRemovalDelay = pPicStatus->uInitialRemovalDelay;
+  pCtx->cpbRemovalDelay += PicStructToFieldNumber[pPicStatus->ePicStruct];
 
-  pCtx->seiData.cpbRemovalDelay += PictureDisplayToFieldNumber[pPicStatus->ePicStruct];
+  if(pPicStatus->eType == AL_SLICE_I)
+  {
+    int const iDefaultCpbRemovalDelay = 0;
+    pCtx->cpbRemovalDelay = iDefaultCpbRemovalDelay;
+  }
 }
 
 static bool shouldReleaseSource(AL_TEncPicStatus* p)
@@ -57,28 +65,22 @@ static bool shouldReleaseSource(AL_TEncPicStatus* p)
   return true;
 }
 
-/***************************************************************************/
-static void GenerateSkippedPictureData(AL_TEncCtx* pCtx, AL_TEncChanParam* pChParam, AL_TSkippedPicture* pSkipPicture)
-{
-  (void)pChParam;
-  AL_Common_Encoder_InitSkippedPicture(pSkipPicture);
-  AL_AVC_GenerateSkippedPicture(pSkipPicture, pCtx->iNumLCU, true, 0);
-}
-
-/****************************************************************************/
-static bool isGdrEnabled(AL_TEncChanParam const* pChParam)
-{
-  AL_TGopParam const* pGop = &pChParam->tGopParam;
-  return (pGop->eGdrMode & AL_GDR_ON) != 0;
-}
-
 static void initHlsSps(AL_TEncChanParam* pChParam, uint32_t* pSpsParam)
 {
+  (void)pChParam;
   *pSpsParam = AL_SPS_TEMPORAL_MVP_EN_FLAG; // TODO
-  AL_SET_SPS_LOG2_MAX_POC(pSpsParam, 10);
+
+  int log2_max_poc = (pChParam->tRCParam.eOptions & AL_RC_OPT_ENABLE_SKIP) ? 16 : 10;
+
+  if(AL_IS_XAVC(pChParam->eProfile))
+    log2_max_poc = 4;
+  AL_SET_SPS_LOG2_MAX_POC(pSpsParam, log2_max_poc);
   int log2_max_frame_num_minus4 = 0; // This value SHOULD be equals to IP_Utils SPS
 
-  if(isGdrEnabled(pChParam))
+  if((pChParam->tGopParam.eMode & AL_GOP_FLAG_PYRAMIDAL) && pChParam->tGopParam.uNumB == 15)
+    log2_max_frame_num_minus4 = 1;
+
+  else if(AL_IsGdrEnabled(pChParam))
     log2_max_frame_num_minus4 = 6; // 6 is to support AVC 8K GDR.
 
   AL_SET_SPS_LOG2_MAX_FRAME_NUM(pSpsParam, log2_max_frame_num_minus4 + 4);
@@ -96,65 +98,39 @@ static void SetMotionEstimationRange(AL_TEncChanParam* pChParam)
   AL_Common_Encoder_SetME(AVC_MAX_HORIZONTAL_RANGE_P, AVC_MAX_VERTICAL_RANGE_P, AVC_MAX_HORIZONTAL_RANGE_B, AVC_MAX_VERTICAL_RANGE_B, pChParam);
 }
 
-static void ComputeQPInfo(AL_TEncCtx* pCtx, AL_TEncChanParam* pChParam)
+static void ComputeQPInfo(AL_TEncChanParam* pChParam)
 {
-  // Calculate Initial QP if not provided ----------------------------------
-  if(!AL_Common_Encoder_IsInitialQpProvided(pChParam))
-  {
-    uint32_t iBitPerPixel = AL_Common_Encoder_ComputeBitPerPixel(pChParam);
-    int8_t iInitQP = AL_Common_Encoder_GetInitialQP(iBitPerPixel);
-
-    if(pChParam->tGopParam.uGopLength <= 1)
-      iInitQP += 12;
-    pChParam->tRCParam.iInitialQP = iInitQP;
-  }
-
-  if(pChParam->tRCParam.eRCMode != AL_RC_CONST_QP && pChParam->tRCParam.iMinQP < 10)
-    pChParam->tRCParam.iMinQP = 10;
-
-  if(pChParam->tRCParam.iMaxQP < pChParam->tRCParam.iMinQP)
-    pChParam->tRCParam.iMaxQP = pChParam->tRCParam.iMinQP;
-
-  if(pCtx->Settings.eQpCtrlMode == RANDOM_QP
-     || pCtx->Settings.eQpCtrlMode == BORDER_QP
-     || pCtx->Settings.eQpCtrlMode == RAMP_QP)
-  {
-    int iCbOffset = pChParam->iCbPicQpOffset;
-    int iCrOffset = pChParam->iCrPicQpOffset;
-
-    pChParam->tRCParam.iMinQP = Max(0, 0 - (iCbOffset < iCrOffset ? iCbOffset : iCrOffset));
-    pChParam->tRCParam.iMaxQP = Min(51, 51 - (iCbOffset > iCrOffset ? iCbOffset : iCrOffset));
-  }
-  pChParam->tRCParam.iInitialQP = Clip3(pChParam->tRCParam.iInitialQP,
-                                        pChParam->tRCParam.iMinQP,
-                                        pChParam->tRCParam.iMaxQP);
+  int iCbOffset = pChParam->iCbPicQpOffset;
+  int iCrOffset = pChParam->iCrPicQpOffset;
+  AL_Common_Encoder_ComputeRCParam(iCbOffset, iCrOffset, 12, pChParam);
 }
 
 static void generateNals(AL_TEncCtx* pCtx, int iLayerID, bool bWriteVps)
 {
   (void)bWriteVps;
-  AL_TEncChanParam* pChParam = &pCtx->Settings.tChParam[iLayerID];
+  AL_TEncChanParam* pChParam = &pCtx->pSettings->tChParam[iLayerID];
 
   uint32_t uCpbBitSize = (uint32_t)((uint64_t)pChParam->tRCParam.uCPBSize * (uint64_t)pChParam->tRCParam.uMaxBitRate / 90000LL);
-  AL_AVC_GenerateSPS(&pCtx->tLayerCtx[0].sps, &pCtx->Settings, pCtx->iMaxNumRef, uCpbBitSize);
-  AL_AVC_GeneratePPS(&pCtx->tLayerCtx[0].pps, &pCtx->Settings, pCtx->iMaxNumRef);
+  AL_AVC_GenerateSPS(&pCtx->tLayerCtx[0].sps, pCtx->pSettings, pCtx->iMaxNumRef, uCpbBitSize);
+  AL_AVC_GeneratePPS(&pCtx->tLayerCtx[0].pps, pCtx->pSettings, &pCtx->tLayerCtx[0].sps);
 }
 
 static void ConfigureChannel(AL_TEncCtx* pCtx, AL_TEncChanParam* pChParam, AL_TEncSettings const* pSettings)
 {
+  (void)pCtx;
   initHls(pChParam);
   SetMotionEstimationRange(pChParam);
-  ComputeQPInfo(pCtx, pChParam);
+  ComputeQPInfo(pChParam);
 
   if(pSettings->eScalingList != AL_SCL_FLAT)
-    pChParam->eOptions |= AL_OPT_SCL_LST;
+    pChParam->eEncTools |= AL_OPT_SCL_LST;
 
 }
 
 static void preprocessEp1(AL_TEncCtx* pCtx, TBufferEP* pEp1)
 {
-  if(pCtx->Settings.eScalingList != AL_SCL_FLAT)
-    AL_AVC_PreprocessScalingList(&pCtx->tLayerCtx[0].sps.AvcSPS.scaling_list_param, pEp1);
+  if(pCtx->pSettings->eScalingList != AL_SCL_FLAT)
+    AL_AVC_PreprocessScalingList(&pCtx->tLayerCtx[0].sps.AvcSPS.scaling_list_param, pCtx->tLayerCtx[0].sps.AvcSPS.chroma_format_idc, pEp1);
 }
 
 void AL_CreateAvcEncoder(HighLevelEncoder* pCtx)
@@ -162,9 +138,7 @@ void AL_CreateAvcEncoder(HighLevelEncoder* pCtx)
   pCtx->shouldReleaseSource = &shouldReleaseSource;
   pCtx->preprocessEp1 = &preprocessEp1;
   pCtx->configureChannel = &ConfigureChannel;
-  pCtx->generateSkippedPictureData = &GenerateSkippedPictureData;
   pCtx->generateNals = &generateNals;
   pCtx->updateHlsAndWriteSections = &updateHlsAndWriteSections;
 }
-
 

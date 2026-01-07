@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright (C) 2018 Allegro DVT2.  All rights reserved.
+* Copyright (C) 2008-2022 Allegro DVT2.  All rights reserved.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -38,6 +38,8 @@
 #include <fstream>
 #include "lib_app/InputFiles.h"
 #include "lib_encode/lib_encoder.h"
+#include "exe_encoder/IvfContainer.h"
+#include "CodecUtils.h"
 
 using namespace std;
 

@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright (C) 2018 Allegro DVT2.  All rights reserved.
+* Copyright (C) 2008-2022 Allegro DVT2.  All rights reserved.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -39,37 +39,109 @@
 #include <stdexcept>
 #include <cstdlib>
 #include <cstdarg>
-#include "utils.h"
+#include <mutex>
+#include "lib_app/utils.h"
 
 using namespace std;
 
 int g_Verbosity = 10;
+static std::mutex s_LogMutex;
 
-void log_vprintf(const char* sMsg, va_list args)
+static void Message(EConColor Color, const char* sMsg, va_list args)
 {
-  if(g_Verbosity == 0)
-    return;
-
+  std::lock_guard<std::mutex> guard(s_LogMutex);
+  SetConsoleColor(Color);
   vprintf(sMsg, args);
   fflush(stdout);
-}
-
-void Message(const char* sMsg, ...)
-{
-  va_list args;
-  va_start(args, sMsg);
-  log_vprintf(sMsg, args);
-  va_end(args);
-}
-
-void Message(EConColor Color, const char* sMsg, ...)
-{
-  SetConsoleColor(Color);
-  va_list args;
-  va_start(args, sMsg);
-  log_vprintf(sMsg, args);
-  va_end(args);
   SetConsoleColor(CC_DEFAULT);
+}
+
+void LogError(const char* sMsg, ...)
+{
+  if(g_Verbosity < 1)
+    return;
+
+  va_list args;
+  va_start(args, sMsg);
+  Message(CC_RED, sMsg, args);
+  va_end(args);
+}
+
+void LogWarning(const char* sMsg, ...)
+{
+  if(g_Verbosity < 3)
+    return;
+
+  va_list args;
+  va_start(args, sMsg);
+  Message(CC_YELLOW, sMsg, args);
+  va_end(args);
+}
+
+void LogDimmedWarning(const char* sMsg, ...)
+{
+  if(g_Verbosity < 4)
+    return;
+
+  va_list args;
+  va_start(args, sMsg);
+  Message(CC_GREY, sMsg, args);
+  va_end(args);
+}
+
+void LogInfo(const char* sMsg, ...)
+{
+  if(g_Verbosity < 5)
+    return;
+
+  va_list args;
+  va_start(args, sMsg);
+  Message(CC_DEFAULT, sMsg, args);
+  va_end(args);
+}
+
+void LogInfo(EConColor Color, const char* sMsg, ...)
+{
+  if(g_Verbosity < 5)
+    return;
+
+  va_list args;
+  va_start(args, sMsg);
+  Message(Color, sMsg, args);
+  va_end(args);
+}
+
+void LogVerbose(const char* sMsg, ...)
+{
+  if(g_Verbosity < 7)
+    return;
+
+  va_list args;
+  va_start(args, sMsg);
+  Message(CC_DEFAULT, sMsg, args);
+  va_end(args);
+}
+
+void LogVerbose(EConColor Color, const char* sMsg, ...)
+{
+  if(g_Verbosity < 7)
+    return;
+
+  va_list args;
+  va_start(args, sMsg);
+  Message(Color, sMsg, args);
+  va_end(args);
+}
+
+void LogDebug(const char* sMsg, ...)
+{
+  if(g_Verbosity < 20)
+    return;
+
+  va_list args;
+  va_start(args, sMsg);
+  Message(CC_DEFAULT, sMsg, args);
+  va_end(args);
 }
 
 void OpenInput(std::ifstream& fp, std::string filename, bool binary)

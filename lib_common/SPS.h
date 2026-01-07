@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright (C) 2018 Allegro DVT2.  All rights reserved.
+* Copyright (C) 2008-2022 Allegro DVT2.  All rights reserved.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -46,21 +46,17 @@
 
 #include "lib_common/ScalingList.h"
 #include "lib_common/common_syntax_elements.h"
-#include "lib_common/VPS.h"
+#include "lib_common_dec/DecBuffersInternal.h"
 
+#define MAX_BIT_DEPTH 4
+#define MAX_POC_LSB 12
+
+/****************************************************************************/
 #define AL_AVC_MAX_SPS 32
-#define AL_HEVC_MAX_SPS 16
 
 // define max sps value respect to AVC semantics
 #define MAX_FRAME_NUM 12
 #define MAX_POC_TYPE 2
-
-// define max sps value respect to HEVC semantics
-#define MAX_BIT_DEPTH 2
-#define MAX_POC_LSB 12
-#define MAX_SUB_LAYER 7
-#define MAX_REF_PIC_SET 64
-#define MAX_LONG_TERM_PIC 32
 
 /*************************************************************************//*!
    \brief Mimics structure described in spec sec. 7.3.2.1.
@@ -87,9 +83,9 @@ typedef struct t_Avc_Sps
   uint8_t qpprime_y_zero_transform_bypass_flag;
 
   uint8_t seq_scaling_matrix_present_flag;
-  uint8_t seq_scaling_list_present_flag[8]; // we can define eight matrices: Sl_4x4_Intra_Y, Sl_4x4_Intra_Cb, Sl_4x4_Intra_Cr, Sl_4x4_Inter_Y, Sl_4x4_Inter_Cb, Sl_4x4_Inter_Cr, Sl_8x8_Intra_Y, Sl_8x8_Inter_Y.
+  uint8_t seq_scaling_list_present_flag[12]; // we can define eight matrices: Sl_4x4_Intra_Y, Sl_4x4_Intra_Cb, Sl_4x4_Intra_Cr, Sl_4x4_Inter_Y, Sl_4x4_Inter_Cb, Sl_4x4_Inter_Cr, Sl_8x8_Intra_Y, Sl_8x8_Inter_Y.
   uint8_t ScalingList4x4[6][16]; // use in decoding
-  uint8_t ScalingList8x8[2][64];
+  uint8_t ScalingList8x8[6][64];
   AL_TSCLParam scaling_list_param;  // use in encoding
 
   uint8_t log2_max_frame_num_minus4;
@@ -106,6 +102,8 @@ typedef struct t_Avc_Sps
   uint16_t pic_width_in_mbs_minus1;
   uint16_t pic_height_in_map_units_minus1;
   uint8_t frame_mbs_only_flag;
+  uint8_t field_pic_flag;
+  uint8_t bottom_field_flag;
   uint8_t mb_adaptive_frame_field_flag;
   uint8_t direct_8x8_inference_flag;
   uint8_t frame_cropping_flag;
@@ -119,12 +117,22 @@ typedef struct t_Avc_Sps
 
   int iCurrInitialCpbRemovalDelay; // Used in the current picture buffering_period
   uint8_t UseDefaultScalingMatrix4x4Flag[6];
-  uint8_t UseDefaultScalingMatrix8x8Flag[2];
+  uint8_t UseDefaultScalingMatrix8x8Flag[6];
   // TSpsExtMVC mvc_ext;
 
   // concealment flag
   bool bConceal;
 }AL_TAvcSps;
+
+/****************************************************************************/
+#include "lib_common/VPS.h"
+
+#define AL_HEVC_MAX_SPS 16
+
+// define max sps value respect to HEVC semantics
+#define MAX_SUB_LAYER 7
+#define MAX_REF_PIC_SET 64
+#define MAX_LONG_TERM_PIC 32
 
 /*************************************************************************//*!
    \brief Mimics structure described in spec sec. 7.3.2.2.
@@ -135,7 +143,7 @@ typedef struct t_Hevc_Sps
   uint8_t sps_max_sub_layers_minus1;
   uint8_t sps_ext_or_max_sub_layers_minus1;
   uint8_t sps_temporal_id_nesting_flag;
-  AL_TProfilevel profile_and_level;
+  AL_THevcProfilevel profile_and_level;
 
   uint8_t sps_seq_parameter_set_id;
   uint8_t update_rep_format_flag;
@@ -158,7 +166,7 @@ typedef struct t_Hevc_Sps
 
   uint8_t sps_sub_layer_ordering_info_present_flag;
   uint8_t sps_max_dec_pic_buffering_minus1[MAX_SUB_LAYER + 1];
-  uint8_t sps_num_reorder_pics[MAX_SUB_LAYER + 1];
+  uint8_t sps_max_num_reorder_pics[MAX_SUB_LAYER + 1];
   uint32_t sps_max_latency_increase_plus1[MAX_SUB_LAYER + 1];
 
   uint8_t log2_min_luma_coding_block_size_minus3;
@@ -248,15 +256,15 @@ typedef struct t_Hevc_Sps
   /* picture order count variable */
   uint32_t MaxPicOrderCntLsb;
   uint8_t ChromaArrayType;
+
+  uint8_t sei_source_scan_type;
 }AL_THevcSps;
 
-typedef struct
+/****************************************************************************/
+typedef union
 {
-  union
-  {
-    AL_THevcSps HevcSPS;
-    AL_TAvcSps AvcSPS;
-  };
+  AL_TAvcSps AvcSPS;
+  AL_THevcSps HevcSPS;
 }AL_TSps;
 
 /****************************************************************************/

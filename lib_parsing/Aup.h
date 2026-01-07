@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright (C) 2018 Allegro DVT2.  All rights reserved.
+* Copyright (C) 2008-2022 Allegro DVT2.  All rights reserved.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -39,19 +39,17 @@
 
 #include "lib_common/SPS.h"
 #include "lib_common/PPS.h"
-
-#define AL_MAX_VPS 16
+#include "lib_common/HDR.h"
 
 typedef struct
 {
   // Context
   AL_THevcPps pPPS[AL_HEVC_MAX_PPS]; // Holds received PPSs.
   AL_THevcSps pSPS[AL_HEVC_MAX_SPS]; // Holds received SPSs.
-  AL_THevcVps pVPS[AL_MAX_VPS];      // Holds received VPSs.
-  AL_THevcSps* pActiveSPS;          // Holds only the currently active SPS.
+  AL_THevcVps pVPS[AL_HEVC_MAX_VPS]; // Holds received VPSs.
+  AL_THevcSps* pActiveSPS;           // Holds only the currently active SPS.
 
   AL_EPicStruct ePicStruct;
-  int iRecoveryCnt;
 }AL_THevcAup;
 
 typedef struct
@@ -62,15 +60,17 @@ typedef struct
   AL_TAvcSps* pActiveSPS;    // Holds only the currently active ParserSPS.
 
   AL_ESliceType ePictureType;
-  int iRecoveryCnt;
 }AL_TAvcAup;
 
 typedef struct
 {
   union
   {
-    AL_THevcAup hevcAup;
     AL_TAvcAup avcAup;
+    AL_THevcAup hevcAup;
   };
+  int iRecoveryCnt;
+  AL_THDRSEIs tParsedHDRSEIs; // The last parsed HDR SEIs
+  AL_THDRSEIs tActiveHDRSEIs; // The active HDR SEIs in display order
 }AL_TAup;
 

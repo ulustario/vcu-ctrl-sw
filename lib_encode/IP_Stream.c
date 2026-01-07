@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright (C) 2018 Allegro DVT2.  All rights reserved.
+* Copyright (C) 2008-2022 Allegro DVT2.  All rights reserved.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -42,27 +42,9 @@
 #include "IP_Stream.h"
 
 #include "lib_common/SliceConsts.h"
+#include "lib_common/Nuts.h"
 #include "lib_common/Utils.h"
 #include "lib_rtos/lib_rtos.h"
-
-/****************************************************************************/
-NalHeader GetNalHeaderHevc(uint8_t uNUT, uint8_t uNalIdc)
-{
-  NalHeader nh;
-  nh.size = 2;
-  nh.bytes[0] = ((uNalIdc & 0x20) >> 5) | ((uNUT & 0x3F) << 1);
-  nh.bytes[1] = 1 | ((uNalIdc & 0x1F) << 3);
-  return nh;
-}
-
-/****************************************************************************/
-NalHeader GetNalHeaderAvc(uint8_t uNUT, uint8_t uNalIdc)
-{
-  NalHeader nh;
-  nh.size = 1;
-  nh.bytes[0] = ((uNalIdc & 0x03) << 5) | (uNUT & 0x1F);
-  return nh;
-}
 
 /****************************************************************************/
 static void writeByte(AL_TBitStreamLite* pStream, uint8_t uByte)
@@ -100,59 +82,43 @@ static void AntiEmul(AL_TBitStreamLite* pStream, uint8_t const* pData, int iNumB
   writeByte(pStream, *pData);
 }
 
-static void writeStartCode(AL_TBitStreamLite* pStream, int nut)
-{
-#if !__ANDROID_API__
-
-  // If this is a SPS, a PPS, an Access Unit or a SEI, add an extra zero_byte (spec. B.1.2).
-  if((nut >= AL_AVC_NUT_PREFIX_SEI && nut <= AL_AVC_NUT_SUB_SPS) ||
-     (nut >= AL_HEVC_NUT_VPS && nut <= AL_HEVC_NUT_SUFFIX_SEI))
-#endif
-  {
-    writeByte(pStream, 0x00);
-  }
-
-  // don't count start code in case of "VCL Compliance"
-  writeByte(pStream, 0x00);
-  writeByte(pStream, 0x00);
-  writeByte(pStream, 0x01);
-}
-
 /****************************************************************************/
-void FlushNAL(AL_TBitStreamLite* pStream, uint8_t uNUT, NalHeader header, uint8_t* pDataInNAL, int iBitsInNAL)
+void FlushNAL(IRbspWriter* pWriter, AL_TBitStreamLite* pStream, uint8_t uNUT, AL_TNalHeader const* pHeader, uint8_t* pDataInNAL, int iBitsInNAL, AL_EStartCodeBytesAlignedMode eStartCodeBytesAligned)
 {
-  writeStartCode(pStream, uNUT);
+  pWriter->WriteStartCode(pStream, uNUT, eStartCodeBytesAligned);
 
-  for(int i = 0; i < header.size; i++)
-    writeByte(pStream, header.bytes[i]);
+  for(int i = 0; i < pHeader->size; i++)
+    writeByte(pStream, pHeader->bytes[i]);
 
-  const int iBytesInNAL = (iBitsInNAL + 7) >> 3;
+  int iBytesInNAL = BitsToBytes(iBitsInNAL);
 
   if(pDataInNAL && iBytesInNAL)
     AntiEmul(pStream, pDataInNAL, iBytesInNAL);
 }
 
 /****************************************************************************/
-void WriteFillerData(AL_TBitStreamLite* pStream, uint8_t uNUT, NalHeader header, int bytesCount, int iSpaceForSeiSuffix)
+void WriteFillerData(IRbspWriter* pWriter, AL_TBitStreamLite* pStream, uint8_t uNUT, AL_TNalHeader const* pHeader, int iBytesCount, bool bDontFill, AL_EStartCodeBytesAlignedMode eStartCodeBytesAligned)
 {
   int bookmark = AL_BitStreamLite_GetBitsCount(pStream);
-  writeStartCode(pStream, uNUT);
+  pWriter->WriteStartCode(pStream, uNUT, eStartCodeBytesAligned);
 
-  for(int i = 0; i < header.size; i++)
-    writeByte(pStream, header.bytes[i]);
+  for(int i = 0; i < pHeader->size; i++)
+    writeByte(pStream, pHeader->bytes[i]);
 
   int headerInBytes = (AL_BitStreamLite_GetBitsCount(pStream) - bookmark) / 8;
-  int bytesToWrite = bytesCount - headerInBytes;
+  int bytesToWrite = iBytesCount - headerInBytes;
   int spaceRemainingInBytes = (pStream->iMaxBits / 8) - (AL_BitStreamLite_GetBitsCount(pStream) / 8);
-  spaceRemainingInBytes -= iSpaceForSeiSuffix;
 
   bytesToWrite = Min(spaceRemainingInBytes, bytesToWrite);
   bytesToWrite -= 1; // -1 for the final 0x80
 
   if(bytesToWrite > 0)
   {
-    Rtos_Memset(AL_BitStreamLite_GetCurData(pStream), 0xFF, bytesToWrite);
-    AL_BitStreamLite_SkipBits(pStream, bytesToWrite * 8);
+    if(bDontFill)
+      AL_BitStreamLite_GetCurData(pStream)[0] = 0xFF; // set single 0xFF byte as start marker
+    else
+      Rtos_Memset(AL_BitStreamLite_GetCurData(pStream), 0xFF, bytesToWrite);
+    AL_BitStreamLite_SkipBits(pStream, BytesToBits(bytesToWrite));
   }
 
   writeByte(pStream, 0x80);
@@ -164,7 +130,7 @@ void AddFlagsToAllSections(AL_TStreamMetaData* pStreamMeta, uint32_t flags)
   for(int i = 0; i < pStreamMeta->uNumSection; i++)
   {
     AL_TStreamSection section = pStreamMeta->pSections[i];
-    AL_StreamMetaData_SetSectionFlags(pStreamMeta, i, flags | section.uFlags);
+    AL_StreamMetaData_SetSectionFlags(pStreamMeta, i, flags | section.eFlags);
   }
 }
 

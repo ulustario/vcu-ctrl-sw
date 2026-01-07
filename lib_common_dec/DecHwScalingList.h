@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright (C) 2018 Allegro DVT2.  All rights reserved.
+* Copyright (C) 2008-2022 Allegro DVT2.  All rights reserved.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -46,6 +46,7 @@
 
 #include "lib_rtos/types.h"
 #include "lib_common/ScalingList.h"
+#include "lib_common/PicFormat.h"
 
 /****************************************************************************/
 static const int AL_AVC_DEC_SCL_ORDER_8x8[64] =
@@ -101,11 +102,18 @@ static const int AL_HEVC_DEC_SCL_ORDER_4x4[16] =
 /*************************************************************************//*!
    \brief Dumps Hardware formated decoder scaling list into buffer of bytes
    \param[in]  pSclLst Pointer to  Scaling list to dump
+   \param[in]  eCMode  Chroma subsampling
    \param[out] pBuf    Pointer to buffer that receives the scaling list
                      matrices data
 *****************************************************************************/
-extern void AL_AVC_WriteDecHwScalingList(AL_TScl const* pSclLst, uint8_t* pBuf);
+extern void AL_AVC_WriteDecHwScalingList(AL_TScl const* pSclLst, AL_EChromaMode eCMode, uint8_t* pBuf);
 
+/*************************************************************************//*!
+   \brief Dumps Hardware formated decoder scaling list into buffer of bytes
+   \param[in]  pSclLst Pointer to  Scaling list to dump
+   \param[out] pBuf    Pointer to buffer that receives the scaling list
+                     matrices data
+*****************************************************************************/
 extern void AL_HEVC_WriteDecHwScalingList(AL_TScl const* pSclLst, uint8_t* pBuf);
 
 /*@}*/

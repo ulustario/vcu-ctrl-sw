@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright (C) 2018 Allegro DVT2.  All rights reserved.
+* Copyright (C) 2008-2022 Allegro DVT2.  All rights reserved.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -36,10 +36,10 @@
 ******************************************************************************/
 
 #pragma once
-#include <memory>
-#include <functional>
+
 #include "lib_app/InputFiles.h"
 #include "lib_app/utils.h"
+#include "exe_encoder/CfgParser.h"
 
 extern "C"
 {
@@ -52,12 +52,51 @@ typedef struct AL_t_IpCtrl AL_TIpCtrl;
 typedef struct AL_t_Timer AL_Timer;
 
 /*****************************************************************************/
-struct CIpDevice
+struct CIpDeviceParam
 {
-  TScheduler* m_pScheduler = nullptr;
-  std::shared_ptr<AL_TAllocator> m_pAllocator;
-  AL_Timer* m_pTimer;
+  int iDeviceType;
+  int iSchedulerType;
+  ConfigFile* pCfgFile;
+  bool bTrackDma = false;
 };
 
-std::shared_ptr<CIpDevice> CreateIpDevice(bool bUseRefSoftware, int iSchedulerType, AL_TEncSettings& Settings, std::function<AL_TIpCtrl* (AL_TIpCtrl*)> wrapIpCtrl, bool trackDma = false, int iVqDescr = 0);
+/*****************************************************************************/
+static int constexpr NUM_SRC_SYNC_CHANNEL = 4;
+
+class CIpDevice
+{
+public:
+  CIpDevice() {};
+  ~CIpDevice();
+
+  void Configure(CIpDeviceParam& param);
+  AL_IEncScheduler* GetScheduler();
+  AL_TAllocator* GetAllocator();
+  AL_Timer* GetTimer();
+
+  CIpDevice(CIpDevice const &) = delete;
+  CIpDevice & operator = (CIpDevice const &) = delete;
+
+private:
+  AL_IEncScheduler* m_pScheduler = nullptr;
+  AL_TAllocator* m_pAllocator = nullptr;
+  AL_Timer* m_pTimer = nullptr;
+
+  void ConfigureMcu(CIpDeviceParam& param);
+};
+
+inline AL_IEncScheduler* CIpDevice::GetScheduler()
+{
+  return m_pScheduler;
+}
+
+inline AL_TAllocator* CIpDevice::GetAllocator()
+{
+  return m_pAllocator;
+}
+
+inline AL_Timer* CIpDevice::GetTimer()
+{
+  return m_pTimer;
+}
 

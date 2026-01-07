@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright (C) 2018 Allegro DVT2.  All rights reserved.
+* Copyright (C) 2008-2022 Allegro DVT2.  All rights reserved.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -42,16 +42,17 @@
    @{
    \file
  *****************************************************************************/
-#include <assert.h>
-#include <string.h>
-#include "lib_common/Utils.h"
-#include "lib_common_dec/DecBuffers.h"
 #include "RbspParser.h"
+#include <string.h>
+
+#include "lib_common/Utils.h"
+#include "lib_common_dec/DecBuffersInternal.h"
+#include "lib_assert/al_assert.h"
 
 #define odd(a) ((a) & 1)
 #define even(a) (!odd(a))
 
-static const int tab_log2[256] =
+static const uint8_t tab_log2[256] =
 {
   0, 0, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4,
   5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5,
@@ -194,6 +195,9 @@ void InitRbspParser(TCircBuffer const* pStream, uint8_t* pBuffer, bool bHasSC, A
 /*****************************************************************************/
 uint8_t read_bit(AL_TRbspParser* pRP, uint32_t iBitIndex)
 {
+  if(pRP->iTrailingBitOneIndex < pRP->iTotalBitIndex + 1)
+    fetch_data(pRP);
+
   uint32_t iByteOffset = iBitIndex >> 3;
   int iBitOffset = (int)(7 - (iBitIndex & 7));
 
@@ -207,6 +211,20 @@ bool byte_aligned(AL_TRbspParser* pRP)
 }
 
 /*****************************************************************************/
+bool simple_byte_alignment(AL_TRbspParser* pRP, uint8_t expected_bit)
+{
+  while(!byte_aligned(pRP))
+  {
+    uint8_t alignment_bit = u(pRP, 1);
+
+    if(alignment_bit != expected_bit)
+      return false;
+  }
+
+  return true;
+}
+
+/*****************************************************************************/
 bool byte_alignment(AL_TRbspParser* pRP)
 {
   uint8_t bit_equal_to_one = u(pRP, 1);
@@ -214,15 +232,7 @@ bool byte_alignment(AL_TRbspParser* pRP)
   if(!bit_equal_to_one)
     return false;
 
-  while(!byte_aligned(pRP))
-  {
-    uint8_t bit_equal_to_zero = u(pRP, 1);
-
-    if(bit_equal_to_zero)
-      return false;
-  }
-
-  return true;
+  return simple_byte_alignment(pRP, 0);
 }
 
 /*****************************************************************************/
@@ -266,7 +276,7 @@ bool rbsp_trailing_bits(AL_TRbspParser* pRP)
 /*****************************************************************************/
 uint8_t getbyte(AL_TRbspParser* pRP)
 {
-  assert(pRP->iTotalBitIndex % 8 == 0);
+  AL_Assert(byte_aligned(pRP));
 
   int byte_offset = (int)(pRP->iTotalBitIndex >> 3);
 
@@ -280,7 +290,7 @@ uint8_t getbyte(AL_TRbspParser* pRP)
     }
   }
 
-  assert(pRP->iTotalBitIndex <= pRP->iTrailingBitOneIndex);
+  AL_Assert(pRP->iTotalBitIndex <= pRP->iTrailingBitOneIndex);
 
   pRP->iTotalBitIndex += 8;
   ++(pRP->pByte);
@@ -350,6 +360,13 @@ void skip(AL_TRbspParser* pRP, uint32_t iNumBits)
 }
 
 /*************************************************************************/
+void skipAllZerosAndTheNextByte(AL_TRbspParser* pRP)
+{
+  while(u(pRP, 8) == 0x00)
+    ;
+}
+
+/*************************************************************************/
 uint32_t offset(AL_TRbspParser* pRP)
 {
   return pRP->iTotalBitIndex;
@@ -397,7 +414,7 @@ int32_t i(AL_TRbspParser* pRP, uint8_t iNumBits)
   int abs_val = val_u & mask;
 
   if(val_u & ~mask)
-    return -abs_val;
+    return -((((~val_u) & mask)) + 1);
 
   return abs_val;
 }
@@ -436,7 +453,13 @@ uint32_t ue(AL_TRbspParser* pRP)
   }
 
   if(n)
-    return (1 << n) - 1 + u(pRP, n);
+  {
+    /* Concealment */
+    if(n >= 32)
+      return 0;
+
+    return (1u << n) - 1 + u(pRP, n);
+  }
 
   return 0;
 }

@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright (C) 2018 Allegro DVT2.  All rights reserved.
+* Copyright (C) 2008-2022 Allegro DVT2.  All rights reserved.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -121,6 +121,19 @@ typedef struct t_AvcSliceHeader
   const AL_TAvcSps* pSPS;
 }AL_TAvcSliceHdr;
 
+typedef struct t_AvcHdrSvcExt // nal_unit_header_svc_extension
+{
+  uint8_t idr_flag;
+  uint8_t priority_id;
+  uint8_t no_inter_layer_pred_flag;
+  uint8_t dependency_id;
+  uint8_t quality_id;
+  uint8_t temporal_id;
+  uint8_t use_ref_base_pic_flag;
+  uint8_t discardable_flag;
+  uint8_t output_flag;
+}AL_TAvcHdrSvcExt;
+
 /*************************************************************************//*!
    \brief Mimics structure described in spec sec. 7.3.3
 *****************************************************************************/
@@ -128,7 +141,7 @@ typedef struct t_HevcSliceHeader
 {
   uint8_t nal_unit_type;
   uint8_t nuh_layer_id;
-  uint8_t temporal_id_plus1;
+  uint8_t nuh_temporal_id_plus1;
 
   uint8_t first_slice_segment_in_pic_flag;
   uint8_t no_output_of_prior_pics_flag;
@@ -185,7 +198,6 @@ typedef struct t_HevcSliceHeader
 
   uint16_t num_entry_point_offsets;
   uint8_t offset_len_minus1;
-  uint32_t entry_point_offset_minus1[AL_MAX_ENTRY_POINT];
 
   AL_THevcPps const* pPPS;
   AL_THevcSps* pSPS;
@@ -207,6 +219,10 @@ typedef struct t_HevcSliceHeader
   uint8_t NumPocTotalCurr;
 
   int slice_header_length;
+  /* Keep this at last position of structure since it allows to memset
+   * AL_THevcSliceHdr without clearing entry_point_offset_minus1.
+   */
+  uint32_t entry_point_offset_minus1[AL_MAX_ENTRY_POINT];
 }AL_THevcSliceHdr;
 
 /******************************************************************************/

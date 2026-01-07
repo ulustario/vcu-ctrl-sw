@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 set -euo pipefail
 scriptDir=$(dirname -- "$(readlink -f -- "$0")")
@@ -10,10 +10,10 @@ has ()
   which $1 > /dev/null
 }
 
-if has svnversion ; then
-  svnversion="$(svnversion -n $scriptDir)"
-  if !(echo $svnversion | grep "Unversioned" > /dev/null 2>&1) ; then
-    res="+$svnversion"
+if has git; then
+  git_hash="$(git rev-parse --verify HEAD 2> /dev/null)"
+  if [ $? -eq 0 ]; then
+    res="+$git_hash"
   fi
 fi
 

@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright (C) 2018 Allegro DVT2.  All rights reserved.
+* Copyright (C) 2008-2022 Allegro DVT2.  All rights reserved.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -36,6 +36,16 @@
 ******************************************************************************/
 
 #pragma once
+#include "lib_rtos/types.h"
+#include "lib_common/Profiles.h"
 
-int Avc_GetMaxNumberOfSlices(int profile_idc, int level_idc, int numUnitInTicks, int timeScale, int numMbsInPic);
+bool AL_AVC_CheckLevel(int level);
+uint32_t AL_AVC_GetMaxNumberOfSlices(AL_EProfile profile, int level, int numUnitInTicks, int timeScale, int numMbsInPic);
+uint32_t AL_AVC_GetMaxCPBSize(int level);
+uint32_t AL_AVC_GetMaxDPBSize(int level, int iWidth, int iHeight);
+
+uint8_t AL_AVC_GetLevelFromFrameSize(int numMbPerFrame);
+uint8_t AL_AVC_GetLevelFromMBRate(int mbRate);
+uint8_t AL_AVC_GetLevelFromBitrate(int bitrate);
+uint8_t AL_AVC_GetLevelFromDPBSize(int dpbSize);
 

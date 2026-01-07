@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright (C) 2018 Allegro DVT2.  All rights reserved.
+* Copyright (C) 2008-2022 Allegro DVT2.  All rights reserved.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -37,16 +37,14 @@
 
 #pragma once
 
-#include "lib_common_enc/EncBuffers.h"
-#include "lib_common_enc/EncRecBuffer.h"
-#include "lib_common_enc/Settings.h"
+#include "lib_encode/IP_EncoderCtx.h"
 
 typedef struct AL_s_TEncoder AL_TEncoder;
 typedef struct AL_t_EncCtx AL_TEncCtx;
 
 /****************************************************************************/
-typedef struct AL_s_TEncoder
+struct AL_s_TEncoder
 {
   AL_TEncCtx* pCtx;
-}AL_TEncoder;
+};
 

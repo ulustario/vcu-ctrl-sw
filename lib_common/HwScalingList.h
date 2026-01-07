@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright (C) 2018 Allegro DVT2.  All rights reserved.
+* Copyright (C) 2008-2022 Allegro DVT2.  All rights reserved.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -49,14 +49,23 @@
 #include "ScalingList.h"
 
 /*************************************************************************//*!
-   \brief Converts Scaling List matrices from software user-friendly format to
+   \brief Converts AVC Scaling List matrices from software user-friendly format to
+   Hardware encoder preprocessed format.
+   \param[in]  pSclLst pointer to Scaling List in Software format
+   \param[in]  chroma_format_idc chroma mode id
+   \param[out] pHwSclLst pointer to Hardware formated Scaling list that receives
+   the preprocessed matrices
+*****************************************************************************/
+void AL_AVC_GenerateHwScalingList(AL_TSCLParam const* pSclLst, uint8_t chroma_format_idc, AL_THwScalingList* pHwSclLst);
+
+/*************************************************************************//*!
+   \brief Converts HEVC Scaling List matrices from software user-friendly format to
    Hardware encoder preprocessed format.
    \param[in]  pSclLst pointer to Scaling List in Software format
    \param[out] pHwSclLst pointer to Hardware formated Scaling list that receives
    the preprocessed matrices
 *****************************************************************************/
 void AL_HEVC_GenerateHwScalingList(AL_TSCLParam const* pSclLst, AL_THwScalingList* pHwSclLst);
-void AL_AVC_GenerateHwScalingList(AL_TSCLParam const* pSclLst, AL_THwScalingList* pHwSclLst);
 
 /*@}*/
 

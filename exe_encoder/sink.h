@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright (C) 2018 Allegro DVT2.  All rights reserved.
+* Copyright (C) 2008-2022 Allegro DVT2.  All rights reserved.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -48,17 +48,18 @@ extern "C"
 struct IFrameSink
 {
   virtual ~IFrameSink() {};
+  virtual void PreprocessFrame() {};
   virtual void ProcessFrame(AL_TBuffer* frame) = 0;
 };
 
 struct NullFrameSink : IFrameSink
 {
-  virtual void ProcessFrame(AL_TBuffer*) {}
+  virtual void ProcessFrame(AL_TBuffer*) override {}
 };
 
 struct MultiSink : IFrameSink
 {
-  virtual void ProcessFrame(AL_TBuffer* frame)
+  void ProcessFrame(AL_TBuffer* frame) override
   {
     for(auto& sink : sinks)
       sink->ProcessFrame(frame);

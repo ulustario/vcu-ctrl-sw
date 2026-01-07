@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright (C) 2018 Allegro DVT2.  All rights reserved.
+* Copyright (C) 2008-2022 Allegro DVT2.  All rights reserved.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -66,7 +66,7 @@ static AL_EDriverError ErrnoToDriverError(int err)
   return DRIVER_ERROR_UNKNOWN;
 }
 
-static AL_EDriverError PostMessage(AL_TDriver* driver, int fd, long unsigned int messageId, void* data)
+static AL_EDriverError PostMessage(AL_TDriver* driver, int fd, long unsigned int messageId, void* data, bool isBlocking)
 {
   (void)driver;
 
@@ -78,7 +78,8 @@ static AL_EDriverError PostMessage(AL_TDriver* driver, int fd, long unsigned int
       iRet = Rtos_DriverIoctl((void*)(intptr_t)fd, messageId, data);
     else
     {
-      iRet = Rtos_DriverPoll((void*)(intptr_t)fd, *(int*)data);
+      Rtos_PollCtx* ctx = (Rtos_PollCtx*)data;
+      iRet = Rtos_DriverPoll((void*)(intptr_t)fd, ctx);
 
       if(iRet == 0)
         return DRIVER_TIMEOUT;
@@ -88,7 +89,8 @@ static AL_EDriverError PostMessage(AL_TDriver* driver, int fd, long unsigned int
 
     if(iRet < 0)
     {
-      if((errdrv == EAGAIN) || (errdrv == EINTR))
+      /* posix -> EAGAIN == EWOULDBLOCK */
+      if((errdrv == EAGAIN && isBlocking) || (errdrv == EINTR))
         continue;
       return ErrnoToDriverError(errdrv);
     }
@@ -99,9 +101,9 @@ static AL_EDriverError PostMessage(AL_TDriver* driver, int fd, long unsigned int
 
 static AL_DriverVtable hardwareDriverVtable =
 {
-  &Open,
-  &Close,
-  &PostMessage,
+  Open,
+  Close,
+  PostMessage,
 };
 
 static AL_TDriver hardwareDriver =
@@ -109,7 +111,7 @@ static AL_TDriver hardwareDriver =
   &hardwareDriverVtable
 };
 
-AL_TDriver* AL_GetHardwareDriver()
+AL_TDriver* AL_GetHardwareDriver(void)
 {
   return &hardwareDriver;
 }

@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright (C) 2018 Allegro DVT2.  All rights reserved.
+* Copyright (C) 2008-2022 Allegro DVT2.  All rights reserved.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -54,15 +54,22 @@
    \param[in] pCtx   Pointer to a Picture manager context object
    \param[in] pSlice slice header of the current decoded slice
 *****************************************************************************/
-bool AL_AVC_PictMngr_SetCurrentPOC(AL_TPictMngrCtx* pCtx, AL_TAvcSliceHdr* pSlice);
+void AL_AVC_PictMngr_SetCurrentPOC(AL_TPictMngrCtx* pCtx, AL_TAvcSliceHdr* pSlice);
+
+/*************************************************************************//*!
+   \brief Sets the picture structure of the current decoded frame
+   \param[in] pCtx       Pointer to a Picture manager context object
+   \param[in] ePicStruct Picture structure
+*****************************************************************************/
+void AL_AVC_PictMngr_SetCurrentPicStruct(AL_TPictMngrCtx* pCtx, AL_EPicStruct ePicStruct);
 
 /*************************************************************************//*!
    \brief This function updates the reconstructed resolution information
    \param[in] pCtx Pointer to a Picture manager context object
    \param[in] pSPS Pointer to a ACV SPS structure
-   \param[in] pPP  Pointer to the current picture parameters
+   \param[in] ePicStruct Picture structure (frame/field, top/Bottom) of the current frame buffer
 *****************************************************************************/
-void AL_AVC_PictMngr_UpdateRecInfo(AL_TPictMngrCtx* pCtx, AL_TAvcSps const* pSPS, AL_TDecPicParam* pPP);
+void AL_AVC_PictMngr_UpdateRecInfo(AL_TPictMngrCtx* pCtx, AL_TAvcSps const* pSPS, AL_EPicStruct ePicStruct);
 
 /*************************************************************************//*!
    \brief This function updates the Picture Manager context each time a picture have been parsed.
@@ -96,7 +103,7 @@ void AL_AVC_PictMngr_CleanDPB(AL_TPictMngrCtx* pCtx);
    \return If the function succeeds the return value is nonzero (true)
         If the function fails the return value is zero (false)
 *****************************************************************************/
-bool AL_AVC_PictMngr_GetBuffers(AL_TPictMngrCtx* pCtx, AL_TDecPicParam* pPP, AL_TDecSliceParam* pSP, AL_TAvcSliceHdr* pSlice, TBufferListRef* pListRef, TBuffer* pListVirtAddr, TBuffer* pListAddr, TBufferPOC* pPOC, TBufferMV* pMV, TBuffer* pWP, AL_TRecBuffers* pRecs);
+bool AL_AVC_PictMngr_GetBuffers(AL_TPictMngrCtx* pCtx, AL_TDecSliceParam* pSP, AL_TAvcSliceHdr* pSlice, TBufferListRef* pListRef, TBuffer* pListVirtAddr, TBuffer* pListAddr, TBufferPOC* pPOC, TBufferMV* pMV, TBuffer* pWP, AL_TRecBuffers* pRecs);
 
 /*************************************************************************//*!
    \brief Initializes the reference picture list for the current slice
@@ -120,6 +127,14 @@ void AL_AVC_PictMngr_Fill_Gap_In_FrameNum(AL_TPictMngrCtx* pCtx, AL_TAvcSliceHdr
    \param[in,out] pListRef Receives the modified reference list of the current slice
 *****************************************************************************/
 void AL_AVC_PictMngr_ReorderPictList(AL_TPictMngrCtx* pCtx, AL_TAvcSliceHdr* pSlice, TBufferListRef* pListRef);
+
+/*************************************************************************//*!
+   \brief Retrieves the number of really existing reference pictures
+   \param[in] pCtx     Pointer to a Picture manager context object
+   \param[in] pListRef The reference list of the current slice
+   \return the number of really existing reference pictures
+*****************************************************************************/
+int AL_AVC_PictMngr_GetNumExistingRef(AL_TPictMngrCtx* pCtx, TBufferListRef* pListRef);
 
 /*@}*/
 

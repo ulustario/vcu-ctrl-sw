@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright (C) 2018 Allegro DVT2.  All rights reserved.
+* Copyright (C) 2008-2022 Allegro DVT2.  All rights reserved.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -46,7 +46,7 @@
 
 #include "lib_rtos/types.h"
 #include "lib_common/SliceConsts.h"
-#include "DecBuffers.h"
+#include "lib_common_dec/DecBuffersInternal.h"
 
 /*************************************************************************//*!
    \brief Slice Parameters : Mimics structure for IP registers
@@ -57,7 +57,7 @@ typedef struct AL_t_DecSliceParam
   uint8_t CabacInitIdc;
   uint8_t ColocFromL0;
   uint8_t mvd_l1_zero_flag;
-  uint16_t WPTableID;
+  uint16_t SliceId;
   uint8_t NumRefIdxL1Minus1;
   uint8_t NumRefIdxL0Minus1;
   uint8_t WeightedPred;
@@ -69,6 +69,8 @@ typedef struct AL_t_DecSliceParam
   uint8_t TileNgbC;
   uint8_t TileNgbD;
   uint8_t TileNgbE;
+  uint8_t TileNgbH;
+  uint8_t TileNgbI;
   uint16_t NumEntryPoint;
   uint8_t PicIDL0[MAX_REF];
   uint8_t PicIDL1[MAX_REF];
@@ -88,8 +90,8 @@ typedef struct AL_t_DecSliceParam
   uint16_t LcuTileWidth;
   uint16_t LcuTileHeight;
 
-  uint32_t FirstLCU;
-  uint32_t NumLCU;
+  uint32_t SliceFirstLCU;
+  uint32_t SliceNumLCU;
 
   uint32_t NextSliceSegment;
   uint32_t FirstLcuSliceSegment;
@@ -104,21 +106,23 @@ typedef struct AL_t_DecSliceParam
   bool DependentSlice;
   bool SAOFilterChroma;
   bool SAOFilterLuma;
-  bool LoopFilter;
+  bool DisableLoopFilter;
   bool XSliceLoopFilter;
   bool CuChromaQpOffset;
   bool NextIsDependent;
   bool Tile;
 
   AL_ESliceType eSliceType;
-
   uint32_t uStrAvailSize;
   uint32_t uCompOffset;
   uint32_t uStrOffset;
+  uint32_t uParsingId;
+
+  /* Keep this at last position of structure since it allows to copy only
+   * necessary entry_point_offset content.
+   */
   uint32_t entry_point_offset[AL_MAX_ENTRY_POINT + 1];
-
 }AL_TDecSliceParam;
-
 
 /*@}*/
 

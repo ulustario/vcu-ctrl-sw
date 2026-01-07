@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright (C) 2018 Allegro DVT2.  All rights reserved.
+* Copyright (C) 2008-2022 Allegro DVT2.  All rights reserved.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -63,6 +63,9 @@ typedef struct t_RepFormat
   uint32_t conf_win_vps_bottom_offset;
 }AL_TRepFormat;
 
+/****************************************************************************/
+#define AL_HEVC_MAX_VPS 16
+
 /*************************************************************************//*!
    \brief Mimics structure described in spec sec. 7.3.2.1.
 *****************************************************************************/
@@ -76,7 +79,7 @@ typedef struct t_HevcVps
   uint8_t vps_temporal_id_nesting_flag;
   uint8_t vps_sub_layer_ordering_info_present_flag;
 
-  AL_TProfilevel profile_and_level[MAX_NUM_LAYER];
+  AL_THevcProfilevel profile_and_level[MAX_NUM_LAYER];
 
   uint8_t vps_max_dec_pic_buffering_minus1[8];
   uint8_t vps_max_num_reorder_pics[8];
@@ -100,6 +103,12 @@ typedef struct t_HevcVps
 
   uint8_t vps_extension_flag;
 }AL_THevcVps;
+
+/****************************************************************************/
+typedef union
+{
+  AL_THevcVps HevcVPS;
+}AL_TVps;
 
 /****************************************************************************/
 

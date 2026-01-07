@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright (C) 2018 Allegro DVT2.  All rights reserved.
+* Copyright (C) 2008-2022 Allegro DVT2.  All rights reserved.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -38,42 +38,100 @@
 #include "NalDecoder.h"
 #include "NalUnitParserPrivate.h"
 
-void AL_DecodeOneNal(AL_NonVclNuts nuts, AL_NalParser parser, AL_TAup* pAUP, AL_TDecCtx* pCtx, AL_ENut nut, bool bIsLastAUNal, int* iNumSlice)
+AL_TSeiMetaData* GetSeiMetaData(AL_TDecCtx* pCtx)
+{
+  if(!pCtx->pInputBuffer)
+    return NULL;
+
+  return (AL_TSeiMetaData*)AL_Buffer_GetMetaData(pCtx->pInputBuffer, AL_META_TYPE_SEI);
+}
+
+bool HasOngoingFrame(AL_TDecCtx* pCtx)
+{
+  return pCtx->bFirstIsValid && pCtx->bFirstSliceInFrameIsValid;
+}
+
+bool CheckAvailSpace(AL_TDecCtx* pCtx, AL_TSeiMetaData* pMeta)
+{
+  uint32_t uLengthNAL = GetNonVclSize(&pCtx->Stream);
+  int Offset = (uintptr_t)AL_SeiMetaData_GetBuffer(pMeta) - (uintptr_t)pMeta->pBuf;
+  return Offset + uLengthNAL <= pMeta->maxBufSize;
+}
+
+static void CheckNALParserResult(AL_TDecCtx* pCtx, AL_PARSE_RESULT eParseResult)
+{
+  if(eParseResult == AL_OK)
+    return;
+
+  AL_Default_Decoder_SetError(pCtx, eParseResult == AL_UNSUPPORTED ? AL_WARN_UNSUPPORTED_NAL : AL_WARN_CONCEAL_DETECT, -1, true);
+}
+
+bool AL_DecodeOneNal(AL_NonVclNuts nuts, AL_NalParser parser, AL_TAup* pAUP, AL_TDecCtx* pCtx, AL_ENut nut, bool bIsLastAUNal, int* iNumSlice)
 {
   if(parser.isSliceData(nut))
   {
-    parser.decodeSliceData(pAUP, pCtx, nut, bIsLastAUNal, iNumSlice);
-    return;
+    return parser.decodeSliceData(pAUP, pCtx, nut, bIsLastAUNal, iNumSlice);
   }
 
-  if((nut == nuts.seiPrefix || nut == nuts.seiSuffix) && parser.parseSei)
+  if((nut == nuts.seiPrefix || (nut == nuts.seiSuffix && pCtx->bIsBuffersAllocated)) && parser.parseSei)
   {
-    AL_TRbspParser rp = getParserOnNonVclNal(pCtx);
-    parser.parseSei(pAUP, &rp, &pCtx->parsedSeiCB);
+    bool bIsPrefix = (nut == nuts.seiPrefix);
+    AL_TSeiMetaData* pMeta = GetSeiMetaData(pCtx);
+
+    if(pMeta && !CheckAvailSpace(pCtx, pMeta))
+    {
+      AL_Default_Decoder_SetError(pCtx, AL_WARN_SEI_OVERFLOW, -1, true);
+      return false;
+    }
+
+    AL_TRbspParser rp = pMeta ? getParserOnNonVclNal(pCtx, AL_SeiMetaData_GetBuffer(pMeta)) : getParserOnNonVclNalInternalBuf(pCtx);
+
+    if(!parser.parseSei(pAUP, &rp, bIsPrefix, &pCtx->tDecCB.parsedSeiCB, pMeta))
+      AL_Default_Decoder_SetError(pCtx, AL_WARN_SEI_OVERFLOW, -1, true);
   }
 
   if(nut == nuts.sps)
   {
-    AL_TRbspParser rp = getParserOnNonVclNal(pCtx);
-    parser.parseSps(pAUP, &rp);
+    AL_TRbspParser rp = getParserOnNonVclNalInternalBuf(pCtx);
+    AL_PARSE_RESULT eParserResult = parser.parseSps(pAUP, &rp, pCtx);
+    CheckNALParserResult(pCtx, eParserResult);
   }
 
   if(nut == nuts.pps)
   {
-    AL_TRbspParser rp = getParserOnNonVclNal(pCtx);
-    parser.parsePps(pAUP, &rp, pCtx);
+    AL_TRbspParser rp = getParserOnNonVclNalInternalBuf(pCtx);
+    AL_PARSE_RESULT eParserResult = parser.parsePps(pAUP, &rp, pCtx);
+    CheckNALParserResult(pCtx, eParserResult);
   }
 
   if(nut == nuts.vps && parser.parseVps)
   {
-    AL_TRbspParser rp = getParserOnNonVclNal(pCtx);
-    parser.parseVps(pAUP, &rp);
+    AL_TRbspParser rp = getParserOnNonVclNalInternalBuf(pCtx);
+    AL_PARSE_RESULT eParserResult = parser.parseVps(pAUP, &rp);
+    CheckNALParserResult(pCtx, eParserResult);
   }
 
-  if(nut == nuts.eos)
+  if((nut == nuts.apsPrefix || nut == nuts.apsSuffix) && parser.parseAps)
   {
-    pCtx->bIsFirstPicture = true;
-    pCtx->bLastIsEOS = true;
+    AL_TRbspParser rp = getParserOnNonVclNalInternalBuf(pCtx);
+    AL_PARSE_RESULT eParserResult = parser.parseAps(pAUP, &rp, pCtx);
+    CheckNALParserResult(pCtx, eParserResult);
   }
+
+  if(nut == nuts.ph && parser.parsePh)
+  {
+    AL_TRbspParser rp = getParserOnNonVclNalInternalBuf(pCtx);
+    AL_PARSE_RESULT eParserResult = parser.parsePh(pAUP, &rp, pCtx);
+    CheckNALParserResult(pCtx, eParserResult);
+  }
+
+  if((nut == nuts.eos) || (nut == nuts.eob))
+  {
+    if(pCtx->bFirstIsValid && pCtx->bFirstSliceInFrameIsValid)
+      parser.finishPendingRequest(pCtx);
+    pCtx->bIsFirstPicture = true;
+  }
+
+  return false;
 }
 

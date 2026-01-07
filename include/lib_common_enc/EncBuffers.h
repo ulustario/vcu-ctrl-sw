@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright (C) 2018 Allegro DVT2.  All rights reserved.
+* Copyright (C) 2008-2022 Allegro DVT2.  All rights reserved.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -47,20 +47,12 @@
 #include "lib_rtos/lib_rtos.h"
 #include "lib_rtos/types.h"
 
-#include "lib_common/versions.h"
 #include "lib_common/SliceConsts.h"
 #include "lib_common/BufCommon.h"
+#include "lib_common/BufferPixMapMeta.h"
 
 #include "lib_common_enc/EncChanParam.h"
-
-// EP2 masks
-#define FLAG_INTRA_ONLY 0x40
-
-#define MASK_QP 0x3F
-#define MASK_FORCE_INTRA 0x40
-#define MASK_FORCE_MV0 0x80
-#define MASK_FORCE 0xC0
-
+#include "lib_common_enc/QPTable.h"
 
 // Encoder Parameter Buf 2 Flag,  Size, Offset
 static const AL_TBufInfo EP2_BUF_QP_CTRL =
@@ -69,21 +61,21 @@ static const AL_TBufInfo EP2_BUF_QP_CTRL =
 }; // only 20 bytes used
 static const AL_TBufInfo EP2_BUF_SEG_CTRL =
 {
-  2, 16, 48
+  2, AL_QPTABLE_SEGMENTS_SIZE, 48
 };
 static const AL_TBufInfo EP2_BUF_QP_BY_MB =
 {
-  4, 0, 64
+  4, 0, 48 + AL_QPTABLE_SEGMENTS_SIZE
 }; // no fixed size
-
 
 /*************************************************************************//*!
    \brief Retrieves the size of a Encoder parameters buffer 2 (QP Ctrl)
    \param[in] tDim Frame size in pixels
-   \param[in] uMaxCuSize Maximum Size of a Coding Unit
+   \param[in] eCodec Codec
+   \param[in] uLog2MaxCuSize Max size of a coding unit (log2)
    \return maximum size (in bytes) needed to store
 *****************************************************************************/
-uint32_t AL_GetAllocSizeEP2(AL_TDimension tDim, uint8_t uMaxCuSize);
+uint32_t AL_GetAllocSizeEP2(AL_TDimension tDim, AL_ECodec eCodec, uint8_t uLog2MaxCuSize);
 
 // AL_DEPRECATED("Doesn't support pitch different of AL_EncGetMinPitch. Use AL_GetAllocSizeSrc(). Will be removed in 0.9")
 uint32_t AL_GetAllocSize_Src(AL_TDimension tDim, uint8_t uBitDepth, AL_EChromaMode eChromaMode, AL_ESrcMode eSrcFmt);
@@ -91,14 +83,26 @@ uint32_t AL_GetAllocSize_Src(AL_TDimension tDim, uint8_t uBitDepth, AL_EChromaMo
 /*************************************************************************//*!
    \brief Retrieves the size of a Source YUV frame buffer
    \param[in] tDim Frame size in pixels
-   \param[in] uBitDepth YUV bit-depth
    \param[in] eChromaMode Chroma Mode
    \param[in] eSrcFmt Source format used by the HW IP
-   \param[in] iPitch pitch / stride of the source frame buffer
-   \param[in] iStrideHeight the offset to the chroma in line of pixels
+   \param[in] iPitch Pitch / stride of the source frame buffer
+   \param[in] iStrideHeight The height used for buffer allocation. Might be
+   greater than the frame height when frame-height is non 8-multiple, or to
+   customize offset between luma and chroma.
    \return maximum size (in bytes) needed for the YUV frame buffer
 *****************************************************************************/
-uint32_t AL_GetAllocSizeSrc(AL_TDimension tDim, uint8_t uBitDepth, AL_EChromaMode eChromaMode, AL_ESrcMode eSrcFmt, int iPitch, int iStrideHeight);
+uint32_t AL_GetAllocSizeSrc(AL_TDimension tDim, AL_EChromaMode eChromaMode, AL_ESrcMode eSrcFmt, int iPitch, int iStrideHeight);
+
+/*************************************************************************//*!
+   \brief Retrieves the size of one pixel component of a YUV frame buffer
+   \param[in] eSrcFmt Source format used by the HW IP
+   \param[in] iPitch Pitch / stride of the source frame buffer
+   \param[in] iStrideHeight The height used for buffer allocation
+   \param[in] eChromaMode Chroma Mode
+   \param[in] ePlaneId The pixel plane type. Must not be a map plane.
+   \return maximum size (in bytes) needed for the component
+*****************************************************************************/
+uint32_t AL_GetAllocSizeSrc_PixPlane(AL_ESrcMode eSrcFmt, int iPitch, int iStrideHeight, AL_EChromaMode eChromaMode, AL_EPlaneId ePlaneId);
 
 /*************************************************************************//*!
    \brief Retrieves the minimal pitch value supported by the ip depending
@@ -109,9 +113,6 @@ uint32_t AL_GetAllocSizeSrc(AL_TDimension tDim, uint8_t uBitDepth, AL_EChromaMod
    \return pitch value in bytes
 *****************************************************************************/
 int AL_EncGetMinPitch(int iWidth, uint8_t uBitDepth, AL_EFbStorageMode eStorageMode);
-
-AL_DEPRECATED("Renamed as AL_EncGetMinPitch, Will be removed in 0.9")
-int AL_CalculatePitchValue(int iWidth, uint8_t uBitDepth, AL_EFbStorageMode eStorageMode);
 
 /*************************************************************************//*!
    \brief Retrieves the Source frame buffer storage mode depending on Source mode
@@ -127,7 +128,13 @@ AL_EFbStorageMode AL_GetSrcStorageMode(AL_ESrcMode eSrcMode);
 *****************************************************************************/
 bool AL_IsSrcCompressed(AL_ESrcMode eSrcMode);
 
+AL_DEPRECATED("Renamed as AL_EncGetMinPitch, Will be removed in 0.9")
+int AL_CalculatePitchValue(int iWidth, uint8_t uBitDepth, AL_EFbStorageMode eStorageMode);
 
+AL_DEPRECATED("Use AL_GetAllocSizeSrc_PixPlane.")
+uint32_t AL_GetAllocSizeSrc_Y(AL_ESrcMode eSrcFmt, int iPitch, int iStrideHeight);
+AL_DEPRECATED("Use AL_GetAllocSizeSrc_PixPlane.")
+uint32_t AL_GetAllocSizeSrc_UV(AL_ESrcMode eSrcFmt, int iPitch, int iStrideHeight, AL_EChromaMode eChromaMode);
 
 /*@}*/
 

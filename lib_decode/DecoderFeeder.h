@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright (C) 2018 Allegro DVT2.  All rights reserved.
+* Copyright (C) 2008-2022 Allegro DVT2.  All rights reserved.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -44,18 +44,11 @@
 #include "Patchworker.h"
 #include "lib_rtos/types.h"
 
-typedef struct
-{
-  void (* func)(void* pUserParam);
-  void* userParam;
-}AL_CB_Error;
-
 typedef struct AL_TDecoderFeederS AL_TDecoderFeeder;
 
-AL_TDecoderFeeder* AL_DecoderFeeder_Create(TMemDesc* decodeMemoryDescriptor, AL_HANDLE hDec, AL_TPatchworker* patchworker, AL_CB_Error* errorCallback);
+AL_TDecoderFeeder* AL_DecoderFeeder_Create(AL_TBuffer* stream, AL_HANDLE hDec, AL_TPatchworker* patchworker);
 void AL_DecoderFeeder_Destroy(AL_TDecoderFeeder* pDecFeeder);
 /* push a buffer in the queue. it will be fed to the decoder when possible */
 void AL_DecoderFeeder_Process(AL_TDecoderFeeder* pDecFeeder);
-void AL_DecoderFeeder_Flush(AL_TDecoderFeeder* pDecFeeder);
 void AL_DecoderFeeder_Reset(AL_TDecoderFeeder* pDecFeeder);
 

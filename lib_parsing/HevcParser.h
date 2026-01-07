@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright (C) 2018 Allegro DVT2.  All rights reserved.
+* Copyright (C) 2008-2022 Allegro DVT2.  All rights reserved.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -36,22 +36,21 @@
 ******************************************************************************/
 
 #pragma once
+#include "Aup.h"
+#include "common_syntax.h"
+#include "Concealment.h"
 
 #include "lib_common/PPS.h"
 #include "lib_common/SEI.h"
+#include "lib_common/BufferSeiMeta.h"
 #include "lib_common_dec/RbspParser.h"
-#include "Concealment.h"
-#include "common_syntax.h"
-#include "Aup.h"
-
-#include "lib_decode/lib_decode.h" // for AL_CB_ParsedSEI
+#include "lib_common_dec/DecCallbacks.h" // for AL_CB_ParsedSEI
 
 void AL_HEVC_InitAUP(AL_THevcAup* pAUP);
-
-void AL_HEVC_ParsePPS(AL_TAup* pIAup, AL_TRbspParser* pRP, uint8_t* pPpsId);
-AL_PARSE_RESULT AL_HEVC_ParseSPS(AL_TAup* pIAup, AL_TRbspParser* pRP);
-void ParseVPS(AL_TAup* pIAup, AL_TRbspParser* pRP);
-bool AL_HEVC_ParseSEI(AL_TAup* pIAup, AL_TRbspParser* pRP, AL_CB_ParsedSei* cb);
+void AL_HEVC_ParsePPS(AL_TAup* pIAup, AL_TRbspParser* pRP, uint16_t* pPpsId);
+AL_PARSE_RESULT AL_HEVC_ParseSPS(AL_TRbspParser* pRP, AL_THevcSps* pSPS);
+AL_PARSE_RESULT AL_HEVC_ParseVPS(AL_TAup* pIAup, AL_TRbspParser* pRP);
+bool AL_HEVC_ParseSEI(AL_TAup* pIAup, AL_TRbspParser* pRP, bool bIsPrefix, AL_CB_ParsedSei* cb, AL_TSeiMetaData* pMeta);
 
 /*************************************************************************//*!
    \brief the short term reference picture computation

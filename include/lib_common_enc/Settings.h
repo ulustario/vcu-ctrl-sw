@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright (C) 2018 Allegro DVT2.  All rights reserved.
+* Copyright (C) 2008-2022 Allegro DVT2.  All rights reserved.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -44,112 +44,105 @@
 ******************************************************************************/
 #pragma once
 
-#include "stdio.h"
+#include <stdio.h>
 #include "lib_rtos/types.h"
 #include "lib_common/SliceConsts.h"
 #include "lib_common/FourCC.h"
 #include "EncChanParam.h"
-
-#define VP9_AUTO_FILT_LEVEL -1
-
-/*************************************************************************//*!
-   \brief Enable/Disable flag identifier
-*****************************************************************************/
-typedef enum e_OptionFlag
-{
-  DISABLE = 0,
-  ENABLE = 1,
-}EOptionFlag;
+#include "lib_common/HDR.h"
 
 /*************************************************************************//*!
    \brief Aspect Ratio identifer
 *****************************************************************************/
 typedef enum e_AspectRatio
 {
-  AL_ASPECT_RATIO_AUTO = 0x00,
-  AL_ASPECT_RATIO_4_3 = 0x01,
-  AL_ASPECT_RATIO_16_9 = 0x02,
-  AL_ASPECT_RATIO_NONE = 0x03,
-  AL_ASPECT_RATIO_MAX_ENUM,
+  AL_ASPECT_RATIO_AUTO,
+  AL_ASPECT_RATIO_1_1,
+  AL_ASPECT_RATIO_4_3,
+  AL_ASPECT_RATIO_16_9,
+  AL_ASPECT_RATIO_NONE,
+  AL_ASPECT_RATIO_MAX_ENUM, /* sentinel */
 }AL_EAspectRatio;
-
-/*************************************************************************//*!
-   \brief Colour Description identifer (See Hevc Spec Table E.3)
-*****************************************************************************/
-typedef enum e_ColourDescription
-{
-  COLOUR_DESC_BT_709 = 1,
-  COLOUR_DESC_BT_470_PAL = 5
-}AL_EColourDescription;
 
 /*************************************************************************//*!
    \brief QP Control Mode
 *****************************************************************************/
-typedef enum e_QPCtrlMode
+typedef enum e_QpCtrlMode
 {
-  // exclusive modes
-  UNIFORM_QP = 0x00, /*!< default behaviour */
-  CHOOSE_QP = 0x01, /*!< used for test purpose, need preprocessing */
-  RAMP_QP = 0x02, /*!< used for test purpose */
-  RANDOM_QP = 0x03, /*!< used for test purpose */
-  LOAD_QP = 0x04, /*!< used for test purpose */
-  BORDER_QP = 0x05, /*!< used for test purpose */
-  ROI_QP = 0x06,
-  MASK_QP_TABLE = 0x07,
-
-  // additional modes
-  RANDOM_SKIP = 0x20, /*!< used for test purpose */
-  RANDOM_I_ONLY = 0x40, /*!< used for test purpose */
-
-  BORDER_SKIP = 0x100,
-  FULL_SKIP = 0x200,
-
-  MASK_QP_TABLE_EXT = 0x367,
-
-  // Auto QP
-  AUTO_QP = 0x400, /*!< compute Qp by MB on the fly */
-  ADAPTIVE_AUTO_QP = 0x800, /*!< Dynamically compute Qp by MB on the fly */
-  MASK_AUTO_QP = 0xC00,
-
-  // QP table mode
-  RELATIVE_QP = 0x8000,
-  QP_MAX_ENUM,
+  AL_QP_CTRL_NONE,
+  AL_QP_CTRL_AUTO,
+  AL_QP_CTRL_ADAPTIVE_AUTO,
+  AL_QP_CTRL_MAX_ENUM,
 }AL_EQpCtrlMode;
 
+static inline bool AL_IS_AUTO_OR_ADAPTIVE_QP_CTRL(AL_EQpCtrlMode eMode)
+{
+  return (eMode == AL_QP_CTRL_AUTO) || (eMode == AL_QP_CTRL_ADAPTIVE_AUTO);
+}
+
+/*************************************************************************//*!
+   \brief QP Table Mode
+*****************************************************************************/
+typedef enum e_QpTableMode
+{
+  AL_QP_TABLE_NONE,
+  AL_QP_TABLE_RELATIVE,
+  AL_QP_TABLE_ABSOLUTE,
+  AL_QP_TABLE_MAX_ENUM,
+}AL_EQpTableMode;
+
+static inline bool AL_IS_QP_TABLE_REQUIRED(AL_EQpTableMode eMode)
+{
+  return (eMode == AL_QP_TABLE_RELATIVE) || (eMode == AL_QP_TABLE_ABSOLUTE);
+}
+
+/*************************************************************************//*!
+   \brief Scaling List identifier
+*****************************************************************************/
+typedef enum e_ScalingList
+{
+  AL_SCL_FLAT, /*!< All matrices coefficients set to 16 */
+  AL_SCL_DEFAULT, /*!< Use default matrices coefficients as defined in the codec specification */
+  AL_SCL_CUSTOM, /*!< Use custom matrices coefficients */
+  AL_SCL_MAX_ENUM, /* sentinel */
+}AL_EScalingList;
 
 /*************************************************************************//*!
    \brief Encoder Parameters
 *****************************************************************************/
 typedef AL_INTROSPECT (category = "debug") struct t_EncSettings
 {
-  // Stream
-  AL_TEncChanParam tChParam[MAX_NUM_LAYER];
-  bool bEnableAUD;
-  bool bEnableFillerData;
-  uint32_t uEnableSEI;
+  AL_TEncChanParam tChParam[MAX_NUM_LAYER]; /*!< Specifies the Channel parameters of the correspondong layer. Except for SHVC encoding (when supported) only layer 0 is used.*/
+  bool bEnableAUD; /*!< Enable Access Unit Delimiter nal unit in the stream */
+  AL_EFillerCtrlMode eEnableFillerData; /*!< Allows Filler Data Nal unit insertion when needed (CBR) */
+  uint32_t uEnableSEI; /*!< Bit-field specifying which SEI message have to be inserted. see AL_SeiFlag for a list of the supported SEI messages */
 
-  AL_EAspectRatio eAspectRatio; /*!< specifies the display aspect ratio */
-  AL_EColourDescription eColourDescription;
-  AL_EScalingList eScalingList;
-  bool bDependentSlice;
+  AL_EAspectRatio eAspectRatio; /*!< Specifies the sample aspect ratio of the luma samples. */
+  AL_EColourDescription eColourDescription; /*!< Indicates the chromaticity coordinates of the source primaries in terms of the CIE 1931 definition. */
+  AL_ETransferCharacteristics eTransferCharacteristics; /*!< Specifies the reference opto-electronic transfer characteristic function */
+  AL_EColourMatrixCoefficients eColourMatrixCoeffs; /*!< Specifies the matrix coefficients used in deriving luma and chroma signals from RGB */
+  AL_EScalingList eScalingList; /*!< Specifies which kind of scaling matrices is used for encoding. When set to AL_SCL_CUSTOM, the customized value shall be provided int the ScalingList and DCcoeff parameters below*/
+  bool bDependentSlice; /*!< Enable the dependent slice mode */
 
-  bool bDisIntra;
-  bool bForceLoad;
-  int32_t iPrefetchLevel2;
-  uint16_t uClipHrzRange;
-  uint16_t uClipVrtRange;
-  AL_EQpCtrlMode eQpCtrlMode;
-  int NumView;
-  int NumLayer;
-  uint8_t ScalingList[4][6][64];
-  uint8_t SclFlag[4][6];
-  uint8_t DcCoeff[8];
-  uint8_t DcCoeffFlag[8];
-  bool bEnableWatchdog;
-#if AL_ENABLE_TWOPASS
-  int LookAhead;
-  int TwoPass;
-#endif
+  bool bDisIntra; /*!< Disable Intra preiction Mode in P or B slice (validation purpose only) */
+  bool bForceLoad; /*!< Specifies if the work buffers are reloaded each time by the IP, recommended value : true */
+  int32_t iPrefetchLevel2; /*!< Specifies the size of the L2 prefetch memory */
+  uint16_t uClipHrzRange; /*!< Specifies the Horizontal motion vector range. Note: this range can be further reduce by the encoder accroding to various constraints*/
+  uint16_t uClipVrtRange; /*!< Specifies the Vertical motion vector range. Note: this range can be further reduce by the encoder accroding to various constraints*/
+  AL_EQpCtrlMode eQpCtrlMode; /*!< Specifies the QP control mode inside a frame; see AL_EQpCtrlMode for available modes */
+  AL_EQpTableMode eQpTableMode; /*!< Specifies the QP table mode. See AL_EQpTableMode for available modes */
+  int NumView; /*!< Specifies the number of view when multi-view encoding is supported. */
+  int NumLayer; /*!< Specifies the number of layer (1 or 2) when SHVC is supported. */
+  uint8_t ScalingList[4][6][64]; /*!< The scaling matrix coeffecients [S][M][C] where S=0 for 4x4, S=1 for 8x8, S=2 for 16x16 and S=3 for 32x32; M=0 for Intra Y, M=1 for Intra U, M=2 for intra V, M=3 for inter Y, M=4 for inter U and M=5 for interV; and where C is the coeffecient index. Note1 in 4x4 only the 16 first coeffecient are used; Note2 in 32x32 only intra Y inter Y matrices are used */
+  uint8_t SclFlag[4][6]; /*!< Specifies whether the corresponding ScalingList is valid or not */
+  uint8_t DcCoeff[8]; /*!< The DC coeffidients for matrices 16x16 intra Y, 16x16 intra U, 16x16 intra V, 16x16 inter Y, 16x16 inter U, 16x16 inter V, 32x32 intra Y and 32x32 inter Y in that order*/
+  uint8_t DcCoeffFlag; /*!< Specifies whether the corresponding DcCoeff is valid or not */
+  bool bEnableWatchdog; /*!< Enable the watchdog interrupt. This parameter should be set to 'false' until further advise */
+  int LookAhead; /*!< Enables the lookahead encoding mode (not zero) and specifies the number of frame ahead. This option is exclusive with TwoPass and bEnableFirstPassSceneChangeDetection. */
+  int TwoPass; /*!< Enables the dual-pass encoding mode (not zero) and specifies the current pass (1 or 2). This option is exclusive with LookAhead and bEnableFirstPassSceneChangeDetection. */
+  bool bEnableFirstPassSceneChangeDetection; /*!< Enables the quick firstpass mode for scene change detection only. This option is exclusive with LookAhead and TwoPass. */
+  AL_HANDLE hRcPluginDmaContext; /*!< Handle to the dma buffer given to the rate control plugin to pass user defined data to the plugin. This should be allocated with a dma allocator */
+  bool bDiagnostic; /*!< Additional checks meant for debugging. Not to be used on default usecase. */
 }AL_TEncSettings;
 
 /*************************************************************************//*!
@@ -162,7 +155,6 @@ void AL_Settings_SetDefaults(AL_TEncSettings* pSettings);
 void AL_Settings_SetDefaultParam(AL_TEncSettings* pSettings);
 
 void AL_Settings_SetDefaultRCParam(AL_TRCParam* pRCParam);
-
 
 /*************************************************************************//*!
    \brief Checks that all encoding parameters are valids
@@ -187,9 +179,9 @@ int AL_Settings_CheckValidity(AL_TEncSettings* pSettings, AL_TEncChanParam* pChP
    written.
    \return 0 if no incoherency
            the number of incoherency if incoherency were found
-   -1 if a fatal incoherency was found
-   Since the function automatically apply correction,
-   the Settings can be then used with IP encoder.
+           -1 if a fatal incoherency was found
+   Since the function automatically apply correction, the Settings can be then
+   used with IP encoder.
  *****************************************************************************/
 int AL_Settings_CheckCoherency(AL_TEncSettings* pSettings, AL_TEncChanParam* pChParam, TFourCC tFourCC, FILE* pOut);
 

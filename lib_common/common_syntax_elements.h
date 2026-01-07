@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright (C) 2018 Allegro DVT2.  All rights reserved.
+* Copyright (C) 2008-2022 Allegro DVT2.  All rights reserved.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -75,6 +75,9 @@ typedef struct t_Profilevel
   uint8_t general_intra_constraint_flag;
   uint8_t general_one_picture_only_constraint_flag;
   uint8_t general_lower_bit_rate_constraint_flag;
+  uint8_t general_max_14bit_constraint_flag;
+
+  uint8_t general_inbld_flag;
 
   uint8_t general_level_idc;
 
@@ -98,9 +101,11 @@ typedef struct t_Profilevel
   uint8_t sub_layer_intra_constraint_flag[8];
   uint8_t sub_layer_one_picture_only_constraint_flag[8];
   uint8_t sub_layer_lower_bit_rate_constraint_flag[8];
+  uint8_t sub_layer_max_14bit_constraint_flag[8];
+  uint8_t sub_layer_inbld_flag[8];
 
   uint8_t sub_layer_level_idc[8];
-}AL_TProfilevel;
+}AL_THevcProfilevel;
 
 /*************************************************************************//*!
    \brief Mimics structure to represent scaling list syntax elements
@@ -164,6 +169,7 @@ typedef struct t_WPTable
   int8_t chroma_log2_weight_denom;
 
   AL_TWPCoeff tWpCoeff[2];
+  uint8_t NumWeights[2];
 }AL_TWPTable;
 
 /*************************************************************************//*!

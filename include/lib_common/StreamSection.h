@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright (C) 2018 Allegro DVT2.  All rights reserved.
+* Copyright (C) 2008-2022 Allegro DVT2.  All rights reserved.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -44,23 +44,27 @@
 
 #include "lib_rtos/types.h"
 
+typedef enum
+{
+  AL_SECTION_NO_FLAG = 0, /*< no flag */
+  AL_SECTION_SEI_PREFIX_FLAG = 0x1, /*< this section data is from a SEI prefix */
+  AL_SECTION_SYNC_FLAG = 0x2, /*< this section data is from an IDR */
+  AL_SECTION_END_FRAME_FLAG = 0x4, /*< this section denotes the end of a frame */
+  AL_SECTION_CONFIG_FLAG = 0x8, /*< section data is an sps, pps, vps, aud */
+  AL_SECTION_FILLER_FLAG = 0x10, /*< section data contains filler data */
+  AL_SECTION_APP_FILLER_FLAG = 0x20, /*< section data contains uninitialized filler data that should be filled by the application layer */
+}AL_ESectionFlags;
+
 /*************************************************************************//*!
    \brief Stream section. Act as a kind of scatter gather list containing the
    stream parts inside a buffer.
 *****************************************************************************/
 typedef struct
 {
-  uint32_t uOffset; /*!< Start offset of the section (in bytes from the begining of the buffer) */
+  uint32_t uOffset; /*!< Start offset of the section (in bytes from the beginning of the buffer) */
   uint32_t uLength; /*!< Length in bytes of the section */
-  uint32_t uFlags; /*!< flags associated with the section; see macro SECTION_xxxxx_FLAG */
+  AL_ESectionFlags eFlags; /*!< Flags associated with the section; see macro AL_SECTION_xxxxx_FLAG */
 }AL_TStreamSection;
-
-typedef enum
-{
-  SECTION_SYNC_FLAG = 0x40000000, /*< this section data is from an IDR */
-  SECTION_END_FRAME_FLAG = 0x20000000, /*< this section denotes the end of a frame */
-  SECTION_CONFIG_FLAG = 0x10000000 /*< section data is an sps, pps, vps, aud */
-}AL_SectionFlags;
 
 /*@}*/
 

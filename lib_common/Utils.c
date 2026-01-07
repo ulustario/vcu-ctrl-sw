@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright (C) 2018 Allegro DVT2.  All rights reserved.
+* Copyright (C) 2008-2022 Allegro DVT2.  All rights reserved.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -43,9 +43,9 @@
    \file
  *****************************************************************************/
 
-#include "assert.h"
 #include "Utils.h"
 #include "lib_rtos/lib_rtos.h"
+#include "lib_assert/al_assert.h"
 
 /***************************************************************************/
 static const uint8_t tab_ceil_log2[] =
@@ -64,7 +64,7 @@ static const uint8_t tab_ceil_log2[] =
 int ceil_log2(uint16_t n)
 {
   int v = 0;
-  assert(n > 0);
+  AL_Assert(n > 0);
 
   if(n < 32)
     return tab_ceil_log2[n];
@@ -95,90 +95,55 @@ int floor_log2(uint16_t n)
   return s;
 }
 
-/*************************************************************************/
-bool AL_AVC_IsIDR(AL_ENut eNUT)
+/****************************************************************************/
+int GetBlkNumber(AL_TDimension tDim, uint32_t uBlkWidth, uint32_t uBlkHeight)
 {
-  return eNUT == AL_AVC_NUT_VCL_IDR;
+  return DivideRoundUp(tDim.iWidth, uBlkWidth) * DivideRoundUp(tDim.iHeight, uBlkHeight);
 }
 
-/*************************************************************************/
-bool AL_AVC_IsVcl(AL_ENut eNUT)
+/****************************************************************************/
+AL_HANDLE AlignedAlloc(AL_TAllocator* pAllocator, const char* pBufName, uint32_t uSize, uint32_t uAlign, uint32_t* uAllocatedSize, uint32_t* uAlignmentOffset)
 {
-  return eNUT == AL_AVC_NUT_VCL_IDR || eNUT == AL_AVC_NUT_VCL_NON_IDR;
+  AL_HANDLE pBuf = NULL;
+  *uAllocatedSize = 0;
+  *uAlignmentOffset = 0;
+
+  uSize += uAlign;
+
+  pBuf = AL_Allocator_AllocNamed(pAllocator, uSize, pBufName);
+
+  if(NULL == pBuf)
+    return NULL;
+
+  *uAllocatedSize = uSize;
+  AL_PADDR pAddr = AL_Allocator_GetPhysicalAddr(pAllocator, pBuf);
+  *uAlignmentOffset = UnsignedRoundUp(pAddr, uAlign) - pAddr;
+
+  return pBuf;
 }
 
-/*************************************************************************/
-bool AL_HEVC_IsSLNR(AL_ENut eNUT)
+/****************************************************************************/
+int16_t MaxInArray(const int16_t tab[], int arraySize)
 {
-  switch(eNUT)
+  int16_t max = 0;
+
+  for(int i = 0; i < arraySize; i++)
   {
-  case AL_HEVC_NUT_TRAIL_N:
-  case AL_HEVC_NUT_TSA_N:
-  case AL_HEVC_NUT_STSA_N:
-  case AL_HEVC_NUT_RADL_N:
-  case AL_HEVC_NUT_RASL_N:
-  case AL_HEVC_NUT_RSV_VCL_N10:
-  case AL_HEVC_NUT_RSV_VCL_N12:
-  case AL_HEVC_NUT_RSV_VCL_N14:
-    return true;
-    break;
-  default:
-    return false;
-    break;
+    max = Max(tab[i], max);
   }
+
+  return max;
 }
 
-/*************************************************************************/
-bool AL_HEVC_IsRASL_RADL_SLNR(AL_ENut eNUT)
+/****************************************************************************/
+int16_t MinInArray(const int16_t tab[], int arraySize)
 {
-  switch(eNUT)
+  int16_t min = 0;
+
+  for(int i = 0; i < arraySize; i++)
   {
-  case AL_HEVC_NUT_TRAIL_N:
-  case AL_HEVC_NUT_TSA_N:
-  case AL_HEVC_NUT_STSA_N:
-  case AL_HEVC_NUT_RADL_N:
-  case AL_HEVC_NUT_RADL_R:
-  case AL_HEVC_NUT_RASL_N:
-  case AL_HEVC_NUT_RASL_R:
-  case AL_HEVC_NUT_RSV_VCL_N10:
-  case AL_HEVC_NUT_RSV_VCL_N12:
-  case AL_HEVC_NUT_RSV_VCL_N14:
-    return true;
-    break;
-  default:
-    return false;
-    break;
+    min = Min(tab[i], min);
   }
-}
 
-/*************************************************************************/
-bool AL_HEVC_IsBLA(AL_ENut eNUT)
-{
-  return eNUT == AL_HEVC_NUT_BLA_N_LP || eNUT == AL_HEVC_NUT_BLA_W_LP || eNUT == AL_HEVC_NUT_BLA_W_RADL;
+  return min;
 }
-
-/*************************************************************************/
-bool AL_HEVC_IsCRA(AL_ENut eNUT)
-{
-  return eNUT == AL_HEVC_NUT_CRA;
-}
-
-/*************************************************************************/
-bool AL_HEVC_IsIDR(AL_ENut eNUT)
-{
-  return eNUT == AL_HEVC_NUT_IDR_N_LP || eNUT == AL_HEVC_NUT_IDR_W_RADL;
-}
-
-/*************************************************************************/
-bool AL_HEVC_IsRASL(AL_ENut eNUT)
-{
-  return eNUT == AL_HEVC_NUT_RASL_N || eNUT == AL_HEVC_NUT_RASL_R;
-}
-
-/*************************************************************************/
-bool AL_HEVC_IsVcl(AL_ENut eNUT)
-{
-  return (eNUT >= AL_HEVC_NUT_TRAIL_N && eNUT <= AL_HEVC_NUT_RASL_R) ||
-         (eNUT >= AL_HEVC_NUT_BLA_W_LP && eNUT <= AL_HEVC_NUT_CRA);
-}
-

@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright (C) 2018 Allegro DVT2.  All rights reserved.
+* Copyright (C) 2008-2022 Allegro DVT2.  All rights reserved.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -38,34 +38,59 @@
 /****************************************************************************
    -----------------------------------------------------------------------------
 ****************************************************************************/
-#include <assert.h>
-#include <stdlib.h>
-#include <string.h>
-#include <malloc.h>
+#include <cassert>
+#include <cstdlib>
+#include <cstring>
 #include <sstream>
 #include <fstream>
+#include <algorithm>
 
 extern "C"
 {
 #include <lib_rtos/lib_rtos.h>
 #include <lib_common_enc/EncBuffers.h>
+#include "lib_common/Error.h"
 }
 
 #include "QPGenerator.h"
 #include "ROIMngr.h"
 
-#include "FileUtils.h"
+#include "lib_app/FileUtils.h"
 
 using namespace std;
 
 /****************************************************************************/
-static AL_INLINE int RoundUp(int iVal, int iRnd)
+// We need to have a deterministic seed to compare soft and hard
+static int CreateSeed(int iNumLCUs, int iSliceQP, int iRandQP)
+{
+  return iNumLCUs * iSliceQP - (0xDEADll << (iSliceQP >> 1)) + iRandQP;
+}
+
+/****************************************************************************/
+static int random_int(int& iSeed, int iMin, int iMax)
+{
+  iSeed = 1103515245ll * iSeed + 12345;
+  int iRange = iMax - iMin + 1;
+  return iMin + abs(iSeed % iRange);
+}
+
+/****************************************************************************/
+static inline int RoundUp(int iVal, int iRnd)
 {
   return (iVal + iRnd - 1) & (~(iRnd - 1));
 }
 
 /****************************************************************************/
-void Generate_RampQP_VP9(uint8_t* pSegs, uint8_t* pQPs, int iNumLCUs, int iMinQP, int iMaxQP)
+static int GetLcuQpOffset(int iQPTableDepth)
+{
+  int iLcuQpOffset = 0;
+  (void)iQPTableDepth;
+
+  return iLcuQpOffset;
+}
+
+/****************************************************************************/
+void Generate_RampQP_AOM(uint8_t* pSegs, uint8_t* pQPs, int iNumLCUs, int iNumQPPerLCU, int iNumBytesPerLCU, int iMinQP, int iMaxQP, int iQPTableDepth)
 {
   static int16_t s_iQP = 0;
   static uint8_t s_iCurSeg = 0;
@@ -88,26 +113,41 @@ void Generate_RampQP_VP9(uint8_t* pSegs, uint8_t* pQPs, int iNumLCUs, int iMinQP
 
   s_iCurSeg = 0;
 
+  auto const iLcuQpOffset = GetLcuQpOffset(iQPTableDepth);
+
   for(int iLCU = 0; iLCU < iNumLCUs; ++iLCU)
   {
-    pQPs[iLCU] = (s_iCurSeg % 8);
-    s_iCurSeg++;
+    int iFirst = iNumBytesPerLCU * iLCU + iLcuQpOffset;
+
+    if(iLcuQpOffset > 0)
+      pQPs[iFirst - iLcuQpOffset] = 0;
+
+    for(int iQP = 0; iQP < iNumQPPerLCU - iLcuQpOffset; ++iQP)
+    {
+      pQPs[iFirst + iQP] = (s_iCurSeg % 8);
+      s_iCurSeg++;
+    }
   }
 }
 
 /****************************************************************************/
-void Generate_RampQP(uint8_t* pQPs, int iNumLCUs, int iNumQPPerLCU, int iNumBytesPerLCU, int iMinQP, int iMaxQP)
+void Generate_RampQP(uint8_t* pQPs, int iNumLCUs, int iNumQPPerLCU, int iNumBytesPerLCU, int iMinQP, int iMaxQP, int iQPTableDepth)
 {
   static int8_t s_iQP = 0;
 
   if(s_iQP < iMinQP)
     s_iQP = iMinQP;
 
+  auto const iLcuQpOffset = GetLcuQpOffset(iQPTableDepth);
+
   for(int iLCU = 0; iLCU < iNumLCUs; iLCU++)
   {
-    int iFirst = iNumBytesPerLCU * iLCU;
+    int iFirst = iNumBytesPerLCU * iLCU + iLcuQpOffset;
 
-    for(int iQP = 0; iQP < iNumQPPerLCU; ++iQP)
+    if(iLcuQpOffset > 0)
+      pQPs[iFirst - iLcuQpOffset] = s_iQP & MASK_QP;
+
+    for(int iQP = 0; iQP < iNumQPPerLCU - iLcuQpOffset; ++iQP)
       pQPs[iFirst + iQP] = s_iQP & MASK_QP;
 
     if(++s_iQP > iMaxQP)
@@ -115,94 +155,89 @@ void Generate_RampQP(uint8_t* pQPs, int iNumLCUs, int iNumQPPerLCU, int iNumByte
   }
 }
 
-static uint32_t CreateSeed(int iNumLCUs, int iSliceQP, int iRandQP)
-{
-  return iNumLCUs * iSliceQP - (0xEFFACE << (iSliceQP >> 1)) + iRandQP;
-}
-
-static int GetNextRandomInt(int iRand)
-{
-  return 1103515245 * iRand + 12345;
-}
-
 /****************************************************************************/
-void Generate_RandomQP_VP9(uint8_t* pSegs, uint8_t* pQPs, int iNumLCUs, int iMinQP, int iMaxQP, int16_t iSliceQP)
+void Generate_RandomQP_AOM(uint8_t* pSegs, uint8_t* pQPs, int iNumLCUs, int iNumQPPerLCU, int iNumBytesPerLCU, int iMinQP, int iMaxQP, int16_t iSliceQP, int iQPTableDepth, bool bForceSbQp0)
 {
   static int iRandQP = 0;
-  uint32_t iRand = CreateSeed(iNumLCUs, iSliceQP % 52, iRandQP);
-  int iRange = iMaxQP - iMinQP + 1;
+  int iSeed = CreateSeed(iNumLCUs, iSliceQP % 52, iRandQP);
   ++iRandQP;
 
   int16_t* pSeg = (int16_t*)pSegs;
 
   for(int iSeg = 0; iSeg < 8; iSeg++)
-  {
-    iRand = GetNextRandomInt(iRand);
-    pSeg[iSeg] = (iMinQP + (iRand % iRange));
-  }
+    pSeg[iSeg] = random_int(iSeed, iMinQP, iMaxQP);
+
+  auto const iLcuQpOffset = GetLcuQpOffset(iQPTableDepth);
 
   for(int iLCU = 0; iLCU < iNumLCUs; iLCU++)
   {
-    iRand = GetNextRandomInt(iRand);
-    pQPs[iLCU] = (iRand % 8);
+    int iFirst = iLCU * iNumBytesPerLCU + iLcuQpOffset;
+
+    if(iLcuQpOffset > 0) // generate delta Qp for super block
+      pQPs[iFirst - iLcuQpOffset] = bForceSbQp0 ? 0 : random_int(iSeed, iMinQP, iMaxQP);
+
+    for(int iQP = 0; iQP < iNumQPPerLCU - iLcuQpOffset; ++iQP)
+      pQPs[iFirst + iQP] = random_int(iSeed, 0, 7);
   }
 }
 
 /****************************************************************************/
-void Generate_RandomQP(uint8_t* pQPs, int iNumLCUs, int iNumQPPerLCU, int iNumBytesPerLCU, int iMinQP, int iMaxQP, int16_t iSliceQP)
+void Generate_RandomQP(uint8_t* pQPs, int iNumLCUs, int iNumQPPerLCU, int iNumBytesPerLCU, int iMinQP, int iMaxQP, int16_t iSliceQP, int iQPTableDepth)
 {
   static int iRandQP = 0;
-
-  uint32_t iRand = CreateSeed(iNumLCUs, iSliceQP, iRandQP);
+  int iSeed = CreateSeed(iNumLCUs, iSliceQP, iRandQP);
   ++iRandQP;
 
-  int iRange = iMaxQP - iMinQP + 1;
+  auto const iLcuQpOffset = GetLcuQpOffset(iQPTableDepth);
 
   for(int iLCU = 0; iLCU < iNumLCUs; ++iLCU)
   {
-    int iFirst = iLCU * iNumBytesPerLCU;
+    int iFirst = iLCU * iNumBytesPerLCU + iLcuQpOffset;
+    int iLcuDeltaQp = 0;
 
-    for(int iQP = 0; iQP < iNumQPPerLCU; ++iQP)
+    if(iLcuQpOffset > 0) // generate delta Qp for LCU block
     {
-      iRand = GetNextRandomInt(iRand);
-      pQPs[iFirst + iQP] = (iMinQP + (iRand % iRange)) & MASK_QP;
+      // assume for QpTableDepth = 2, CU Qp is given relative to LCU Qp
+      iLcuDeltaQp = random_int(iSeed, iMinQP, iMaxQP);
+      pQPs[iFirst - iLcuQpOffset] = iLcuDeltaQp;
     }
+
+    for(int iQP = 0; iQP < iNumQPPerLCU - iLcuQpOffset; ++iQP)
+      pQPs[iFirst + iQP] = (random_int(iSeed, iMinQP, iMaxQP) - iLcuDeltaQp) & MASK_QP;
   }
 }
 
 /****************************************************************************/
-void Generate_BorderQP(uint8_t* pQPs, int iNumLCUs, int iLCUWidth, int iLCUHeight, int iNumQPPerLCU, int iNumBytesPerLCU, int iMaxQP, int16_t iSliceQP, bool bRelative)
+void Generate_BorderQP(uint8_t* pQPs, int iNumLCUs, int iLCUPicWidth, int iLCUPicHeight, int iNumQPPerLCU, int iNumBytesPerLCU, int iMaxQP, int16_t iSliceQP, bool bRelative, int iQPTableDepth)
 {
-  int iQP0 = bRelative ? 0 : iSliceQP;
-  int iQP2 = iQP0 + 2;
-  int iQP1;
+  const int iQP0 = bRelative ? 0 : iSliceQP;
+  const int iQP2 = min(iQP0 + 2, iMaxQP);
+  const int iQP1 = min(iQP0 + 1, iMaxQP);
 
   const int iFirstX2 = 0;
   const int iFirstX1 = 1;
-  const int iLastX2 = iLCUWidth - 1;
-  const int iLastX1 = iLCUWidth - 2;
+  const int iLastX2 = iLCUPicWidth - 1;
+  const int iLastX1 = iLCUPicWidth - 2;
 
   const int iFirstY2 = 0;
   const int iFirstY1 = 1;
-  const int iLastY2 = iLCUHeight - 1;
-  const int iLastY1 = iLCUHeight - 2;
+  const int iLastY2 = iLCUPicHeight - 1;
+  const int iLastY1 = iLCUPicHeight - 2;
 
-  int iFirstLCU = 0;
-  int iLastLCU = iNumLCUs - 1;
+  const int iFirstLCU = 0;
+  const int iLastLCU = iNumLCUs - 1;
 
-  if(iQP2 > iMaxQP)
-    iQP2 = iMaxQP;
-  iQP1 = iQP0 + 1;
-
-  if(iQP1 > iMaxQP)
-    iQP1 = iMaxQP;
+  auto const iLcuQpOffset = GetLcuQpOffset(iQPTableDepth);
 
   for(int iLCU = iFirstLCU; iLCU <= iLastLCU; iLCU++)
   {
-    int X = iLCU % iLCUWidth;
-    int Y = iLCU / iLCUWidth;
+    const int X = iLCU % iLCUPicWidth;
+    const int Y = iLCU / iLCUPicWidth;
 
-    int iFirst = iNumBytesPerLCU * iLCU;
+    const int iFirst = iNumBytesPerLCU * iLCU + iLcuQpOffset;
+
+    if(iLcuQpOffset > 0)
+      pQPs[iFirst - iLcuQpOffset] = 0;
 
     if(X == iFirstX2 || Y == iFirstY2 || X == iLastX2 || Y >= iLastY2)
       pQPs[iFirst] = iQP2;
@@ -211,65 +246,69 @@ void Generate_BorderQP(uint8_t* pQPs, int iNumLCUs, int iLCUWidth, int iLCUHeigh
     else
       pQPs[iFirst] = iQP0;
 
-    for(int iQP = 1; iQP < iNumQPPerLCU; ++iQP)
+    for(int iQP = 1; iQP < iNumQPPerLCU - iLcuQpOffset; ++iQP)
       pQPs[iFirst + iQP] = pQPs[iFirst];
   }
 }
 
 /****************************************************************************/
-void Generate_BorderQP_VP9(uint8_t* pSegs, uint8_t* pQPs, int iNumLCUs, int iLCUWidth, int iLCUHeight, int iMaxQP, int16_t iSliceQP, bool bRelative)
+void Generate_BorderQP_AOM(uint8_t* pSegs, uint8_t* pQPs, int iNumLCUs, int iLCUPicWidth, int iLCUPicHeight, int iNumQPPerLCU, int iNumBytesPerLCU, int iMaxQP, int16_t iSliceQP, bool bRelative, int iQPTableDepth)
 {
-  int iQP0 = bRelative ? 0 : iSliceQP;
-  int iQP2 = iQP0 + 10;
-  int iQP1;
+  const int iQP0 = bRelative ? 0 : iSliceQP;
+  const int iQP2 = min(iQP0 + 10, iMaxQP);
+  const int iQP1 = min(iQP0 + 5, iMaxQP);
 
-  int iFirstLCU = 0;
-  int iLastLCU = iNumLCUs - 1;
+  const int iFirstLCU = 0;
+  const int iLastLCU = iNumLCUs - 1;
 
   const int iFirstX2 = 0;
   const int iFirstX1 = 1;
-  const int iLastX2 = iLCUWidth - 1;
-  const int iLastX1 = iLCUWidth - 2;
+  const int iLastX2 = iLCUPicWidth - 1;
+  const int iLastX1 = iLCUPicWidth - 2;
 
   const int iFirstY2 = 0;
   const int iFirstY1 = 1;
-  const int iLastY2 = iLCUHeight - 1;
-  const int iLastY1 = iLCUHeight - 2;
+  const int iLastY2 = iLCUPicHeight - 1;
+  const int iLastY1 = iLCUPicHeight - 2;
   int16_t* pSeg = (int16_t*)pSegs;
-
-  if(iQP2 > iMaxQP)
-    iQP2 = iMaxQP;
-  iQP1 = iQP0 + 5;
-
-  if(iQP1 > iMaxQP)
-    iQP1 = iMaxQP;
 
   Rtos_Memset(pSeg, 0, 8 * sizeof(int16_t));
   pSeg[0] = iQP0;
   pSeg[1] = iQP1;
   pSeg[2] = iQP2;
 
+  auto const iLcuQpOffset = GetLcuQpOffset(iQPTableDepth);
+
   // write Map
   for(int iLCU = iFirstLCU; iLCU <= iLastLCU; iLCU++)
   {
-    int X = iLCU % iLCUWidth;
-    int Y = iLCU / iLCUWidth;
+    const int X = iLCU % iLCUPicWidth;
+    const int Y = iLCU / iLCUPicWidth;
+
+    const int iFirst = iNumBytesPerLCU * iLCU + iLcuQpOffset;
+
+    if(iLcuQpOffset > 0)
+      pQPs[iFirst - iLcuQpOffset] = 0;
 
     if(X == iFirstX2 || Y == iFirstY2 || X == iLastX2 || Y >= iLastY2)
-      pQPs[iLCU] = 2;
+      pQPs[iFirst] = 2;
     else if(X == iFirstX1 || Y == iFirstY1 || X == iLastX1 || Y == iLastY1)
-      pQPs[iLCU] = 1;
+      pQPs[iFirst] = 1;
     else
-      pQPs[iLCU] = 0;
+      pQPs[iFirst] = 0;
+
+    for(int iQP = 1; iQP < iNumQPPerLCU - iLcuQpOffset; ++iQP)
+      pQPs[iFirst + iQP] = pQPs[iFirst];
   }
 }
 
 /****************************************************************************/
-static void ReadQPs(ifstream& qpFile, uint8_t* pQPs, int iNumLCUs, int iNumQPPerLCU, int iNumBytesPerLCU)
+static AL_ERR ReadQPs(ifstream& qpFile, uint8_t* pQPs, int iNumLCUs, int iNumQPPerLCU, int iNumBytesPerLCU, int iQPTableDepth)
 {
   string sLine;
-
-  int iNumQPPerLine = (iNumQPPerLCU == 5) ? 5 : 1;
+  int iNumQPPerLine;
+  (void)iQPTableDepth;
+  iNumQPPerLine = (iNumQPPerLCU == 5) ? 5 : 1;
   int iNumDigit = iNumQPPerLine * 2;
 
   int iIdx = 0;
@@ -277,22 +316,38 @@ static void ReadQPs(ifstream& qpFile, uint8_t* pQPs, int iNumLCUs, int iNumQPPer
   for(int iLCU = 0; iLCU < iNumLCUs; ++iLCU)
   {
     int iFirst = iNumBytesPerLCU * iLCU;
+    int iNumLine = 0;
 
     for(int iQP = 0; iQP < iNumQPPerLCU; ++iQP)
     {
       if(iIdx == 0)
+      {
         getline(qpFile, sLine);
 
-      pQPs[iFirst + iQP] = FromHex2(sLine[iNumDigit - 2 * iIdx - 2], sLine[iNumDigit - 2 * iIdx - 1]);
+        if(sLine.size() < uint32_t(iNumDigit))
+          return AL_ERR_QPLOAD_NOT_ENOUGH_DATA;
+
+        ++iNumLine;
+      }
+
+      int iHexVal = FromHex2(sLine[iNumDigit - 2 * iIdx - 2], sLine[iNumDigit - 2 * iIdx - 1]);
+
+      if(iHexVal == FROM_HEX_ERROR)
+        return AL_ERR_QPLOAD_DATA;
+
+      pQPs[iFirst + iQP] = iHexVal;
 
       iIdx = (iIdx + 1) % iNumQPPerLine;
     }
+
   }
+
+  return AL_SUCCESS;
 }
 
 #ifdef _MSC_VER
-#include <stdarg.h>
-static AL_INLINE
+#include <cstdarg>
+static inline
 int LIBSYS_SNPRINTF(char* str, size_t size, const char* format, ...)
 {
   int retval;
@@ -334,14 +389,14 @@ static bool OpenFile(const string& sQPTablesFolder, int iFrameID, string motif, 
 }
 
 /****************************************************************************/
-bool Load_QPTable_FromFile_Vp9(uint8_t* pSegs, uint8_t* pQPs, int iNumLCUs, const string& sQPTablesFolder, int iFrameID, bool bRelative)
+AL_ERR Load_QPTable_FromFile_AOM(uint8_t* pSegs, uint8_t* pQPs, int iNumLCUs, int iNumQPPerLCU, int iNumBytesPerLCU, int iQPTableDepth, const string& sQPTablesFolder, int iFrameID, bool bRelative)
 {
+  string sLine;
   ifstream file;
 
   if(!OpenFile(sQPTablesFolder, iFrameID, QPTablesMotif, file))
-    return false;
+    return AL_ERR_CANNOT_OPEN_FILE;
 
-  char sLine[256];
   int16_t* pSeg = (int16_t*)pSegs;
 
   for(int iSeg = 0; iSeg < 8; ++iSeg)
@@ -349,31 +404,46 @@ bool Load_QPTable_FromFile_Vp9(uint8_t* pSegs, uint8_t* pQPs, int iNumLCUs, cons
     int idx = (iSeg & 0x01) << 2;
 
     if(idx == 0)
-      file.read(sLine, 256);
-    pSeg[iSeg] = FromHex4(sLine[4 - idx], sLine[5 - idx], sLine[6 - idx], sLine[7 - idx]);
+    {
+      getline(file, sLine);
 
-    if(!bRelative && (pSeg[iSeg] < 0 || pSeg[iSeg] > 255))
-      pSeg[iSeg] = 255;
+      if(sLine.size() < 8)
+        return AL_ERR_QPLOAD_NOT_ENOUGH_DATA;
+    }
+
+    int iHexVal = FromHex4(sLine[4 - idx], sLine[5 - idx], sLine[6 - idx], sLine[7 - idx]);
+
+    if(iHexVal == FROM_HEX_ERROR)
+      return AL_ERR_QPLOAD_DATA;
+
+    pSeg[iSeg] = iHexVal;
+
+    int16_t iMinQP = 1;
+    int16_t iMaxQP = 255;
+
+    if(bRelative)
+    {
+      int16_t iMaxDelta = iMaxQP - iMinQP;
+      iMinQP = -iMaxDelta;
+      iMaxQP = +iMaxDelta;
+    }
+
+    pSeg[iSeg] = max(iMinQP, min(iMaxQP, pSeg[iSeg]));
   }
 
-  // read QPs
-  ReadQPs(file, pQPs, iNumLCUs, 1, 1);
-
-  return true;
+  return ReadQPs(file, pQPs, iNumLCUs, iNumQPPerLCU, iNumBytesPerLCU, iQPTableDepth);
 }
 
 /****************************************************************************/
-bool Load_QPTable_FromFile(uint8_t* pQPs, int iNumLCUs, int iNumQPPerLCU, int iNumBytesPerLCU, const string& sQPTablesFolder, int iFrameID)
+AL_ERR Load_QPTable_FromFile(uint8_t* pQPs, int iNumLCUs, int iNumQPPerLCU, int iNumBytesPerLCU, int iQPTableDepth, const string& sQPTablesFolder, int iFrameID)
 {
   ifstream file;
 
   if(!OpenFile(sQPTablesFolder, iFrameID, QPTablesMotif, file))
-    return false;
+    return AL_ERR_CANNOT_OPEN_FILE;
 
-  // Warning : the LOAD_QP is not backward compatible
-  ReadQPs(file, pQPs, iNumLCUs, iNumQPPerLCU, iNumBytesPerLCU);
-
-  return true;
+  // Warning: the LOAD_QP is not backward compatible
+  return ReadQPs(file, pQPs, iNumLCUs, iNumQPPerLCU, iNumBytesPerLCU, iQPTableDepth);
 }
 
 /****************************************************************************/
@@ -399,8 +469,7 @@ static bool get_motif(char* sLine, string motif, int& iPos)
 /****************************************************************************/
 static int get_id(char* sLine, int iPos)
 {
-  int iID = atoi(sLine + iPos);
-  return iID;
+  return atoi(sLine + iPos);
 }
 
 /****************************************************************************/
@@ -408,14 +477,11 @@ static bool check_frame_id(char* sLine, int iFrameID)
 {
   int iPos;
 
-  if(get_motif(sLine, "frame", iPos))
-  {
-    int iID = get_id(sLine, iPos);
+  if(!get_motif(sLine, "frame", iPos))
+    return false;
+  int iID = get_id(sLine, iPos);
 
-    if(iID == iFrameID)
-      return true;
-  }
-  return false;
+  return iID == iFrameID;
 }
 
 /****************************************************************************/
@@ -449,8 +515,14 @@ static AL_ERoiQuality get_roi_quality(char* sLine, int iPos)
   if(s == "NO_QUALITY")
     return AL_ROI_QUALITY_DONT_CARE;
 
+  if(s == "INTRA_QUALITY")
+    return AL_ROI_QUALITY_INTRA;
 
-  return AL_ROI_QUALITY_MAX_ENUM;
+  std::stringstream ss {};
+  ss.str(s);
+  int i;
+  ss >> i;
+  return static_cast<AL_ERoiQuality>(i);
 }
 
 /****************************************************************************/
@@ -464,7 +536,7 @@ static AL_ERoiOrder get_roi_order(char* sLine, int iPos)
 }
 
 /****************************************************************************/
-static bool ReadRoiHdr(ifstream& RoiFile, int iFrameID, AL_ERoiQuality& eBkgQuality, AL_ERoiOrder& eRoiOrder)
+static bool ReadRoiHdr(ifstream& RoiFile, int iFrameID, AL_ERoiQuality& eBkgQuality, AL_ERoiOrder& eRoiOrder, bool& bRoiDisable)
 {
   char sLine[256];
   bool bFind = false;
@@ -483,6 +555,8 @@ static bool ReadRoiHdr(ifstream& RoiFile, int iFrameID, AL_ERoiQuality& eBkgQual
 
       if(get_motif(sLine, "Order", iPos))
         eRoiOrder = get_roi_order(sLine, iPos);
+
+      bRoiDisable = get_motif(sLine, "RoiDisable", iPos);
     }
   }
 
@@ -510,16 +584,14 @@ static void get_dual_value(char* sLine, char separator, int& iPos, int& iValue1,
   iValue1 = atoi(sLine + iPos);
 
   while(sLine[++iPos] != separator)
-  {
-  }
+    ;
 
   ++iPos;
 
   iValue2 = atoi(sLine + iPos);
 
   while(sLine[++iPos] != ',')
-  {
-  }
+    ;
 
   ++iPos;
 }
@@ -552,14 +624,18 @@ static bool get_new_roi(ifstream& RoiFile, int& iPosX, int& iPosY, int& iWidth, 
 }
 
 /****************************************************************************/
-bool Load_QPTable_FromRoiFile(AL_TRoiMngrCtx* pCtx, string const& sRoiFileName, uint8_t* pQPs, int iFrameID, int iNumQPPerLCU, int iNumBytesPerLCU)
+AL_ERR Load_QPTable_FromRoiFile(AL_TRoiMngrCtx* pCtx, string const& sRoiFileName, uint8_t* pQPs, int iFrameID, int iNumQPPerLCU, int iNumBytesPerLCU, int iQPTableDepth)
 {
   ifstream file(sRoiFileName);
 
   if(!file.is_open())
-    return false;
+    return AL_ERR_CANNOT_OPEN_FILE;
 
-  bool bHasData = ReadRoiHdr(file, iFrameID, pCtx->eBkgQuality, pCtx->eOrder);
+  bool bRoiDisable = false;
+  bool bHasData = ReadRoiHdr(file, iFrameID, pCtx->eBkgQuality, pCtx->eOrder, bRoiDisable);
+
+  if(bRoiDisable)
+    return AL_ERR_ROI_DISABLE;
 
   if(bHasData)
   {
@@ -570,19 +646,31 @@ bool Load_QPTable_FromRoiFile(AL_TRoiMngrCtx* pCtx, string const& sRoiFileName, 
     while(get_new_roi(file, iPosX, iPosY, iWidth, iHeight, eQuality))
       AL_RoiMngr_AddROI(pCtx, iPosX, iPosY, iWidth, iHeight, eQuality);
   }
-  AL_RoiMngr_FillBuff(pCtx, iNumQPPerLCU, iNumBytesPerLCU, pQPs);
-  return true;
+
+  auto const iLcuQpOffset = GetLcuQpOffset(iQPTableDepth);
+  AL_RoiMngr_FillBuff(pCtx, iNumQPPerLCU, iNumBytesPerLCU, pQPs, iLcuQpOffset);
+  return AL_SUCCESS;
 }
 
-
 /****************************************************************************/
-void Generate_FullSkip(uint8_t* pQPs, int iNumLCUs, int iNumQPPerLCU, int iNumBytesPerLCU)
+void Generate_FullSkip(uint8_t* pQPs, int iNumLCUs, int iNumQPPerLCU, int iNumBytesPerLCU, int iQPTableDepth)
 {
+  auto const iLcuQpOffset = GetLcuQpOffset(iQPTableDepth);
+
   for(int iLCU = 0; iLCU < iNumLCUs; iLCU++)
   {
-    int iFirst = iLCU * iNumBytesPerLCU;
+    int iFirst = iLCU * iNumBytesPerLCU + iLcuQpOffset;
 
-    for(int iQP = 0; iQP < iNumQPPerLCU; ++iQP)
+    if(iLcuQpOffset > 0)
+    {
+      int8_t const LCU_MASK_FORCE = 0x03;
+      int8_t const LCU_MASK_FORCE_MV0 = 0x02;
+
+      pQPs[iFirst - iLcuQpOffset + 1] &= ~LCU_MASK_FORCE;
+      pQPs[iFirst - iLcuQpOffset + 1] |= LCU_MASK_FORCE_MV0;
+    }
+
+    for(int iQP = 0; iQP < iNumQPPerLCU - iLcuQpOffset; ++iQP)
     {
       pQPs[iFirst + iQP] &= ~MASK_FORCE;
       pQPs[iFirst + iQP] |= MASK_FORCE_MV0;
@@ -591,71 +679,95 @@ void Generate_FullSkip(uint8_t* pQPs, int iNumLCUs, int iNumQPPerLCU, int iNumBy
 }
 
 /****************************************************************************/
-void Generate_BorderSkip(uint8_t* pQPs, int iNumLCUs, int iNumQPPerLCU, int iNumBytesPerLCU, int iLCUWidth, int iLCUHeight)
+void Generate_BorderSkip(uint8_t* pQPs, int iNumLCUs, int iNumQPPerLCU, int iNumBytesPerLCU, int iLCUPicWidth, int iLCUPicHeight, int iQPTableDepth)
 {
-  int H = iLCUHeight * 2 / 6;
-  int W = iLCUWidth * 2 / 6;
+  int H = iLCUPicHeight * 2 / 6;
+  int W = iLCUPicWidth * 2 / 6;
 
   H *= H;
   W *= W;
 
+  auto const iLcuQpOffset = GetLcuQpOffset(iQPTableDepth);
+
   for(int iLCU = 0; iLCU < iNumLCUs; iLCU++)
   {
-    int X = (iLCU % iLCUWidth) - (iLCUWidth >> 1);
-    int Y = (iLCU / iLCUWidth) - (iLCUHeight >> 1);
+    int X = (iLCU % iLCUPicWidth) - (iLCUPicWidth >> 1);
+    int Y = (iLCU / iLCUPicWidth) - (iLCUPicHeight >> 1);
 
-    int iFirst = iNumBytesPerLCU * iLCU;
+    int iFirst = iNumBytesPerLCU * iLCU + iLcuQpOffset;
 
     if(100 * X * X / W + 100 * Y * Y / H > 100)
     {
+      if(iLcuQpOffset > 0)
+      {
+        int8_t const LCU_MASK_FORCE = 0x03;
+        int8_t const LCU_MASK_FORCE_MV0 = 0x02;
+
+        pQPs[iFirst - iLcuQpOffset + 1] &= ~LCU_MASK_FORCE;
+        pQPs[iFirst - iLcuQpOffset + 1] |= LCU_MASK_FORCE_MV0;
+      }
+
       pQPs[iFirst] &= ~MASK_FORCE;
       pQPs[iFirst] |= MASK_FORCE_MV0;
     }
 
-    for(int iQP = 1; iQP < iNumQPPerLCU; ++iQP)
+    for(int iQP = 1; iQP < iNumQPPerLCU - iLcuQpOffset; ++iQP)
       pQPs[iFirst + iQP] = pQPs[iFirst];
   }
 }
 
 /****************************************************************************/
-void Generate_Random_WithFlag(uint8_t* pQPs, int iNumLCUs, int iNumQPPerLCU, int iNumBytesPerLCU, int16_t iSliceQP, int iRandFlag, int iPercent, uint8_t uFORCE)
+void Generate_Random_WithFlag(uint8_t* pQPs, int iNumLCUs, int iNumQPPerLCU, int iNumBytesPerLCU, int16_t iSliceQP, int iRandFlag, int iPercent, uint8_t uFORCE, int iQPTableDepth)
 {
-  int iRand = CreateSeed(iNumLCUs, iSliceQP % 52, iRandFlag);
+  int iSeed = CreateSeed(iNumLCUs, iSliceQP % 52, iRandFlag);
+
+  auto const iLcuQpOffset = GetLcuQpOffset(iQPTableDepth);
 
   for(int iLCU = 0; iLCU < iNumLCUs; iLCU++)
   {
-    int iFirst = iNumBytesPerLCU * iLCU;
+    int iFirst = iNumBytesPerLCU * iLCU + iLcuQpOffset;
 
-    if(!(pQPs[iFirst] & MASK_FORCE))
+    // remove existing flags at LCU level
+    if(iLcuQpOffset > 0)
     {
-      for(int iQP = 0; iQP < iNumQPPerLCU; ++iQP)
-      {
-        if((pQPs[iFirst + iQP] & MASK_FORCE) != (pQPs[iFirst] & MASK_FORCE)) // remove existing flag if different from depth 0
-          pQPs[iFirst + iQP] &= ~MASK_FORCE;
+      pQPs[iFirst - iLcuQpOffset + 1] = 0;
 
-        iRand = GetNextRandomInt(iRand);
+      if(iNumQPPerLCU <= iLcuQpOffset &&
+         random_int(iSeed, 0, 99) <= iPercent)
+        pQPs[iFirst - iLcuQpOffset + 1] |= (uFORCE >> 6);
+    }
 
-        if(abs(iRand) % 100 <= iPercent)
-          pQPs[iFirst + iQP] |= uFORCE;
-      }
+    for(int iQP = 0; iQP < iNumQPPerLCU - iLcuQpOffset; ++iQP)
+    {
+      // remove existing flag
+      pQPs[iFirst + iQP] &= ~MASK_FORCE;
+
+      if(random_int(iSeed, 0, 99) <= iPercent)
+        pQPs[iFirst + iQP] |= uFORCE;
     }
   }
 }
 
 /****************************************************************************/
-static void GetQPBufferParameters(int iLCUWidth, int iLCUHeight, AL_EProfile eProf, int& iNumQPPerLCU, int& iNumBytesPerLCU, int& iNumLCUs, uint8_t* pQPs)
+static void Set_Block_Feature(uint8_t* pQPs, int iNumLCUs, int iNumBytesPerLCU, int iQPTableDepth)
+{
+  uint8_t const uLambdaFactor = 1 << 5; // fixed point with 5 decimal bits
+
+  if(iQPTableDepth > 1)
+    for(int iLcuIdx = 0; iLcuIdx < iNumLCUs * iNumBytesPerLCU; iLcuIdx += iNumBytesPerLCU)
+      pQPs[iLcuIdx + 3] = uLambdaFactor;
+}
+
+/****************************************************************************/
+static void GetQPBufferParameters(int iLCUPicWidth, int iLCUPicHeight, AL_EProfile eProf, uint8_t uLog2MaxCuSize, int iQPTableDepth, int& iNumQPPerLCU, int& iNumBytesPerLCU, int& iNumLCUs, uint8_t* pQPs)
 {
   (void)eProf;
-
-#if AL_BLK16X16_QP_TABLE
-  iNumQPPerLCU = AL_IS_HEVC(eProf) ? 5 : 1;
-  iNumBytesPerLCU = AL_IS_HEVC(eProf) ? 8 : 1;
-#else
+  (void)uLog2MaxCuSize;
+  (void)iQPTableDepth;
   iNumQPPerLCU = 1;
   iNumBytesPerLCU = 1;
-#endif
 
-  iNumLCUs = iLCUWidth * iLCUHeight;
+  iNumLCUs = iLCUPicWidth * iLCUPicHeight;
   int iSize = RoundUp(iNumLCUs * iNumBytesPerLCU, 128);
 
   assert(pQPs);
@@ -663,34 +775,28 @@ static void GetQPBufferParameters(int iLCUWidth, int iLCUHeight, AL_EProfile ePr
 }
 
 /****************************************************************************/
-bool GenerateROIBuffer(AL_TRoiMngrCtx* pRoiCtx, string const& sRoiFileName, int iLCUWidth, int iLCUHeight, AL_EProfile eProf, int iFrameID, uint8_t* pQPs)
+AL_ERR GenerateROIBuffer(AL_TRoiMngrCtx* pRoiCtx, string const& sRoiFileName, int iLCUPicWidth, int iLCUPicHeight, AL_EProfile eProf, uint8_t uLog2MaxCuSize, int iQPTableDepth, int iFrameID, uint8_t* pQPs)
 {
   int iNumQPPerLCU, iNumBytesPerLCU, iNumLCUs;
-  GetQPBufferParameters(iLCUWidth, iLCUHeight, eProf, iNumQPPerLCU, iNumBytesPerLCU, iNumLCUs, pQPs);
-  return Load_QPTable_FromRoiFile(pRoiCtx, sRoiFileName, pQPs, iFrameID, iNumQPPerLCU, iNumBytesPerLCU);
+  GetQPBufferParameters(iLCUPicWidth, iLCUPicHeight, eProf, uLog2MaxCuSize, iQPTableDepth, iNumQPPerLCU, iNumBytesPerLCU, iNumLCUs, pQPs);
+  return Load_QPTable_FromRoiFile(pRoiCtx, sRoiFileName, pQPs, iFrameID, iNumQPPerLCU, iNumBytesPerLCU, iQPTableDepth);
 }
 
-
 /****************************************************************************/
-bool GenerateQPBuffer(AL_EQpCtrlMode eMode, int16_t iSliceQP, int16_t iMinQP, int16_t iMaxQP, int iLCUWidth, int iLCUHeight, AL_EProfile eProf, const string& sQPTablesFolder, int iFrameID, uint8_t* pQPs, uint8_t* pSegs)
+AL_ERR GenerateQPBuffer(AL_EGenerateQpMode eMode, int16_t iSliceQP, int16_t iMinQP, int16_t iMaxQP, int iLCUPicWidth, int iLCUPicHeight, AL_EProfile eProf, uint8_t uLog2MaxCuSize, int iQPTableDepth, const string& sQPTablesFolder, int iFrameID, uint8_t* pQPs, uint8_t* pSegs)
 {
-  bool bRet = false;
-  int iNumQPPerLCU, iNumBytesPerLCU, iNumLCUs;
   static int iRandFlag = 0;
   bool bIsAOM = false;
 
-  if(bIsAOM)
-    Rtos_Memset(pSegs, 0, 8 * sizeof(int16_t));
-
-  int iQPMode = eMode & 0x0F; // exclusive mode
-  bool bRelative = (eMode & RELATIVE_QP) ? true : false;
+  AL_EGenerateQpMode eQPMode = (AL_EGenerateQpMode)(eMode & AL_GENERATE_MASK_QP_TABLE);
+  bool bRelative = (eMode & AL_GENERATE_RELATIVE_QP);
 
   if(bRelative)
   {
     int iMinus = bIsAOM ? 128 : 32;
     int iPlus = bIsAOM ? 127 : 31;
 
-    if(iQPMode == RANDOM_QP)
+    if(eQPMode == AL_GENERATE_RANDOM_QP && !bIsAOM)
     {
       iMinQP = -iMinus;
       iMaxQP = iPlus;
@@ -701,84 +807,85 @@ bool GenerateQPBuffer(AL_EQpCtrlMode eMode, int16_t iSliceQP, int16_t iMinQP, in
       iMaxQP = (iSliceQP + iPlus > iMaxQP) ? iMaxQP - iSliceQP : iPlus;
     }
   }
-  GetQPBufferParameters(iLCUWidth, iLCUHeight, eProf, iNumQPPerLCU, iNumBytesPerLCU, iNumLCUs, pQPs);
+
+  int iNumQPPerLCU, iNumBytesPerLCU, iNumLCUs;
+  GetQPBufferParameters(iLCUPicWidth, iLCUPicHeight, eProf, uLog2MaxCuSize, iQPTableDepth, iNumQPPerLCU, iNumBytesPerLCU, iNumLCUs, pQPs);
+  Set_Block_Feature(pQPs, iNumLCUs, iNumBytesPerLCU, iQPTableDepth);
   /////////////////////////////////  QPs  /////////////////////////////////////
-  switch(iQPMode)
+  switch(eQPMode)
   {
-  case RAMP_QP:
+  case AL_GENERATE_RAMP_QP:
   {
-    bIsAOM ? Generate_RampQP_VP9(pSegs, pQPs, iNumLCUs, iMinQP, iMaxQP) :
-    Generate_RampQP(pQPs, iNumLCUs, iNumQPPerLCU, iNumBytesPerLCU, iMinQP, iMaxQP);
-    bRet = true;
+    bIsAOM ? Generate_RampQP_AOM(pSegs, pQPs, iNumLCUs, iNumQPPerLCU, iNumBytesPerLCU, iMinQP, iMaxQP, iQPTableDepth) :
+    Generate_RampQP(pQPs, iNumLCUs, iNumQPPerLCU, iNumBytesPerLCU, iMinQP, iMaxQP, iQPTableDepth);
   } break;
   // ------------------------------------------------------------------------
-  case RANDOM_QP:
+  case AL_GENERATE_RANDOM_QP:
   {
-    bIsAOM ? Generate_RandomQP_VP9(pSegs, pQPs, iNumLCUs, iMinQP, iMaxQP, iSliceQP) :
-    Generate_RandomQP(pQPs, iNumLCUs, iNumQPPerLCU, iNumBytesPerLCU, iMinQP, iMaxQP, iSliceQP);
-    bRet = true;
+    bool bForceSbQp0 = false;
+
+    bIsAOM ? Generate_RandomQP_AOM(pSegs, pQPs, iNumLCUs, iNumQPPerLCU, iNumBytesPerLCU, iMinQP, iMaxQP, iSliceQP, iQPTableDepth, bForceSbQp0) :
+    Generate_RandomQP(pQPs, iNumLCUs, iNumQPPerLCU, iNumBytesPerLCU, iMinQP, iMaxQP, iSliceQP, iQPTableDepth);
   } break;
   // ------------------------------------------------------------------------
-  case BORDER_QP:
+  case AL_GENERATE_BORDER_QP:
   {
-    bIsAOM ? Generate_BorderQP_VP9(pSegs, pQPs, iNumLCUs, iLCUWidth, iLCUHeight, iMaxQP, iSliceQP, bRelative) :
-    Generate_BorderQP(pQPs, iNumLCUs, iLCUWidth, iLCUHeight, iNumQPPerLCU, iNumBytesPerLCU, iMaxQP, iSliceQP, bRelative);
-    bRet = true;
+    bIsAOM ? Generate_BorderQP_AOM(pSegs, pQPs, iNumLCUs, iLCUPicWidth, iLCUPicHeight, iNumQPPerLCU, iNumBytesPerLCU, iMaxQP, iSliceQP, bRelative, iQPTableDepth) :
+    Generate_BorderQP(pQPs, iNumLCUs, iLCUPicWidth, iLCUPicHeight, iNumQPPerLCU, iNumBytesPerLCU, iMaxQP, iSliceQP, bRelative, iQPTableDepth);
   } break;
   // ------------------------------------------------------------------------
-  case LOAD_QP:
+  case AL_GENERATE_LOAD_QP:
   {
-    bRet = bIsAOM ? Load_QPTable_FromFile_Vp9(pSegs, pQPs, iNumLCUs, sQPTablesFolder, iFrameID, bRelative) :
-           Load_QPTable_FromFile(pQPs, iNumLCUs, iNumQPPerLCU, iNumBytesPerLCU, sQPTablesFolder, iFrameID);
+    int Err = bIsAOM ? Load_QPTable_FromFile_AOM(pSegs, pQPs, iNumLCUs, iNumQPPerLCU, iNumBytesPerLCU, iQPTableDepth, sQPTablesFolder, iFrameID, bRelative) :
+              Load_QPTable_FromFile(pQPs, iNumLCUs, iNumQPPerLCU, iNumBytesPerLCU, iQPTableDepth, sQPTablesFolder, iFrameID);
+
+    if(Err)
+      return Err;
   } break;
+  default: break;
   }
 
   // ------------------------------------------------------------------------
-  if((eMode != UNIFORM_QP) && (iQPMode == UNIFORM_QP) && !bRelative)
+  if((eMode != AL_GENERATE_UNIFORM_QP) && (eQPMode == AL_GENERATE_UNIFORM_QP) && !bRelative)
   {
-    int s;
-
     if(bIsAOM)
-      for(s = 0; s < 8; ++s)
+    {
+      for(int s = 0; s < 8; ++s)
         pSegs[2 * s] = iSliceQP;
-
+    }
     else
+    {
+      auto const iLcuQpOffset = GetLcuQpOffset(iQPTableDepth);
+      auto const iCuQp = (iLcuQpOffset > 0) ? 0 : iSliceQP;
+
       for(int iLCU = 0; iLCU < iNumLCUs; iLCU++)
       {
-        int iFirst = iLCU * iNumBytesPerLCU;
+        int iFirst = iLCU * iNumBytesPerLCU + iLcuQpOffset;
+
+        if(iLcuQpOffset > 0)
+          pQPs[iFirst - iLcuQpOffset] = iSliceQP;
 
         for(int iQP = 0; iQP < iNumQPPerLCU; ++iQP)
-          pQPs[iFirst + iQP] = iSliceQP;
+          pQPs[iFirst + iQP] = iCuQp;
       }
+    }
   }
   // ------------------------------------------------------------------------
 
-  if(eMode & RANDOM_I_ONLY)
-  {
-    Generate_Random_WithFlag(pQPs, iNumLCUs, iNumQPPerLCU, iNumBytesPerLCU, iSliceQP, iRandFlag++, 20, MASK_FORCE_INTRA); // 20 percent
-    bRet = true;
-  }
+  if(eMode & AL_GENERATE_RANDOM_I_ONLY)
+    Generate_Random_WithFlag(pQPs, iNumLCUs, iNumQPPerLCU, iNumBytesPerLCU, iSliceQP, iRandFlag++, 20, MASK_FORCE_INTRA, iQPTableDepth); // 20 percent
 
   // ------------------------------------------------------------------------
-  if(eMode & RANDOM_SKIP)
-  {
-    Generate_Random_WithFlag(pQPs, iNumLCUs, iNumQPPerLCU, iNumBytesPerLCU, iSliceQP, iRandFlag++, 30, MASK_FORCE_MV0); // 30 percent
-    bRet = true;
-  }
+  if(eMode & AL_GENERATE_RANDOM_SKIP)
+    Generate_Random_WithFlag(pQPs, iNumLCUs, iNumQPPerLCU, iNumBytesPerLCU, iSliceQP, iRandFlag++, 30, MASK_FORCE_MV0, iQPTableDepth); // 30 percent
 
   // ------------------------------------------------------------------------
-  if(eMode & FULL_SKIP)
-  {
-    Generate_FullSkip(pQPs, iNumLCUs, iNumQPPerLCU, iNumBytesPerLCU);
-    bRet = true;
-  }
-  else if(eMode & BORDER_SKIP)
-  {
-    Generate_BorderSkip(pQPs, iNumLCUs, iNumQPPerLCU, iNumBytesPerLCU, iLCUWidth, iLCUHeight);
-    bRet = true;
-  }
+  if(eMode & AL_GENERATE_FULL_SKIP)
+    Generate_FullSkip(pQPs, iNumLCUs, iNumQPPerLCU, iNumBytesPerLCU, iQPTableDepth);
+  else if(eMode & AL_GENERATE_BORDER_SKIP)
+    Generate_BorderSkip(pQPs, iNumLCUs, iNumQPPerLCU, iNumBytesPerLCU, iLCUPicWidth, iLCUPicHeight, iQPTableDepth);
 
-  return bRet;
+  return AL_SUCCESS;
 }
 
 /****************************************************************************/

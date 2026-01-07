@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright (C) 2018 Allegro DVT2.  All rights reserved.
+* Copyright (C) 2008-2022 Allegro DVT2.  All rights reserved.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -42,10 +42,13 @@
    @{
    \file
  *****************************************************************************/
-#ifndef _INCLUDE_RBSP_ENCODING_H_DA01A86F_11CD_46D0_AAF6_EF08C957E05A
-#define _INCLUDE_RBSP_ENCODING_H_DA01A86F_11CD_46D0_AAF6_EF08C957E05A
+
+#pragma once
 
 #include "BitStreamLite.h"
+#include "lib_common/SliceConsts.h"
+#include "lib_common/AUD.h"
+#include "lib_common/HDR.h"
 
 /*************************************************************************//*!
    \brief This class implements helpful functions to encode Raw Byte Sequence
@@ -55,17 +58,20 @@
 /*********************************************************************//*!
    \brief Writes Access Unit delimiter to the managed CBitstreamLite
    \param[in] pRE Pointer to TRbspEncoding Object
-   \param[in] primary_pic_type
+   \param[in] eSliceType Slice type
 *************************************************************************/
-void AL_RbspEncoding_WriteAUD(AL_TBitStreamLite* pRE, int primary_pic_type);
-
+void AL_RbspEncoding_WriteAUD(AL_TBitStreamLite* pRE, AL_TAud const* pAud);
 int AL_RbspEncoding_BeginSEI(AL_TBitStreamLite* pRE, uint8_t payloadType);
 void AL_RbspEncoding_BeginSEI2(AL_TBitStreamLite* pBS, int iPayloadType, int iPayloadSize);
 void AL_RbspEncoding_EndSEI(AL_TBitStreamLite* pRE, int bookmarkSEI);
 void AL_RbspEncoding_CloseSEI(AL_TBitStreamLite* pRE);
-void AL_RbspEncoding_WriteUserDataUnregistered(AL_TBitStreamLite* pRE, uint8_t uuid[16]);
+void AL_RbspEncoding_WriteUserDataUnregistered(AL_TBitStreamLite* pRE, uint8_t uuid[16], int8_t numSlices);
+void AL_RbspEncoding_WriteMasteringDisplayColourVolume(AL_TBitStreamLite* pBS, AL_TMasteringDisplayColourVolume* pMDCV);
+void AL_RbspEncoding_WriteContentLightLevel(AL_TBitStreamLite* pBS, AL_TContentLightLevel* pCLL);
+void AL_RbspEncoding_WriteAlternativeTransferCharacteristics(AL_TBitStreamLite* pBS, AL_TAlternativeTransferCharacteristics* pATC);
+void AL_RbspEncoding_WriteST2094_10(AL_TBitStreamLite* pBS, AL_TDynamicMeta_ST2094_10* pST2094_10);
+void AL_RbspEncoding_WriteST2094_40(AL_TBitStreamLite* pBS, AL_TDynamicMeta_ST2094_40* pST2094_40);
 /****************************************************************************/
 
-#endif
 /*@}*/
 

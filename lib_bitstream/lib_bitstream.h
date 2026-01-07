@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright (C) 2018 Allegro DVT2.  All rights reserved.
+* Copyright (C) 2008-2022 Allegro DVT2.  All rights reserved.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -45,9 +45,9 @@
 #pragma once
 
 #include "BitStreamLite.h"
-#include "HEVC_RbspEncod.h"
-#include "HEVC_SkippedPict.h"
 #include "AVC_RbspEncod.h"
 #include "AVC_SkippedPict.h"
+#include "HEVC_RbspEncod.h"
+#include "HEVC_SkippedPict.h"
 /*@}*/
 

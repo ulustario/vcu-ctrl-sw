@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright (C) 2018 Allegro DVT2.  All rights reserved.
+* Copyright (C) 2008-2022 Allegro DVT2.  All rights reserved.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -53,9 +53,10 @@
 typedef struct AL_t_StreamMetaData
 {
   AL_TMetaData tMeta;
+  uint8_t uTemporalID; /*!< Temporal ID */
   AL_TStreamSection* pSections;  /*!< Array of sections */
   uint16_t uNumSection; /*!< number of sections inside the buffer */
-  uint16_t uMaxNumSection /*!< maximum number of sections available */;
+  uint16_t uMaxNumSection; /*!< maximum number of sections available */
 }AL_TStreamMetaData;
 
 /*************************************************************************//*!
@@ -75,10 +76,10 @@ AL_TStreamMetaData* AL_StreamMetaData_Clone(AL_TStreamMetaData* pMeta);
    \param[in] pMetaData Pointer to the stream metadata
    \param[in] uOffset offset in the stream data of the section
    \param[in] uLength size of the data of the section
-   \param[in] uFlags stream section bitfield (see SECTION_xxxxx_FLAG)
+   \param[in] eFlags stream section bitfield (see SECTION_xxxxx_FLAG)
    \return return the id given to the added section, -1 if the section couldn't be added
 *****************************************************************************/
-int AL_StreamMetaData_AddSection(AL_TStreamMetaData* pMetaData, uint32_t uOffset, uint32_t uLength, uint32_t uFlags);
+int AL_StreamMetaData_AddSection(AL_TStreamMetaData* pMetaData, uint32_t uOffset, uint32_t uLength, AL_ESectionFlags eFlags);
 
 /*************************************************************************//*!
    \brief Change the information of a previously added section
@@ -93,9 +94,9 @@ void AL_StreamMetaData_ChangeSection(AL_TStreamMetaData* pMetaData, uint16_t uSe
    \brief Change the flags related to a section (see SECTION_xxxxx_FLAG)
    \param[in] pMetaData Pointer to the stream metadata
    \param[in] uSectionID id representing the section you want to change
-   \param[in] uFlags stream section bitfield (see SECTION_xxxxx_FLAG)
+   \param[in] eFlags stream section bitfield (see SECTION_xxxxx_FLAG)
 *****************************************************************************/
-void AL_StreamMetaData_SetSectionFlags(AL_TStreamMetaData* pMetaData, uint16_t uSectionID, uint32_t uFlags);
+void AL_StreamMetaData_SetSectionFlags(AL_TStreamMetaData* pMetaData, uint16_t uSectionID, AL_ESectionFlags eFlags);
 
 /*************************************************************************//*!
    \brief Remove all the sections of a particular stream metadata
@@ -120,6 +121,14 @@ int AL_StreamMetaData_AddSeiSection(AL_TStreamMetaData* pMetaData, bool isPrefix
    \return returns an offset where the section data can be inserted in the stream.
 *****************************************************************************/
 uint32_t AL_StreamMetaData_GetUnusedStreamPart(AL_TStreamMetaData* pMetaData);
+
+/*************************************************************************//*!
+   \brief Get an the last section in the stream buffer of containing the provided flag
+   \param[in] pMetaData Pointer to the stream metadata
+   \param[in] uFlag Section's flag
+   \return returns the section id, -1 on failure
+*****************************************************************************/
+int AL_StreamMetaData_GetLastSectionOfFlag(AL_TStreamMetaData* pMetaData, uint32_t uFlag);
 
 /*@}*/
 

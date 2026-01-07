@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright (C) 2018 Allegro DVT2.  All rights reserved.
+* Copyright (C) 2008-2022 Allegro DVT2.  All rights reserved.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -119,6 +119,15 @@ void AL_BitStreamLite_EndOfSEIPayload(AL_TBitStreamLite* pBS);
    \param[in] uValue Value to put in the bitstream
  *************************************************************************/
 void AL_BitStreamLite_PutU(AL_TBitStreamLite* pBS, int iNumBits, uint32_t uValue);
+
+/*************************************************************************//*!
+   \brief Puts signed integer to the BitStream using the specified number of
+   bits
+   \param[in] pBS Pointer to a TBitStreamLite object
+   \param[in] iNumBits Number of bits used to encode uValue
+   \param[in] uValue Value to put in the bitstream
+ *************************************************************************/
+void AL_BitStreamLite_PutI(AL_TBitStreamLite* pBS, int iNumBits, int32_t iValue);
 
 /*************************************************************************//*!
    \brief Puts unsigned integer Exp-Golomb-coded in the BitStream

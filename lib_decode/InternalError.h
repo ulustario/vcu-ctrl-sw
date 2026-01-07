@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright (C) 2018 Allegro DVT2.  All rights reserved.
+* Copyright (C) 2008-2022 Allegro DVT2.  All rights reserved.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -44,5 +44,8 @@ typedef enum
   ERR_UNIT_NOT_FOUND,
   ERR_UNIT_INVALID_CHANNEL,
   ERR_UNIT_DYNAMIC_ALLOC,
+  ERR_UNIT_FAILED,
+  ERR_INVALID_ACCESS_UNIT,
+  ERR_INVALID_NAL_UNIT,
 }UNIT_ERROR;
 

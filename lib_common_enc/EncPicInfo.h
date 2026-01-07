@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright (C) 2018 Allegro DVT2.  All rights reserved.
+* Copyright (C) 2008-2022 Allegro DVT2.  All rights reserved.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -48,6 +48,21 @@
 #include "lib_common/Error.h"
 #include "lib_common_enc/EncChanParam.h"
 #include "lib_common/BufferAPI.h"
+#include "lib_common_enc/RateCtrlStats.h"
+
+/*************************************************************************//*!
+   \brief Segmentation structure
+*****************************************************************************/
+#define MAX_SEGMENTS 8
+typedef struct AL_t_Segmentation
+{
+  bool enable;
+  bool update_map;
+  bool temporal_update;
+  bool update_data;
+  bool abs_delta;
+  int16_t feature_data[MAX_SEGMENTS];  // only store data for Q
+}AL_TSegmentation;
 
 /*************************************************************************//*!
    \brief Encoding tool enum
@@ -64,34 +79,49 @@ typedef enum AL_e_PicEncOption
 typedef struct AL_t_EncInfo
 {
   AL_EPicEncOption eEncOptions;
+  uint8_t uPpsId;
   int16_t iPpsQP;
 
-#if AL_ENABLE_TWOPASS
   AL_TLookAheadParam tLAParam;
-#endif
 
   AL_64U UserParam;
   AL_64U SrcHandle;
+
+  int8_t iQp1Offset;
+  int8_t iQp2Offset;
 }AL_TEncInfo;
 
 typedef enum
 {
   AL_NO_OPT = 0,
-  AL_OPT_SCENE_CHANGE = 0x0001,
-  AL_OPT_IS_LONG_TERM = 0x0002,
-  AL_OPT_USE_LONG_TERM = 0x0004,
-  AL_OPT_RESTART_GOP = 0x0008,
-  AL_OPT_UPDATE_PARAMS = 0x0010,
-  AL_OPT_SET_QP = 0x0100,
+  AL_OPT_SCENE_CHANGE = 0x00001,
+  AL_OPT_IS_LONG_TERM = 0x00002,
+  AL_OPT_USE_LONG_TERM = 0x00004,
+  AL_OPT_RESTART_GOP = 0x00008,
+  AL_OPT_UPDATE_RC_GOP_PARAMS = 0x00010,
+  AL_OPT_UPDATE_COST_MODE = 0x01000,
+  AL_OPT_SET_QP = 0x00100,
+  AL_OPT_SET_INPUT_RESOLUTION = 0x00200,
+  AL_OPT_SET_LF_OFFSETS = 0x00400,
+  AL_OPT_SET_AUTO_QP = 0x08000,
+  AL_OPT_UPDATE_AUTO_QP_VALUES = 0x20000,
+  AL_OPT_RECOVERY_POINT = 0x10000,
 }AL_ERequestEncOption;
 
-
+typedef struct
+{
+  AL_TDimension tInputResolution;
+}AL_TDynResParams;
 
 typedef struct
 {
   AL_TRCParam rc;
   AL_TGopParam gop;
   int16_t iQPSet;
+  int8_t iLFBetaOffset;
+  int8_t iLFTcOffset;
+  bool costMode;
+  bool useAutoQP;
 }AL_TEncSmartParams;
 
 typedef struct AL_t_EncRequestInfo
@@ -99,6 +129,7 @@ typedef struct AL_t_EncRequestInfo
   AL_ERequestEncOption eReqOptions;
   uint32_t uSceneChangeDelay;
   AL_TEncSmartParams smartParams;
+  AL_TDynResParams dynResParams;
 }AL_TEncRequestInfo;
 
 /*************************************************************************//*!
@@ -149,14 +180,22 @@ typedef struct AL_t_EncPicStatus
   bool bIsLastSlice;
   int16_t iPpsQP;
   int iRecoveryCnt;
+  uint8_t uTempId;
+  int32_t iPOC;
 
   uint8_t uCuQpDeltaDepth;
+  uint8_t bDisLoopFilter;
+  int8_t iBetaOffset;
+  int8_t iTcOffset;
 
-#if AL_ENABLE_TWOPASS
   int32_t iPictureSize;
-  int8_t iPercentIntra;
-  int8_t iPercentSkip;
-#endif
+  int8_t iPercentIntra[5];
+
+  AL_RateCtrl_Statistics tRateCtrlStats;
+
+  uint16_t uGdrPos;
+  AL_EGdrMode eGdrMode;
+
 }AL_TEncPicStatus;
 
 #define AL_ERR_SRC_BUF_NOT_READY AL_DEF_ERROR(20)
@@ -169,13 +208,23 @@ typedef struct AL_t_EncPicStatus
 /*************************************************************************//*!
    \brief Picture buffers structure
 *****************************************************************************/
+typedef struct AL_t_SrcInfo
+{
+  uint8_t uBitDepth;
+  uint32_t uPitch;
+  uint8_t uFormat;
+}AL_TSrcInfo;
+
+typedef struct AL_t_SrcAddrs
+{
+  AL_PADDR pY;
+  AL_PADDR pC1;
+}AL_TSrcAddrs;
+
 typedef struct AL_t_EncPicBufAddrs
 {
-  AL_PADDR pSrc_Y;
-  AL_PADDR pSrc_UV;
-  uint32_t uPitchSrc;
-
-
+  AL_TSrcAddrs tSrcAddrs;
+  AL_TSrcInfo tSrcInfo;
   AL_PADDR pEP2;
   AL_PTR64 pEP2_v;
 }AL_TEncPicBufAddrs;

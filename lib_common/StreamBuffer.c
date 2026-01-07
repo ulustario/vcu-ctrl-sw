@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright (C) 2018 Allegro DVT2.  All rights reserved.
+* Copyright (C) 2008-2022 Allegro DVT2.  All rights reserved.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -37,73 +37,79 @@
 
 #include "lib_common/StreamBuffer.h"
 #include "lib_common/StreamBufferPrivate.h"
+#include "lib_common/Utils.h"
 #include "lib_common/AvcLevelsLimit.h"
+#include "lib_common/HevcLevelsLimit.h"
+
+static const uint8_t STREAM_ALLOC_LOG2_MINCUSIZE = 4;
+static const uint8_t STREAM_ALLOC_LOG2_MAXCUSIZE = 6;
 
 /****************************************************************************/
-int GetBlk64x64(AL_TDimension tDim)
+static int GetOneLCUPCMSize(AL_EChromaMode eChromaMode, uint8_t uLog2MaxCuSize, uint8_t uBitDepth)
 {
-  int i64x64Width = (tDim.iWidth + 63) / 64;
-  int i64x64Height = (tDim.iHeight + 63) / 64;
-
-  return i64x64Width * i64x64Height;
+  static const uint16_t AL_PCM_SIZE[4][3] =
+  {
+    { 256, 1024, 4096 }, { 384, 1536, 6144 }, { 512, 2048, 8192 }, { 768, 3072, 12288 }
+  };
+  return AL_PCM_SIZE[eChromaMode][uLog2MaxCuSize - 4] * uBitDepth / 8;
 }
 
 /****************************************************************************/
-int GetBlk32x32(AL_TDimension tDim)
+int GetPCMSize(uint32_t uNumLCU, uint8_t uLog2MaxCuSize, AL_EChromaMode eChromaMode, uint8_t uBitDepth, bool bIntermediateBuffer)
 {
-  int i32x32Width = (tDim.iWidth + 31) / 32;
-  int i32x32Height = (tDim.iHeight + 31) / 32;
+  (void)bIntermediateBuffer;
 
-  return i32x32Width * i32x32Height;
-}
+  // Sample cost
+  int iLCUSize = GetOneLCUPCMSize(eChromaMode, uLog2MaxCuSize, uBitDepth);
 
-/****************************************************************************/
-int GetBlk16x16(AL_TDimension tDim)
-{
-  int i16x16Width = (tDim.iWidth + 15) / 16;
-  int i16x16Height = (tDim.iHeight + 15) / 16;
+  // Rounding because of potential tiling
+  iLCUSize = RoundUp(iLCUSize, HW_IP_BURST_ALIGNMENT);
 
-  return i16x16Width * i16x16Height;
-}
-
-/****************************************************************************/
-static int GetPcmSizeWithFractionalCoefficient(AL_TDimension tDim, AL_EChromaMode eMode, int iBitDepth, int coeffNumerator, int coeffDenominator)
-{
-  const int bitdepthNumerator = iBitDepth;
-  const int bitdepthDenominator = 8;
-
-  /* Careful round up (at the 64x64 MB/LCU level) while calculating fraction. */
-  const int iLcu64PcmSizeMultipliedByFraction = ((AL_PCM_SIZE[eMode][2] * bitdepthNumerator * coeffNumerator + (bitdepthDenominator * coeffDenominator - 1)) / (bitdepthDenominator * coeffDenominator));
-  return GetBlk64x64(tDim) * iLcu64PcmSizeMultipliedByFraction;
+  return uNumLCU * iLCUSize;
 }
 
 /****************************************************************************/
 int GetPcmVclNalSize(AL_TDimension tDim, AL_EChromaMode eMode, int iBitDepth)
 {
-  return GetPcmSizeWithFractionalCoefficient(tDim, eMode, iBitDepth, 1, 1);
+  /* We round the dimensions according to the maximum LCU size, but then
+  compute stream size according the the minimum LCU size. Indeed, smaller LCU
+  can give bigger PCM sizes due to rounding */
+  uint32_t uNumLCU = GetSquareBlkNumber(tDim, 1 << STREAM_ALLOC_LOG2_MAXCUSIZE);
+  uNumLCU <<= 2 * (STREAM_ALLOC_LOG2_MAXCUSIZE - STREAM_ALLOC_LOG2_MINCUSIZE);
+  return GetPCMSize(uNumLCU, STREAM_ALLOC_LOG2_MINCUSIZE, eMode, iBitDepth, false);
 }
 
 /****************************************************************************/
-int GetMaxVclNalSize(AL_TDimension tDim, AL_EChromaMode eMode, int iBitDepth)
+int Hevc_GetMaxVclNalSize(AL_TDimension tDim, AL_EChromaMode eMode, int iBitDepth)
 {
+  int iLCUSize = GetOneLCUPCMSize(eMode, STREAM_ALLOC_LOG2_MAXCUSIZE, iBitDepth);
   /* Spec. A.3.2, A.3.3: Number of bits in the macroblock is at most: 5 * RawCtuBits / 3. */
-  return GetPcmSizeWithFractionalCoefficient(tDim, eMode, iBitDepth, 5, 3);
+  iLCUSize = (iLCUSize * 5 + 2) / 3;
+  // Round at LCU?
+  int iSize = GetSquareBlkNumber(tDim, 1 << STREAM_ALLOC_LOG2_MAXCUSIZE) * iLCUSize;
+  return RoundUp(iSize, HW_IP_BURST_ALIGNMENT);
 }
 
 /****************************************************************************/
-int AL_GetMaxNalSize(AL_ECodec eCodec, AL_TDimension tDim, AL_EChromaMode eMode, int iBitDepth, int iLevel, int iProfileIdc)
+int AL_GetMaxNalSize(AL_TDimension tDim, AL_EChromaMode eMode, int iBitDepth, AL_EProfile eProfile, int iLevel)
 {
-  (void)iProfileIdc;
-  /* Actual worst case: 5/3*PCM + one slice per MB/LCU. */
-  int iMaxPCM = eCodec == AL_CODEC_HEVC ? GetMaxVclNalSize(tDim, eMode, iBitDepth) : GetPcmVclNalSize(tDim, eMode, iBitDepth);
-  int iNumSlices = iLevel > 52 ? 600 : 200;
+  (void)iLevel;
+
+  AL_ECodec eCodec = AL_GET_CODEC(eProfile);
+
+  int iMaxPCM = (eCodec == AL_CODEC_HEVC) ? Hevc_GetMaxVclNalSize(tDim, eMode, iBitDepth) : GetPcmVclNalSize(tDim, eMode, iBitDepth);
+
+  int iNumSlices = 1;
 
   if(eCodec == AL_CODEC_AVC)
-    iNumSlices = Avc_GetMaxNumberOfSlices(iProfileIdc, iLevel, 1, 60, INT32_MAX);
+    iNumSlices = AL_AVC_GetMaxNumberOfSlices(eProfile, iLevel, 1, 60, INT32_MAX);
 
-  iMaxPCM += 2048 + (iNumSlices * AL_MAX_SLICE_HEADER_SIZE);
+  if(eCodec == AL_CODEC_HEVC)
+    iNumSlices = AL_HEVC_GetMaxNumberOfSlices(iLevel);
 
-  return RoundUp(iMaxPCM, 32);
+  int iMaxNalSize = iMaxPCM + AL_ENC_MAX_HEADER_SIZE + (iNumSlices * AL_MAX_SLICE_HEADER_SIZE);
+
+  return RoundUp(iMaxNalSize, 32);
 }
 
 /****************************************************************************/
@@ -112,7 +118,7 @@ int AL_GetMitigatedMaxNalSize(AL_TDimension tDim, AL_EChromaMode eMode, int iBit
   /* Mitigated worst case: PCM + one slice per row. */
   int iMaxPCM = GetPcmVclNalSize(tDim, eMode, iBitDepth);
   int iNumSlices = ((tDim.iHeight + 15) / 16);
-  iMaxPCM += 2048 + (iNumSlices * AL_MAX_SLICE_HEADER_SIZE);
+  iMaxPCM += AL_ENC_MAX_HEADER_SIZE + (iNumSlices * AL_MAX_SLICE_HEADER_SIZE);
 
   return RoundUp(iMaxPCM, 32);
 }

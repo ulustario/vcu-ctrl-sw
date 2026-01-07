@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright (C) 2018 Allegro DVT2.  All rights reserved.
+* Copyright (C) 2008-2022 Allegro DVT2.  All rights reserved.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -43,23 +43,20 @@
    \file
  *****************************************************************************/
 
-#include <assert.h>
-
-#include "lib_common/Utils.h"
-#include "lib_common/HwScalingList.h"
-
-#include "lib_common_dec/DecSliceParam.h"
-#include "lib_common_dec/DecBuffers.h"
-#include "lib_common_dec/RbspParser.h"
-
-#include "lib_parsing/Avc_PictMngr.h"
-#include "lib_parsing/Hevc_PictMngr.h"
-#include "lib_parsing/SliceHdrParsing.h"
-
 #include "FrameParam.h"
 #include "I_DecoderCtx.h"
 #include "DefaultDecoder.h"
 #include "SliceDataParsing.h"
+
+#include "lib_common/Utils.h"
+#include "lib_common/HwScalingList.h"
+#include "lib_common/BufferSeiMeta.h"
+
+#include "lib_common_dec/RbspParser.h"
+
+#include "lib_parsing/SliceHdrParsing.h"
+#include "lib_parsing/Avc_PictMngr.h"
+#include "lib_parsing/Hevc_PictMngr.h"
 
 /*************************************************************************//*!
    \brief This function returns a pointer to the Nal data cleaned of the AE bytes
@@ -111,7 +108,7 @@ static uint32_t AL_sCount_AntiEmulBytes(TCircBuffer* pStream, uint32_t uLength)
 }
 
 /*****************************************************************************/
-static uint32_t GetNonVclSize(TCircBuffer* pBufStream)
+uint32_t GetNonVclSize(TCircBuffer* pBufStream)
 {
   int iNumZeros = 0;
   int iNumNALFound = 0;
@@ -144,18 +141,21 @@ static uint32_t GetNonVclSize(TCircBuffer* pBufStream)
     ++uLengthNAL;
   }
 
-  return RoundUp(uLengthNAL, ANTI_EMUL_GRANULARITY);
+  return uLengthNAL;
 }
 
 /*****************************************************************************/
-static void InitNonVclBuf(AL_TDecCtx* pCtx, TCircBuffer* pBufStream)
+static void InitNonVclBuf(AL_TDecCtx* pCtx)
 {
-  uint32_t uLengthNAL = GetNonVclSize(pBufStream);
+  // The anti emulation works on chunks of ANTI_EMUL_GRANULARITY size so we need
+  // the size to be aligned to that granularity.
+  uint32_t uLengthNAL = RoundUp(GetNonVclSize(&pCtx->Stream), ANTI_EMUL_GRANULARITY);
 
   if(uLengthNAL > pCtx->BufNoAE.tMD.uSize) /* should occurs only on long SEI message */
   {
     Rtos_Free(pCtx->BufNoAE.tMD.pVirtualAddr);
     pCtx->BufNoAE.tMD.pVirtualAddr = (uint8_t*)Rtos_Malloc(uLengthNAL);
+    AL_Assert(pCtx->BufNoAE.tMD.pVirtualAddr);
     pCtx->BufNoAE.tMD.uSize = uLengthNAL;
   }
 
@@ -174,7 +174,6 @@ static uint32_t GetSliceHdrSize(AL_TRbspParser* pRP, TCircBuffer* pBufStream)
 void UpdateContextAtEndOfFrame(AL_TDecCtx* pCtx)
 {
   pCtx->bIsFirstPicture = false;
-  pCtx->bLastIsEOS = false;
 
   pCtx->tConceal.iFirstLCU = -1;
   pCtx->tConceal.bValidFrame = false;
@@ -204,18 +203,24 @@ void UpdateCircBuffer(AL_TRbspParser* pRP, TCircBuffer* pBufStream, int* pSliceH
 }
 
 /*****************************************************************************/
-bool SkipNal()
+bool SkipNal(void)
 {
   return false;
 }
 
 /*****************************************************************************/
-AL_TRbspParser getParserOnNonVclNal(AL_TDecCtx* pCtx)
+AL_TRbspParser getParserOnNonVclNal(AL_TDecCtx* pCtx, uint8_t* pBufNoAE)
 {
   TCircBuffer* pBufStream = &pCtx->Stream;
-  InitNonVclBuf(pCtx, pBufStream);
   AL_TRbspParser rp;
-  InitRbspParser(pBufStream, pCtx->BufNoAE.tMD.pVirtualAddr, true, &rp);
+  InitRbspParser(pBufStream, pBufNoAE, true, &rp);
   return rp;
+}
+
+/*****************************************************************************/
+AL_TRbspParser getParserOnNonVclNalInternalBuf(AL_TDecCtx* pCtx)
+{
+  InitNonVclBuf(pCtx);
+  return getParserOnNonVclNal(pCtx, pCtx->BufNoAE.tMD.pVirtualAddr);
 }
 

@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright (C) 2018 Allegro DVT2.  All rights reserved.
+* Copyright (C) 2008-2022 Allegro DVT2.  All rights reserved.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -37,6 +37,7 @@
 
 #include "ChannelResources.h"
 #include "Utils.h"
+#include "lib_rtos/lib_rtos.h"
 
 static int divideRoundUp(uint64_t dividende, uint64_t divisor)
 {
@@ -59,10 +60,11 @@ static int ChoseCoresCount(int width, int height, int frameRate, int clockRatio,
   return Max(GetMinCoresCount(width, maxWidth), divideRoundUp(channelResources, resourcesByCore));
 }
 
-void AL_CoreConstraint_Init(AL_CoreConstraint* constraint, int coreFrequency, int margin, int hardwareCyclesCount, int minWidth, int maxWidth)
+void AL_CoreConstraint_Init(AL_CoreConstraint* constraint, int coreFrequency, int margin, int hardwareCyclesCount, int minWidth, int maxWidth, int lcuSize)
 {
   constraint->minWidth = minWidth;
   constraint->maxWidth = maxWidth;
+  constraint->lcuSize = lcuSize;
   constraint->resources = GetCoreResources(coreFrequency, margin, hardwareCyclesCount);
   constraint->enableMultiCore = true;
 }
@@ -80,9 +82,9 @@ int AL_CoreConstraint_GetMinCoresCount(AL_CoreConstraint* constraint, int width)
 static int getLcuCount(int width, int height)
 {
   /* Fixed LCU Size chosen for resources calculs */
-  int const lcuHeight = 32;
-  int const lcuWidth = 32;
-  return divideRoundUp(width, lcuWidth) * divideRoundUp(height, lcuHeight);
+  int const lcuPicHeight = 32;
+  int const lcuPicWidth = 32;
+  return divideRoundUp(width, lcuPicWidth) * divideRoundUp(height, lcuPicHeight);
 }
 
 int AL_GetResources(int width, int height, int frameRate, int clockRatio)
@@ -94,5 +96,48 @@ int AL_GetResources(int width, int height, int frameRate, int clockRatio)
   uint64_t dividende = lcuCount * (uint64_t)frameRate;
   uint64_t divisor = (uint64_t)clockRatio;
   return divideRoundUp(dividende, divisor);
+}
+
+static int ToCtb(int val, int ctbSize)
+{
+  return divideRoundUp(val, ctbSize);
+}
+
+bool AL_Constraint_NumCoreIsSane(int width, int numCore, int log2MaxCuSize, AL_NumCoreDiagnostic* diagnostic)
+{
+  /*
+   * Hardware limitation, for each core, we need at least:
+   * -> 3 CTB for VP9 / HEVC64
+   * -> 4 CTB for HEVC32
+   * -> 5 MB for AVC
+   * Each core starts on a tile.
+   * Tiles are aligned on 64 bytes.
+   */
+
+  int ctbSize = 1 << log2MaxCuSize;
+  int const MIN_CTB_PER_CORE = 9 - log2MaxCuSize;
+  int widthPerCoreInCtb = ToCtb(width / numCore, ctbSize);
+
+  int offset = 0;
+  int roundedOffset = 0; // A core needs to starts at a 64 bytes aligned offset
+
+  if(diagnostic)
+    Rtos_Memset(diagnostic, 0, sizeof(*diagnostic));
+
+  for(int core = 0; core < numCore; ++core)
+  {
+    offset = roundedOffset;
+    int curCoreMinWidthInCtb = MIN_CTB_PER_CORE * ctbSize;
+    offset += curCoreMinWidthInCtb;
+    roundedOffset = RoundUp(offset, 64);
+  }
+
+  if(diagnostic)
+  {
+    diagnostic->requiredWidthInCtbPerCore = MIN_CTB_PER_CORE;
+    diagnostic->actualWidthInCtbPerCore = widthPerCoreInCtb;
+  }
+
+  return widthPerCoreInCtb >= MIN_CTB_PER_CORE && offset <= RoundUp(width, ctbSize);
 }
 

@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright (C) 2018 Allegro DVT2.  All rights reserved.
+* Copyright (C) 2008-2022 Allegro DVT2.  All rights reserved.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -36,7 +36,7 @@
 ******************************************************************************/
 
 #include "lib_common/FourCC.h"
-#include <assert.h>
+#include "lib_assert/al_assert.h"
 
 /* FOURCC from chars */
 #define FOURCC2(A, B, C, D) ((TFourCC)(((uint32_t)((A))) \
@@ -56,57 +56,99 @@ typedef struct AL_t_FourCCMapping
 static const TFourCCMapping FourCCMappings[] =
 {
   // planar: 8b
-  AL_FOURCC_MAPPING(FOURCC2('I', '4', '2', '0'), CHROMA_4_2_0, 8, AL_FB_RASTER, AL_C_ORDER_U_V, false, false)
-  , AL_FOURCC_MAPPING(FOURCC2('I', 'Y', 'U', 'V'), CHROMA_4_2_0, 8, AL_FB_RASTER, AL_C_ORDER_U_V, false, false)
-  , AL_FOURCC_MAPPING(FOURCC2('Y', 'V', '1', '2'), CHROMA_4_2_0, 8, AL_FB_RASTER, AL_C_ORDER_V_U, false, false)
-  , AL_FOURCC_MAPPING(FOURCC2('I', '4', '2', '2'), CHROMA_4_2_2, 8, AL_FB_RASTER, AL_C_ORDER_U_V, false, false)
-  , AL_FOURCC_MAPPING(FOURCC2('Y', 'V', '1', '6'), CHROMA_4_2_2, 8, AL_FB_RASTER, AL_C_ORDER_U_V, false, false)
+  AL_FOURCC_MAPPING(FOURCC2('I', '4', '2', '0'), AL_CHROMA_4_2_0, 8, AL_FB_RASTER, AL_C_ORDER_U_V, false, false)
+  , AL_FOURCC_MAPPING(FOURCC2('I', 'Y', 'U', 'V'), AL_CHROMA_4_2_0, 8, AL_FB_RASTER, AL_C_ORDER_U_V, false, false)
+  , AL_FOURCC_MAPPING(FOURCC2('Y', 'V', '1', '2'), AL_CHROMA_4_2_0, 8, AL_FB_RASTER, AL_C_ORDER_V_U, false, false)
+  , AL_FOURCC_MAPPING(FOURCC2('I', '4', '2', '2'), AL_CHROMA_4_2_2, 8, AL_FB_RASTER, AL_C_ORDER_U_V, false, false)
+  , AL_FOURCC_MAPPING(FOURCC2('Y', 'V', '1', '6'), AL_CHROMA_4_2_2, 8, AL_FB_RASTER, AL_C_ORDER_V_U, false, false)
+  , AL_FOURCC_MAPPING(FOURCC2('Y', 'U', 'Y', '2'), AL_CHROMA_4_2_2, 8, AL_FB_RASTER, AL_C_ORDER_PACKED, false, false)
+  , AL_FOURCC_MAPPING(FOURCC2('I', '4', '4', '4'), AL_CHROMA_4_4_4, 8, AL_FB_RASTER, AL_C_ORDER_U_V, false, false)
+
   // planar: 10b
-  , AL_FOURCC_MAPPING(FOURCC2('I', '0', 'A', 'L'), CHROMA_4_2_0, 10, AL_FB_RASTER, AL_C_ORDER_U_V, false, false)
-  , AL_FOURCC_MAPPING(FOURCC2('I', '2', 'A', 'L'), CHROMA_4_2_2, 10, AL_FB_RASTER, AL_C_ORDER_U_V, false, false)
+  , AL_FOURCC_MAPPING(FOURCC2('I', '0', 'A', 'L'), AL_CHROMA_4_2_0, 10, AL_FB_RASTER, AL_C_ORDER_U_V, false, false)
+  , AL_FOURCC_MAPPING(FOURCC2('I', '2', 'A', 'L'), AL_CHROMA_4_2_2, 10, AL_FB_RASTER, AL_C_ORDER_U_V, false, false)
+  , AL_FOURCC_MAPPING(FOURCC2('Y', 'U', 'V', 'P'), AL_CHROMA_4_2_2, 10, AL_FB_RASTER, AL_C_ORDER_PACKED, false, false)
+  , AL_FOURCC_MAPPING(FOURCC2('I', '4', 'A', 'L'), AL_CHROMA_4_4_4, 10, AL_FB_RASTER, AL_C_ORDER_U_V, false, false)
+
+  // planar: 12b
+  , AL_FOURCC_MAPPING(FOURCC2('I', '0', 'C', 'L'), AL_CHROMA_4_2_0, 12, AL_FB_RASTER, AL_C_ORDER_U_V, false, false)
+  , AL_FOURCC_MAPPING(FOURCC2('I', '2', 'C', 'L'), AL_CHROMA_4_2_2, 12, AL_FB_RASTER, AL_C_ORDER_U_V, false, false)
+  , AL_FOURCC_MAPPING(FOURCC2('I', '4', 'C', 'L'), AL_CHROMA_4_4_4, 12, AL_FB_RASTER, AL_C_ORDER_U_V, false, false)
 
   // semi-planar: 8b
-  , AL_FOURCC_MAPPING(FOURCC2('N', 'V', '1', '2'), CHROMA_4_2_0, 8, AL_FB_RASTER, AL_C_ORDER_SEMIPLANAR, false, false)
-  , AL_FOURCC_MAPPING(FOURCC2('N', 'V', '1', '6'), CHROMA_4_2_2, 8, AL_FB_RASTER, AL_C_ORDER_SEMIPLANAR, false, false)
+  , AL_FOURCC_MAPPING(FOURCC2('N', 'V', '1', '2'), AL_CHROMA_4_2_0, 8, AL_FB_RASTER, AL_C_ORDER_SEMIPLANAR, false, false)
+  , AL_FOURCC_MAPPING(FOURCC2('N', 'V', '1', '6'), AL_CHROMA_4_2_2, 8, AL_FB_RASTER, AL_C_ORDER_SEMIPLANAR, false, false)
+  , AL_FOURCC_MAPPING(FOURCC2('N', 'V', '2', '4'), AL_CHROMA_4_4_4, 8, AL_FB_RASTER, AL_C_ORDER_SEMIPLANAR, false, false)
+
   // semi-planar: 10b
-  , AL_FOURCC_MAPPING(FOURCC2('P', '0', '1', '0'), CHROMA_4_2_0, 10, AL_FB_RASTER, AL_C_ORDER_SEMIPLANAR, false, false)
-  , AL_FOURCC_MAPPING(FOURCC2('P', '2', '1', '0'), CHROMA_4_2_2, 10, AL_FB_RASTER, AL_C_ORDER_SEMIPLANAR, false, false)
+  , AL_FOURCC_MAPPING(FOURCC2('P', '0', '1', '0'), AL_CHROMA_4_2_0, 10, AL_FB_RASTER, AL_C_ORDER_SEMIPLANAR, false, false)
+  , AL_FOURCC_MAPPING(FOURCC2('P', '2', '1', '0'), AL_CHROMA_4_2_2, 10, AL_FB_RASTER, AL_C_ORDER_SEMIPLANAR, false, false)
+  , AL_FOURCC_MAPPING(FOURCC2('P', '4', '1', '0'), AL_CHROMA_4_4_4, 10, AL_FB_RASTER, AL_C_ORDER_SEMIPLANAR, false, false)
 
-  // monochrome
-  , AL_FOURCC_MAPPING(FOURCC2('Y', '8', '0', '0'), CHROMA_4_0_0, 8, AL_FB_RASTER, AL_C_ORDER_NO_CHROMA, false, false)
-  , AL_FOURCC_MAPPING(FOURCC2('Y', '0', '1', '0'), CHROMA_4_0_0, 10, AL_FB_RASTER, AL_C_ORDER_NO_CHROMA, false, false)
+  // semi-planar: 12b
+  , AL_FOURCC_MAPPING(FOURCC2('P', '0', '1', '2'), AL_CHROMA_4_2_0, 12, AL_FB_RASTER, AL_C_ORDER_SEMIPLANAR, false, false)
+  , AL_FOURCC_MAPPING(FOURCC2('P', '2', '1', '2'), AL_CHROMA_4_2_2, 12, AL_FB_RASTER, AL_C_ORDER_SEMIPLANAR, false, false)
 
-  // tile : 64x4
-  , AL_FOURCC_MAPPING(FOURCC2('T', '6', '0', '8'), CHROMA_4_2_0, 8, AL_FB_TILE_64x4, AL_C_ORDER_SEMIPLANAR, false, false)
-  , AL_FOURCC_MAPPING(FOURCC2('T', '6', '2', '8'), CHROMA_4_2_2, 8, AL_FB_TILE_64x4, AL_C_ORDER_SEMIPLANAR, false, false)
-  , AL_FOURCC_MAPPING(FOURCC2('T', '6', 'm', '8'), CHROMA_4_0_0, 8, AL_FB_TILE_64x4, AL_C_ORDER_NO_CHROMA, false, false)
-  , AL_FOURCC_MAPPING(FOURCC2('T', '6', '0', 'A'), CHROMA_4_2_0, 10, AL_FB_TILE_64x4, AL_C_ORDER_SEMIPLANAR, false, false)
-  , AL_FOURCC_MAPPING(FOURCC2('T', '6', '2', 'A'), CHROMA_4_2_2, 10, AL_FB_TILE_64x4, AL_C_ORDER_SEMIPLANAR, false, false)
-  , AL_FOURCC_MAPPING(FOURCC2('T', '6', 'm', 'A'), CHROMA_4_0_0, 10, AL_FB_TILE_64x4, AL_C_ORDER_NO_CHROMA, false, false)
-  // tile : 32x4
-  , AL_FOURCC_MAPPING(FOURCC2('T', '5', '0', '8'), CHROMA_4_2_0, 8, AL_FB_TILE_32x4, AL_C_ORDER_SEMIPLANAR, false, false)
-  , AL_FOURCC_MAPPING(FOURCC2('T', '5', '2', '8'), CHROMA_4_2_2, 8, AL_FB_TILE_32x4, AL_C_ORDER_SEMIPLANAR, false, false)
-  , AL_FOURCC_MAPPING(FOURCC2('T', '5', 'm', '8'), CHROMA_4_0_0, 8, AL_FB_TILE_32x4, AL_C_ORDER_NO_CHROMA, false, false)
-  , AL_FOURCC_MAPPING(FOURCC2('T', '5', '0', 'A'), CHROMA_4_2_0, 10, AL_FB_TILE_32x4, AL_C_ORDER_SEMIPLANAR, false, false)
-  , AL_FOURCC_MAPPING(FOURCC2('T', '5', '2', 'A'), CHROMA_4_2_2, 10, AL_FB_TILE_32x4, AL_C_ORDER_SEMIPLANAR, false, false)
-  , AL_FOURCC_MAPPING(FOURCC2('T', '5', 'm', 'A'), CHROMA_4_0_0, 10, AL_FB_TILE_32x4, AL_C_ORDER_NO_CHROMA, false, false)
+  // monochrome: 8b
+  , AL_FOURCC_MAPPING(FOURCC2('Y', '8', '0', '0'), AL_CHROMA_4_0_0, 8, AL_FB_RASTER, AL_C_ORDER_NO_CHROMA, false, false)
 
+  // monochrome: 10b
+  , AL_FOURCC_MAPPING(FOURCC2('Y', '0', '1', '0'), AL_CHROMA_4_0_0, 10, AL_FB_RASTER, AL_C_ORDER_NO_CHROMA, false, false)
 
-  // Xilinx 10b packed
-  , AL_FOURCC_MAPPING(FOURCC2('X', 'V', '1', '0'), CHROMA_4_0_0, 10, AL_FB_RASTER, AL_C_ORDER_NO_CHROMA, false, true)
-  , AL_FOURCC_MAPPING(FOURCC2('X', 'V', '1', '5'), CHROMA_4_2_0, 10, AL_FB_RASTER, AL_C_ORDER_SEMIPLANAR, false, true)
-  , AL_FOURCC_MAPPING(FOURCC2('X', 'V', '2', '0'), CHROMA_4_2_2, 10, AL_FB_RASTER, AL_C_ORDER_SEMIPLANAR, false, true)
+  // monochrome: 12b
+  , AL_FOURCC_MAPPING(FOURCC2('Y', '0', '1', '2'), AL_CHROMA_4_0_0, 12, AL_FB_RASTER, AL_C_ORDER_NO_CHROMA, false, false)
+
+  // tile : 64x4: 8b
+  , AL_FOURCC_MAPPING(FOURCC2('T', '6', 'm', '8'), AL_CHROMA_4_0_0, 8, AL_FB_TILE_64x4, AL_C_ORDER_NO_CHROMA, false, false)
+  , AL_FOURCC_MAPPING(FOURCC2('T', '6', '0', '8'), AL_CHROMA_4_2_0, 8, AL_FB_TILE_64x4, AL_C_ORDER_SEMIPLANAR, false, false)
+  , AL_FOURCC_MAPPING(FOURCC2('T', '6', '2', '8'), AL_CHROMA_4_2_2, 8, AL_FB_TILE_64x4, AL_C_ORDER_SEMIPLANAR, false, false)
+  , AL_FOURCC_MAPPING(FOURCC2('T', '6', '4', '8'), AL_CHROMA_4_4_4, 8, AL_FB_TILE_64x4, AL_C_ORDER_U_V, false, false)
+
+  // tile : 64x4: 10b
+  , AL_FOURCC_MAPPING(FOURCC2('T', '6', 'm', 'A'), AL_CHROMA_4_0_0, 10, AL_FB_TILE_64x4, AL_C_ORDER_NO_CHROMA, false, false)
+  , AL_FOURCC_MAPPING(FOURCC2('T', '6', '0', 'A'), AL_CHROMA_4_2_0, 10, AL_FB_TILE_64x4, AL_C_ORDER_SEMIPLANAR, false, false)
+  , AL_FOURCC_MAPPING(FOURCC2('T', '6', '2', 'A'), AL_CHROMA_4_2_2, 10, AL_FB_TILE_64x4, AL_C_ORDER_SEMIPLANAR, false, false)
+  , AL_FOURCC_MAPPING(FOURCC2('T', '6', '4', 'A'), AL_CHROMA_4_4_4, 10, AL_FB_TILE_64x4, AL_C_ORDER_U_V, false, false)
+
+  // tile : 64x4: 12b
+  , AL_FOURCC_MAPPING(FOURCC2('T', '6', 'm', 'C'), AL_CHROMA_4_0_0, 12, AL_FB_TILE_64x4, AL_C_ORDER_NO_CHROMA, false, false)
+  , AL_FOURCC_MAPPING(FOURCC2('T', '6', '0', 'C'), AL_CHROMA_4_2_0, 12, AL_FB_TILE_64x4, AL_C_ORDER_SEMIPLANAR, false, false)
+  , AL_FOURCC_MAPPING(FOURCC2('T', '6', '2', 'C'), AL_CHROMA_4_2_2, 12, AL_FB_TILE_64x4, AL_C_ORDER_SEMIPLANAR, false, false)
+  , AL_FOURCC_MAPPING(FOURCC2('T', '6', '4', 'C'), AL_CHROMA_4_4_4, 12, AL_FB_TILE_64x4, AL_C_ORDER_U_V, false, false)
+
+  // tile : 32x4: 8b
+  , AL_FOURCC_MAPPING(FOURCC2('T', '5', 'm', '8'), AL_CHROMA_4_0_0, 8, AL_FB_TILE_32x4, AL_C_ORDER_NO_CHROMA, false, false)
+  , AL_FOURCC_MAPPING(FOURCC2('T', '5', '0', '8'), AL_CHROMA_4_2_0, 8, AL_FB_TILE_32x4, AL_C_ORDER_SEMIPLANAR, false, false)
+  , AL_FOURCC_MAPPING(FOURCC2('T', '5', '2', '8'), AL_CHROMA_4_2_2, 8, AL_FB_TILE_32x4, AL_C_ORDER_SEMIPLANAR, false, false)
+  , AL_FOURCC_MAPPING(FOURCC2('T', '5', '4', '8'), AL_CHROMA_4_4_4, 8, AL_FB_TILE_32x4, AL_C_ORDER_U_V, false, false)
+
+  // tile : 32x4: 10b
+  , AL_FOURCC_MAPPING(FOURCC2('T', '5', 'm', 'A'), AL_CHROMA_4_0_0, 10, AL_FB_TILE_32x4, AL_C_ORDER_NO_CHROMA, false, false)
+  , AL_FOURCC_MAPPING(FOURCC2('T', '5', '0', 'A'), AL_CHROMA_4_2_0, 10, AL_FB_TILE_32x4, AL_C_ORDER_SEMIPLANAR, false, false)
+  , AL_FOURCC_MAPPING(FOURCC2('T', '5', '2', 'A'), AL_CHROMA_4_2_2, 10, AL_FB_TILE_32x4, AL_C_ORDER_SEMIPLANAR, false, false)
+  , AL_FOURCC_MAPPING(FOURCC2('T', '5', '4', 'A'), AL_CHROMA_4_4_4, 10, AL_FB_TILE_32x4, AL_C_ORDER_U_V, false, false)
+
+  // tile : 32x4: 12b
+  , AL_FOURCC_MAPPING(FOURCC2('T', '5', 'm', 'C'), AL_CHROMA_4_0_0, 12, AL_FB_TILE_32x4, AL_C_ORDER_NO_CHROMA, false, false)
+  , AL_FOURCC_MAPPING(FOURCC2('T', '5', '0', 'C'), AL_CHROMA_4_2_0, 12, AL_FB_TILE_32x4, AL_C_ORDER_SEMIPLANAR, false, false)
+  , AL_FOURCC_MAPPING(FOURCC2('T', '5', '2', 'C'), AL_CHROMA_4_2_2, 12, AL_FB_TILE_32x4, AL_C_ORDER_SEMIPLANAR, false, false)
+  , AL_FOURCC_MAPPING(FOURCC2('T', '5', '4', 'C'), AL_CHROMA_4_4_4, 12, AL_FB_TILE_32x4, AL_C_ORDER_U_V, false, false)
+
+  // 10b packed
+  , AL_FOURCC_MAPPING(FOURCC2('X', 'V', '1', '0'), AL_CHROMA_4_0_0, 10, AL_FB_RASTER, AL_C_ORDER_NO_CHROMA, false, true)
+  , AL_FOURCC_MAPPING(FOURCC2('X', 'V', '1', '5'), AL_CHROMA_4_2_0, 10, AL_FB_RASTER, AL_C_ORDER_SEMIPLANAR, false, true)
+  , AL_FOURCC_MAPPING(FOURCC2('X', 'V', '2', '0'), AL_CHROMA_4_2_2, 10, AL_FB_RASTER, AL_C_ORDER_SEMIPLANAR, false, true)
 };
 
-static const int FourCCMappingSize = sizeof(FourCCMappings) / sizeof(FourCCMappings[0]);
+static int const FourCCMappingSize = sizeof(FourCCMappings) / sizeof(FourCCMappings[0]);
 
 /****************************************************************************/
 bool AL_GetPicFormat(TFourCC tFourCC, AL_TPicFormat* tPicFormat)
 {
-  const TFourCCMapping* pBeginMapping = &FourCCMappings[0];
-  const TFourCCMapping* pEndMapping = pBeginMapping + FourCCMappingSize;
+  TFourCCMapping const* pBeginMapping = &FourCCMappings[0];
+  TFourCCMapping const* pEndMapping = pBeginMapping + FourCCMappingSize;
 
-  for(const TFourCCMapping* pMapping = pBeginMapping; pMapping != pEndMapping; pMapping++)
+  for(TFourCCMapping const* pMapping = pBeginMapping; pMapping != pEndMapping; pMapping++)
   {
     if(pMapping->tfourCC == tFourCC)
     {
@@ -115,7 +157,7 @@ bool AL_GetPicFormat(TFourCC tFourCC, AL_TPicFormat* tPicFormat)
     }
   }
 
-  assert(0);
+  AL_Assert(0 && "Unknown fourCC");
 
   return false;
 }
@@ -137,7 +179,7 @@ TFourCC AL_GetFourCC(AL_TPicFormat tPictFormat)
       return pMapping->tfourCC;
   }
 
-  assert(0);
+  AL_Assert(0 && "Unknown picture format");
 
   return 0;
 }
@@ -147,6 +189,13 @@ AL_EChromaMode AL_GetChromaMode(TFourCC tFourCC)
 {
   AL_TPicFormat tPicFormat;
   return AL_GetPicFormat(tFourCC, &tPicFormat) ? tPicFormat.eChromaMode : (AL_EChromaMode) - 1;
+}
+
+/****************************************************************************/
+AL_EChromaOrder AL_GetChromaOrder(TFourCC tFourCC)
+{
+  AL_TPicFormat tPicFormat;
+  return AL_GetPicFormat(tFourCC, &tPicFormat) ? tPicFormat.eChromaOrder : (AL_EChromaOrder) - 1;
 }
 
 /****************************************************************************/
@@ -167,11 +216,11 @@ void AL_GetSubsampling(TFourCC fourcc, int* sx, int* sy)
 {
   switch(AL_GetChromaMode(fourcc))
   {
-  case CHROMA_4_2_0:
+  case AL_CHROMA_4_2_0:
     *sx = 2;
     *sy = 2;
     break;
-  case CHROMA_4_2_2:
+  case AL_CHROMA_4_2_2:
     *sx = 2;
     *sy = 1;
     break;
@@ -192,7 +241,7 @@ bool AL_Is10bitPacked(TFourCC tFourCC)
 /*****************************************************************************/
 bool AL_IsMonochrome(TFourCC tFourCC)
 {
-  return AL_GetChromaMode(tFourCC) == CHROMA_MONO;
+  return AL_GetChromaMode(tFourCC) == AL_CHROMA_MONO;
 }
 
 /*****************************************************************************/

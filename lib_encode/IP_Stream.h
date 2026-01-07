@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright (C) 2018 Allegro DVT2.  All rights reserved.
+* Copyright (C) 2008-2022 Allegro DVT2.  All rights reserved.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -46,6 +46,7 @@
 
 #include "lib_rtos/types.h"
 #include "lib_bitstream/BitStreamLite.h"
+#include "lib_bitstream/IRbspWriter.h"
 #include "lib_common/BufferStreamMeta.h"
 
 /****************************************************************************/
@@ -53,13 +54,10 @@ typedef struct t_NalHeader
 {
   uint8_t bytes[2];
   int size;
-}NalHeader;
+}AL_TNalHeader;
 
-NalHeader GetNalHeaderAvc(uint8_t uNUT, uint8_t uNalIdc);
-NalHeader GetNalHeaderHevc(uint8_t uNUT, uint8_t uNalIdc);
-
-void WriteFillerData(AL_TBitStreamLite* pStream, uint8_t uNUT, NalHeader header, int bytesCount, int iSpaceForSeiSuffix);
-void FlushNAL(AL_TBitStreamLite* pStream, uint8_t uNUT, NalHeader header, uint8_t* pDataInNAL, int iBitsInNAL);
+void WriteFillerData(IRbspWriter* pWriter, AL_TBitStreamLite* pStream, uint8_t uNUT, AL_TNalHeader const* pHeader, int iBytesCount, bool bDoNotFill, AL_EStartCodeBytesAlignedMode eStartCodeBytesAligned);
+void FlushNAL(IRbspWriter* pWriter, AL_TBitStreamLite* pStream, uint8_t uNUT, AL_TNalHeader const* pHeader, uint8_t* pDataInNAL, int iBitsInNAL, AL_EStartCodeBytesAlignedMode eStartCodeBytesAligned);
 
 void AddFlagsToAllSections(AL_TStreamMetaData* pStreamMeta, uint32_t flags);
 

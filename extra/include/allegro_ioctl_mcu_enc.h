@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright (C) 2018 Allegro DVT2.  All rights reserved.
+* Copyright (C) 2008-2022 Allegro DVT2.  All rights reserved.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -58,6 +58,8 @@ struct al5_reconstructed_info
 	__u32 fd;
 	__u32 pic_struct;
 	__u32 poc;
+	__u32 width;
+	__u32 height;
 };
 
 struct al5_dma_info
@@ -77,9 +79,6 @@ struct al5_params
 
 struct al5_channel_status
 {
-	__u32 options;
-	__u8 num_core;
-	__u32 pps_param;
 	__u32 error_code;
 };
 
@@ -87,6 +86,7 @@ struct al5_channel_config
 {
 	struct al5_params param;
 	struct al5_channel_status status;
+	__u32 rc_plugin_fd;
 };
 
 struct al5_encode_msg {
@@ -94,11 +94,16 @@ struct al5_encode_msg {
 	struct al5_params addresses;
 };
 
+struct al5_stream_buffer {
+  __u64 stream_buffer_ptr;
+  __u32 handle;
+  __u32 offset;
+  __u32 size;
+};
+
 struct al5_buffer {
-	__u64 stream_buffer_ptr;
-	__u32 handle;
-	__u32 offset;
-	__u32 size;
+  struct al5_stream_buffer stream_buffer;
+  __u32 external_mv_handle;
 };
 
 #endif	/* _AL_ENC_IOCTL_H_ */

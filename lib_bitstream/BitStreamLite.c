@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright (C) 2018 Allegro DVT2.  All rights reserved.
+* Copyright (C) 2008-2022 Allegro DVT2.  All rights reserved.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -35,8 +35,8 @@
 *
 ******************************************************************************/
 
-#include <assert.h>
 #include "BitStreamLite.h"
+#include "lib_assert/al_assert.h"
 
 /******************************************************************************/
 
@@ -82,7 +82,7 @@ int AL_BitStreamLite_GetBitsCount(AL_TBitStreamLite* pBS)
 /******************************************************************************/
 void AL_BitStreamLite_PutBit(AL_TBitStreamLite* pBS, uint8_t iBit)
 {
-  assert((iBit == 0) || (iBit == 1));
+  AL_Assert((iBit == 0) || (iBit == 1));
   AL_BitStreamLite_PutBits(pBS, 1, iBit);
 }
 
@@ -110,7 +110,7 @@ static inline void writeData(AL_TBitStreamLite* pBS, uint8_t iNumBits, uint32_t 
   uint32_t byteNum = pBS->iBitCount >> 3;
   uint8_t byteOffset = pBS->iBitCount & 7;
 
-  assert(byteOffset + iNumBits <= 8);
+  AL_Assert(byteOffset + iNumBits <= 8);
 
   if(byteOffset == 0)
   {
@@ -136,7 +136,7 @@ static void PutInByte(AL_TBitStreamLite* pBS, uint8_t iNumBits, uint32_t uValue)
 /******************************************************************************/
 void AL_BitStreamLite_PutBits(AL_TBitStreamLite* pBS, uint8_t iNumBits, uint32_t uValue)
 {
-  assert(iNumBits == 32 || (uValue >> iNumBits) == 0);
+  AL_Assert(iNumBits == 32 || (uValue >> iNumBits) == 0);
 
   uint8_t numBitsToWrite = 8 - (pBS->iBitCount & 7);
 
@@ -167,6 +167,29 @@ void AL_BitStreamLite_PutU(AL_TBitStreamLite* pBS, int iNumBits, uint32_t uValue
 }
 
 /******************************************************************************/
+void AL_BitStreamLite_PutI(AL_TBitStreamLite* pBS, int iNumBits, int32_t iValue)
+{
+  uint32_t uValue;
+
+  if(iValue >= 0)
+    uValue = iValue;
+  else
+  {
+    uValue = -iValue;
+    AL_Assert(iNumBits == 32 || ((uValue - 1) >> iNumBits) == 0);
+    uValue = ~uValue + 1;
+
+    if(iNumBits != 32)
+    {
+      uint32_t uMask = (1 << iNumBits) - 1;
+      uValue &= uMask;
+    }
+  }
+
+  AL_BitStreamLite_PutBits(pBS, iNumBits, uValue);
+}
+
+/******************************************************************************/
 static void putVclBits(AL_TBitStreamLite* pBS, uint32_t uCodeLength, uint32_t uValue)
 {
   if(uCodeLength == 1)
@@ -186,8 +209,19 @@ static void putVclBits(AL_TBitStreamLite* pBS, uint32_t uCodeLength, uint32_t uV
 
 #if defined(__ICL)
 #define bit_scan_reverse _bit_scan_reverse
+#elif defined(__GNUC__) || defined(__clang__)
+static uint32_t bit_scan_reverse_clz(int32_t NN)
+{
+  // This function should never be called with a 0 value because __builtin_clz
+  // result is undefined.
+  AL_Assert(NN != 0);
+
+  return 31 - __builtin_clz(NN);
+}
+
+#define bit_scan_reverse bit_scan_reverse_clz
 #else
-uint32_t bit_scan_reverse_soft(int32_t NN)
+static uint32_t bit_scan_reverse_soft(int32_t NN)
 {
   int32_t i = -1;
 

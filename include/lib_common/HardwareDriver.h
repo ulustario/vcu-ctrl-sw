@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright (C) 2018 Allegro DVT2.  All rights reserved.
+* Copyright (C) 2008-2022 Allegro DVT2.  All rights reserved.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -35,7 +35,19 @@
 *
 ******************************************************************************/
 
+/**************************************************************************//*!
+   \addtogroup Driver
+   @{
+   \file
+ *****************************************************************************/
+#pragma once
+
 typedef struct AL_t_driver AL_TDriver;
 
-AL_TDriver* AL_GetHardwareDriver();
+/*************************************************************************//*!
+    \brief Get a driver that will access an hardware device
+*****************************************************************************/
+AL_TDriver* AL_GetHardwareDriver(void);
+
+/*@}*/
 

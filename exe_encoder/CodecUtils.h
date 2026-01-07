@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright (C) 2018 Allegro DVT2.  All rights reserved.
+* Copyright (C) 2008-2022 Allegro DVT2.  All rights reserved.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -40,6 +40,7 @@
 #include <fstream>
 #include <string>
 #include <stdexcept>
+#include <deque>
 #include "lib_app/console.h"
 #include "lib_app/InputFiles.h"
 
@@ -48,22 +49,11 @@ extern "C"
 #include "lib_common/SliceConsts.h"
 #include "lib_common/BufferAPI.h"
 #include "lib_common_enc/EncBuffers.h"
+#include "lib_common_enc/Settings.h"
 }
 
 /*****************************************************************************/
 bool IsConversionNeeded(TFourCC const& FourCC, AL_TPicFormat const& picFmt);
-
-/*****************************************************************************/
-void GotoFirstPicture(TYUVFileInfo const& FI, std::ifstream& File, unsigned int iFirstPict = 0);
-
-/*****************************************************************************/
-int GotoNextPicture(TYUVFileInfo const& FI, std::ifstream& File, int iEncFrameRate, int iEncPictCount, int iFilePictCount);
-
-/*****************************************************************************/
-bool ReadOneFrameYuv(std::ifstream& File, AL_TBuffer* pBuf, bool bLoop);
-
-/*****************************************************************************/
-bool WriteOneFrame(std::ofstream& File, AL_TBuffer const* pBuf, int iWidth, int iHeight);
 
 /*****************************************************************************/
 unsigned int ReadNextFrame(std::ifstream& File);
@@ -72,16 +62,7 @@ unsigned int ReadNextFrame(std::ifstream& File);
 unsigned int ReadNextFrameMV(std::ifstream& File, int& iX, int& iY);
 
 /*****************************************************************************/
-void WriteOneSection(std::ofstream& File, AL_TBuffer* pStream, int iSection, const AL_TEncChanParam* pChannelParam);
-
-/*****************************************************************************/
-int WriteStream(std::ofstream& HEVCFile, AL_TBuffer* pStream, const AL_TEncChanParam* pChannelParam);
-
-/*****************************************************************************/
 void DisplayFrameStatus(int iFrameNum);
-
-/*****************************************************************************/
-uint32_t GetIOLumaRowSize(TFourCC fourCC, uint32_t uWidth);
 
 /*****************************************************************************/
 
@@ -101,4 +82,16 @@ public:
 protected:
   AL_ERR m_eErrCode;
 };
+
+/*****************************************************************************/
+int WriteStream(std::ofstream& File, AL_TBuffer* pStream, const AL_TEncSettings* pSettings);
+
+/*****************************************************************************/
+struct ImageSize
+{
+  int size; // in bytes
+  bool finished;
+};
+
+void GetImageStreamSize(AL_TBuffer* pStream, std::deque<ImageSize>& imageSizes);
 

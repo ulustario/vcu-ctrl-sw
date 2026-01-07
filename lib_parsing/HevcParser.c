@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright (C) 2018 Allegro DVT2.  All rights reserved.
+* Copyright (C) 2008-2022 Allegro DVT2.  All rights reserved.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -38,6 +38,8 @@
 #include "HevcParser.h"
 #include "lib_rtos/lib_rtos.h"
 #include "lib_common/Utils.h"
+#include "lib_common/SeiInternal.h"
+#include "lib_common_dec/RbspParser.h"
 
 #define CONCEAL_LEVEL_IDC 60 * 3
 
@@ -63,34 +65,32 @@ static void initPps(AL_THevcPps* pPPS)
   pPPS->cross_component_prediction_enabled_flag = 0;
   pPPS->diff_cu_chroma_qp_offset_depth = 0;
   pPPS->chroma_qp_offset_list_enabled_flag = 0;
+  pPPS->log2_sao_offset_scale_luma = 0;
   pPPS->log2_sao_offset_scale_chroma = 0;
-  pPPS->log2_sao_offset_scale_chroma = 0;
+
+  pPPS->bConceal = true;
 }
 
 /*****************************************************************************/
-void AL_HEVC_ParsePPS(AL_TAup* pIAup, AL_TRbspParser* pRP, uint8_t* pPpsId)
+void AL_HEVC_ParsePPS(AL_TAup* pIAup, AL_TRbspParser* pRP, uint16_t* pPpsId)
 {
-  AL_THevcAup* aup = &pIAup->hevcAup;
-  uint8_t pps_id, QpBdOffset;
-  uint16_t uLCUWidth, uLCUHeight;
-  AL_THevcPps* pPPS;
-
-  // Parse bitstream
-  while(u(pRP, 8) == 0x00)
-    ; // Skip all 0x00s and one 0x01
+  skipAllZerosAndTheNextByte(pRP);
 
   u(pRP, 16); // Skip NUT + temporal_id
 
-  pps_id = ue(pRP);
-  pPPS = &aup->pPPS[pps_id];
-
-  *pPpsId = pps_id;
-  // default values
-  initPps(pPPS);
-  pPPS->bConceal = true;
+  uint16_t pps_id = ue(pRP);
 
   if(pps_id >= AL_HEVC_MAX_PPS)
     return;
+
+  AL_THevcAup* aup = &pIAup->hevcAup;
+  AL_THevcPps* pPPS = &aup->pPPS[pps_id];
+
+  if(pPpsId)
+    *pPpsId = pps_id;
+
+  // default values
+  initPps(pPPS);
 
   pPPS->pps_pic_parameter_set_id = pps_id;
   pPPS->pps_seq_parameter_set_id = ue(pRP);
@@ -103,8 +103,8 @@ void AL_HEVC_ParsePPS(AL_TAup* pIAup, AL_TRbspParser* pRP, uint8_t* pPpsId)
   if(pPPS->pSPS->bConceal)
     return;
 
-  uLCUWidth = pPPS->pSPS->PicWidthInCtbs;
-  uLCUHeight = pPPS->pSPS->PicHeightInCtbs;
+  uint16_t uLCUPicWidth = pPPS->pSPS->PicWidthInCtbs;
+  uint16_t uLCUPicHeight = pPPS->pSPS->PicHeightInCtbs;
 
   pPPS->dependent_slice_segments_enabled_flag = u(pRP, 1);
   pPPS->output_flag_present_flag = u(pRP, 1);
@@ -115,7 +115,7 @@ void AL_HEVC_ParsePPS(AL_TAup* pIAup, AL_TRbspParser* pRP, uint8_t* pPpsId)
   pPPS->num_ref_idx_l0_default_active_minus1 = Clip3(ue(pRP), 0, AL_HEVC_MAX_REF_IDX);
   pPPS->num_ref_idx_l1_default_active_minus1 = Clip3(ue(pRP), 0, AL_HEVC_MAX_REF_IDX);
 
-  QpBdOffset = 6 * pPPS->pSPS->bit_depth_luma_minus8;
+  uint16_t QpBdOffset = 6 * pPPS->pSPS->bit_depth_luma_minus8;
   pPPS->init_qp_minus26 = Clip3(se(pRP), -(26 + QpBdOffset), AL_MAX_INIT_QP);
 
   pPPS->constrained_intra_pred_flag = u(pRP, 1);
@@ -147,7 +147,7 @@ void AL_HEVC_ParsePPS(AL_TAup* pIAup, AL_TRbspParser* pRP, uint8_t* pPpsId)
     pPPS->num_tile_rows_minus1 = ue(pRP);
     pPPS->uniform_spacing_flag = u(pRP, 1);
 
-    if(pPPS->num_tile_columns_minus1 >= uLCUWidth || pPPS->num_tile_rows_minus1 >= uLCUHeight ||
+    if(pPPS->num_tile_columns_minus1 >= uLCUPicWidth || pPPS->num_tile_rows_minus1 >= uLCUPicHeight ||
        pPPS->num_tile_columns_minus1 >= AL_MAX_COLUMNS_TILE || pPPS->num_tile_rows_minus1 >= AL_MAX_ROWS_TILE)
       return;
 
@@ -158,21 +158,21 @@ void AL_HEVC_ParsePPS(AL_TAup* pIAup, AL_TRbspParser* pRP, uint8_t* pPpsId)
 
       for(uint8_t i = 0; i < pPPS->num_tile_columns_minus1; ++i)
       {
-        pPPS->column_width[i] = ue(pRP) + 1;
-        uClmnOffset += pPPS->column_width[i];
+        pPPS->tile_column_width[i] = ue(pRP) + 1;
+        uClmnOffset += pPPS->tile_column_width[i];
       }
 
       for(uint8_t i = 0; i < pPPS->num_tile_rows_minus1; ++i)
       {
-        pPPS->row_height[i] = ue(pRP) + 1;
-        uLineOffset += pPPS->row_height[i];
+        pPPS->tile_row_height[i] = ue(pRP) + 1;
+        uLineOffset += pPPS->tile_row_height[i];
       }
 
-      if(uClmnOffset >= uLCUWidth || uLineOffset >= uLCUHeight)
+      if(uClmnOffset >= uLCUPicWidth || uLineOffset >= uLCUPicHeight)
         return;
 
-      pPPS->column_width[pPPS->num_tile_columns_minus1] = uLCUWidth - uClmnOffset;
-      pPPS->row_height[pPPS->num_tile_rows_minus1] = uLCUHeight - uLineOffset;
+      pPPS->tile_column_width[pPPS->num_tile_columns_minus1] = uLCUPicWidth - uClmnOffset;
+      pPPS->tile_row_height[pPPS->num_tile_rows_minus1] = uLCUPicHeight - uLineOffset;
     }
     else /* tile of same size */
     {
@@ -180,10 +180,10 @@ void AL_HEVC_ParsePPS(AL_TAup* pIAup, AL_TRbspParser* pRP, uint8_t* pPpsId)
       uint16_t num_line = pPPS->num_tile_rows_minus1 + 1;
 
       for(uint8_t i = 0; i <= pPPS->num_tile_columns_minus1; ++i)
-        pPPS->column_width[i] = (((i + 1) * uLCUWidth) / num_clmn) - ((i * uLCUWidth) / num_clmn);
+        pPPS->tile_column_width[i] = (((i + 1) * uLCUPicWidth) / num_clmn) - ((i * uLCUPicWidth) / num_clmn);
 
       for(uint8_t i = 0; i <= pPPS->num_tile_rows_minus1; ++i)
-        pPPS->row_height[i] = (((i + 1) * uLCUHeight) / num_line) - ((i * uLCUHeight) / num_line);
+        pPPS->tile_row_height[i] = (((i + 1) * uLCUPicHeight) / num_line) - ((i * uLCUPicHeight) / num_line);
     }
 
     /* register tile topology within the frame */
@@ -197,12 +197,12 @@ void AL_HEVC_ParsePPS(AL_TAup* pIAup, AL_TRbspParser* pRP, uint8_t* pPpsId)
         uint8_t uLine = 0;
 
         while(line < i)
-          uLine += pPPS->row_height[line++];
+          uLine += pPPS->tile_row_height[line++];
 
         while(clmn < j)
-          uClmn += pPPS->column_width[clmn++];
+          uClmn += pPPS->tile_column_width[clmn++];
 
-        pPPS->TileTopology[(i * (pPPS->num_tile_columns_minus1 + 1)) + j] = uLine * uLCUWidth + uClmn;
+        pPPS->TileTopology[(i * (pPPS->num_tile_columns_minus1 + 1)) + j] = uLine * uLCUPicWidth + uClmn;
       }
     }
 
@@ -405,260 +405,291 @@ static void initSps(AL_THevcSps* pSPS)
   pSPS->persistent_rice_adaptation_enabled_flag = 0;
   pSPS->cabac_bypass_alignment_enabled_flag = 0;
 
+  pSPS->vui_param.aspect_ratio_info_present_flag = 0;
+  pSPS->vui_param.aspect_ratio_idc = 0;
+  pSPS->vui_param.sar_width = 0;
+  pSPS->vui_param.sar_height = 0;
+  pSPS->vui_param.overscan_info_present_flag = 0;
+  pSPS->vui_param.video_signal_type_present_flag = 0;
+  pSPS->vui_param.video_format = 5;
+  pSPS->vui_param.video_full_range_flag = 0;
+  pSPS->vui_param.colour_description_present_flag = 0;
+  pSPS->vui_param.colour_primaries = 2;
+  pSPS->vui_param.transfer_characteristics = 2;
+  pSPS->vui_param.matrix_coefficients = 0;
+  pSPS->vui_param.chroma_loc_info_present_flag = 0;
+
+  pSPS->vui_param.chroma_sample_loc_type_top_field = 0;
+  pSPS->vui_param.chroma_sample_loc_type_bottom_field = 0;
+
+  pSPS->vui_param.neutral_chroma_indication_flag = 0;
+  pSPS->vui_param.field_seq_flag = 0;
+  pSPS->vui_param.frame_field_info_present_flag = (pSPS->profile_and_level.general_progressive_source_flag && pSPS->profile_and_level.general_interlaced_source_flag) ? 1 : 0;
+
+  pSPS->vui_param.default_display_window_flag = 0;
+  pSPS->vui_param.def_disp_win_left_offset = 0;
+  pSPS->vui_param.def_disp_win_right_offset = 0;
+  pSPS->vui_param.def_disp_win_top_offset = 0;
+  pSPS->vui_param.def_disp_win_bottom_offset = 0;
+
+  pSPS->vui_param.min_spatial_segmentation_idc = 0;
+  pSPS->vui_param.max_bytes_per_pic_denom = 2;
+  pSPS->vui_param.max_bits_per_min_cu_denom = 1;
+  pSPS->vui_param.log2_max_mv_length_horizontal = 15;
+  pSPS->vui_param.log2_max_mv_length_vertical = 15;
+
   pSPS->vui_param.hrd_param.du_cpb_removal_delay_increment_length_minus1 = 23;
   pSPS->vui_param.hrd_param.initial_cpb_removal_delay_length_minus1 = 23;
   pSPS->vui_param.hrd_param.dpb_output_delay_length_minus1 = 23;
 
   pSPS->vui_param.hrd_param.nal_hrd_parameters_present_flag = 0;
   pSPS->vui_param.hrd_param.vcl_hrd_parameters_present_flag = 0;
-
   pSPS->vui_param.hrd_param.sub_pic_hrd_params_present_flag = 0;
+
   Rtos_Memset(pSPS->sps_max_dec_pic_buffering_minus1, 0, sizeof(pSPS->sps_max_dec_pic_buffering_minus1));
-  Rtos_Memset(pSPS->sps_num_reorder_pics, 0, sizeof(pSPS->sps_num_reorder_pics));
+  Rtos_Memset(pSPS->sps_max_num_reorder_pics, 0, sizeof(pSPS->sps_max_num_reorder_pics));
   Rtos_Memset(pSPS->sps_max_latency_increase_plus1, 0, sizeof(pSPS->sps_max_latency_increase_plus1));
 
   Rtos_Memset(pSPS->scaling_list_param.UseDefaultScalingMatrixFlag, 0, 20);
 }
 
 /*****************************************************************************/
-AL_PARSE_RESULT AL_HEVC_ParseSPS(AL_TAup* pIAup, AL_TRbspParser* pRP)
+AL_PARSE_RESULT AL_HEVC_ParseSPS(AL_TRbspParser* pRP, AL_THevcSps* pSPS)
 {
-  AL_THevcSps tempSPS;
+  pSPS->bConceal = true;
 
-  // Parse bitstream
-  while(u(pRP, 8) == 0x00)
-    ; // Skip all 0x00s and one 0x01
+  skipAllZerosAndTheNextByte(pRP);
 
   u(pRP, 16); // Skip NUT + temporal_id
 
   int vps_id = u(pRP, 4);
+
+  COMPLY(vps_id < AL_HEVC_MAX_VPS);
+
   int max_sub_layers = Clip3(u(pRP, 3), 0, MAX_SUB_LAYER - 1);
   int temp_id_nesting_flag = u(pRP, 1);
 
-  profile_tier_level(&tempSPS.profile_and_level, max_sub_layers, pRP);
+  hevc_profile_tier_level(&pSPS->profile_and_level, max_sub_layers, pRP);
 
-  if(tempSPS.profile_and_level.general_level_idc == 0)
-    tempSPS.profile_and_level.general_level_idc = CONCEAL_LEVEL_IDC;
+  if(pSPS->profile_and_level.general_level_idc == 0)
+    pSPS->profile_and_level.general_level_idc = CONCEAL_LEVEL_IDC;
 
   int sps_id = ue(pRP);
 
-  pIAup->hevcAup.pSPS[sps_id].bConceal = true;
-
   COMPLY(sps_id < AL_HEVC_MAX_SPS);
 
-  tempSPS.bConceal = true;
-  tempSPS.sps_video_parameter_set_id = vps_id;
-  tempSPS.sps_max_sub_layers_minus1 = max_sub_layers;
-  tempSPS.sps_temporal_id_nesting_flag = temp_id_nesting_flag;
-  tempSPS.sps_seq_parameter_set_id = sps_id;
+  pSPS->bConceal = true;
+  pSPS->sps_video_parameter_set_id = vps_id;
+  pSPS->sps_max_sub_layers_minus1 = max_sub_layers;
+  pSPS->sps_temporal_id_nesting_flag = temp_id_nesting_flag;
+  pSPS->sps_seq_parameter_set_id = sps_id;
 
   // default values
-  initSps(&tempSPS);
+  initSps(pSPS);
 
-  tempSPS.chroma_format_idc = ue(pRP);
+  pSPS->chroma_format_idc = ue(pRP);
 
-  if(tempSPS.chroma_format_idc == 3)
-    tempSPS.separate_colour_plane_flag = u(pRP, 1);
+  if(pSPS->chroma_format_idc == 3)
+    pSPS->separate_colour_plane_flag = u(pRP, 1);
 
-  if(tempSPS.separate_colour_plane_flag)
-    tempSPS.ChromaArrayType = 0;
+  if(pSPS->separate_colour_plane_flag)
+    pSPS->ChromaArrayType = 0;
   else
-    tempSPS.ChromaArrayType = tempSPS.chroma_format_idc;
+    pSPS->ChromaArrayType = pSPS->chroma_format_idc;
 
-  tempSPS.pic_width_in_luma_samples = ue(pRP);
-  tempSPS.pic_height_in_luma_samples = ue(pRP);
+  pSPS->pic_width_in_luma_samples = ue(pRP);
+  pSPS->pic_height_in_luma_samples = ue(pRP);
 
-  tempSPS.conformance_window_flag = u(pRP, 1);
+  pSPS->conformance_window_flag = u(pRP, 1);
 
-  if(tempSPS.conformance_window_flag)
+  if(pSPS->conformance_window_flag)
   {
-    tempSPS.conf_win_left_offset = ue(pRP);
-    tempSPS.conf_win_right_offset = ue(pRP);
-    tempSPS.conf_win_top_offset = ue(pRP);
-    tempSPS.conf_win_bottom_offset = ue(pRP);
+    pSPS->conf_win_left_offset = ue(pRP);
+    pSPS->conf_win_right_offset = ue(pRP);
+    pSPS->conf_win_top_offset = ue(pRP);
+    pSPS->conf_win_bottom_offset = ue(pRP);
 
-    if(tempSPS.conf_win_bottom_offset + tempSPS.conf_win_top_offset >= tempSPS.pic_height_in_luma_samples)
+    if(pSPS->conf_win_bottom_offset + pSPS->conf_win_top_offset >= pSPS->pic_height_in_luma_samples)
     {
-      tempSPS.conf_win_top_offset = 0;
-      tempSPS.conf_win_bottom_offset = 0;
+      pSPS->conf_win_top_offset = 0;
+      pSPS->conf_win_bottom_offset = 0;
     }
 
-    if(tempSPS.conf_win_left_offset + tempSPS.conf_win_right_offset >= tempSPS.pic_width_in_luma_samples)
+    if(pSPS->conf_win_left_offset + pSPS->conf_win_right_offset >= pSPS->pic_width_in_luma_samples)
     {
-      tempSPS.conf_win_left_offset = 0;
-      tempSPS.conf_win_right_offset = 0;
+      pSPS->conf_win_left_offset = 0;
+      pSPS->conf_win_right_offset = 0;
     }
   }
 
-  tempSPS.bit_depth_luma_minus8 = Clip3(ue(pRP), 0, MAX_BIT_DEPTH);
-  tempSPS.bit_depth_chroma_minus8 = Clip3(ue(pRP), 0, MAX_BIT_DEPTH);
+  pSPS->bit_depth_luma_minus8 = Clip3(ue(pRP), 0, MAX_BIT_DEPTH);
+  pSPS->bit_depth_chroma_minus8 = Clip3(ue(pRP), 0, MAX_BIT_DEPTH);
 
-  tempSPS.log2_max_slice_pic_order_cnt_lsb_minus4 = ue(pRP);
+  pSPS->log2_max_slice_pic_order_cnt_lsb_minus4 = ue(pRP);
 
-  COMPLY(tempSPS.log2_max_slice_pic_order_cnt_lsb_minus4 <= MAX_POC_LSB);
+  COMPLY(pSPS->log2_max_slice_pic_order_cnt_lsb_minus4 <= MAX_POC_LSB);
 
-  tempSPS.sps_sub_layer_ordering_info_present_flag = u(pRP, 1);
-  int layer_offset = tempSPS.sps_sub_layer_ordering_info_present_flag ? 0 : max_sub_layers;
+  pSPS->sps_sub_layer_ordering_info_present_flag = u(pRP, 1);
+  int layer_offset = pSPS->sps_sub_layer_ordering_info_present_flag ? 0 : max_sub_layers;
 
   for(int i = layer_offset; i <= max_sub_layers; ++i)
   {
-    tempSPS.sps_max_dec_pic_buffering_minus1[i] = ue(pRP);
-    tempSPS.sps_num_reorder_pics[i] = ue(pRP);
-    tempSPS.sps_max_latency_increase_plus1[i] = ue(pRP);
+    pSPS->sps_max_dec_pic_buffering_minus1[i] = ue(pRP);
+    pSPS->sps_max_num_reorder_pics[i] = ue(pRP);
+    pSPS->sps_max_latency_increase_plus1[i] = ue(pRP);
   }
 
-  tempSPS.log2_min_luma_coding_block_size_minus3 = ue(pRP);
-  tempSPS.Log2MinCbSize = tempSPS.log2_min_luma_coding_block_size_minus3 + 3;
+  pSPS->log2_min_luma_coding_block_size_minus3 = ue(pRP);
+  pSPS->Log2MinCbSize = pSPS->log2_min_luma_coding_block_size_minus3 + 3;
 
-  COMPLY(tempSPS.Log2MinCbSize <= 6);
+  COMPLY(pSPS->Log2MinCbSize <= 6);
 
-  tempSPS.log2_diff_max_min_luma_coding_block_size = ue(pRP);
-  tempSPS.Log2CtbSize = tempSPS.Log2MinCbSize + tempSPS.log2_diff_max_min_luma_coding_block_size;
+  pSPS->log2_diff_max_min_luma_coding_block_size = ue(pRP);
+  pSPS->Log2CtbSize = pSPS->Log2MinCbSize + pSPS->log2_diff_max_min_luma_coding_block_size;
 
-  COMPLY(tempSPS.Log2CtbSize <= 6);
-  COMPLY(tempSPS.Log2CtbSize >= 4);
+  COMPLY(pSPS->Log2CtbSize <= 6);
+  COMPLY(pSPS->Log2CtbSize >= 4);
 
-  tempSPS.log2_min_transform_block_size_minus2 = ue(pRP);
-  int Log2MinTransfoSize = tempSPS.log2_min_transform_block_size_minus2 + 2;
-  tempSPS.log2_diff_max_min_transform_block_size = ue(pRP);
+  pSPS->log2_min_transform_block_size_minus2 = ue(pRP);
+  int Log2MinTransfoSize = pSPS->log2_min_transform_block_size_minus2 + 2;
+  pSPS->log2_diff_max_min_transform_block_size = ue(pRP);
 
-  COMPLY(tempSPS.log2_min_transform_block_size_minus2 <= tempSPS.log2_min_luma_coding_block_size_minus3);
-  COMPLY(tempSPS.log2_diff_max_min_transform_block_size <= Min(tempSPS.Log2CtbSize, 5) - Log2MinTransfoSize);
+  COMPLY(pSPS->log2_min_transform_block_size_minus2 <= pSPS->log2_min_luma_coding_block_size_minus3);
+  COMPLY(pSPS->log2_diff_max_min_transform_block_size <= Min(pSPS->Log2CtbSize, 5) - Log2MinTransfoSize);
 
-  tempSPS.max_transform_hierarchy_depth_inter = ue(pRP);
-  tempSPS.max_transform_hierarchy_depth_intra = ue(pRP);
+  pSPS->max_transform_hierarchy_depth_inter = ue(pRP);
+  pSPS->max_transform_hierarchy_depth_intra = ue(pRP);
 
-  COMPLY(tempSPS.max_transform_hierarchy_depth_inter <= (tempSPS.Log2CtbSize - Log2MinTransfoSize));
-  COMPLY(tempSPS.max_transform_hierarchy_depth_intra <= (tempSPS.Log2CtbSize - Log2MinTransfoSize));
+  COMPLY(pSPS->max_transform_hierarchy_depth_inter <= (pSPS->Log2CtbSize - Log2MinTransfoSize));
+  COMPLY(pSPS->max_transform_hierarchy_depth_intra <= (pSPS->Log2CtbSize - Log2MinTransfoSize));
 
-  tempSPS.scaling_list_enabled_flag = u(pRP, 1);
+  pSPS->scaling_list_enabled_flag = u(pRP, 1);
 
   // check if NAL isn't empty
   COMPLY(more_rbsp_data(pRP));
 
-  if(tempSPS.scaling_list_enabled_flag)
+  if(pSPS->scaling_list_enabled_flag)
   {
-    tempSPS.sps_scaling_list_data_present_flag = u(pRP, 1);
+    pSPS->sps_scaling_list_data_present_flag = u(pRP, 1);
 
-    if(tempSPS.sps_scaling_list_data_present_flag)
-      hevc_scaling_list_data(&tempSPS.scaling_list_param, pRP);
+    if(pSPS->sps_scaling_list_data_present_flag)
+      hevc_scaling_list_data(&pSPS->scaling_list_param, pRP);
     else
       for(int i = 0; i < 20; ++i)
-        tempSPS.scaling_list_param.UseDefaultScalingMatrixFlag[i] = 1;
+        pSPS->scaling_list_param.UseDefaultScalingMatrixFlag[i] = 1;
   }
 
-  tempSPS.amp_enabled_flag = u(pRP, 1);
-  tempSPS.sample_adaptive_offset_enabled_flag = u(pRP, 1);
+  pSPS->amp_enabled_flag = u(pRP, 1);
+  pSPS->sample_adaptive_offset_enabled_flag = u(pRP, 1);
 
-  tempSPS.pcm_enabled_flag = u(pRP, 1);
+  pSPS->pcm_enabled_flag = u(pRP, 1);
 
-  if(tempSPS.pcm_enabled_flag)
+  if(pSPS->pcm_enabled_flag)
   {
-    tempSPS.pcm_sample_bit_depth_luma_minus1 = u(pRP, 4);
-    tempSPS.pcm_sample_bit_depth_chroma_minus1 = u(pRP, 4);
+    pSPS->pcm_sample_bit_depth_luma_minus1 = u(pRP, 4);
+    pSPS->pcm_sample_bit_depth_chroma_minus1 = u(pRP, 4);
 
-    COMPLY(tempSPS.pcm_sample_bit_depth_luma_minus1 <= tempSPS.bit_depth_luma_minus8 + 7);
-    COMPLY(tempSPS.pcm_sample_bit_depth_chroma_minus1 <= tempSPS.bit_depth_chroma_minus8 + 7);
+    COMPLY(pSPS->pcm_sample_bit_depth_luma_minus1 <= pSPS->bit_depth_luma_minus8 + 7);
+    COMPLY(pSPS->pcm_sample_bit_depth_chroma_minus1 <= pSPS->bit_depth_chroma_minus8 + 7);
 
-    tempSPS.log2_min_pcm_luma_coding_block_size_minus3 = Clip3(ue(pRP), Min(tempSPS.log2_min_luma_coding_block_size_minus3, 2), Min(tempSPS.Log2CtbSize - 3, 2));
+    pSPS->log2_min_pcm_luma_coding_block_size_minus3 = Clip3(ue(pRP), Min(pSPS->log2_min_luma_coding_block_size_minus3, 2), Min(pSPS->Log2CtbSize - 3, 2));
 
-    COMPLY(tempSPS.log2_min_pcm_luma_coding_block_size_minus3 >= Min(tempSPS.log2_min_luma_coding_block_size_minus3, 2));
-    COMPLY(tempSPS.log2_min_pcm_luma_coding_block_size_minus3 <= Min(tempSPS.Log2CtbSize - 3, 2));
+    COMPLY(pSPS->log2_min_pcm_luma_coding_block_size_minus3 >= Min(pSPS->log2_min_luma_coding_block_size_minus3, 2));
+    COMPLY(pSPS->log2_min_pcm_luma_coding_block_size_minus3 <= Min(pSPS->Log2CtbSize - 3, 2));
 
-    tempSPS.log2_diff_max_min_pcm_luma_coding_block_size = Clip3(ue(pRP), 0, Min(tempSPS.Log2CtbSize - 3, 2) - tempSPS.log2_min_pcm_luma_coding_block_size_minus3);
+    pSPS->log2_diff_max_min_pcm_luma_coding_block_size = Clip3(ue(pRP), 0, Min(pSPS->Log2CtbSize - 3, 2) - pSPS->log2_min_pcm_luma_coding_block_size_minus3);
 
-    COMPLY(tempSPS.log2_diff_max_min_pcm_luma_coding_block_size <= (Min(tempSPS.Log2CtbSize - 3, 2) - tempSPS.log2_min_pcm_luma_coding_block_size_minus3));
+    COMPLY(pSPS->log2_diff_max_min_pcm_luma_coding_block_size <= (Min(pSPS->Log2CtbSize - 3, 2) - pSPS->log2_min_pcm_luma_coding_block_size_minus3));
 
-    tempSPS.pcm_loop_filter_disabled_flag = u(pRP, 1);
+    pSPS->pcm_loop_filter_disabled_flag = u(pRP, 1);
   }
 
-  tempSPS.num_short_term_ref_pic_sets = ue(pRP);
+  pSPS->num_short_term_ref_pic_sets = ue(pRP);
 
-  COMPLY(tempSPS.num_short_term_ref_pic_sets <= MAX_REF_PIC_SET);
+  COMPLY(pSPS->num_short_term_ref_pic_sets <= MAX_REF_PIC_SET);
 
-  for(int i = 0; i < tempSPS.num_short_term_ref_pic_sets; ++i)
+  for(int i = 0; i < pSPS->num_short_term_ref_pic_sets; ++i)
   {
     // check if NAL isn't empty
     COMPLY(more_rbsp_data(pRP));
-    AL_HEVC_short_term_ref_pic_set(&tempSPS, i, pRP);
+    AL_HEVC_short_term_ref_pic_set(pSPS, i, pRP);
   }
 
-  tempSPS.long_term_ref_pics_present_flag = u(pRP, 1);
+  pSPS->long_term_ref_pics_present_flag = u(pRP, 1);
 
-  if(tempSPS.long_term_ref_pics_present_flag)
+  if(pSPS->long_term_ref_pics_present_flag)
   {
-    uint8_t syntax_size = tempSPS.log2_max_slice_pic_order_cnt_lsb_minus4 + 4;
-    tempSPS.num_long_term_ref_pics_sps = ue(pRP);
+    uint8_t syntax_size = pSPS->log2_max_slice_pic_order_cnt_lsb_minus4 + 4;
+    pSPS->num_long_term_ref_pics_sps = ue(pRP);
 
-    COMPLY(tempSPS.num_long_term_ref_pics_sps <= MAX_LONG_TERM_PIC);
+    COMPLY(pSPS->num_long_term_ref_pics_sps <= MAX_LONG_TERM_PIC);
 
-    for(int i = 0; i < tempSPS.num_long_term_ref_pics_sps; ++i)
+    for(int i = 0; i < pSPS->num_long_term_ref_pics_sps; ++i)
     {
-      tempSPS.lt_ref_pic_poc_lsb_sps[i] = u(pRP, syntax_size);
-      tempSPS.used_by_curr_pic_lt_sps_flag[i] = u(pRP, 1);
+      pSPS->lt_ref_pic_poc_lsb_sps[i] = u(pRP, syntax_size);
+      pSPS->used_by_curr_pic_lt_sps_flag[i] = u(pRP, 1);
     }
   }
-  tempSPS.sps_temporal_mvp_enabled_flag = u(pRP, 1);
-  tempSPS.strong_intra_smoothing_enabled_flag = u(pRP, 1);
+  pSPS->sps_temporal_mvp_enabled_flag = u(pRP, 1);
+  pSPS->strong_intra_smoothing_enabled_flag = u(pRP, 1);
 
-  tempSPS.vui_parameters_present_flag = u(pRP, 1);
+  pSPS->vui_parameters_present_flag = u(pRP, 1);
 
   // check if NAL isn't empty
   COMPLY(more_rbsp_data(pRP));
 
-  if(tempSPS.vui_parameters_present_flag)
-    hevc_vui_parameters(&tempSPS.vui_param, tempSPS.sps_max_sub_layers_minus1, pRP);
+  if(pSPS->vui_parameters_present_flag)
+    hevc_vui_parameters(&pSPS->vui_param, pSPS->sps_max_sub_layers_minus1, pRP);
 
-  tempSPS.sps_extension_present_flag = u(pRP, 1);
+  pSPS->sps_extension_present_flag = u(pRP, 1);
 
-  if(tempSPS.sps_extension_present_flag)
+  if(pSPS->sps_extension_present_flag)
   {
-    tempSPS.sps_range_extension_flag = u(pRP, 1);
-    tempSPS.sps_extension_7bits = u(pRP, 7);
+    pSPS->sps_range_extension_flag = u(pRP, 1);
+    pSPS->sps_extension_7bits = u(pRP, 7);
   }
 
-  if(tempSPS.sps_range_extension_flag)
+  if(pSPS->sps_range_extension_flag)
   {
-    tempSPS.transform_skip_rotation_enabled_flag = u(pRP, 1);
-    tempSPS.transform_skip_context_enabled_flag = u(pRP, 1);
-    tempSPS.implicit_rdpcm_enabled_flag = u(pRP, 1);
-    tempSPS.explicit_rdpcm_enabled_flag = u(pRP, 1);
-    tempSPS.extended_precision_processing_flag = u(pRP, 1);
-    tempSPS.intra_smoothing_disabled_flag = u(pRP, 1);
-    tempSPS.high_precision_offsets_enabled_flag = u(pRP, 1);
-    tempSPS.persistent_rice_adaptation_enabled_flag = u(pRP, 1);
-    tempSPS.cabac_bypass_alignment_enabled_flag = u(pRP, 1);
+    pSPS->transform_skip_rotation_enabled_flag = u(pRP, 1);
+    pSPS->transform_skip_context_enabled_flag = u(pRP, 1);
+    pSPS->implicit_rdpcm_enabled_flag = u(pRP, 1);
+    pSPS->explicit_rdpcm_enabled_flag = u(pRP, 1);
+    pSPS->extended_precision_processing_flag = u(pRP, 1);
+    pSPS->intra_smoothing_disabled_flag = u(pRP, 1);
+    pSPS->high_precision_offsets_enabled_flag = u(pRP, 1);
+    pSPS->persistent_rice_adaptation_enabled_flag = u(pRP, 1);
+    pSPS->cabac_bypass_alignment_enabled_flag = u(pRP, 1);
   }
 
-  if(tempSPS.sps_extension_7bits) // sps_extension_flag
+  if(pSPS->sps_extension_7bits) // sps_extension_flag
   {
     while(more_rbsp_data(pRP))
       skip(pRP, 1); // sps_extension_data_flag
   }
 
   // Compute variables
-  tempSPS.PicWidthInCtbs = (tempSPS.pic_width_in_luma_samples + ((1 << tempSPS.Log2CtbSize) - 1)) >> tempSPS.Log2CtbSize;
-  tempSPS.PicHeightInCtbs = (tempSPS.pic_height_in_luma_samples + ((1 << tempSPS.Log2CtbSize) - 1)) >> tempSPS.Log2CtbSize;
+  pSPS->PicWidthInCtbs = (pSPS->pic_width_in_luma_samples + ((1 << pSPS->Log2CtbSize) - 1)) >> pSPS->Log2CtbSize;
+  pSPS->PicHeightInCtbs = (pSPS->pic_height_in_luma_samples + ((1 << pSPS->Log2CtbSize) - 1)) >> pSPS->Log2CtbSize;
 
-  COMPLY(tempSPS.PicWidthInCtbs > 1);
-  COMPLY(tempSPS.PicHeightInCtbs > 1);
+  COMPLY_WITH_LOG(pSPS->PicWidthInCtbs >= 2, "SPS width less than 2 CTBs is not supported\n");
+  COMPLY_WITH_LOG(pSPS->PicHeightInCtbs >= 2, "SPS height less than 2 CTBs is not supported\n");
 
-  tempSPS.PicWidthInMinCbs = tempSPS.pic_width_in_luma_samples >> tempSPS.Log2MinCbSize;
-  tempSPS.PicHeightInMinCbs = tempSPS.pic_height_in_luma_samples >> tempSPS.Log2MinCbSize;
+  pSPS->PicWidthInMinCbs = pSPS->pic_width_in_luma_samples >> pSPS->Log2MinCbSize;
+  pSPS->PicHeightInMinCbs = pSPS->pic_height_in_luma_samples >> pSPS->Log2MinCbSize;
 
-  tempSPS.SpsMaxLatency = tempSPS.sps_max_latency_increase_plus1[max_sub_layers] ? tempSPS.sps_num_reorder_pics[max_sub_layers] + tempSPS.sps_max_latency_increase_plus1[max_sub_layers] - 1 : UINT32_MAX;
+  pSPS->SpsMaxLatency = pSPS->sps_max_latency_increase_plus1[max_sub_layers] ? pSPS->sps_max_num_reorder_pics[max_sub_layers] + pSPS->sps_max_latency_increase_plus1[max_sub_layers] - 1 : UINT32_MAX;
 
-  tempSPS.MaxPicOrderCntLsb = 1 << (tempSPS.log2_max_slice_pic_order_cnt_lsb_minus4 + 4);
+  pSPS->MaxPicOrderCntLsb = 1 << (pSPS->log2_max_slice_pic_order_cnt_lsb_minus4 + 4);
 
-  tempSPS.WpOffsetBdShiftY = tempSPS.high_precision_offsets_enabled_flag ? 0 : tempSPS.bit_depth_luma_minus8;
-  tempSPS.WpOffsetBdShiftC = tempSPS.high_precision_offsets_enabled_flag ? 0 : tempSPS.bit_depth_chroma_minus8;
-  tempSPS.WpOffsetHalfRangeY = 1 << (tempSPS.high_precision_offsets_enabled_flag ? tempSPS.bit_depth_luma_minus8 + 7 : 7);
-  tempSPS.WpOffsetHalfRangeC = 1 << (tempSPS.high_precision_offsets_enabled_flag ? tempSPS.bit_depth_chroma_minus8 + 7 : 7);
+  pSPS->WpOffsetBdShiftY = pSPS->high_precision_offsets_enabled_flag ? 0 : pSPS->bit_depth_luma_minus8;
+  pSPS->WpOffsetBdShiftC = pSPS->high_precision_offsets_enabled_flag ? 0 : pSPS->bit_depth_chroma_minus8;
+  pSPS->WpOffsetHalfRangeY = 1 << (pSPS->high_precision_offsets_enabled_flag ? pSPS->bit_depth_luma_minus8 + 7 : 7);
+  pSPS->WpOffsetHalfRangeC = 1 << (pSPS->high_precision_offsets_enabled_flag ? pSPS->bit_depth_chroma_minus8 + 7 : 7);
 
   COMPLY(rbsp_trailing_bits(pRP));
 
-  tempSPS.bConceal = false;
-  pIAup->hevcAup.pSPS[sps_id] = tempSPS;
+  pSPS->bConceal = false;
 
   return AL_OK;
 }
@@ -715,17 +746,19 @@ void AL_HEVC_short_term_ref_pic_set(AL_THevcSps* pSPS, uint8_t RefIdx, AL_TRbspP
 }
 
 /*****************************************************************************/
-void ParseVPS(AL_TAup* pIAup, AL_TRbspParser* pRP)
+AL_PARSE_RESULT AL_HEVC_ParseVPS(AL_TAup* pIAup, AL_TRbspParser* pRP)
 {
   AL_THevcVps* pVPS;
 
-  // Parse bitstream
-  while(u(pRP, 8) == 0x00)
-    ; // Skip all 0x00s and one 0x01
+  skipAllZerosAndTheNextByte(pRP);
 
   u(pRP, 16); // Skip NUT + temporal_id
 
   int vps_id = u(pRP, 4);
+
+  if(vps_id >= AL_HEVC_MAX_VPS)
+    return AL_UNSUPPORTED;
+
   pVPS = &pIAup->hevcAup.pVPS[vps_id];
   pVPS->vps_video_parameter_set_id = vps_id;
 
@@ -737,7 +770,7 @@ void ParseVPS(AL_TAup* pIAup, AL_TRbspParser* pRP)
   pVPS->vps_temporal_id_nesting_flag = u(pRP, 1);
   skip(pRP, 16); // vps_reserved_0xffff_16bits
 
-  profile_tier_level(&pVPS->profile_and_level[0], pVPS->vps_max_sub_layers_minus1, pRP);
+  hevc_profile_tier_level(&pVPS->profile_and_level[0], pVPS->vps_max_sub_layers_minus1, pRP);
 
   if(pVPS->profile_and_level[0].general_level_idc == 0)
     pVPS->profile_and_level[0].general_level_idc = CONCEAL_LEVEL_IDC;
@@ -796,10 +829,12 @@ void ParseVPS(AL_TAup* pIAup, AL_TRbspParser* pRP)
       skip(pRP, 1); // vps_extension_data_flag
   }
   rbsp_trailing_bits(pRP);
+
+  return AL_OK;
 }
 
 /*****************************************************************************/
-static uint8_t sei_active_parameter_sets(AL_TRbspParser* pRP, AL_THevcAup* aup)
+static bool sei_active_parameter_sets(AL_TRbspParser* pRP, AL_THevcAup* aup, uint8_t* pSpsId)
 {
   uint8_t active_video_parameter_set_id = u(pRP, 4);
   /*self_Containd_cvs_flag =*/ u(pRP, 1);
@@ -817,7 +852,9 @@ static uint8_t sei_active_parameter_sets(AL_TRbspParser* pRP, AL_THevcAup* aup)
   for(int i = pVPS->vps_base_layer_internal_flag; i <= MaxLayersMinus1; ++i)
     /*layer_sps_idx[i] =*/ ue(pRP);
 
-  return active_seq_parameter_set_id[0];
+  *pSpsId = active_seq_parameter_set_id[0];
+
+  return true;
 }
 
 /*****************************************************************************/
@@ -833,6 +870,7 @@ static bool sei_pic_timing(AL_TRbspParser* pRP, AL_THevcSps* pSPS, AL_THevcPicTi
     pPicTiming->pic_struct = u(pRP, 4);
     pPicTiming->source_scan_type = u(pRP, 2);
     pPicTiming->duplicate_flag = u(pRP, 1);
+    pSPS->sei_source_scan_type = pPicTiming->source_scan_type;
   }
 
   bool CpbDpbDelaysPresentFlag = pSPS->vui_param.hrd_param.nal_hrd_parameters_present_flag
@@ -888,20 +926,32 @@ static bool sei_recovery_point(AL_TRbspParser* pRP, AL_TRecoveryPoint* pRecovery
   return byte_alignment(pRP);
 }
 
-#define PIC_TIMING 1
-#define ACTIVE_PARAMETER_SETS 129
-#define RECOVERY_POINT 6
+#define SEI_PTYPE_ACTIVE_PARAMETER_SETS 129
+
+#define CONTIUE_PARSE_OR_SKIP(ParseCmd) \
+  bRet = ParseCmd; \
+  if(!bRet) \
+  { \
+    uOffset = offset(pRP) - uOffset; \
+    if(uOffset > (uint32_t)payload_size << 3) \
+      return false; \
+    skip(pRP, (payload_size << 3) - uOffset); \
+    break; \
+  }
+
+#define PARSE_OR_SKIP(ParseCmd) \
+  uint32_t uOffset = offset(pRP); \
+  bool bRet; \
+  CONTIUE_PARSE_OR_SKIP(ParseCmd)
 
 /*****************************************************************************/
-bool AL_HEVC_ParseSEI(AL_TAup* pIAup, AL_TRbspParser* pRP, AL_CB_ParsedSei* cb)
+bool AL_HEVC_ParseSEI(AL_TAup* pIAup, AL_TRbspParser* pRP, bool bIsPrefix, AL_CB_ParsedSei* cb, AL_TSeiMetaData* pMeta)
 {
   AL_THevcSei sei;
   AL_THevcAup* aup = &pIAup->hevcAup;
   sei.present_flags = 0;
 
-  // Parse bitstream
-  while(u(pRP, 8) == 0x00)
-    ; // Skip all 0x00s and one 0x01
+  skipAllZerosAndTheNextByte(pRP);
 
   u(pRP, 16); // Skip NUT + temporal_id
 
@@ -911,6 +961,9 @@ bool AL_HEVC_ParseSEI(AL_TAup* pIAup, AL_TRbspParser* pRP, AL_CB_ParsedSei* cb)
     int32_t payload_size = 0;
 
     // get payload type
+    if(!byte_aligned(pRP))
+      return false;
+
     uint8_t byte = getbyte(pRP);
 
     while(byte == 0xff)
@@ -934,52 +987,107 @@ bool AL_HEVC_ParseSEI(AL_TAup* pIAup, AL_TRbspParser* pRP, AL_CB_ParsedSei* cb)
 
     payload_size += byte;
 
+    bool bCBAndSEIMeta = true; // Don't call CB or add in SEI metadata for HDR related SEIs, HDR settings are provided through dedicated metadata
+
     /* get payload data address, at this point we may not have the whole payload
      * data loaded in the rbsp parser */
     uint8_t* payload_data = get_raw_data(pRP);
     switch(payload_type)
     {
-    case PIC_TIMING: // picture_timing parsing
-
+    case SEI_PTYPE_PIC_TIMING: // picture_timing parsing
+    {
       if(aup->pActiveSPS)
       {
-        bool bRet = sei_pic_timing(pRP, aup->pActiveSPS, &sei.picture_timing);
-
-        if(!bRet)
-          skip(pRP, payload_size << 3);
-        sei.present_flags |= SEI_PT;
-
+        PARSE_OR_SKIP(sei_pic_timing(pRP, aup->pActiveSPS, &sei.picture_timing));
+        sei.present_flags |= AL_SEI_PT;
         aup->ePicStruct = sei.picture_timing.pic_struct;
       }
       else
-        return false;
-      break;
-
-    case RECOVERY_POINT: // picture_timing parsing
-    {
-      bool bRet = sei_recovery_point(pRP, &sei.recovery_point);
-
-      if(!bRet)
         skip(pRP, payload_size << 3);
-
-      aup->iRecoveryCnt = sei.recovery_point.recovery_cnt;
-    } break;
-
-    case ACTIVE_PARAMETER_SETS:
+      break;
+    }
+    case SEI_PTYPE_RECOVERY_POINT: // picture_timing parsing
     {
-      uint8_t uSpsId = sei_active_parameter_sets(pRP, aup);
+      PARSE_OR_SKIP(sei_recovery_point(pRP, &sei.recovery_point));
+      pIAup->iRecoveryCnt = sei.recovery_point.recovery_cnt + 1; // +1 for non-zero value when AL_SEI_RP is present
+      break;
+    }
+    case SEI_PTYPE_ACTIVE_PARAMETER_SETS:
+    {
+      uint8_t uSpsId;
+      PARSE_OR_SKIP(sei_active_parameter_sets(pRP, aup, &uSpsId));
+
+      if(uSpsId >= AL_HEVC_MAX_SPS)
+        return false;
 
       if(!aup->pSPS[uSpsId].bConceal)
         aup->pActiveSPS = &aup->pSPS[uSpsId];
-    } break;
+      break;
+    }
+    case SEI_PTYPE_MASTERING_DISPLAY_COLOUR_VOLUME:
+    {
+      PARSE_OR_SKIP(sei_mastering_display_colour_volume(&pIAup->tParsedHDRSEIs.tMDCV, pRP));
+      pIAup->tParsedHDRSEIs.bHasMDCV = true;
+      bCBAndSEIMeta = false;
+      break;
+    }
+    case SEI_PTYPE_CONTENT_LIGHT_LEVEL:
+    {
+      PARSE_OR_SKIP(sei_content_light_level(&pIAup->tParsedHDRSEIs.tCLL, pRP));
+      pIAup->tParsedHDRSEIs.bHasCLL = true;
+      bCBAndSEIMeta = false;
+      break;
+    }
+    case SEI_PTYPE_ALTERNATIVE_TRANSFER_CHARACTERISTICS:
+    {
+      PARSE_OR_SKIP(sei_alternative_transfer_characteristics(&pIAup->tParsedHDRSEIs.tATC, pRP));
+      pIAup->tParsedHDRSEIs.bHasATC = true;
+      bCBAndSEIMeta = false;
+      break;
+    }
+    case SEI_PTYPE_USER_DATA_REGISTERED:
+    {
+      AL_EUserDataRegisterSEIType eSEIType;
+      PARSE_OR_SKIP((eSEIType = sei_user_data_registered(pRP, payload_size)) != AL_UDR_SEI_UNKNOWN);
+      switch(eSEIType)
+      {
+      case AL_UDR_SEI_ST2094_10:
+      {
+        CONTIUE_PARSE_OR_SKIP(sei_st2094_10(&pIAup->tParsedHDRSEIs.tST2094_10, pRP));
+        pIAup->tParsedHDRSEIs.bHasST2094_10 = true;
+        break;
+      }
+      case AL_UDR_SEI_ST2094_40:
+      {
+        CONTIUE_PARSE_OR_SKIP(sei_st2094_40(&pIAup->tParsedHDRSEIs.tST2094_40, pRP));
+        pIAup->tParsedHDRSEIs.bHasST2094_40 = true;
+        break;
+      }
+      default:
+      {
+        AL_Assert(0);
+        break;
+      }
+      }
 
+      bCBAndSEIMeta = false;
+      break;
+    }
     default: // payload not supported
+    {
       skip(pRP, payload_size << 3); // skip data
       break;
     }
+    }
 
-    if(cb->func)
-      cb->func(payload_type, payload_data, payload_size, cb->userParam);
+    if(bCBAndSEIMeta && pMeta)
+    {
+      if(!AL_SeiMetaData_AddPayload(pMeta, (AL_TSeiMessage) {bIsPrefix, payload_type, payload_data, payload_size }))
+        return false;
+    }
+
+    if(bCBAndSEIMeta && cb->func)
+      cb->func(bIsPrefix, payload_type, payload_data, payload_size, cb->userParam);
 
     uint32_t offsetAfter = offset(pRP);
     // Skip payload extension data if any

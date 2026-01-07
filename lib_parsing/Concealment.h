@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright (C) 2018 Allegro DVT2.  All rights reserved.
+* Copyright (C) 2008-2022 Allegro DVT2.  All rights reserved.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -38,6 +38,7 @@
 #pragma once
 
 #include "lib_rtos/types.h"
+#include "lib_rtos/lib_rtos.h"
 
 typedef struct t_Conceal
 {
@@ -57,7 +58,6 @@ typedef enum
   AL_UNSUPPORTED = 2
 }AL_PARSE_RESULT;
 
-
 #define COMPLY(cond) \
   do { \
     if(!(cond)) \
@@ -65,4 +65,12 @@ typedef enum
   } \
   while(0) \
 
-
+#define COMPLY_WITH_LOG(cond, log) \
+  do { \
+    if(!(cond)) \
+    { \
+      Rtos_Log(AL_LOG_ERROR, log); \
+      return AL_CONCEAL; \
+    } \
+  } \
+  while(0) \

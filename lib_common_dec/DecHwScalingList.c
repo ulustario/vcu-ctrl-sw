@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright (C) 2018 Allegro DVT2.  All rights reserved.
+* Copyright (C) 2008-2022 Allegro DVT2.  All rights reserved.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -35,34 +35,54 @@
 *
 ******************************************************************************/
 
-#include "assert.h"
 #include "DecHwScalingList.h"
+#include "lib_assert/al_assert.h"
 
 /******************************************************************************/
 static void AL_sWriteWord(const uint8_t* pSrc, int iSize, uint32_t* pBuf, const int* pScan)
 {
-  for(int scl = 0; scl < iSize; ++scl)
+  for(int iScl = 0; iScl < iSize; ++iScl)
   {
-    int iOffset = scl << 2;
-    *pBuf++ = pSrc[pScan ? pScan[iOffset] : iOffset] | (pSrc[pScan ? pScan[iOffset + 1] : iOffset + 1] << 8) |
-              (pSrc[pScan ? pScan[iOffset + 2] : iOffset + 2] << 16) | ((uint32_t)pSrc[pScan ? pScan[iOffset + 3] : iOffset + 3] << 24);
+    int iOffset = iScl << 2;
+    int iOffset0 = pScan ? pScan[iOffset] : iOffset;
+    int iOffset1 = pScan ? pScan[iOffset + 1] : iOffset + 1;
+    int iOffset2 = pScan ? pScan[iOffset + 2] : iOffset + 2;
+    int iOffset3 = pScan ? pScan[iOffset + 3] : iOffset + 3;
+
+    uint32_t var = 0;
+    var |= (uint32_t)pSrc[iOffset0];
+    var |= (uint32_t)pSrc[iOffset1] << 8;
+    var |= (uint32_t)pSrc[iOffset2] << 16;
+    var |= (uint32_t)pSrc[iOffset3] << 24;
+
+    *pBuf++ = var;
   }
 }
 
 /******************************************************************************/
-void AL_AVC_WriteDecHwScalingList(AL_TScl const* pSclLst, uint8_t* pBuf)
+void AL_AVC_WriteDecHwScalingList(AL_TScl const* pSclLst, AL_EChromaMode eCMode, uint8_t* pBuf)
 {
-  uint8_t const* pSrc;
   uint32_t* pBuf32 = (uint32_t*)pBuf;
 
-  assert((1 & (size_t)pBuf) == 0);
+  AL_Assert((1 & (size_t)pBuf) == 0);
 
   for(int m = 0; m < 2; m++) // Mode : 0 = Intra; 1 = Inter
   {
     // 8x8
-    pSrc = (*pSclLst)[m].t8x8Y;
+    uint8_t const* pSrc = (*pSclLst)[m].t8x8Y;
     AL_sWriteWord(pSrc, 16, pBuf32, AL_AVC_DEC_SCL_ORDER_8x8);
     pBuf32 += 16;
+
+    if(eCMode == AL_CHROMA_4_4_4)
+    {
+      pSrc = (*pSclLst)[m].t8x8Cb;
+      AL_sWriteWord(pSrc, 16, pBuf32, AL_AVC_DEC_SCL_ORDER_8x8);
+      pBuf32 += 16;
+
+      pSrc = (*pSclLst)[m].t8x8Cr;
+      AL_sWriteWord(pSrc, 16, pBuf32, AL_AVC_DEC_SCL_ORDER_8x8);
+      pBuf32 += 16;
+    }
 
     // 4x4 Luma
     pSrc = (*pSclLst)[m].t4x4Y;
@@ -84,13 +104,12 @@ void AL_AVC_WriteDecHwScalingList(AL_TScl const* pSclLst, uint8_t* pBuf)
 /******************************************************************************/
 void AL_HEVC_WriteDecHwScalingList(AL_TScl const* pSclLst, uint8_t* pBuf)
 {
-  uint8_t const* pSrc;
   uint32_t* pBuf32 = (uint32_t*)pBuf;
 
   for(int m = 0; m < 2; m++) // Mode : 0 = Intra; 1 = Inter
   {
     // 32x32
-    pSrc = (*pSclLst)[m].t32x32;
+    uint8_t const* pSrc = (*pSclLst)[m].t32x32;
     AL_sWriteWord(pSrc, 16, pBuf32, AL_HEVC_DEC_SCL_ORDER_8x8);
     pBuf32 += 16;
 

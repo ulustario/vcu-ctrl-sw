@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright (C) 2018 Allegro DVT2.  All rights reserved.
+* Copyright (C) 2008-2022 Allegro DVT2.  All rights reserved.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -38,27 +38,30 @@
 #if __linux__
 
 #include "DriverDataConversions.h"
-#include "lib_rtos/types.h"
 #include <string.h>
-#include <assert.h>
+
+#include "lib_rtos/types.h"
 
 static void write(struct al5_params* msg, void* data, int size)
 {
-  assert(size % 4 == 0);
   memcpy(msg->opaque_params + (msg->size / 4), data, size);
-  msg->size += size;
+  msg->size += ((size + 3) / 4) * 4;
 }
 
-void setChannelParam(struct al5_params* msg, AL_TEncChanParam* pChParam, TMemDesc* pEP1)
+void setChannelParam(struct al5_params* msg, TMemDesc* pMDChParam, TMemDesc* pEP1)
 {
-  static_assert(sizeof(*pChParam) <= sizeof(msg->opaque_params), "Driver channel_param struct is too small");
+  uint32_t uMcuVirtAddr;
+  static_assert(2 * sizeof(uMcuVirtAddr) <= sizeof(msg->opaque_params), "Driver channel_param struct is too small");
   msg->size = 0;
-  write(msg, pChParam, sizeof(*pChParam));
-  uint32_t uEp1VirtAddr = 0;
+
+  uMcuVirtAddr = pMDChParam->uPhysicalAddr + DCACHE_OFFSET;
+  write(msg, &uMcuVirtAddr, sizeof(uMcuVirtAddr));
 
   if(pEP1)
-    uEp1VirtAddr = pEP1->uPhysicalAddr + DCACHE_OFFSET;
-  write(msg, &uEp1VirtAddr, sizeof(uEp1VirtAddr));
+    uMcuVirtAddr = pEP1->uPhysicalAddr + DCACHE_OFFSET;
+  else
+    uMcuVirtAddr = 0;
+  write(msg, &uMcuVirtAddr, sizeof(uMcuVirtAddr));
 }
 
 static void setPicParam(struct al5_params* msg, AL_TEncInfo* encInfo, AL_TEncRequestInfo* reqInfo)
@@ -72,9 +75,23 @@ static void setPicParam(struct al5_params* msg, AL_TEncInfo* encInfo, AL_TEncReq
   if(reqInfo->eReqOptions & AL_OPT_SCENE_CHANGE)
     write(msg, &reqInfo->uSceneChangeDelay, sizeof(reqInfo->uSceneChangeDelay));
 
+  if(reqInfo->eReqOptions & AL_OPT_UPDATE_RC_GOP_PARAMS)
+  {
+    write(msg, &reqInfo->smartParams.rc, sizeof(reqInfo->smartParams.rc));
+    write(msg, &reqInfo->smartParams.gop, sizeof(reqInfo->smartParams.gop));
+  }
 
-  if(reqInfo->eReqOptions & AL_OPT_UPDATE_PARAMS)
-    write(msg, &reqInfo->smartParams, sizeof(reqInfo->smartParams));
+  if(reqInfo->eReqOptions & AL_OPT_SET_QP)
+    write(msg, &reqInfo->smartParams.iQPSet, sizeof(reqInfo->smartParams.iQPSet));
+
+  if(reqInfo->eReqOptions & AL_OPT_SET_INPUT_RESOLUTION)
+    write(msg, &reqInfo->dynResParams, sizeof(reqInfo->dynResParams));
+
+  if(reqInfo->eReqOptions & AL_OPT_SET_LF_OFFSETS)
+  {
+    write(msg, &reqInfo->smartParams.iLFBetaOffset, sizeof(reqInfo->smartParams.iLFBetaOffset));
+    write(msg, &reqInfo->smartParams.iLFTcOffset, sizeof(reqInfo->smartParams.iLFTcOffset));
+  }
 }
 
 static void setBuffersAddrs(struct al5_params* msg, AL_TEncPicBufAddrs* pBuffersAddrs)

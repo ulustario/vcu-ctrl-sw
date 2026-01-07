@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright (C) 2018 Allegro DVT2.  All rights reserved.
+* Copyright (C) 2008-2022 Allegro DVT2.  All rights reserved.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -41,16 +41,18 @@
 #include "lib_common/BufferCircMeta.h"
 #include "lib_common/Fifo.h"
 
-#include "lib_common_dec/DecBuffers.h"
+#include "lib_common_dec/DecBuffersInternal.h"
+
+#define AL_CIRCULAR_BUFFER_SIZE_MARGIN 1
 
 typedef struct al_t_Patchworker
 {
-  bool endOfInput;
   bool endOfOutput;
   AL_MUTEX lock;
   AL_TFifo* inputFifo;
-  TCircBuffer* outputCirc;
+  AL_TBuffer* outputCirc;
   AL_TBuffer* workBuf;
+  bool bCompleteFill;
 }AL_TPatchworker;
 
 /*
@@ -62,13 +64,10 @@ size_t AL_Patchworker_CopyBuffer(AL_TPatchworker* pPatchworker, AL_TBuffer* pBuf
 /* Transfer as much data as possible from one buffer of the fifo to the circular buffer */
 size_t AL_Patchworker_Transfer(AL_TPatchworker* pPatchworker);
 
-void AL_Patchworker_NotifyEndOfInput(AL_TPatchworker* pPatchworker);
-bool AL_Patchworker_IsEndOfInput(AL_TPatchworker* pPatchworker);
 bool AL_Patchworker_IsAllDataTransfered(AL_TPatchworker* pPatchworker);
 
-void AL_Patchworker_Drop(AL_TPatchworker* pPatchworker);
 void AL_Patchworker_Reset(AL_TPatchworker* pPatchworker);
 
 void AL_Patchworker_Deinit(AL_TPatchworker* pPatchworker);
-bool AL_Patchworker_Init(AL_TPatchworker* pPatchworker, TCircBuffer* pCircularBuf, AL_TFifo* pInputFifo);
+bool AL_Patchworker_Init(AL_TPatchworker* pPatchworker, AL_TBuffer* stream, AL_TFifo* pInputFifo);
 

@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright (C) 2018 Allegro DVT2.  All rights reserved.
+* Copyright (C) 2008-2022 Allegro DVT2.  All rights reserved.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -35,12 +35,13 @@
 *
 ******************************************************************************/
 
-#include "console.h"
+#include "lib_app/console.h"
 
 #include <unistd.h>
-#include <stdio.h>
+#include <cstdio>
 
-static bool bUseColor;
+static bool bUseColor = true;
+static bool isAuto = true;
 
 static
 int translateColor(EConColor col)
@@ -70,6 +71,9 @@ int translateColor(EConColor col)
 
 void SetConsoleColor(EConColor eColor)
 {
+  if(isAuto)
+    bUseColor = isatty(fileno(stdout));
+
   if(bUseColor)
     printf("\033[%dm", translateColor(eColor));
 }
@@ -77,5 +81,6 @@ void SetConsoleColor(EConColor eColor)
 void SetEnableColor(bool bColor)
 {
   bUseColor = bColor;
+  isAuto = false;
 }
 

@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright (C) 2018 Allegro DVT2.  All rights reserved.
+* Copyright (C) 2008-2022 Allegro DVT2.  All rights reserved.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -47,10 +47,10 @@
 #pragma once
 
 #include "lib_rtos/types.h"
-#include "lib_common/SliceConsts.h"
+#include "lib_common/PicFormat.h"
 
 /*************************************************************************//*!
-   \brief FOURCC identifer type
+   \brief FOURCC identifier type
 *****************************************************************************/
 typedef uint32_t TFourCC;
 
@@ -58,28 +58,6 @@ typedef uint32_t TFourCC;
                              | ((uint32_t)((# A)[1]) << 8) \
                              | ((uint32_t)((# A)[2]) << 16) \
                              | ((uint32_t)((# A)[3]) << 24)))
-/*************************************************************************//*!
-   \brief Chroma order
-*****************************************************************************/
-typedef enum e_ChromaOrder
-{
-  AL_C_ORDER_NO_CHROMA,
-  AL_C_ORDER_U_V,
-  AL_C_ORDER_V_U,
-  AL_C_ORDER_SEMIPLANAR
-}AL_EChromaOrder;
-
-/***************************************************************************/
-
-typedef struct AL_t_PicFormat
-{
-  AL_EChromaMode eChromaMode;
-  uint8_t uBitDepth;
-  AL_EFbStorageMode eStorageMode;
-  AL_EChromaOrder eChromaOrder;
-  bool bCompressed;
-  bool b10bPacked;
-}AL_TPicFormat;
 
 /*************************************************************************//*!
    \brief Returns the ChromaMode identifier according to the tFourCC parameter
@@ -87,6 +65,13 @@ typedef struct AL_t_PicFormat
    \return return the ChomaMode according to the tFourCC parameter
 *****************************************************************************/
 AL_EChromaMode AL_GetChromaMode(TFourCC tFourCC);
+
+/*************************************************************************//*!
+   \brief Returns the ChromaOrder identifier according to the tFourCC parameter
+   \param[in] tFourCC FourCC format of the current picture
+   \return return the ChromaOrder according to the tFourCC parameter
+*****************************************************************************/
+AL_EChromaOrder AL_GetChromaOrder(TFourCC tFourCC);
 
 /*************************************************************************//*!
    \brief Returns the bitDepth according to the tFourCC parameter

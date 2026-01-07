@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright (C) 2018 Allegro DVT2.  All rights reserved.
+* Copyright (C) 2008-2022 Allegro DVT2.  All rights reserved.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -40,17 +40,23 @@
 #include <list>
 #include <iostream>
 #include <string>
+#include <vector>
 
 #include "ICommandsSender.h"
 
-class CEncCmdMngr
+struct CEncCmdMngr
 {
-public:
   CEncCmdMngr(std::istream& CmdInput, int iLookAhead, int iFreqLT);
 
   void Process(ICommandsSender* sender, int iFrame);
 
 private:
+  std::istream& m_CmdInput;
+  int const m_iLookAhead;
+  int const m_iFreqLT;
+  bool m_bHasLT;
+  std::string m_sBufferedLine;
+
   struct TFrmCmd
   {
     int iFrame = 0;
@@ -58,30 +64,61 @@ private:
     bool bIsLongTerm = false;
     bool bUseLongTerm = false;
     bool bKeyFrame = false;
+    bool bRecoveryPoint = false;
     bool bChangeGopLength = false;
     int iGopLength = 0;
     bool bChangeGopNumB = false;
     int iGopNumB = 0;
+    bool bChangeFreqIDR = false;
+    int iFreqIDR = 0;
     bool bChangeBitRate = false;
     int iBitRate = 0;
+    bool bChangeMaxBitRate = false;
+    int iTargetBitRate = 0;
+    int iMaxBitRate = 0;
     bool bChangeFrameRate = false;
     int iFrameRate = 0;
     int iClkRatio = 0;
     bool bChangeQP = false;
     int iQP = 0;
+    bool bChangeQPBounds = false;
+    int iMinQP = 0;
+    int iMaxQP = 0;
+    bool bChangeQPBounds_I = false;
+    int iMinQP_I = 0;
+    int iMaxQP_I = 0;
+    bool bChangeQPBounds_P = false;
+    int iMinQP_P = 0;
+    int iMaxQP_P = 0;
+    bool bChangeQPBounds_B = false;
+    int iMinQP_B = 0;
+    int iMaxQP_B = 0;
+    bool bChangeIPDelta = false;
+    int iIPDelta = 0;
+    bool bChangePBDelta = false;
+    int iPBDelta = 0;
+    bool bChangeResolution = false;
+    int iInputIdx;
+    bool bSetLFBetaOffset = false;
+    int iLFBetaOffset;
+    bool bSetLFTcOffset = false;
+    int iLFTcOffset;
+    bool bSetCostMode = false;
+    bool bCostMode;
+    bool bChangeQPChromaOffsets = false;
+    int iQp1Offset = 0;
+    int iQp2Offset = 0;
+    bool bSetAutoQP = false;
+    bool bUseAutoQP = false;
+    bool bChangeHDR = false;
+    int iHDRIdx = 0;
   };
+
+  std::list<TFrmCmd> m_Cmds;
 
   void Refill(int iCurFrame);
   bool ReadNextCmd(TFrmCmd& Cmd);
   bool ParseCmd(std::string sLine, TFrmCmd& Cmd, bool bSameFrame);
   bool GetNextLine(std::string& sNextLine);
-
-private:
-  std::istream& m_CmdInput;
-  int const m_iLookAhead;
-  int const m_iFreqLT;
-  bool m_bHasLT;
-  std::list<TFrmCmd> m_Cmds;
-  std::string m_sBufferedLine;
 };
 

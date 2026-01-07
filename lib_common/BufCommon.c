@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright (C) 2018 Allegro DVT2.  All rights reserved.
+* Copyright (C) 2008-2022 Allegro DVT2.  All rights reserved.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -35,26 +35,28 @@
 *
 ******************************************************************************/
 
-#include <assert.h>
+#include "Utils.h"
+
 #include "lib_rtos/lib_rtos.h"
 #include "lib_common/BufCommon.h"
 #include "lib_common/BufferAPI.h"
-#include "lib_common/BufferSrcMeta.h"
-#include "Utils.h"
+#include "lib_common/BufferPixMapMeta.h"
+
+#include "lib_assert/al_assert.h"
 
 /*****************************************************************************/
 int AL_GetNumLinesInPitch(AL_EFbStorageMode eFrameBufferStorageMode)
 {
   switch(eFrameBufferStorageMode)
   {
-  case AL_FB_RASTER:
-    return 1;
+  case AL_FB_RASTER: return 1;
   case AL_FB_TILE_32x4:
-  case AL_FB_TILE_64x4:
-    return 4;
+  case AL_FB_TILE_64x4: return 4;
   default:
-    assert(false);
+  {
+    AL_Assert(false);
     return 0;
+  }
   }
 }
 
@@ -63,15 +65,14 @@ static inline int GetWidthRound(AL_EFbStorageMode eStorageMode)
 {
   switch(eStorageMode)
   {
-  case AL_FB_RASTER:
-    return 1;
-  case AL_FB_TILE_64x4:
-    return 64;
-  case AL_FB_TILE_32x4:
-    return 32;
+  case AL_FB_RASTER: return 1;
+  case AL_FB_TILE_64x4: return 64;
+  case AL_FB_TILE_32x4: return 32;
   default:
-    assert(false);
+  {
+    AL_Assert(false);
     return 0;
+  }
   }
 }
 
@@ -79,7 +80,7 @@ static inline int GetWidthRound(AL_EFbStorageMode eStorageMode)
 int32_t ComputeRndPitch(int32_t iWidth, uint8_t uBitDepth, AL_EFbStorageMode eFrameBufferStorageMode, int iBurstAlignment)
 {
   int32_t iVal = 0;
-  int const iRndWidth = RoundUp(iWidth, GetWidthRound(eFrameBufferStorageMode));
+  int iRndWidth = RoundUp(iWidth, GetWidthRound(eFrameBufferStorageMode));
   switch(eFrameBufferStorageMode)
   {
   case AL_FB_RASTER:
@@ -95,30 +96,65 @@ int32_t ComputeRndPitch(int32_t iWidth, uint8_t uBitDepth, AL_EFbStorageMode eFr
   case AL_FB_TILE_32x4:
   case AL_FB_TILE_64x4:
   {
-    int const uDepth = uBitDepth > 8 ? 10 : 8;
-    iVal = iRndWidth * AL_GetNumLinesInPitch(eFrameBufferStorageMode) * uDepth / 8;
+    uBitDepth = (uBitDepth + 1) & 0xFE; // Prevent 9 and 11 bitdepth -> 10/12
+    iVal = iRndWidth * AL_GetNumLinesInPitch(eFrameBufferStorageMode) * uBitDepth / 8;
     break;
   }
   default:
-    assert(false);
+    AL_Assert(false);
   }
 
-  assert(iBurstAlignment > 0 && (iBurstAlignment % 32) == 0); // IP requirement
+  AL_Assert(iBurstAlignment > 0);
+  AL_Assert((iBurstAlignment % HW_IP_BURST_ALIGNMENT) == 0);
   return RoundUp(iVal, iBurstAlignment);
 }
 
 /****************************************************************************/
-void AL_CopyYuv(AL_TBuffer const* pSrc, AL_TBuffer* pDst)
+int AL_GetChromaPitch(TFourCC tFourCC, int iLumaPitch)
 {
-  AL_TSrcMetaData* pSrcMeta = (AL_TSrcMetaData*)AL_Buffer_GetMetaData(pSrc, AL_META_TYPE_SOURCE);
-  AL_TSrcMetaData* pDstMeta = (AL_TSrcMetaData*)AL_Buffer_GetMetaData(pDst, AL_META_TYPE_SOURCE);
+  AL_TPicFormat tPicFormat;
+  bool bSuccess = AL_GetPicFormat(tFourCC, &tPicFormat);
+  AL_Assert(bSuccess);
 
-  pDstMeta->tDim = pSrcMeta->tDim;
-  pDstMeta->tFourCC = pSrcMeta->tFourCC;
+  if(tPicFormat.eChromaMode == AL_CHROMA_MONO)
+    return 0;
 
-  assert(pDst->zSize >= pSrc->zSize);
+  int iNumPlanes = tPicFormat.eChromaOrder == AL_C_ORDER_SEMIPLANAR ? 2 : 1;
+  int iChromaPitch = iLumaPitch;
 
-  Rtos_Memcpy(AL_Buffer_GetData(pDst), AL_Buffer_GetData(pSrc), pSrc->zSize);
+  if(tPicFormat.eChromaMode != AL_CHROMA_4_4_4)
+  {
+    int iRound = tPicFormat.uBitDepth > 8 ? 4 : 2;
+    iChromaPitch = RoundUp(iLumaPitch, iRound) / 2;
+  }
+
+  return iChromaPitch * iNumPlanes;
+}
+
+/****************************************************************************/
+int AL_GetChromaWidth(TFourCC tFourCC, int iLumaWidth)
+{
+  AL_TPicFormat tPicFormat;
+  bool bSuccess = AL_GetPicFormat(tFourCC, &tPicFormat);
+  AL_Assert(bSuccess);
+
+  if(tPicFormat.eChromaMode == AL_CHROMA_MONO)
+    return 0;
+
+  int iNumPlanes = tPicFormat.eChromaOrder == AL_C_ORDER_SEMIPLANAR ? 2 : 1;
+  int iHrzScale = tPicFormat.eChromaMode == AL_CHROMA_4_4_4 ? 1 : 2;
+  return ((iLumaWidth + iHrzScale - 1) / iHrzScale) * iNumPlanes;
+}
+
+/****************************************************************************/
+int AL_GetChromaHeight(TFourCC tFourCC, int iLumaHeight)
+{
+  AL_EChromaMode eChromaMode = AL_GetChromaMode(tFourCC);
+
+  if(eChromaMode == AL_CHROMA_MONO)
+    return 0;
+
+  return eChromaMode == AL_CHROMA_4_2_0 ? (iLumaHeight + 1) / 2 : iLumaHeight;
 }
 
 /****************************************************************************/

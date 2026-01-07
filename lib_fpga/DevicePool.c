@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright (C) 2018 Allegro DVT2.  All rights reserved.
+* Copyright (C) 2008-2022 Allegro DVT2.  All rights reserved.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -41,8 +41,8 @@
 #include <stdio.h>
 #include <fcntl.h>
 #include "lib_rtos/types.h"
-#include <assert.h>
 #include "lib_rtos/lib_rtos.h"
+#include "lib_assert/al_assert.h"
 
 #include "DevicePool.h"
 
@@ -179,7 +179,7 @@ static int DevicePool_Close(struct DevicePool* pDP, int fd)
     goto exit;
   }
 
-  assert(pEntry->iRefCount > 0);
+  AL_Assert(pEntry->iRefCount > 0);
 
   pEntry->iRefCount -= 1;
 
@@ -203,13 +203,13 @@ static bool g_DevicePoolInit;
 static struct DevicePool g_DevicePool;
 
 static
-void AL_DevicePool_Deinit()
+void AL_DevicePool_Deinit(void)
 {
   DevicePool_Deinit(&g_DevicePool);
 }
 
 static
-bool AL_DevicePool_Init()
+bool AL_DevicePool_Init(void)
 {
   atexit(&AL_DevicePool_Deinit);
   return DevicePool_Init(&g_DevicePool);

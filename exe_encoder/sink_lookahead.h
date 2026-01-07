@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright (C) 2018 Allegro DVT2.  All rights reserved.
+* Copyright (C) 2008-2022 Allegro DVT2.  All rights reserved.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -35,13 +35,11 @@
 *
 ******************************************************************************/
 
-#if AL_ENABLE_TWOPASS
 #pragma once
 
 #include "sink_encoder.h"
 
 #include <memory>
-#include <deque>
 #include <stdexcept>
 
 /*
@@ -54,40 +52,59 @@
 */
 struct EncoderLookAheadSink : IFrameSink
 {
-  EncoderLookAheadSink(ConfigFile const& cfg, TScheduler* pScheduler, AL_TAllocator* pAllocator, BufPool & qpBufPool
+  EncoderLookAheadSink(ConfigFile const& cfg, EncoderSink* pBaseSink, AL_IEncScheduler* pScheduler, AL_TAllocator* pAllocator
                        ) :
     CmdFile(cfg.sCmdFileName),
     EncCmd(CmdFile, cfg.RunInfo.iScnChgLookAhead, cfg.Settings.tChParam[0].tGopParam.uFreqLT),
-    qpBuffers(qpBufPool, cfg.Settings, cfg.Settings.tChParam[0])
+    lookAheadMngr(cfg.Settings.LookAhead, cfg.Settings.bEnableFirstPassSceneChangeDetection)
   {
-    qpBuffers.setRoiFileName(cfg.sRoiFileName);
+    (void)pBaseSink;
+
+    BitstreamOutput.reset(new NullFrameSink);
+    RecOutput.reset(new NullFrameSink);
 
     AL_CB_EndEncoding onEndEncoding = { &EncoderLookAheadSink::EndEncoding, this };
-
-    ConfigFile cfgLA = cfg;
-
+    cfgLA = cfg;
     AL_TwoPassMngr_SetPass1Settings(cfgLA.Settings);
-    AL_Settings_CheckCoherency(&cfgLA.Settings, &cfgLA.Settings.tChParam[0], cfgLA.FileInfo.FourCC, NULL);
+
+    AL_Settings_CheckCoherency(&cfgLA.Settings, &cfgLA.Settings.tChParam[0], cfgLA.MainInput.FileInfo.FourCC, NULL);
+
+    qpBuffers.Configure(&cfgLA.Settings, cfgLA.RunInfo.eGenerateQpMode);
 
     AL_ERR errorCode = AL_Encoder_Create(&hEnc, pScheduler, pAllocator, &cfgLA.Settings, onEndEncoding);
 
     if(errorCode)
-      ThrowEncoderError(errorCode);
+      throw codec_error(AL_Codec_ErrorToString(errorCode), errorCode);
 
     commandsSender.reset(new CommandsSender(hEnc));
-    m_pictureType = cfg.RunInfo.printPictureType ? SLICE_MAX_ENUM : -1;
+    m_pictureType = cfg.RunInfo.printPictureType ? AL_SLICE_MAX_ENUM : -1;
 
-    bEndOfStream = false;
-    uLookAheadSize = cfg.Settings.LookAhead;
-    bUseComplexity = (uLookAheadSize >= 10);
+    bEnableFirstPassSceneChangeDetection = false;
+    bEnableFirstPassSceneChangeDetection = cfg.Settings.bEnableFirstPassSceneChangeDetection;
     EOSFinished = Rtos_CreateEvent(false);
+    FifoFlushFinished = Rtos_CreateEvent(false);
     iNumLayer = cfg.Settings.NumLayer;
+
+    iNumFrameEnded = 0;
+
+    m_maxpicCount = cfg.RunInfo.iMaxPict;
   }
 
   ~EncoderLookAheadSink()
   {
     AL_Encoder_Destroy(hEnc);
     Rtos_DeleteEvent(EOSFinished);
+    Rtos_DeleteEvent(FifoFlushFinished);
+  }
+
+  void AddQpBufPool(QPBuffers::QPLayerInfo qpInf, int iLayerID)
+  {
+    qpBuffers.AddBufPool(qpInf, iLayerID);
+  }
+
+  void PreprocessFrame() override
+  {
+    EncCmd.Process(commandsSender.get(), m_picCount);
   }
 
   void ProcessFrame(AL_TBuffer* Src) override
@@ -96,8 +113,6 @@ struct EncoderLookAheadSink : IFrameSink
 
     if(Src)
     {
-      EncCmd.Process(commandsSender.get(), m_picCount);
-
 
       auto pPictureMetaLA = (AL_TLookAheadMetaData*)AL_Buffer_GetMetaData(Src, AL_META_TYPE_LOOKAHEAD);
 
@@ -114,8 +129,13 @@ struct EncoderLookAheadSink : IFrameSink
 
     std::shared_ptr<AL_TBuffer> QpBufShared(QpBuf, [&](AL_TBuffer* pBuf) { qpBuffers.releaseBuffer(pBuf); });
 
-    if(!AL_Encoder_Process(hEnc, Src, QpBuf))
-      throw std::runtime_error("Failed LA");
+    if(m_picCount <= m_maxpicCount)
+    {
+      AL_TBuffer* pSrc = (m_picCount == m_maxpicCount) ? nullptr : Src;
+
+      if(!AL_Encoder_Process(hEnc, pSrc, QpBuf))
+        throw std::runtime_error("Failed LA");
+    }
 
     if(Src)
       m_picCount++;
@@ -123,30 +143,30 @@ struct EncoderLookAheadSink : IFrameSink
     {
       // the main process waits for the LookAhead to end so he can flush the fifo
       Rtos_WaitEvent(EOSFinished, AL_WAIT_FOREVER);
-      ProcessFifo();
+      ProcessFifo(true, false);
     }
   }
 
-
   AL_HEncoder hEnc;
   IFrameSink* next;
+  std::unique_ptr<IFrameSink> BitstreamOutput;
+  std::unique_ptr<IFrameSink> RecOutput;
 
 private:
   int m_picCount = 0;
+  int m_maxpicCount = -1;
   int m_pictureType = -1;
   std::ifstream CmdFile;
   CEncCmdMngr EncCmd;
+  ConfigFile cfgLA;
   QPBuffers qpBuffers;
   std::unique_ptr<CommandsSender> commandsSender;
-  std::deque<AL_TBuffer*> m_fifo;
-  bool bEndOfStream;
-  uint16_t uLookAheadSize;
-  bool bUseComplexity;
-  int iComplexity = 1000;
-  int iComplexityCount = 0;
-  int iComplexityDiff = 0;
+  LookAheadMngr lookAheadMngr;
+  bool bEnableFirstPassSceneChangeDetection;
   AL_EVENT EOSFinished;
+  AL_EVENT FifoFlushFinished;
   int iNumLayer;
+  int iNumFrameEnded;
 
   static inline bool isStreamReleased(AL_TBuffer* pStream, AL_TBuffer const* pSrc)
   {
@@ -165,17 +185,24 @@ private:
     if(isStreamReleased(pStream, pSrc) || isSourceReleased(pStream, pSrc))
       return;
 
-    pThis->AddFifo((AL_TBuffer*)pSrc);
+    pThis->AddFifo(const_cast<AL_TBuffer*>(pSrc), pStream);
 
     pThis->processOutputLookAhead(pStream);
   }
 
   void processOutputLookAhead(AL_TBuffer* pStream)
   {
+    BitstreamOutput->ProcessFrame(pStream);
     AL_ERR eErr = AL_Encoder_GetLastError(hEnc);
 
-    if(eErr != AL_SUCCESS)
-      ThrowEncoderError(eErr);
+    if(AL_IS_ERROR_CODE(eErr))
+    {
+      LogError("%s\n", AL_Codec_ErrorToString(eErr));
+      g_EncoderLastError = eErr;
+    }
+
+    if(AL_IS_WARNING_CODE(eErr))
+      LogWarning("%s\n", AL_Codec_ErrorToString(eErr));
 
     if(pStream)
     {
@@ -183,105 +210,73 @@ private:
       assert(bRet);
     }
 
-    TRecPic RecPic;
+    AL_TRecPic RecPic;
 
     while(AL_Encoder_GetRecPicture(hEnc, &RecPic))
+    {
+      RecOutput->ProcessFrame(RecPic.pBuf);
       AL_Encoder_ReleaseRecPicture(hEnc, &RecPic);
+    }
   }
 
-  bool AddFifo(AL_TBuffer* pSrc)
+  void AddFifo(AL_TBuffer* pSrc, AL_TBuffer* pStream)
   {
-    bool bRet = true;
-
-    if(pSrc)
+    if(!pSrc)
     {
-      AL_Buffer_Ref(pSrc);
-      m_fifo.push_back(pSrc);
-      ProcessFifo();
-    }
-    else
-    {
-      bEndOfStream = true;
       Rtos_SetEvent(EOSFinished);
+      return;
     }
-    return bRet;
+
+    if(!pStream)
+      return;
+
+    bool bIsRepeat = false;
+    AL_TPictureMetaData* pPictureMeta = (AL_TPictureMetaData*)AL_Buffer_GetMetaData(pStream, AL_META_TYPE_PICTURE);
+    assert(pPictureMeta);
+    bIsRepeat = pPictureMeta->eType == AL_SLICE_REPEAT;
+
+    if(bIsRepeat)
+      return;
+
+    AL_Buffer_Ref(pSrc);
+    lookAheadMngr.m_fifo.push_back(pSrc);
+
+    ProcessFifo(false, false);
+
+    ++iNumFrameEnded;
   }
 
-  void ProcessFifo()
+  AL_TBuffer* GetSrcBuffer()
   {
-    if(bUseComplexity)
-      ComputeComplexity();
+    AL_TBuffer* pSrc = lookAheadMngr.m_fifo.front();
+    lookAheadMngr.m_fifo.pop_front();
+    return pSrc;
+  }
+
+  void ProcessFifo(bool isEOS, bool NoFirstPass)
+  {
+    auto iLASize = lookAheadMngr.uLookAheadSize;
 
     // Fifo is empty, we propagate the EndOfStream
-    if(bEndOfStream && m_fifo.size() == 0)
+    if(isEOS && lookAheadMngr.m_fifo.size() == 0)
     {
+      next->PreprocessFrame();
       next->ProcessFrame(NULL);
     }
     // Fifo is full, or fifo must be emptied at EOS
-    else if(bEndOfStream || m_fifo.size() == uLookAheadSize)
+    else if((lookAheadMngr.m_fifo.size() != 0) && (isEOS || iNumFrameEnded == iLASize || NoFirstPass))
     {
-      AL_TBuffer* pSrc = m_fifo.front();
-      m_fifo.pop_front();
+      iNumFrameEnded--;
+      lookAheadMngr.ProcessLookAheadParams();
+      AL_TBuffer* pSrc = GetSrcBuffer();
 
-      ProcessLookAheadParams(pSrc);
-
+      next->PreprocessFrame();
       next->ProcessFrame(pSrc);
       AL_Buffer_Unref(pSrc);
 
-
-      if(bEndOfStream)
-        ProcessFifo();
-    }
-  }
-
-  void ProcessLookAheadParams(AL_TBuffer* pSrc)
-  {
-    auto pPictureMetaLA = (AL_TLookAheadMetaData*)AL_Buffer_GetMetaData(pSrc, AL_META_TYPE_LOOKAHEAD);
-    int iFifoSize = static_cast<int>(m_fifo.size());
-
-    if(pPictureMetaLA)
-    {
-      if(bUseComplexity)
-        pPictureMetaLA->iComplexity = iComplexity;
-
-      if(iFifoSize >= 1)
-      {
-        pPictureMetaLA->bNextSceneChange = AL_TwoPassMngr_SceneChangeDetected(pSrc, m_fifo[0]);
-        pPictureMetaLA->iIPRatio = AL_TwoPassMngr_GetIPRatio(pSrc, m_fifo[0]);
-
-        for(int i = 1; i < Min(iFifoSize, 3) && !AL_TwoPassMngr_SceneChangeDetected(m_fifo[i - 1], m_fifo[i]); i++)
-          pPictureMetaLA->iIPRatio = Min(pPictureMetaLA->iIPRatio, AL_TwoPassMngr_GetIPRatio(pSrc, m_fifo[i]));
-      }
-    }
-  }
-
-  void ComputeComplexity()
-  {
-    iComplexityCount++;
-    int iFifoSize = static_cast<int>(m_fifo.size());
-
-    if(iComplexityCount >= 5 && (bEndOfStream || iFifoSize == uLookAheadSize))
-    {
-      iComplexityCount = 0;
-      iComplexity = 1000;
-
-      if(iFifoSize >= 5 && AL_Buffer_GetMetaData(m_fifo.front(), AL_META_TYPE_LOOKAHEAD))
-      {
-        intmax_t iComp[2] = { 0, 0 };
-
-        for(int i = 0; i < iFifoSize; i++)
-        {
-          auto pPictureMetaLA = (AL_TLookAheadMetaData*)AL_Buffer_GetMetaData(m_fifo[i], AL_META_TYPE_LOOKAHEAD);
-          iComp[(i < 5) ? 0 : 1] += pPictureMetaLA->iPictureSize;
-        }
-
-        iComplexity = ((1000 * iFifoSize / 5) + iComplexityDiff) * iComp[0] / (iComp[0] + iComp[1]);
-        iComplexity = Min(3000, Max(100, iComplexity));
-        iComplexityDiff += (1000 - iComplexity);
-      }
+      if(isEOS)
+        ProcessFifo(isEOS, NoFirstPass);
     }
   }
 };
-
-#endif
 

@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright (C) 2018 Allegro DVT2.  All rights reserved.
+* Copyright (C) 2008-2022 Allegro DVT2.  All rights reserved.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -53,11 +53,14 @@
    picture slice data
    \param[in] iWidth Encoded picture width
    \param[in] iHeight Encoded picture height
-   \param[in] uMaxCuSize Maximum coding unit Size
-   \param[in] uMinCuSize Minimum coding unit Size
-   \param[in] uNumLCU Number of coding tree blocks to be generated
+   \param[in] uLog2MaxCuSize Max size of a coding unit (log2)
+   \param[in] uLog2MinCuSize Min size of a coding unit (log2)
+   \param[in] iTileColumns Number of tile columns in the picture
+   \param[in] iTileRows Number of tile rows in the picture
+   \param[in] pTileWidths Array with the tile column widths
+   \param[in] pTileHeights Array of the tile row heights
 *****************************************************************************/
-extern bool AL_HEVC_GenerateSkippedPicture(AL_TSkippedPicture* pSkipPict, int iWidth, int iHeight, uint8_t uMaxCuSize, uint8_t uMinCuSize, uint32_t uNumLCU);
+extern bool AL_HEVC_GenerateSkippedPicture(AL_TSkippedPicture* pSkipPict, int iWidth, int iHeight, uint8_t uLog2MaxCuSize, uint8_t uLog2MinCuSize, int iTileColumns, int iTileRows, uint16_t* pTileWidths, uint16_t* pTileHeights);
 
 /****************************************************************************/
 

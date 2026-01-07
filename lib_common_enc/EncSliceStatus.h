@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright (C) 2018 Allegro DVT2.  All rights reserved.
+* Copyright (C) 2008-2022 Allegro DVT2.  All rights reserved.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -75,7 +75,6 @@ typedef struct AL_t_SliceStatus
   int16_t iMaxQP; /*!< Maximum QP value */
   uint16_t uNumSlices; /*!< Number of slices */
   int32_t iEstimNumBytes; /*!< Estimated Number of bytes in the stream (AVC multi-core only) */
-
 
   uint32_t SyntaxElements;
 }AL_TEncSliceStatus;

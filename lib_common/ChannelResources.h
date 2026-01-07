@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright (C) 2018 Allegro DVT2.  All rights reserved.
+* Copyright (C) 2008-2022 Allegro DVT2.  All rights reserved.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -42,13 +42,23 @@ typedef struct
 {
   int minWidth;
   int maxWidth;
+  int lcuSize;
   int resources;
   bool enableMultiCore;
 }AL_CoreConstraint;
 
-void AL_CoreConstraint_Init(AL_CoreConstraint* constraint, int coreFrequency, int margin, int hardwareCyclesCount, int minWidth, int maxWidth);
+void AL_CoreConstraint_Init(AL_CoreConstraint* constraint, int coreFrequency, int margin, int hardwareCyclesCount, int minWidth, int maxWidth, int lcuSize);
 int AL_CoreConstraint_GetExpectedNumberOfCores(AL_CoreConstraint* constraint, int width, int height, int frameRate, int clockRatio);
 int AL_CoreConstraint_GetMinCoresCount(AL_CoreConstraint* constraint, int width);
 
 int AL_GetResources(int width, int height, int frameRate, int clockRatio);
+
+/* Doesn't support NUMCORE_AUTO, only works on actual number of cores. */
+typedef struct
+{
+  int requiredWidthInCtbPerCore;
+  int actualWidthInCtbPerCore; /* calculated without taking the alignement of the cores in consideration */
+}AL_NumCoreDiagnostic;
+
+bool AL_Constraint_NumCoreIsSane(int width, int numCore, int log2MaxCuSize, AL_NumCoreDiagnostic* diagnostic);
 

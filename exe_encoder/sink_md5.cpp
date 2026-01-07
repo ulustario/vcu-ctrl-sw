@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright (C) 2018 Allegro DVT2.  All rights reserved.
+* Copyright (C) 2008-2022 Allegro DVT2.  All rights reserved.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -38,56 +38,110 @@
 #include <fstream>
 #include "lib_app/utils.h"
 #include "sink_md5.h"
-#include "MD5.h"
+#include "lib_app/MD5.h"
+#include "lib_app/YuvIO.h"
 #include "CodecUtils.h"
 
 extern "C"
 {
-#include "lib_common/BufferSrcMeta.h"
+#include "lib_common/PixMapBuffer.h"
+#include "lib_common/BufferStreamMeta.h"
 }
 
-void RecToYuv(AL_TBuffer const* pRec, AL_TBuffer* pYuv, TFourCC tFourCC);
+void RecToYuv(AL_TBuffer const* pRec, AL_TBuffer* pYuv, TFourCC tYuvFourCC);
 
-class Md5Calculator : public IFrameSink
+class YuvMd5Calculator : public IFrameSink, Md5Calculator
 {
 public:
-  Md5Calculator(std::string path, ConfigFile& cfg_, AL_TBuffer* Yuv_) :
-    Yuv(Yuv_),
+  YuvMd5Calculator(std::string& path, ConfigFile& cfg_) :
+    Md5Calculator(path),
     fourcc(cfg_.RecFourCC)
   {
-    OpenOutput(m_Md5File, path);
   }
 
-  void ProcessFrame(AL_TBuffer* pBuf)
+  void ProcessFrame(AL_TBuffer* pBuf) override
   {
     if(pBuf == EndOfStream)
     {
-      auto const sMD5 = m_MD5.GetMD5();
-      m_Md5File << sMD5;
+      Md5Output();
       return;
     }
 
-    auto meta = (AL_TSrcMetaData*)AL_Buffer_GetMetaData(pBuf, AL_META_TYPE_SOURCE);
+    TFourCC tRecFourCC = AL_PixMapBuffer_GetFourCC(pBuf);
 
-    if(meta->tFourCC != fourcc)
+    if(tRecFourCC != fourcc && !AL_IsCompressed(tRecFourCC))
     {
-      RecToYuv(pBuf, Yuv, fourcc);
-      pBuf = Yuv;
+      CheckAndAllocateConversionBuffer(pBuf);
+      RecToYuv(pBuf, m_convYUV.get(), fourcc);
+      pBuf = m_convYUV.get();
     }
 
-    m_MD5.Update(AL_Buffer_GetData(pBuf), pBuf->zSize);
+    int iChunkCnt = AL_Buffer_GetChunkCount(pBuf);
+
+    for(int i = 0; i < iChunkCnt; i++)
+      m_MD5.Update(AL_Buffer_GetDataChunk(pBuf, i), AL_Buffer_GetSizeChunk(pBuf, i));
   }
 
-
 private:
-  std::ofstream m_Md5File;
-  CMD5 m_MD5;
-  AL_TBuffer* const Yuv;
+  std::shared_ptr<AL_TBuffer> m_convYUV;
   TFourCC const fourcc;
+
+  void CheckAndAllocateConversionBuffer(AL_TBuffer* pBuf)
+  {
+    AL_TDimension tOutputDim = AL_PixMapBuffer_GetDimension(pBuf);
+
+    if(m_convYUV != nullptr)
+    {
+      AL_TDimension tConvDim = AL_PixMapBuffer_GetDimension(m_convYUV.get());
+
+      if(tConvDim.iHeight >= tOutputDim.iHeight && tConvDim.iWidth >= tOutputDim.iWidth)
+        return;
+    }
+
+    AL_TBuffer* pYuv = AllocateDefaultYuvIOBuffer(tOutputDim, fourcc);
+
+    if(pYuv == nullptr)
+      throw std::runtime_error("Couldn't allocate reconstruct conversion buffer");
+
+    m_convYUV = std::shared_ptr<AL_TBuffer>(pYuv, &AL_Buffer_Destroy);
+
+  }
 };
 
-std::unique_ptr<IFrameSink> createMd5Calculator(std::string path, ConfigFile& cfg_, AL_TBuffer* Yuv_)
+std::unique_ptr<IFrameSink> createYuvMd5Calculator(std::string path, ConfigFile& cfg_)
 {
-  return std::unique_ptr<IFrameSink>(new Md5Calculator(path, cfg_, Yuv_));
+  return std::unique_ptr<IFrameSink>(new YuvMd5Calculator(path, cfg_));
+}
+
+class StreamMd5Calculator : public IFrameSink, Md5Calculator
+{
+public:
+  StreamMd5Calculator(std::string& path) :
+    Md5Calculator(path)
+  {}
+
+  void ProcessFrame(AL_TBuffer* pBuf) override
+  {
+    if(pBuf == EndOfStream)
+    {
+      Md5Output();
+      return;
+    }
+
+    AL_TStreamMetaData* pMeta = reinterpret_cast<AL_TStreamMetaData*>(AL_Buffer_GetMetaData(pBuf, AL_META_TYPE_STREAM));
+
+    if(pMeta)
+    {
+      uint8_t* pStreamData = AL_Buffer_GetData(pBuf);
+
+      for(int i = 0; i < pMeta->uNumSection; i++)
+        m_MD5.Update(pStreamData + pMeta->pSections[i].uOffset, pMeta->pSections[i].uLength);
+    }
+  }
+};
+
+std::unique_ptr<IFrameSink> createStreamMd5Calculator(std::string path)
+{
+  return std::unique_ptr<IFrameSink>(new StreamMd5Calculator(path));
 }
 

@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright (C) 2018 Allegro DVT2.  All rights reserved.
+* Copyright (C) 2008-2022 Allegro DVT2.  All rights reserved.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -42,7 +42,6 @@
 #include <iostream>
 
 #define SEQUENCE_SIZE_MAX 1000
-#define LOCAL_RANGE 5
 
 using namespace std;
 
@@ -54,9 +53,31 @@ static bool SceneChangeDetected(AL_TLookAheadMetaData* pPrevMeta, AL_TLookAheadM
   if(!pPrevMeta || !pCurrentMeta)
     return false;
 
-  auto iPercent = 100 * pCurrentMeta->iPercentIntra;
-  auto iIntraRatio = (pPrevMeta->iPercentIntra != 0) ? iPercent / pPrevMeta->iPercentIntra : iPercent;
-  return (pCurrentMeta->iPercentSkip < 5) && ((pCurrentMeta->iPercentIntra == 100) || (pCurrentMeta->iPercentIntra >= 80 && iIntraRatio > 200));
+  auto iPercent = 100 * pCurrentMeta->iPercentIntra[0];
+  auto iIntraRatio = (pPrevMeta->iPercentIntra[0] != 0) ? iPercent / pPrevMeta->iPercentIntra[0] : iPercent;
+  return (pCurrentMeta->iPercentIntra[0] >= 95 && iIntraRatio > 135) || (pCurrentMeta->iPercentIntra[0] >= 80 && iIntraRatio > 200);
+}
+
+/***************************************************************************/
+static bool SceneChangeDetected_Crop(AL_TLookAheadMetaData* pPrevMeta, AL_TLookAheadMetaData* pCurrentMeta)
+{
+  if(!pPrevMeta || !pCurrentMeta)
+    return false;
+
+  int iOk = 0, iKo = 0;
+
+  for(int8_t i = 0; i < 5; i++)
+  {
+    auto iPercent = 100 * pCurrentMeta->iPercentIntra[i];
+    auto iIntraRatio = (pPrevMeta->iPercentIntra[i] != 0) ? iPercent / pPrevMeta->iPercentIntra[i] : iPercent;
+
+    if((pCurrentMeta->iPercentIntra[i] >= 95 && iIntraRatio > 135) || (pCurrentMeta->iPercentIntra[i] >= 80 && iIntraRatio > 200))
+      iOk++;
+    else if(pCurrentMeta->iPercentIntra[i] < 40)
+      iKo++;
+  }
+
+  return iOk >= 3 && iKo == 0;
 }
 
 /***************************************************************************/
@@ -69,11 +90,40 @@ static int32_t GetIPRatio(AL_TLookAheadMetaData* pCurrentMeta, AL_TLookAheadMeta
 }
 
 /***************************************************************************/
-/*LookAhead Methods*/
+AL_TLookAheadMetaData* AL_TwoPassMngr_CreateAndAttachTwoPassMetaData(AL_TBuffer* Src)
+{
+  auto pPictureMetaTP = reinterpret_cast<AL_TLookAheadMetaData*>(AL_Buffer_GetMetaData(Src, AL_META_TYPE_LOOKAHEAD));
+
+  if(!pPictureMetaTP)
+  {
+    pPictureMetaTP = AL_LookAheadMetaData_Create();
+    bool success = AL_Buffer_AddMetaData(Src, reinterpret_cast<AL_TMetaData*>(pPictureMetaTP));
+    assert(success);
+  }
+  AL_LookAheadMetaData_Reset(pPictureMetaTP);
+  return pPictureMetaTP;
+}
+
 /***************************************************************************/
-bool AL_TwoPassMngr_HasLookAhead(AL_TEncSettings settings)
+bool AL_TwoPassMngr_HasLookAhead(AL_TEncSettings const& settings)
 {
   return settings.LookAhead > 0;
+}
+
+/***************************************************************************/
+static void setPass1RateControlSettings(AL_TEncChanParam& channel)
+{
+  channel.tRCParam.eRCMode = AL_RC_CONST_QP;
+  channel.tRCParam.iInitialQP = AL_RC_FIRSTPASS_QP;
+  channel.tRCParam.eOptions = static_cast<AL_ERateCtrlOption>(channel.tRCParam.eOptions & (~AL_RC_OPT_ENABLE_SKIP));
+}
+
+/***************************************************************************/
+static void setPass1GopSettings(AL_TGopParam& gop)
+{
+  gop.eMode = AL_GOP_MODE_LOW_DELAY_P;
+  gop.uGopLength = 0;
+  gop.uNumB = 0;
 }
 
 /***************************************************************************/
@@ -81,44 +131,51 @@ void AL_TwoPassMngr_SetPass1Settings(AL_TEncSettings& settings)
 {
   settings.NumLayer = 1;
   auto& channel = settings.tChParam[0];
-  channel.tRCParam.eRCMode = AL_RC_CONST_QP;
-  channel.tRCParam.iInitialQP = 20;
-  channel.tGopParam.eMode = AL_GOP_MODE_LOW_DELAY_P;
-  channel.tGopParam.uGopLength = 0;
-  channel.tGopParam.uNumB = 0;
+  channel.bSubframeLatency = false;
+  channel.eLdaCtrlMode = AL_DEFAULT_LDA;
+
+  if(settings.bEnableFirstPassSceneChangeDetection)
+  {
+    channel.eEncOptions = static_cast<AL_EChEncOption>(channel.eEncOptions | AL_OPT_SCENE_CHANGE_DETECTION);
+    channel.uNumSlices = 1;
+  }
+
+  setPass1RateControlSettings(channel);
+  setPass1GopSettings(channel.tGopParam);
 }
 
 /***************************************************************************/
-bool AL_TwoPassMngr_SceneChangeDetected(AL_TBuffer* pPrevSrc, AL_TBuffer* pCurrentSrc)
+static bool DetectPatternTwoFrames(vector<int> v)
 {
-  if(!pPrevSrc || !pCurrentSrc)
+  if(v.size() < 5)
     return false;
 
-  auto pPreviousMeta = reinterpret_cast<AL_TLookAheadMetaData*>(AL_Buffer_GetMetaData(pPrevSrc, AL_META_TYPE_LOOKAHEAD));
-  auto pCurrentMeta = reinterpret_cast<AL_TLookAheadMetaData*>(AL_Buffer_GetMetaData(pCurrentSrc, AL_META_TYPE_LOOKAHEAD));
+  int nb_zero = 0, ecart = 0, ecart_max = 0;
 
-  return SceneChangeDetected(pPreviousMeta, pCurrentMeta);
-}
+  for(int i = 1; i < (int)v.size(); i++)
+  {
+    if(v[i] == 0)
+    {
+      nb_zero++;
+      ecart_max = max(ecart_max, ecart);
+      ecart = 0;
+    }
+    else
+      ecart++;
+  }
 
-/***************************************************************************/
-int32_t AL_TwoPassMngr_GetIPRatio(AL_TBuffer* pCurrentSrc, AL_TBuffer* pNextSrc)
-{
-  auto pCurrentMeta = reinterpret_cast<AL_TLookAheadMetaData*>(AL_Buffer_GetMetaData(pCurrentSrc, AL_META_TYPE_LOOKAHEAD));
-  auto pNextMeta = reinterpret_cast<AL_TLookAheadMetaData*>(AL_Buffer_GetMetaData(pNextSrc, AL_META_TYPE_LOOKAHEAD));
-
-  return GetIPRatio(pCurrentMeta, pNextMeta);
+  return ecart_max == 1 && nb_zero >= ((int)v.size() - 1) / 2;
 }
 
 /***************************************************************************/
 /*Offline TwoPass methods*/
 /***************************************************************************/
-TwoPassMngr::TwoPassMngr(string p_FileName, int p_iPass)
+TwoPassMngr::TwoPassMngr(std::string p_FileName, int p_iPass, bool p_bEnabledFirstPassSceneChangeDetection, int p_iGopSize, int p_iCpbLevel, int p_iInitialLevel, int p_iFrameRate) :
+  iPass(p_iPass), bEnableFirstPassSceneChangeDetection(p_bEnabledFirstPassSceneChangeDetection), iGopSize(p_iGopSize),
+  iCpbLevel(p_iCpbLevel), iInitialLevel(p_iInitialLevel), iFrameRate(p_iFrameRate)
 {
-  FileName = p_FileName;
-  iPass = p_iPass;
-  iCurrentFrame = 0;
+  FileName = { p_FileName };
   tFrames.clear();
-  OpenLog();
 }
 
 /***************************************************************************/
@@ -132,10 +189,20 @@ TwoPassMngr::~TwoPassMngr()
 void TwoPassMngr::OpenLog()
 {
   if(iPass == 1)
+  {
     outputFile.open(FileName);
 
+    if(!outputFile.is_open())
+      throw runtime_error("Can't open TwoPass LogFile");
+  }
+
   if(iPass == 2)
+  {
     inputFile.open(FileName);
+
+    if(!inputFile.is_open())
+      throw runtime_error("Can't open TwoPass LogFile");
+  }
 }
 
 /***************************************************************************/
@@ -149,7 +216,7 @@ void TwoPassMngr::CloseLog()
 void TwoPassMngr::EmptyLog()
 {
   if(!inputFile.is_open())
-    throw runtime_error("Can't open TwoPass LogFile");
+    OpenLog();
 
   tFrames.clear();
 
@@ -162,15 +229,14 @@ void TwoPassMngr::EmptyLog()
     inputFile.getline(sLine, 256);
 
     auto str_PicSize = strtok(sLine, " ");
-    auto str_PercentIntra = strtok(NULL, " ");
-    auto str_PercentSkip = strtok(NULL, " ");
+    auto str_PercentIntra = strtok(nullptr, " ");
 
-    bFind = (str_PicSize != NULL && str_PercentIntra != NULL && str_PercentSkip != NULL);
+    bFind = ((str_PicSize != nullptr) && (str_PercentIntra != nullptr));
 
     if(!bFind)
       break;
 
-    AddNewFrame(atoi(str_PicSize), atoi(str_PercentIntra), atoi(str_PercentSkip));
+    AddNewFrame(atoi(str_PicSize), atoi(str_PercentIntra));
     i++;
   }
 
@@ -181,23 +247,22 @@ void TwoPassMngr::EmptyLog()
 void TwoPassMngr::FillLog()
 {
   if(!outputFile.is_open())
-    throw runtime_error("Can't open TwoPass LogFile");
+    OpenLog();
 
   for(auto frame: tFrames)
-    outputFile << frame.iPictureSize << " " << static_cast<int>(frame.iPercentIntra) << " " << static_cast<int>(frame.iPercentSkip) << endl;
+    outputFile << frame.iPictureSize << " " << static_cast<int>(frame.iPercentIntra[0]) << endl;
 
   tFrames.clear();
 }
 
 /***************************************************************************/
-void TwoPassMngr::AddNewFrame(int iPictureSize, int iPercentIntra, int iPercentSkip)
+void TwoPassMngr::AddNewFrame(int iPictureSize, int iPercentIntra)
 {
   AL_TLookAheadMetaData tParams;
   tParams.iPictureSize = iPictureSize;
-  tParams.iPercentIntra = iPercentIntra;
-  tParams.iPercentSkip = iPercentSkip;
+  tParams.iPercentIntra[0] = iPercentIntra;
   tParams.iComplexity = 0;
-  tParams.bNextSceneChange = false;
+  tParams.eSceneChange = AL_SC_NONE;
   tParams.iIPRatio = 1000;
   tFrames.push_back(tParams);
 }
@@ -236,28 +301,20 @@ void TwoPassMngr::GetFrame(AL_TLookAheadMetaData* pMetaData)
 }
 
 /***************************************************************************/
-AL_TLookAheadMetaData* TwoPassMngr::CreateAndAttachTwoPassMetaData(AL_TBuffer* Src)
-{
-  auto pPictureMetaTP = reinterpret_cast<AL_TLookAheadMetaData*>(AL_Buffer_GetMetaData(Src, AL_META_TYPE_LOOKAHEAD));
-
-  if(!pPictureMetaTP)
-  {
-    pPictureMetaTP = AL_LookAheadMetaData_Create();
-    bool success = AL_Buffer_AddMetaData(Src, reinterpret_cast<AL_TMetaData*>(pPictureMetaTP));
-    assert(success);
-  }
-  AL_LookAheadMetaData_Reset(pPictureMetaTP);
-  return pPictureMetaTP;
-}
-
-/***************************************************************************/
 void TwoPassMngr::ComputeTwoPass()
 {
-  ComputeComplexity();
   auto iSequenceSize = static_cast<int>(tFrames.size());
 
+  if(HasPatternTwoFrames())
+  {
+    for(int i = 0; i < iSequenceSize - 1; i++)
+      tFrames[i].iPictureSize = 0;
+
+    return;
+  }
+
   for(int i = 0; i < iSequenceSize - 1; i++)
-    tFrames[i].bNextSceneChange = SceneChangeDetected(&tFrames[i], &tFrames[i + 1]);
+    tFrames[i].eSceneChange = SceneChangeDetected(&tFrames[i], &tFrames[i + 1]) ? AL_SC_NEXT : AL_SC_NONE;
 
   for(int i = 0; i < iSequenceSize - 1; i++)
   {
@@ -266,20 +323,8 @@ void TwoPassMngr::ComputeTwoPass()
     for(int k = i + 2; k < min(iSequenceSize, i + 4) && !SceneChangeDetected(&tFrames[k - 1], &tFrames[k]); k++)
       tFrames[i].iIPRatio = min(tFrames[i].iIPRatio, GetIPRatio(&tFrames[i], &tFrames[k]));
   }
-}
 
-/***************************************************************************/
-static int GetLocalComplexity(vector<AL_TLookAheadMetaData> tFrames, int iLocalIndex, int iIndexMax, size_t zPicSizeMoy)
-{
-  if(iIndexMax - iLocalIndex < LOCAL_RANGE)
-    return 1000;
-
-  size_t zSumLocal = 0;
-
-  for(int k = 0; k < LOCAL_RANGE; k++)
-    zSumLocal += tFrames[iLocalIndex + k].iPictureSize;
-
-  return 1000 * (zSumLocal / LOCAL_RANGE) / zPicSizeMoy;
+  ComputeComplexity();
 }
 
 /***************************************************************************/
@@ -288,21 +333,263 @@ void TwoPassMngr::ComputeComplexity()
   auto iSequenceSize = static_cast<int>(tFrames.size());
   assert(iSequenceSize > 0);
   assert(iSequenceSize <= SEQUENCE_SIZE_MAX);
+  assert(iCpbLevel >= iInitialLevel);
 
-  size_t zSumPicSize = 0;
+  if(iGopSize == 0 || iSequenceSize == 0)
+    return;
 
-  for(auto frame: tFrames)
-    zSumPicSize += frame.iPictureSize;
+  size_t uSumCompGops = 0;
+  int iIndex = 0, iNbGop = 0;
 
-  auto zPicSizeMoy = zSumPicSize / iSequenceSize;
-
-  int iComplexity = 1000;
-
-  for(int k = 0; k < iSequenceSize; k++)
+  while(iIndex < iSequenceSize)
   {
-    if(k % LOCAL_RANGE == 0)
-      iComplexity = GetLocalComplexity(tFrames, k, iSequenceSize, zPicSizeMoy);
-    tFrames[k].iComplexity = iComplexity;
+    int iLength = 0;
+    size_t uSumComp = 0;
+
+    while(iLength < iGopSize && iIndex + iLength < iSequenceSize)
+    {
+      uSumComp += tFrames[iIndex + iLength].iPictureSize;
+      iLength++;
+
+      if(tFrames[iIndex + iLength - 1].eSceneChange == AL_SC_NEXT)
+        break;
+    }
+
+    int iComp = iLength ? uSumComp / iLength : uSumComp;
+
+    for(int k = 0; k < iLength; k++)
+      tFrames[iIndex + k].iComplexity = iComp;
+
+    uSumCompGops += iComp;
+    iNbGop++;
+    iIndex += iLength;
   }
+
+  int iMeanComp = uSumCompGops / iNbGop;
+
+  int iLevel = 0, iLevelMax = 0, iLevelMin = 0;
+  int iLimitMin = -iInitialLevel;
+  int iLimitMax = (iCpbLevel - iInitialLevel);
+
+  for(int i = 0; i < iSequenceSize; i++)
+  {
+    tFrames[i].iComplexity = (tFrames[i].iComplexity * 1000 / iMeanComp) - 1000;
+    iLevel -= tFrames[i].iComplexity / iFrameRate;
+    iLevelMax = max(iLevelMax, iLevel);
+    iLevelMin = min(iLevelMin, iLevel);
+  }
+
+  int iCoeff = 1000;
+
+  if(iLevelMax > 0)
+    iCoeff = min(iCoeff, iLimitMax * 1000 / iLevelMax);
+
+  if(iLevelMin < 0)
+    iCoeff = min(iCoeff, iLimitMin * 900 / iLevelMin);
+
+  for(int i = 0; i < iSequenceSize; i++)
+    tFrames[i].iComplexity = (tFrames[i].iComplexity * iCoeff / 1000) + 1000;
+
+  iIndex = 0;
+  iLevel = iInitialLevel;
+
+  while(iIndex < iSequenceSize)
+  {
+    int iLength = 0;
+
+    while(iLength < iGopSize && iIndex + iLength < iSequenceSize)
+    {
+      iLength++;
+
+      if(tFrames[iIndex + iLength - 1].eSceneChange == AL_SC_NEXT)
+        break;
+    }
+
+    int iTarget = iLevel - iGopSize * (tFrames[iIndex].iComplexity - 1000) / iFrameRate;
+    iLevel -= iLength * (tFrames[iIndex].iComplexity - 1000) / iFrameRate;
+
+    for(int k = 0; k < iLength; k++)
+      tFrames[iIndex + k].iTargetLevel = iTarget;
+
+    iIndex += iLength;
+  }
+}
+
+/***************************************************************************/
+bool TwoPassMngr::HasPatternTwoFrames()
+{
+  vector<int> v {};
+
+  for(auto i = tFrames.begin(); i < tFrames.end(); i++)
+    v.push_back(i->iPercentIntra[0]);
+
+  return DetectPatternTwoFrames(v);
+}
+
+/***************************************************************************/
+/*LookAhead structures and methods*/
+/***************************************************************************/
+LookAheadMngr::LookAheadMngr(int p_iLookAhead, bool p_bEnableFirstPassSceneChangeDetection) : uLookAheadSize(p_iLookAhead), bEnableFirstPassSceneChangeDetection(p_bEnableFirstPassSceneChangeDetection)
+{
+  iComplexity = 1000;
+  iFrameCount = 0;
+  iComplexityDiff = 0;
+  bUseComplexity = (uLookAheadSize >= 10 && !bEnableFirstPassSceneChangeDetection);
+  m_fifo.clear();
+
+  for(int8_t i = 0; i < 5; i++)
+    tPrevMetaData.iPercentIntra[i] = 100;
+
+}
+
+/***************************************************************************/
+LookAheadMngr::~LookAheadMngr()
+{
+  m_fifo.clear();
+
+}
+
+/***************************************************************************/
+bool LookAheadMngr::ComputeSceneChange(AL_TBuffer* pPrevSrc, AL_TBuffer* pCurrentSrc)
+{
+  if(!pPrevSrc || !pCurrentSrc)
+    return false;
+
+  auto pPreviousMeta = reinterpret_cast<AL_TLookAheadMetaData*>(AL_Buffer_GetMetaData(pPrevSrc, AL_META_TYPE_LOOKAHEAD));
+  auto pCurrentMeta = reinterpret_cast<AL_TLookAheadMetaData*>(AL_Buffer_GetMetaData(pCurrentSrc, AL_META_TYPE_LOOKAHEAD));
+
+  if(bEnableFirstPassSceneChangeDetection)
+    return SceneChangeDetected_Crop(pPreviousMeta, pCurrentMeta);
+
+  return SceneChangeDetected(pPreviousMeta, pCurrentMeta);
+}
+
+/***************************************************************************/
+bool LookAheadMngr::ComputeSceneChange_LA1(AL_TBuffer* pCurrentSrc)
+{
+  if(!pCurrentSrc)
+    return false;
+
+  auto pCurrentMeta = reinterpret_cast<AL_TLookAheadMetaData*>(AL_Buffer_GetMetaData(pCurrentSrc, AL_META_TYPE_LOOKAHEAD));
+  bool bDetected = false;
+
+  if(bEnableFirstPassSceneChangeDetection)
+    bDetected = SceneChangeDetected_Crop(&tPrevMetaData, pCurrentMeta);
+  else
+    bDetected = SceneChangeDetected(&tPrevMetaData, pCurrentMeta);
+
+  tPrevMetaData = *pCurrentMeta;
+  return bDetected;
+}
+
+/***************************************************************************/
+int32_t LookAheadMngr::ComputeIPRatio(AL_TBuffer* pCurrentSrc, AL_TBuffer* pNextSrc)
+{
+  auto pCurrentMeta = reinterpret_cast<AL_TLookAheadMetaData*>(AL_Buffer_GetMetaData(pCurrentSrc, AL_META_TYPE_LOOKAHEAD));
+  auto pNextMeta = reinterpret_cast<AL_TLookAheadMetaData*>(AL_Buffer_GetMetaData(pNextSrc, AL_META_TYPE_LOOKAHEAD));
+
+  return GetIPRatio(pCurrentMeta, pNextMeta);
+}
+
+/***************************************************************************/
+int LookAheadMngr::GetNextSceneChange()
+{
+  int iFifoSize = static_cast<int>(m_fifo.size());
+  int iIndex = 0;
+
+  while((iIndex + 1 < iFifoSize) && !ComputeSceneChange(m_fifo[iIndex], m_fifo[iIndex + 1]))
+    iIndex++;
+
+  if(iFifoSize < 2 || iIndex + 1 == iFifoSize)
+    return iFifoSize;
+  return iIndex + 1;
+}
+
+/***************************************************************************/
+void LookAheadMngr::ProcessLookAheadParams()
+{
+  int iFifoSize = static_cast<int>(m_fifo.size());
+  assert(iFifoSize > 0);
+
+  auto pPictureMetaLA = (AL_TLookAheadMetaData*)AL_Buffer_GetMetaData(m_fifo[0], AL_META_TYPE_LOOKAHEAD);
+
+  if(!pPictureMetaLA)
+    return;
+
+  if(uLookAheadSize == 1)
+  {
+    pPictureMetaLA->eSceneChange = ComputeSceneChange_LA1(m_fifo[0]) ? AL_SC_CURRENT : AL_SC_NONE;
+    pPictureMetaLA->iPictureSize = 0;
+    return;
+  }
+
+  if(bUseComplexity)
+  {
+    ComputeComplexity();
+    pPictureMetaLA->iComplexity = iComplexity;
+  }
+
+  if(iFifoSize < 2)
+    return;
+
+  pPictureMetaLA->eSceneChange = ComputeSceneChange(m_fifo[0], m_fifo[1]) ? AL_SC_NEXT : AL_SC_NONE;
+
+  if(bEnableFirstPassSceneChangeDetection)
+  {
+    pPictureMetaLA->iPictureSize = 0;
+    return;
+  }
+
+  pPictureMetaLA->iIPRatio = ComputeIPRatio(m_fifo[0], m_fifo[1]);
+  int iNextSceneChange = GetNextSceneChange();
+
+  for(int i = 2; i < min(iNextSceneChange, 4); i++)
+    pPictureMetaLA->iIPRatio = min(pPictureMetaLA->iIPRatio, ComputeIPRatio(m_fifo[0], m_fifo[i]));
+}
+
+/***************************************************************************/
+void LookAheadMngr::ComputeComplexity()
+{
+  int iFifoSize = static_cast<int>(m_fifo.size());
+
+  if(iFrameCount % 5 == 0)
+  {
+    iFrameCount = 0;
+    iComplexity = 1000;
+
+    if(iFifoSize >= 5 && AL_Buffer_GetMetaData(m_fifo.front(), AL_META_TYPE_LOOKAHEAD))
+    {
+      intmax_t iComp[2] = { 0, 0 };
+
+      for(int i = 0; i < iFifoSize; i++)
+      {
+        auto pPictureMetaLA = (AL_TLookAheadMetaData*)AL_Buffer_GetMetaData(m_fifo[i], AL_META_TYPE_LOOKAHEAD);
+        iComp[(i < 5) ? 0 : 1] += pPictureMetaLA->iPictureSize;
+      }
+
+      iComplexity = ((1000 * iFifoSize / 5) + iComplexityDiff) * iComp[0] / (iComp[0] + iComp[1]);
+      iComplexity = min(3000, max(100, iComplexity));
+      iComplexityDiff += (1000 - iComplexity);
+    }
+  }
+
+  iFrameCount++;
+
+  if(iFifoSize >= 2 && ComputeSceneChange(m_fifo[0], m_fifo[1]))
+    iFrameCount = 0;
+}
+
+/***************************************************************************/
+bool LookAheadMngr::HasPatternTwoFrames()
+{
+  vector<int> v {};
+
+  for(auto i = m_fifo.begin(); i < m_fifo.end(); i++)
+  {
+    auto pPictureMetaLA = (AL_TLookAheadMetaData*)AL_Buffer_GetMetaData(*i, AL_META_TYPE_LOOKAHEAD);
+    v.push_back(pPictureMetaLA->iPercentIntra[0]);
+  }
+
+  return DetectPatternTwoFrames(v);
 }
 

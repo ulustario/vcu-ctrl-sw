@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright (C) 2018 Allegro DVT2.  All rights reserved.
+* Copyright (C) 2008-2022 Allegro DVT2.  All rights reserved.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -36,80 +36,105 @@
 ******************************************************************************/
 
 #include "SourceBufferChecker.h"
-#include "lib_common/BufferSrcMeta.h"
+#include "lib_common/PixMapBufferInternal.h"
 #include "lib_common_enc/EncBuffers.h"
 #include "lib_common_enc/IpEncFourCC.h"
-
-static uint32_t getExpectedSourceBufferSize(AL_TSrcBufferChecker* pCtx, int pitch, int strideHeight)
-{
-  AL_TDimension tDim = { pCtx->width, pCtx->height };
-  return AL_GetAllocSizeSrc(tDim, pCtx->picFmt.uBitDepth, pCtx->picFmt.eChromaMode, pCtx->srcMode, pitch, strideHeight);
-}
+#include "lib_common/Utils.h"
+#include "lib_assert/al_assert.h"
 
 void AL_SrcBuffersChecker_Init(AL_TSrcBufferChecker* pCtx, AL_TEncChanParam const* pChParam)
 {
-  pCtx->width = AL_GetSrcWidth(*pChParam);
-  pCtx->height = AL_GetSrcHeight(*pChParam);
+  pCtx->maxDim.iWidth = AL_GetSrcWidth(*pChParam);
+  pCtx->maxDim.iHeight = AL_GetSrcHeight(*pChParam);
 
-  pCtx->picFmt = AL_EncGetSrcPicFormat(AL_GET_CHROMA_MODE(pChParam->ePicFormat), pChParam->uSrcBitDepth, AL_GetSrcStorageMode(pChParam->eSrcMode), AL_IsSrcCompressed(pChParam->eSrcMode));
+  pCtx->currentDim = pCtx->maxDim;
+
+  AL_EChromaMode eChromaMode = AL_GET_CHROMA_MODE(pChParam->ePicFormat);
+  pCtx->picFmt = AL_EncGetSrcPicFormat(eChromaMode, pChParam->uSrcBitDepth, AL_GetSrcStorageMode(pChParam->eSrcMode), AL_IsSrcCompressed(pChParam->eSrcMode));
   pCtx->fourCC = AL_GetFourCC(pCtx->picFmt);
   pCtx->srcMode = pChParam->eSrcMode;
 }
 
-static int GetPitchYValue(int iWidth)
+bool AL_SrcBuffersChecker_UpdateResolution(AL_TSrcBufferChecker* pCtx, AL_TDimension tNewDim)
 {
-  return (iWidth + 31) & 0xFFFFFFE0; // 32 bytes alignment
+  if((pCtx->maxDim.iWidth < tNewDim.iWidth) || (pCtx->maxDim.iHeight < tNewDim.iHeight))
+    return false;
+  pCtx->currentDim = tNewDim;
+  return true;
 }
 
-static bool CheckMetaData(AL_TSrcBufferChecker* pCtx, AL_TSrcMetaData* pMetaDataBuf)
+static bool CheckMetaData(AL_TSrcBufferChecker* pCtx, AL_TBuffer* pBuf)
 {
-  if(pMetaDataBuf == NULL)
+  if(AL_Buffer_GetMetaData(pBuf, AL_META_TYPE_PIXMAP) == NULL)
     return false;
 
-  if(pMetaDataBuf->tDim.iWidth > pMetaDataBuf->tPitches.iLuma)
+  AL_TDimension tDim = AL_PixMapBuffer_GetDimension(pBuf);
+  TFourCC tFourCC = AL_PixMapBuffer_GetFourCC(pBuf);
+
+  if(tDim.iWidth != pCtx->currentDim.iWidth)
     return false;
 
-  if(pMetaDataBuf->tDim.iWidth != pCtx->width)
+  if(tDim.iHeight != pCtx->currentDim.iHeight)
     return false;
 
-  if(pMetaDataBuf->tDim.iHeight != pCtx->height)
+  if(tFourCC != pCtx->fourCC)
     return false;
 
-  if(pMetaDataBuf->tFourCC != pCtx->fourCC)
+  return true;
+}
+
+static uint32_t GetSrcPlaneSize(AL_TDimension tDim, AL_EChromaMode eChromaMode, AL_ESrcMode eSrcFmt, int iPitchY, int iStrideHeight, AL_EPlaneId ePlaneId)
+{
+  (void)tDim;
+
+  if(AL_Plane_IsPixelPlane(ePlaneId))
+    return AL_GetAllocSizeSrc_PixPlane(eSrcFmt, iPitchY, iStrideHeight, eChromaMode, ePlaneId);
+
+  return 0;
+}
+
+static bool CheckPlanes(AL_TSrcBufferChecker* pCtx, AL_TBuffer* pBuf)
+{
+  TFourCC tFourCC = AL_PixMapBuffer_GetFourCC(pBuf);
+  AL_TDimension tDim = AL_PixMapBuffer_GetDimension(pBuf);
+
+  const int iMinPitch = AL_EncGetMinPitch(tDim.iWidth, AL_GetBitDepth(tFourCC), AL_GetStorageMode(tFourCC));
+  int const iMinStrideHeight = RoundUp(tDim.iHeight, 8);
+
+  int const iPitchY = AL_PixMapBuffer_GetPlanePitch(pBuf, AL_PLANE_Y);
+
+  if(iPitchY < iMinPitch || (iPitchY % HW_IP_BURST_ALIGNMENT != 0))
     return false;
 
-  int iMinPitch;
+  uint32_t uChunkSizes[AL_BUFFER_MAX_CHUNK] = { 0 };
 
-  if((pMetaDataBuf->tFourCC == FOURCC(XV15)) ||
-     (pMetaDataBuf->tFourCC == FOURCC(XV20)) ||
-     (pMetaDataBuf->tFourCC == FOURCC(XV10))
-     )
-    iMinPitch = GetPitchYValue((pCtx->width + 2) / 3 * 4);
-  else
-  iMinPitch = GetPitchYValue(pCtx->width);
+  AL_TPicFormat tPicFormat;
+  bool bSuccess = AL_GetPicFormat(tFourCC, &tPicFormat);
+  AL_Assert(bSuccess);
+  AL_EPlaneId usedPlanes[AL_MAX_BUFFER_PLANES];
+  int iNbPlanes = AL_Plane_GetBufferPixelPlanes(tPicFormat.eChromaOrder, usedPlanes);
 
-  if(pMetaDataBuf->tPitches.iLuma < iMinPitch)
-    return false;
-
-  if(pMetaDataBuf->tPitches.iLuma % 32)
-    return false;
-
-  if(AL_GetChromaMode(pMetaDataBuf->tFourCC) != CHROMA_MONO)
+  for(int iPlane = 0; iPlane < iNbPlanes; iPlane++)
   {
-    if(pMetaDataBuf->tDim.iWidth > pMetaDataBuf->tPitches.iChroma)
-      return false;
+    AL_EPlaneId ePlaneId = usedPlanes[iPlane];
 
-    if(pMetaDataBuf->tPitches.iChroma != pMetaDataBuf->tPitches.iLuma)
-      return false;
+    int iChunkIdx = AL_PixMapBuffer_GetPlaneChunkIdx(pBuf, ePlaneId);
+    AL_Assert(iChunkIdx != AL_BUFFER_BAD_CHUNK);
 
-    if((pMetaDataBuf->tOffsetYC.iLuma < pMetaDataBuf->tOffsetYC.iChroma) &&
-       (pMetaDataBuf->tOffsetYC.iChroma < AL_SrcMetaData_GetLumaSize(pMetaDataBuf))
-       )
-      return false;
+    if(AL_Plane_IsPixelPlane(ePlaneId) && ePlaneId != AL_PLANE_Y)
+    {
+      int const iPitch = AL_PixMapBuffer_GetPlanePitch(pBuf, ePlaneId);
 
-    if((pMetaDataBuf->tOffsetYC.iChroma < pMetaDataBuf->tOffsetYC.iLuma) &&
-       (pMetaDataBuf->tOffsetYC.iLuma < AL_SrcMetaData_GetChromaSize(pMetaDataBuf))
-       )
+      if(iPitch != AL_GetChromaPitch(tFourCC, iPitchY))
+        return false;
+    }
+
+    uChunkSizes[iChunkIdx] += GetSrcPlaneSize(tDim, tPicFormat.eChromaMode, pCtx->srcMode, iPitchY, iMinStrideHeight, ePlaneId);
+  }
+
+  for(int i = 0; i < AL_BUFFER_MAX_CHUNK; i++)
+  {
+    if(uChunkSizes[i] != 0 && (AL_Buffer_GetSizeChunk(pBuf, i) < uChunkSizes[i]))
       return false;
   }
 
@@ -121,18 +146,9 @@ bool AL_SrcBuffersChecker_CanBeUsed(AL_TSrcBufferChecker* pCtx, AL_TBuffer* pBuf
   if(pBuf == NULL)
     return false;
 
-  AL_TSrcMetaData* pMeta = (AL_TSrcMetaData*)AL_Buffer_GetMetaData(pBuf, AL_META_TYPE_SOURCE);
-
-  if(!CheckMetaData(pCtx, pMeta))
+  if(!CheckMetaData(pCtx, pBuf))
     return false;
 
-  int const iPitch = pMeta->tPitches.iLuma;
-  int const strideHeight = pMeta->tOffsetYC.iChroma / iPitch;
-  uint32_t const minSize = getExpectedSourceBufferSize(pCtx, iPitch, strideHeight);
-
-  if(pBuf->zSize < minSize)
-    return false;
-
-  return true;
+  return CheckPlanes(pCtx, pBuf);
 }
 

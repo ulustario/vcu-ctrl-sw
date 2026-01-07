@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright (C) 2018 Allegro DVT2.  All rights reserved.
+* Copyright (C) 2008-2022 Allegro DVT2.  All rights reserved.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -39,11 +39,7 @@
 
 #include "lib_rtos/types.h"
 
-/*****************************************************************************/
-static const int PictureDisplayToFieldNumber[9] =
-{
-  2, 1, 1, 2, 2, 3, 3, 4, 6
-};
+#define AL_MAX_TILE_ROWS 22 // see table A.1 of the HEVC specification
 
 /*************************************************************************//*!
    \brief This structure is designed to store slice data information of
@@ -52,10 +48,18 @@ static const int PictureDisplayToFieldNumber[9] =
 *****************************************************************************/
 typedef struct AL_t_SkippedPicture
 {
-  uint8_t* pBuffer;  /*!< Array of bytes for storing precomputed skipped picture bitstream */
+  AL_HANDLE hBuf; /*!< Handle of the skipped picture buffer */
+  uint8_t* pData; /*!< Data pointer from hBuf for storing precomputed skipped picture bitstream */
   int iBufSize; /*!< Size (in byte of pBuffer */
 
   int iNumBits; /*!< Number of bits used by the skipped picture */
   int iNumBins; /*!< Number of bins used by the skipped picture */
+
+  int iNumTiles; /*!< Number of tile in the skipped picture */
+  uint32_t uTileSizes[AL_ENC_NUM_CORES * AL_MAX_TILE_ROWS]; /*!< Tile size in Bytes */
 }AL_TSkippedPicture;
+
+/*****************************************************************************/
+#include "HEVC_SkippedPict.h"
+#include "AVC_SkippedPict.h"
 

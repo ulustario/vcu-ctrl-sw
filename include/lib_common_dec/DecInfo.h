@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright (C) 2018 Allegro DVT2.  All rights reserved.
+* Copyright (C) 2008-2022 Allegro DVT2.  All rights reserved.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -47,6 +47,7 @@
 #include "lib_rtos/lib_rtos.h"
 
 #include "lib_common/SliceConsts.h"
+#include "lib_common/PicFormat.h"
 #include "lib_common/VideoMode.h"
 #include "lib_common_dec/DecDpbMode.h"
 
@@ -59,7 +60,7 @@ typedef struct
   AL_EChromaMode eChroma; /*!< Stream's chroma mode (400/420/422/444) */
   int iBitDepth; /*!< Stream's bit depth */
   int iLevel; /*!< Stream's level */
-  int iProfileIdc; /*!< Stream's profile idc */
+  AL_EProfile eProfile; /*!< Stream's profile */
   AL_ESequenceMode eSequenceMode; /*!< Stream's sequence mode */
 }AL_TStreamSettings;
 
@@ -80,14 +81,15 @@ typedef struct t_CropInfo
  ***************************************************************************/
 typedef struct t_InfoDecode
 {
-  bool bChroma; /*!< Does the current framebuffer hold a chroma component or not (monochrome)*/
   AL_TDimension tDim; /*!< Dimensions of the current framebuffer */
+  AL_EChromaMode eChromaMode; /*!< Chroma sub-sampling mode of the current frame*/
   uint8_t uBitDepthY; /*!< Luma bitdepth of the current framebuffer */
   uint8_t uBitDepthC; /*!< Chroma bitdepth of the current framebuffer */
   AL_TCropInfo tCrop; /*!< Crop information of the current framebuffer */
   AL_EFbStorageMode eFbStorageMode; /*! frame buffer storage mode */
   AL_EPicStruct ePicStruct; /*!< structure (frame/field, top/Bottom) of the current framebuffer */
   uint32_t uCRC; /*!< framebuffer data checksum */
+  AL_TPosition tPos; /*!< Position of the top left decoded pixel */
 }AL_TInfoDecode;
 
 /*************************************************************************//*!
@@ -100,24 +102,24 @@ bool AL_NeedsCropping(AL_TCropInfo const* pInfo);
 /*************************************************************************//*!
    \brief Returns the minimum number of output buffers required to decode
    the AVC stream in the specified dpb mode
-   \param[in] tStreamSettings Settings describing the stream to decode
+   \param[in] pStreamSettings Settings describing the stream to decode
    \param[in] iStack Number of requests that should be stacked inside the decoder
    at the same time (affects performances)
    \return Returns the minimum number of output buffers required to decode
    the AVC stream in the specified dpb mode
  ***************************************************************************/
-int AL_AVC_GetMinOutputBuffersNeeded(AL_TStreamSettings tStreamSettings, int iStack);
+int AL_AVC_GetMinOutputBuffersNeeded(AL_TStreamSettings const* pStreamSettings, int iStack);
 
 /*************************************************************************//*!
    \brief Returns the minimum number of output buffers required to decode
    the HEVC stream in the specified dpb mode
-   \param[in] tStreamSettings Settings describing the stream to decode
+   \param[in] pStreamSettings Settings describing the stream to decode
    \param[in] iStack Number of requests that should be stacked inside the decoder
    at the same time (affects performances)
    \return Returns the minimum number of output buffers required to decode
    the HEVC stream in the specified dpb mode
  ***************************************************************************/
-int AL_HEVC_GetMinOutputBuffersNeeded(AL_TStreamSettings tStreamSettings, int iStack);
+int AL_HEVC_GetMinOutputBuffersNeeded(AL_TStreamSettings const* pStreamSettings, int iStack);
 
 /*@}*/
 

@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright (C) 2018 Allegro DVT2.  All rights reserved.
+* Copyright (C) 2008-2022 Allegro DVT2.  All rights reserved.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -41,9 +41,8 @@
 
 extern "C"
 {
-#include "lib_common/SliceConsts.h" // EChromaMode
+#include "lib_common/BufferAPI.h"
 }
 
-template<typename T>
-void Compute_CRC(int iBdInY, int iBdInC, int iBdOut, int iNumPix, int iNumPixC, AL_EChromaMode eMode, T* pBuf, std::ofstream& ofCrcFile);
+void Compute_CRC(AL_TBuffer* pYUV, int iBdInY, int iBdInC, std::ofstream& ofCrcFile);
 

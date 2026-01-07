@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright (C) 2018 Allegro DVT2.  All rights reserved.
+* Copyright (C) 2008-2022 Allegro DVT2.  All rights reserved.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -40,64 +40,28 @@
 
 extern "C"
 {
-#include "lib_common/BufferSrcMeta.h"
+#include "lib_common/PixMapBuffer.h"
 }
 
 #include "Conversion.h"
 
-void CropFrame(AL_TBuffer* pYUV, int iSizePix, uint32_t uCropLeft, uint32_t uCropRight, uint32_t uCropTop, uint32_t uCropBottom)
+void CropFrame(AL_TBuffer* pYUV, int iSizePix, int32_t iCropLeft, int32_t iCropRight, int32_t iCropTop, int32_t iCropBottom)
 {
-  int iBeginVert, iEndVert, iBeginHrz, iEndHrz;
-  int iParse, iUV, iCbOffset, iCrOffset;
+  AL_TPixMapMetaData* pMeta = (AL_TPixMapMetaData*)AL_Buffer_GetMetaData(pYUV, AL_META_TYPE_PIXMAP);
 
-  AL_TSrcMetaData* pMeta = (AL_TSrcMetaData*)AL_Buffer_GetMetaData(pYUV, AL_META_TYPE_SOURCE);
+  pMeta->tDim.iWidth -= iCropLeft + iCropRight;
+  pMeta->tDim.iHeight -= iCropTop + iCropBottom;
 
-  int iWidth = pMeta->tDim.iWidth;
-  int iHeight = pMeta->tDim.iHeight;
+  pMeta->tPlanes[AL_PLANE_Y].iOffset += iCropTop * AL_PixMapBuffer_GetPlanePitch(pYUV, AL_PLANE_Y) + iCropLeft * iSizePix;
+
   AL_EChromaMode eMode = AL_GetChromaMode(pMeta->tFourCC);
 
-  uint8_t* pOut = AL_Buffer_GetData(pYUV);
-  uint8_t* pIn = AL_Buffer_GetData(pYUV);
-
-  /*warning: works in frame only in 4:2:0*/
-  iBeginVert = uCropTop;
-  iBeginHrz = uCropLeft;
-  iEndVert = iHeight - uCropBottom;
-  iEndHrz = iWidth - uCropRight;
-
-  pMeta->tDim.iWidth = iEndHrz - iBeginHrz;
-  pMeta->tDim.iHeight = iEndVert - iBeginVert;
-
-  /*luma samples*/
-  for(iParse = iBeginVert; iParse < iEndVert; ++iParse)
+  if(eMode != AL_CHROMA_MONO)
   {
-    memmove(pOut, &pIn[(iParse * iWidth + iBeginHrz) * iSizePix], (iEndHrz - iBeginHrz) * iSizePix);
-    pOut += (iEndHrz - iBeginHrz) * iSizePix;
-  }
-
-  /*chroma samples*/
-  if(eMode != CHROMA_MONO)
-  {
-    iCbOffset = iWidth * iHeight;
-    iWidth /= (eMode == CHROMA_4_4_4) ? 1 : 2;
-    iHeight /= (eMode == CHROMA_4_2_0) ? 2 : 1;
-    iCrOffset = iCbOffset + (iWidth * iHeight);
-
-    iBeginVert /= (eMode == CHROMA_4_2_0) ? 2 : 1;
-    iEndVert /= (eMode == CHROMA_4_2_0) ? 2 : 1;
-    iBeginHrz /= (eMode == CHROMA_4_4_4) ? 1 : 2;
-    iEndHrz /= (eMode == CHROMA_4_4_4) ? 1 : 2;
-
-    for(iUV = 0; iUV < 2; ++iUV)
-    {
-      int iChromaOffset = (iUV ? iCrOffset : iCbOffset);
-
-      for(iParse = iBeginVert; iParse < iEndVert; ++iParse)
-      {
-        memmove(pOut, &pIn[(iParse * iWidth + iBeginHrz + iChromaOffset) * iSizePix], (iEndHrz - iBeginHrz) * iSizePix);
-        pOut += (iEndHrz - iBeginHrz) * iSizePix;
-      }
-    }
+    iCropTop /= (eMode == AL_CHROMA_4_2_0) ? 2 : 1;
+    iCropLeft /= (eMode == AL_CHROMA_4_4_4) ? 1 : 2;
+    pMeta->tPlanes[AL_PLANE_U].iOffset += iCropTop * AL_PixMapBuffer_GetPlanePitch(pYUV, AL_PLANE_U) + iCropLeft * iSizePix;
+    pMeta->tPlanes[AL_PLANE_V].iOffset += iCropTop * AL_PixMapBuffer_GetPlanePitch(pYUV, AL_PLANE_V) + iCropLeft * iSizePix;
   }
 }
 

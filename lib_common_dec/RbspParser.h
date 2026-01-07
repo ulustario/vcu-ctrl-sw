@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright (C) 2018 Allegro DVT2.  All rights reserved.
+* Copyright (C) 2008-2022 Allegro DVT2.  All rights reserved.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -96,7 +96,18 @@ uint8_t read_bit(AL_TRbspParser* pRP, uint32_t bit_index);
 bool byte_aligned(AL_TRbspParser* pRP);
 
 /*************************************************************************//*!
-   \brief The byte_alignment function set the current bitstream offset to the next byte boundary
+   \brief The simple_byte_alignment function set the current bitstream offset to
+   the next byte boundary, checking all bits are set to a specified value
+   \param[in] pRP Pointer to NAL parser
+   \param[in] expected_bit Expected value for the aligment bits
+   \return return true if the bit value conditions are met
+   false otherwise
+*****************************************************************************/
+bool simple_byte_alignment(AL_TRbspParser* pRP, uint8_t expected_bit);
+
+/*************************************************************************//*!
+   \brief The byte_alignment function set the current bitstream offset to the
+   next byte boundary, checking the first bit is 1 followed by 0
    \param[in] pRP Pointer to NAL parser
    \return return true if the bit value conditions are met
                 false otherwise
@@ -146,6 +157,12 @@ uint32_t get_cache_24(AL_TRbspParser* pRP);
    \param[in] iNumBits Number of bits to skip
 *****************************************************************************/
 void skip(AL_TRbspParser* pRP, uint32_t iNumBits);
+
+/*************************************************************************//*!
+   \brief The skip function skips all firsts zeros and the next byte from the bitstream buffer
+   \param[in] pRP      Pointer to NAL parser
+*****************************************************************************/
+void skipAllZerosAndTheNextByte(AL_TRbspParser* pRP);
 
 /*************************************************************************//*!
    \brief The offset function retrieves the current bit offset in the bitstream buffer
