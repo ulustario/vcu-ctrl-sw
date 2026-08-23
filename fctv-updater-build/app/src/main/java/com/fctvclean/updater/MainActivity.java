@@ -7,14 +7,12 @@ import android.net.Uri;
 import android.os.*;
 import android.provider.Settings;
 import android.security.keystore.*;
-import android.view.*;
 import android.widget.*;
 
 import com.android.apksig.ApkSigner;
 
 import java.io.*;
 import java.math.BigInteger;
-import java.nio.*;
 import java.security.*;
 import java.security.cert.X509Certificate;
 import java.util.*;
@@ -108,7 +106,7 @@ public class MainActivity extends Activity {
                     PendingIntent pending=PendingIntent.getBroadcast(this,id,result,PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_MUTABLE);
                     session.commit(pending.getIntentSender());
                 }
-                runOnUiThread(()->status.setText("PackageInstaller avviato. Se la FCTV originale è ancora installata, Android può richiederne prima la disinstallazione perché la firma originale è diversa."));
+                runOnUiThread(()->status.setText("PackageInstaller avviato. Se FCTV è firmata con una chiave diversa, Android richiederà prima la disinstallazione della vecchia copia."));
             } catch(Exception e){ runOnUiThread(()->status.setText("Installazione non avviata: "+e.getMessage())); }
         }).start();
     }
@@ -125,36 +123,56 @@ public class MainActivity extends Activity {
         static final String[] HOSTS={"app-measurement.com","firebase-settings.crashlytics.com","google-analytics.com","googleadservices.com","doubleclick.net","mixpanel.com","pagead2.googlesyndication.com"};
 
         static void sanitize(File input,File output) throws Exception {
-            Map<String,byte[]> replaced=new HashMap<>();
+            LinkedHashMap<String,Dex> dexes=new LinkedHashMap<>();
             try(ZipFile z=new ZipFile(input)){
                 for(String dexName:new String[]{"classes.dex","classes2.dex"}){
                     ZipEntry e=z.getEntry(dexName); if(e==null) throw new Exception("Manca "+dexName);
-                    byte[] d=readAll(z.getInputStream(e)); Dex dex=new Dex(d);
-                    if("classes.dex".equals(dexName)) patchMethodExact(dex,"Lcom/rblive/common/utils/GA;","postEvent","V",new int[]{0x000e});
-                    for(String[] m:BOOL_METHODS) patchMethodIfHere(dex,m[0],m[1],"Z",new int[]{0x0012,0x000f});
-                    for(String h:HOSTS) replaceAscii(dex.data,h,invalid(h),!h.equals("pagead2.googlesyndication.com"));
-                    dex.fix(); replaced.put(dexName,dex.data);
+                    dexes.put(dexName,new Dex(readAll(z.getInputStream(e))));
                 }
             }
-            for(String[] m:BOOL_METHODS){ int hits=0; for(byte[] d:replaced.values()) if(new Dex(d).findMethod(m[0],m[1],"Z")>=0) hits++; if(hits!=1) throw new Exception("Layout non supportato: "+m[0]+"->"+m[1]); }
+
+            patchMethodAny(dexes,"Lcom/rblive/common/utils/GA;","postEvent","V",new int[]{0x000e});
+            for(String[] m:BOOL_METHODS) patchMethodAny(dexes,m[0],m[1],"Z",new int[]{0x0012,0x000f});
+
+            for(String h:HOSTS){
+                int total=0;
+                for(Dex dex:dexes.values()) total+=replaceAsciiCount(dex.data,h,invalid(h));
+                if(!h.equals("pagead2.googlesyndication.com") && total==0) throw new Exception("Marker telemetria mancante: "+h);
+            }
+            for(Dex dex:dexes.values()) dex.fix();
+
             try(ZipFile zin=new ZipFile(input); ZipOutputStream zout=new ZipOutputStream(new FileOutputStream(output))){
                 Enumeration<? extends ZipEntry> en=zin.entries();
                 while(en.hasMoreElements()){
                     ZipEntry old=en.nextElement(); String n=old.getName(); String u=n.toUpperCase(Locale.ROOT);
                     if(u.startsWith("META-INF/")&&(u.endsWith(".RSA")||u.endsWith(".DSA")||u.endsWith(".EC")||u.endsWith(".SF")||u.endsWith("MANIFEST.MF"))) continue;
-                    byte[] bytes=replaced.containsKey(n)?replaced.get(n):readAll(zin.getInputStream(old));
+                    byte[] bytes=dexes.containsKey(n)?dexes.get(n).data:readAll(zin.getInputStream(old));
                     ZipEntry ne=new ZipEntry(n); ne.setTime(old.getTime()); ne.setComment(old.getComment()); ne.setExtra(old.getExtra()); ne.setMethod(old.getMethod());
                     if(old.getMethod()==ZipEntry.STORED){ ne.setSize(bytes.length); CRC32 c=new CRC32(); c.update(bytes); ne.setCrc(c.getValue()); }
                     zout.putNextEntry(ne); if(!old.isDirectory()) zout.write(bytes); zout.closeEntry();
                 }
             }
         }
+
+        static void patchMethodAny(Map<String,Dex> dexes,String cls,String name,String ret,int[] units)throws Exception{
+            Dex target=null; int off=-1; int hits=0;
+            for(Dex dex:dexes.values()){
+                int x=dex.findMethod(cls,name,ret);
+                if(x==-2) throw new Exception("Metodo ambiguo: "+cls+"->"+name);
+                if(x>=0){ target=dex; off=x; hits++; }
+            }
+            if(hits!=1) throw new Exception("Layout non supportato: "+cls+"->"+name+" hits="+hits);
+            target.patchCode(off,units);
+        }
+
         static String invalid(String h){ return h.length()>=8?repeat('x',h.length()-8)+".invalid":repeat('x',h.length()); }
         static String repeat(char c,int n){ char[] a=new char[n]; Arrays.fill(a,c); return new String(a); }
         static byte[] readAll(InputStream is)throws Exception{ try(InputStream x=is; ByteArrayOutputStream o=new ByteArrayOutputStream()){ byte[] b=new byte[65536]; int n; while((n=x.read(b))>0)o.write(b,0,n); return o.toByteArray(); } }
-        static void replaceAscii(byte[] b,String old,String neu,boolean required)throws Exception{ byte[] a=old.getBytes("UTF-8"), r=neu.getBytes("UTF-8"); if(a.length!=r.length)throw new Exception("Host length"); int hits=0; outer: for(int i=0;i<=b.length-a.length;i++){ for(int j=0;j<a.length;j++)if(b[i+j]!=a[j])continue outer; System.arraycopy(r,0,b,i,r.length); hits++; i+=a.length-1; } if(required&&hits==0)throw new Exception("Marker telemetria mancante: "+old); }
-        static void patchMethodExact(Dex dex,String cls,String name,String ret,int[] units)throws Exception{ int off=dex.findMethod(cls,name,ret); if(off<0)throw new Exception("Metodo mancante: "+name); dex.patchCode(off,units); dex.fix(); }
-        static void patchMethodIfHere(Dex dex,String cls,String name,String ret,int[] units)throws Exception{ int off=dex.findMethod(cls,name,ret); if(off>=0){ dex.patchCode(off,units); dex.fix(); } }
+        static int replaceAsciiCount(byte[] b,String old,String neu)throws Exception{
+            byte[] a=old.getBytes("UTF-8"), r=neu.getBytes("UTF-8"); if(a.length!=r.length)throw new Exception("Host length"); int hits=0;
+            outer: for(int i=0;i<=b.length-a.length;i++){ for(int j=0;j<a.length;j++)if(b[i+j]!=a[j])continue outer; System.arraycopy(r,0,b,i,r.length); hits++; i+=a.length-1; }
+            return hits;
+        }
     }
 
     static class Dex {
@@ -166,13 +184,18 @@ public class MainActivity extends Activity {
         int[] uleb(int o){ int v=0,s=0; while(true){ int b=data[o++]&255; v|=(b&0x7f)<<s; if((b&0x80)==0)return new int[]{v,o}; s+=7; } }
         String cstr(int o)throws Exception{ int[] q=uleb(o); o=q[1]; int e=o; while(data[e]!=0)e++; return new String(data,o,e-o,"UTF-8"); }
         void parse()throws Exception{
-            int ss=u32(0x38),so=u32(0x3c), ts=u32(0x40),to=u32(0x44), ps=u32(0x48),po=u32(0x4c), ms=u32(0x58),mo=u32(0x5c), cs=u32(0x60),co=u32(0x64);
+            int ss=u32(0x38),so=u32(0x3c),ts=u32(0x40),to=u32(0x44),ps=u32(0x48),po=u32(0x4c),ms=u32(0x58),mo=u32(0x5c),cs=u32(0x60),co=u32(0x64);
             strings=new String[ss]; for(int i=0;i<ss;i++)strings[i]=cstr(u32(so+4*i));
             types=new String[ts]; for(int i=0;i<ts;i++)types[i]=strings[u32(to+4*i)];
-            protos=new Proto[ps]; for(int i=0;i<ps;i++){ int r=u32(po+12*i+4), off=u32(po+12*i+8); protos[i]=new Proto(types[r]); }
+            protos=new Proto[ps]; for(int i=0;i<ps;i++){ int r=u32(po+12*i+4); protos[i]=new Proto(types[r]); }
             methods=new Method[ms]; for(int i=0;i<ms;i++){ int c=u16(mo+8*i),p=u16(mo+8*i+2),n=u32(mo+8*i+4); methods[i]=new Method(types[c],strings[n],protos[p].ret); }
-            for(int i=0;i<cs;i++){ int clsIdx=u32(co+32*i), off=u32(co+32*i+24); if(off==0)continue; String cls=types[clsIdx]; int[] q=uleb(off); int sf=q[0]; off=q[1]; q=uleb(off); int inf=q[0]; off=q[1]; q=uleb(off); int dm=q[0]; off=q[1]; q=uleb(off); int vm=q[0]; off=q[1]; for(int k=0;k<sf+inf;k++){ q=uleb(off);off=q[1];q=uleb(off);off=q[1]; }
-                List<ClassMethod> list=new ArrayList<>(); int[] counts={dm,vm}; for(int count:counts){ int midx=0; for(int k=0;k<count;k++){ q=uleb(off);midx+=q[0];off=q[1];q=uleb(off);off=q[1];q=uleb(off);int code=q[0];off=q[1];list.add(new ClassMethod(midx,code)); } } classMethods.put(cls,list);
+            for(int i=0;i<cs;i++){
+                int clsIdx=u32(co+32*i),off=u32(co+32*i+24); if(off==0)continue; String cls=types[clsIdx];
+                int[] q=uleb(off); int sf=q[0]; off=q[1]; q=uleb(off); int inf=q[0]; off=q[1]; q=uleb(off); int dm=q[0]; off=q[1]; q=uleb(off); int vm=q[0]; off=q[1];
+                for(int k=0;k<sf+inf;k++){ q=uleb(off);off=q[1];q=uleb(off);off=q[1]; }
+                List<ClassMethod> list=new ArrayList<>();
+                for(int count:new int[]{dm,vm}){ int midx=0; for(int k=0;k<count;k++){ q=uleb(off);midx+=q[0];off=q[1];q=uleb(off);off=q[1];q=uleb(off);int code=q[0];off=q[1];list.add(new ClassMethod(midx,code)); } }
+                classMethods.put(cls,list);
             }
         }
         int findMethod(String cls,String name,String ret){ List<ClassMethod> l=classMethods.get(cls); if(l==null)return -1; int found=-1; for(ClassMethod cm:l){ Method m=methods[cm.idx]; if(m.name.equals(name)&&m.ret.equals(ret)){ if(found!=-1)return -2; found=cm.code; } } return found; }
