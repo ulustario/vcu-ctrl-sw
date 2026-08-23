@@ -1,4 +1,4 @@
-name: FCTV Clean Updater 3.0 build
+name: FCTV Clean Updater 3.0 signed build
 on:
   pull_request:
     branches: [ master ]
@@ -17,14 +17,30 @@ jobs:
       - name: Build release APK
         working-directory: fctv-clean-updater-v3
         run: gradle --no-daemon :app:assembleRelease
-      - name: Verify no installer permission
+      - name: Sign and verify
         run: |
-          APK=fctv-clean-updater-v3/app/build/outputs/apk/release/app-release-unsigned.apk
-          test -f "$APK"
-          "$ANDROID_HOME/build-tools/35.0.0/aapt2" dump permissions "$APK" | tee /tmp/permissions.txt
-          ! grep -q 'REQUEST_INSTALL_PACKAGES' /tmp/permissions.txt
-          sha256sum "$APK"
+          set -e
+          UNSIGNED=fctv-clean-updater-v3/app/build/outputs/apk/release/app-release-unsigned.apk
+          mkdir -p out/tools
+          PASS=$(openssl rand -hex 24)
+          printf '%s\n' "$PASS" > out/FCTV_Clean_Updater_signing_password.txt
+          keytool -genkeypair -noprompt \
+            -keystore out/FCTV_Clean_Updater_signing.p12 -storetype PKCS12 \
+            -storepass "$PASS" -keypass "$PASS" -alias fctv-updater \
+            -keyalg RSA -keysize 3072 -sigalg SHA256withRSA -validity 10000 \
+            -dname 'CN=FCTV CLEAN Updater, OU=Local, O=Local, C=IT'
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" sign \
+            --ks out/FCTV_Clean_Updater_signing.p12 \
+            --ks-key-alias fctv-updater \
+            --ks-pass "pass:$PASS" --key-pass "pass:$PASS" \
+            --out out/FCTV_Clean_Updater_3.0.apk "$UNSIGNED"
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose --print-certs out/FCTV_Clean_Updater_3.0.apk | tee out/APK_SIGNATURE_VERIFY.txt
+          "$ANDROID_HOME/build-tools/35.0.0/aapt2" dump permissions out/FCTV_Clean_Updater_3.0.apk | tee out/APK_PERMISSIONS.txt
+          ! grep -q 'REQUEST_INSTALL_PACKAGES' out/APK_PERMISSIONS.txt
+          sha256sum out/FCTV_Clean_Updater_3.0.apk | tee out/SHA256.txt
+          cp "$ANDROID_HOME/build-tools/35.0.0/apksigner" out/tools/
+          cp "$ANDROID_HOME/build-tools/35.0.0/lib/apksigner.jar" out/tools/
       - uses: actions/upload-artifact@v4
         with:
-          name: FCTV-Clean-Updater-3.0-unsigned
-          path: fctv-clean-updater-v3/app/build/outputs/apk/release/app-release-unsigned.apk
+          name: FCTV-Clean-Updater-3.0
+          path: out/
