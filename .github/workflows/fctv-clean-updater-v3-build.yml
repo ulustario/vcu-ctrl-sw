@@ -1,4 +1,4 @@
-name: FCTV Clean Updater 3.0 signed build
+name: FCTV Clean Updater 3.1 build
 on:
   pull_request:
     branches: [ master ]
@@ -14,33 +14,47 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.10.2'
+      - name: Patch 3.0 source to 3.1 verifier
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('fctv-clean-updater-v3/app/src/main/java/com/fctvclean/updater/MainActivity.java')
+          s = p.read_text()
+          old = 'String signer = packageInfoSignerSha256(pi);'
+          new = 'String signer = ApkCert.signerSha256(apk, EXPECTED_FCTV_CERT_SHA256);'
+          if s.count(old) != 1:
+              raise SystemExit(f'expected exactly one official signer check, found {s.count(old)}')
+          s = s.replace(old, new)
+          # Verifica anche il file CLEAN dopo la firma, in entrambi i percorsi online/manuale.
+          marker = 'signApk(unsigned, signed);'
+          if s.count(marker) != 2:
+              raise SystemExit(f'expected two signApk calls, found {s.count(marker)}')
+          s = s.replace(marker, marker + '\n        ApkCert.assertVerified(signed);')
+          s = s.replace('FCTV CLEAN Updater 3.0', 'FCTV CLEAN Updater 3.1')
+          s = s.replace('FCTV-Clean-Updater/3.0 Android', 'FCTV-Clean-Updater/3.1 Android')
+          s = s.replace("L'Updater 3.0 non possiede", "L'Updater 3.1 non possiede")
+          p.write_text(s)
+
+          g = Path('fctv-clean-updater-v3/app/build.gradle')
+          t = g.read_text()
+          t = t.replace('versionCode 300', 'versionCode 310')
+          t = t.replace("versionName '3.0'", "versionName '3.1'")
+          g.write_text(t)
+          PY
       - name: Build release APK
         working-directory: fctv-clean-updater-v3
         run: gradle --no-daemon :app:assembleRelease
-      - name: Sign and verify
+      - name: Verify manifest and collect unsigned APK
         run: |
           set -e
           UNSIGNED=fctv-clean-updater-v3/app/build/outputs/apk/release/app-release-unsigned.apk
-          mkdir -p out/tools
-          PASS=$(openssl rand -hex 24)
-          printf '%s\n' "$PASS" > out/FCTV_Clean_Updater_signing_password.txt
-          keytool -genkeypair -noprompt \
-            -keystore out/FCTV_Clean_Updater_signing.p12 -storetype PKCS12 \
-            -storepass "$PASS" -keypass "$PASS" -alias fctv-updater \
-            -keyalg RSA -keysize 3072 -sigalg SHA256withRSA -validity 10000 \
-            -dname 'CN=FCTV CLEAN Updater, OU=Local, O=Local, C=IT'
-          "$ANDROID_HOME/build-tools/35.0.0/apksigner" sign \
-            --ks out/FCTV_Clean_Updater_signing.p12 \
-            --ks-key-alias fctv-updater \
-            --ks-pass "pass:$PASS" --key-pass "pass:$PASS" \
-            --out out/FCTV_Clean_Updater_3.0.apk "$UNSIGNED"
-          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose --print-certs out/FCTV_Clean_Updater_3.0.apk | tee out/APK_SIGNATURE_VERIFY.txt
-          "$ANDROID_HOME/build-tools/35.0.0/aapt2" dump permissions out/FCTV_Clean_Updater_3.0.apk | tee out/APK_PERMISSIONS.txt
+          test -f "$UNSIGNED"
+          mkdir -p out
+          cp "$UNSIGNED" out/FCTV_Clean_Updater_3.1_unsigned.apk
+          "$ANDROID_HOME/build-tools/35.0.0/aapt2" dump permissions "$UNSIGNED" | tee out/APK_PERMISSIONS.txt
           ! grep -q 'REQUEST_INSTALL_PACKAGES' out/APK_PERMISSIONS.txt
-          sha256sum out/FCTV_Clean_Updater_3.0.apk | tee out/SHA256.txt
-          cp "$ANDROID_HOME/build-tools/35.0.0/apksigner" out/tools/
-          cp "$ANDROID_HOME/build-tools/35.0.0/lib/apksigner.jar" out/tools/
+          sha256sum "$UNSIGNED" | tee out/SHA256_UNSIGNED.txt
       - uses: actions/upload-artifact@v4
         with:
-          name: FCTV-Clean-Updater-3.0
+          name: FCTV-Clean-Updater-3.1-unsigned
           path: out/
