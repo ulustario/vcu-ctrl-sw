@@ -1,0 +1,22 @@
+plugins { id 'com.android.application' }
+
+android {
+    namespace 'com.fctvclean.updater'
+    compileSdk 35
+
+    defaultConfig {
+        applicationId 'com.fctvclean.updater'
+        minSdk 23
+        targetSdk 35
+        versionCode 300
+        versionName '3.0'
+    }
+
+    buildTypes {
+        release { minifyEnabled false }
+    }
+}
+
+dependencies {
+    implementation 'com.android.tools.build:apksig:8.6.1'
+}
