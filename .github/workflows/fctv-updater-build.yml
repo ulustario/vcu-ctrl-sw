@@ -2,6 +2,8 @@ name: FCTV Clean Updater build
 on:
   push:
     branches: [ tmp-fctv-clean-updater-build ]
+  pull_request:
+    branches: [ master ]
 jobs:
   build:
     runs-on: ubuntu-latest
