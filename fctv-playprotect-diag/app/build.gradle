@@ -1,0 +1,17 @@
+plugins { id 'com.android.application' }
+
+android {
+    namespace 'com.fctvclean.diag'
+    compileSdk 35
+    defaultConfig { minSdk 23; targetSdk 35; versionCode 1; versionName '1.0' }
+    flavorDimensions 'diag'
+    productFlavors {
+        a { dimension 'diag'; applicationId 'com.fctvclean.diag.a'; resValue 'string','app_name','FCTV Diag A UI' }
+        b { dimension 'diag'; applicationId 'com.fctvclean.diag.b'; resValue 'string','app_name','FCTV Diag B Keystore' }
+        c { dimension 'diag'; applicationId 'com.fctvclean.diag.c'; resValue 'string','app_name','FCTV Diag C Installer' }
+        d { dimension 'diag'; applicationId 'com.fctvclean.diag.d'; resValue 'string','app_name','FCTV Diag D ApkSig' }
+        e { dimension 'diag'; applicationId 'com.fctvclean.diag.e'; resValue 'string','app_name','FCTV Diag E DEX' }
+    }
+}
+
+dependencies { dImplementation 'com.android.tools.build:apksig:8.7.3' }

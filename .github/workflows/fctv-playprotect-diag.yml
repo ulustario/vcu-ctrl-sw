@@ -1,0 +1,29 @@
+name: FCTV Play Protect diagnostics
+on:
+  pull_request:
+    branches: [ master ]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: '17' }
+      - uses: gradle/actions/setup-gradle@v4
+        with: { gradle-version: '8.10.2' }
+      - name: Build diagnostics
+        working-directory: fctv-playprotect-diag
+        run: gradle --no-daemon :app:assembleADebug :app:assembleBDebug :app:assembleCDebug :app:assembleDDebug :app:assembleEDebug
+      - name: Collect APKs
+        run: |
+          mkdir out
+          cp fctv-playprotect-diag/app/build/outputs/apk/a/debug/app-a-debug.apk out/FCTV_Diag_A_UI.apk
+          cp fctv-playprotect-diag/app/build/outputs/apk/b/debug/app-b-debug.apk out/FCTV_Diag_B_Keystore.apk
+          cp fctv-playprotect-diag/app/build/outputs/apk/c/debug/app-c-debug.apk out/FCTV_Diag_C_Installer.apk
+          cp fctv-playprotect-diag/app/build/outputs/apk/d/debug/app-d-debug.apk out/FCTV_Diag_D_ApkSig.apk
+          cp fctv-playprotect-diag/app/build/outputs/apk/e/debug/app-e-debug.apk out/FCTV_Diag_E_DEX.apk
+          sha256sum out/*.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: FCTV-PlayProtect-Diagnostics
+          path: out/*.apk
