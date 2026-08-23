@@ -1,0 +1,30 @@
+name: FCTV C1 C2 C3 diagnostics
+on:
+  pull_request:
+    branches: [ master ]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.10.2'
+      - name: Build diagnostics
+        working-directory: fctv-trigger-diag2
+        run: gradle --no-daemon :c1perm:assembleDebug :c2installer:assembleDebug :c3handoff:assembleDebug
+      - name: Collect APKs
+        run: |
+          mkdir -p out
+          cp fctv-trigger-diag2/c1perm/build/outputs/apk/debug/c1perm-debug.apk out/FCTV_Diag_C1_PermissionOnly.apk
+          cp fctv-trigger-diag2/c2installer/build/outputs/apk/debug/c2installer-debug.apk out/FCTV_Diag_C2_PackageInstallerOnly.apk
+          cp fctv-trigger-diag2/c3handoff/build/outputs/apk/debug/c3handoff-debug.apk out/FCTV_Diag_C3_Handoff.apk
+          sha256sum out/*.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: FCTV-C1-C2-C3-Diagnostics
+          path: out/*.apk
