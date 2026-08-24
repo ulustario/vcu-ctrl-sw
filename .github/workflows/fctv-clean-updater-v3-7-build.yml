@@ -15,7 +15,7 @@ jobs:
         with:
           gradle-version: '8.10.2'
       - name: Patch source to 3.7 DIAG
-        run: python3 .github/scripts/patch_fctv_clean_3_7.py
+        run: python3 .github/scripts/patch_fctv_clean_3_7_v2.py
       - name: Build release APK
         working-directory: fctv-clean-updater-v3
         run: gradle --no-daemon :app:assembleRelease
