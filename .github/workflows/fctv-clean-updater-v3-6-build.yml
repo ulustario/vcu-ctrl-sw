@@ -1,0 +1,51 @@
+name: FCTV Clean Updater 3.6 build
+on:
+  pull_request:
+    branches: [ master ]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.10.2'
+      - name: Prepare 3.6 source
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          exec(Path('.github/scripts/patch_fctv_clean_3_5.py').read_text(encoding='utf-8'), {})
+          p=Path('fctv-clean-updater-v3/app/src/main/java/com/fctvclean/updater/MainActivity.java')
+          s=p.read_text(encoding='utf-8')
+          s=s.replace('                    dex.validateStringIdsSorted();\n','')
+          a=s.index('        void validateStringIdsSorted() throws Exception {')
+          b=s.index('        void patchCode(',a)
+          s=s[:a]+s[b:]
+          s=s.replace('op != 0x3907 || rel != 0x000d','op != 0x0739 || rel != 0x000d')
+          s=s.replace('FCTV CLEAN Updater 3.5','FCTV CLEAN Updater 3.6')
+          s=s.replace('FCTV-Clean-Updater/3.5 Android','FCTV-Clean-Updater/3.6 Android')
+          p.write_text(s,encoding='utf-8')
+          g=Path('fctv-clean-updater-v3/app/build.gradle')
+          t=g.read_text(encoding='utf-8').replace('versionCode 350','versionCode 360').replace("versionName '3.5'","versionName '3.6'")
+          g.write_text(t,encoding='utf-8')
+          m=Path('fctv-clean-updater-v3/app/src/main/AndroidManifest.xml')
+          m.write_text(m.read_text(encoding='utf-8').replace('FCTV CLEAN Updater 3.5','FCTV CLEAN Updater 3.6'),encoding='utf-8')
+          PY
+      - name: Build release APK
+        working-directory: fctv-clean-updater-v3
+        run: gradle --no-daemon :app:assembleRelease
+      - name: Collect
+        run: |
+          mkdir -p out
+          cp fctv-clean-updater-v3/app/build/outputs/apk/release/app-release-unsigned.apk out/FCTV_Clean_Updater_3.6_unsigned.apk
+          "$ANDROID_HOME/build-tools/35.0.0/aapt2" dump permissions out/FCTV_Clean_Updater_3.6_unsigned.apk | tee out/APK_PERMISSIONS.txt
+          ! grep -q 'REQUEST_INSTALL_PACKAGES' out/APK_PERMISSIONS.txt
+          sha256sum out/FCTV_Clean_Updater_3.6_unsigned.apk > out/SHA256.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: FCTV-Clean-Updater-3.6-unsigned
+          path: out/
