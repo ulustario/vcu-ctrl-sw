@@ -1,0 +1,35 @@
+name: FCTV Clean Updater 3.3 build
+on:
+  pull_request:
+    branches: [ master ]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.10.2'
+      - name: Patch source to 3.3
+        run: python3 .github/scripts/patch_fctv_clean_3_3.py
+      - name: Build release APK
+        working-directory: fctv-clean-updater-v3
+        run: gradle --no-daemon :app:assembleRelease
+      - name: Verify manifest and collect unsigned APK
+        run: |
+          set -e
+          APK=fctv-clean-updater-v3/app/build/outputs/apk/release/app-release-unsigned.apk
+          test -f "$APK"
+          "$ANDROID_HOME/build-tools/35.0.0/aapt2" dump permissions "$APK" | tee /tmp/permissions.txt
+          ! grep -q 'REQUEST_INSTALL_PACKAGES' /tmp/permissions.txt
+          mkdir -p out
+          cp "$APK" out/FCTV_Clean_Updater_3.3_unsigned.apk
+          sha256sum out/FCTV_Clean_Updater_3.3_unsigned.apk | tee out/SHA256_UNSIGNED.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: FCTV-Clean-Updater-3.3-unsigned
+          path: out/
